@@ -10,13 +10,12 @@ part of asteroidracers;
 class Movable {
   final String name;
   final String color;
-  final SolarSystem solarSystem;
 
   Point position;
   Vector speed;
   num bodySize;
 
-  Movable(SolarSystem this.solarSystem, String this.name, String this.color,
+  Movable(String this.name, String this.color,
       num this.bodySize, Point this.position, Vector this.speed) {
 
     //bodySize = solarSystem.normalizePlanetSize(bodySize);

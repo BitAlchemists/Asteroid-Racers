@@ -2,3 +2,5 @@ name: AsteroidRacers
 description: A sample web application
 dependencies:
   browser: any
+  game_loop:
+    git: https://github.com/BitAlchemists/game_loop.git
