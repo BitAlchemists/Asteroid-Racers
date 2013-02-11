@@ -20,7 +20,7 @@ void main() {
   var player = new Movable("Sun", "#ff2", 10, new Point(0,0), new Vector(0,0));
   scene.movables.add(player);
   
-  const num playerSpeed = 30;
+  const num playerSpeed = 10;
 
   Map keyDownMap = new Map();
   keyDownMap[GameLoopKeyboard.LEFT] = (gameLoop){
@@ -97,7 +97,7 @@ class AsteroidsScene extends Scene {
 
     for (int i = 0; i < count; i++) {
       int xDistance = 500;
-      int yDistance = 200;
+      int yDistance = 500;
       Point point = new Point(random.nextDouble() * 2 * xDistance - xDistance, random.nextDouble() * 2 * yDistance - yDistance);
       movables.add(new Movable("asteroid", "#777", 3, point, new Vector(0,0)));
     }
