@@ -5,6 +5,10 @@ import 'dart:math';
 import 'package:game_loop/game_loop.dart';
 
 part 'movable.dart';
+part 'entity.dart';
+part 'node.dart';
+part 'scene.dart';
+part 'scene_renderer.dart';
 
 /**
  * The entry point to the application.
@@ -73,7 +77,7 @@ void showFps(num fps) {
 class Point {
   num x, y;
 
-  Point(this.x, this.y);
+  Point([this.x, this.y]);
 }
 
 class Vector {
@@ -81,59 +85,3 @@ class Vector {
   Vector(this.x, this.y);
 }
 
-
-class Scene {
-  List<Movable> movables = new List<Movable>();
-}
-
-class AsteroidsScene extends Scene {
-
-  AsteroidsScene() {
-    addAsteroidBelt(30); 
-  }
-
-  void addAsteroidBelt(int count) {
-    Random random = new Random();
-
-    for (int i = 0; i < count; i++) {
-      int xDistance = 500;
-      int yDistance = 500;
-      Point point = new Point(random.nextDouble() * 2 * xDistance - xDistance, random.nextDouble() * 2 * yDistance - yDistance);
-      movables.add(new Movable("asteroid", "#777", 3, point, new Vector(0,0)));
-    }
-  }
-
-  
-/*
-  num normalizePlanetSize(num r) {
-    return log(r + 1) * (width / 100.0);
-  }
-  */
-}
-
-class SceneRenderer {
-  num width;
-  num height;
-  CanvasRenderingContext2D context;
-  Scene scene;
-  
-  SceneRenderer(this.scene, this.context, this.width, this.height);
-  
-   void render()
-   {
-     drawBackground();
-     drawMovables();
-   }
-   
-   void drawBackground() {
-     context.fillStyle = "black";
-     context.rect(0, 0, width, height);
-     context.fill();
-   }
-
-   void drawMovables() {
-     scene.movables.forEach( 
-         (Movable movable) => movable.draw(context, width / 2, height / 2) 
-     );
-   }
-}

@@ -9,22 +9,18 @@ part of asteroidracers;
  */
 class Movable {
   final String name;
-  final String color;
-
   Point position;
+
   Vector speed;
   num bodySize;
 
-  Movable(String this.name, String this.color,
-      num this.bodySize, Point this.position, Vector this.speed) {
+  Movable(String this.name, num this.bodySize, Point this.position, Vector this.speed) {
 
     //bodySize = solarSystem.normalizePlanetSize(bodySize);
   }
 
-  void draw(CanvasRenderingContext2D context, num x, num y) {
+  void draw(CanvasRenderingContext2D context, Position position) {
     context.save();
-
-    Point absolutePosition = new Point(position.x + x, position.y + y);
     
     try {
       context.lineWidth = 0.5;
@@ -32,7 +28,7 @@ class Movable {
       context.strokeStyle = color;
 
       context.beginPath();
-      context.arc(absolutePosition.x, absolutePosition.y, bodySize, 0, PI * 2, false);
+      context.arc(position.x, position.y, bodySize, 0, PI * 2, false);
       context.fill();
       context.closePath();
       context.stroke();
