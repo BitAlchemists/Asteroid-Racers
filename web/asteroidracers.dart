@@ -4,9 +4,7 @@ import 'dart:html';
 import 'dart:math';
 import 'package:game_loop/game_loop.dart';
 
-part 'movable.dart';
 part 'entity.dart';
-part 'node.dart';
 part 'scene.dart';
 part 'scene_renderer.dart';
 
@@ -21,8 +19,8 @@ void main() {
   AsteroidsScene scene = new AsteroidsScene();
   SceneRenderer renderer = new SceneRenderer(scene, canvas.context2d, gameLoop.width, gameLoop.height);
   
-  var player = new Movable("Sun", "#ff2", 10, new Point(0,0), new Vector(0,0));
-  scene.movables.add(player);
+  var player = new Entity("Sun", 10, new Point(0,0), new Vector(0,0));
+  scene.entities.add(player);
   
   const num playerSpeed = 10;
 

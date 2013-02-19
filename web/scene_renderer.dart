@@ -22,7 +22,7 @@ class SceneRenderer {
    }
 
    void drawMovables() {
-     scene.movables.forEach( 
+     scene.entities.forEach( 
          Point absolutePosition = new Point(position.x + x, position.y + y);
          (Movable movable) => movable.draw(context, width / 2, height / 2) 
      );

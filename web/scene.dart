@@ -2,7 +2,7 @@ part of asteroidracers;
 
 
 class Scene {
-  List<Node> nodes = new List<Node>();
+  List<Entity> entities = new List<Entity>();
 }
 
 class AsteroidsScene extends Scene {
@@ -18,8 +18,8 @@ class AsteroidsScene extends Scene {
       int xDistance = 500;
       int yDistance = 500;
       Point point = new Point(random.nextDouble() * 2 * xDistance - xDistance, random.nextDouble() * 2 * yDistance - yDistance);
-      Node node = new Movable("asteroid", 3, point, new Vector(0,0));
-      nodes.add(node);
+      Entity entity = new Entity("asteroid", 3, point, new Vector(0,0));
+      entities.add(entity);
     }
   }
 
