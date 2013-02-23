@@ -19,32 +19,31 @@ void main() {
   AsteroidsScene scene = new AsteroidsScene();
   SceneRenderer renderer = new SceneRenderer(scene, canvas.context2d, gameLoop.width, gameLoop.height);
   
-  var player = new Entity("Sun", 10, new Point(0,0), new Vector(0,0));
+  var player = new Entity("Sun", new Point(0,0));
   scene.entities.add(player);
   
   const num playerSpeed = 10;
 
   Map keyDownMap = new Map();
   keyDownMap[GameLoopKeyboard.LEFT] = (gameLoop){
-    player.speed.x -= gameLoop.dt * playerSpeed;
+    player.position.x -= gameLoop.dt * playerSpeed;
   };
   keyDownMap[GameLoopKeyboard.RIGHT] = (gameLoop){
-    player.speed.x += gameLoop.dt * playerSpeed;
+    player.position.x += gameLoop.dt * playerSpeed;
   };
   keyDownMap[GameLoopKeyboard.UP] = (gameLoop){
-    player.speed.y -= gameLoop.dt * playerSpeed;
+    player.position.y -= gameLoop.dt * playerSpeed;
   };
   keyDownMap[GameLoopKeyboard.DOWN] = (gameLoop){
-    player.speed.y += gameLoop.dt * playerSpeed;
+    player.position.y += gameLoop.dt * playerSpeed;
   };
   
   gameLoop.onUpdate = (gameLoop) {
-    scene.movables.forEach((Movable movable) => movable.updatePosition());
+    //scene.entities.forEach((Entity entity) => entity.updatePosition());
     var keys = keyDownMap.keys.where((key) => gameLoop.keyboard.isDown(key));
     
     keys.forEach((key) { 
-      Function function = keyDownMap[key];
-      function(gameLoop);
+      keyDownMap[key](gameLoop);
     }); 
   };
   

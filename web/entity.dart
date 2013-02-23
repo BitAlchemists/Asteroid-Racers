@@ -14,11 +14,11 @@ class Entity {
     
     try {
       context.lineWidth = 0.5;
-      //context.fillStyle = color;
-      //context.strokeStyle = color;
+      context.fillStyle = "white";
+      context.strokeStyle = "yellow";
 
       context.beginPath();
-      context.arc(position.x, position.y, bodySize, 0, PI * 2, false);
+      context.arc(position.x, position.y, 3, 0, PI * 2, false);
       context.fill();
       context.closePath();
       context.stroke();
