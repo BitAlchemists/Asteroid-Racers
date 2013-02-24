@@ -4,9 +4,13 @@ import 'dart:html';
 import 'dart:math';
 import 'package:game_loop/game_loop.dart';
 
-part 'entity.dart';
-part 'scene.dart';
-part 'scene_renderer.dart';
+part 'core/entity.dart';
+part 'core/scene.dart';
+part 'core/point.dart';
+part 'core/component.dart';
+
+part 'graphics/scene_renderer.dart';
+part 'graphics/render_component.dart';
 
 /**
  * The entry point to the application.
@@ -20,6 +24,7 @@ void main() {
   SceneRenderer renderer = new SceneRenderer(scene, canvas.context2d, gameLoop.width, gameLoop.height);
   
   var player = new Entity("Sun", new Point(0,0));
+  player.addComponent(new RenderComponent());
   scene.entities.add(player);
   
   const num playerSpeed = 10;
@@ -71,11 +76,6 @@ void showFps(num fps) {
   query("#notes").text = "${fpsAverage.round().toInt()} fps";
 }
 
-class Point {
-  num x, y;
-
-  Point([this.x, this.y]);
-}
 
 class Vector {
   num x, y;

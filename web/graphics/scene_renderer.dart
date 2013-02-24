@@ -22,10 +22,13 @@ class SceneRenderer {
    }
 
    void drawMovables() {
-     scene.entities.forEach( 
-         //Point absolutePosition = new Point(position.x + x, position.y + y);
-         (Entity entity) => entity.draw(context, new Point(width / 2, height / 2)) 
-     );
+     scene.entities.forEach((Entity entity) {
+       entity.components.forEach( (Component component) {
+         if(component is RenderComponent) {
+           component.draw(context, new Point(width / 2, height / 2)); 
+         }
+       });
+     });
    }
 }
 
