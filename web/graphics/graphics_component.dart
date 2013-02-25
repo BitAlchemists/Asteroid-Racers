@@ -1,6 +1,6 @@
 part of asteroidracers;
 
-class RenderComponent extends Component {
+class GraphicsComponent extends Component {
   
   void draw(CanvasRenderingContext2D context, vec3 center) {
     context.save();

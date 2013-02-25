@@ -10,7 +10,10 @@ part 'core/scene.dart';
 part 'core/component.dart';
 
 part 'graphics/scene_renderer.dart';
-part 'graphics/render_component.dart';
+part 'graphics/graphics_component.dart';
+
+part 'physics/physics_simulator.dart';
+part 'physics/physics_component.dart';
 
 /**
  * The entry point to the application.
@@ -18,17 +21,20 @@ part 'graphics/render_component.dart';
 void main() {
   CanvasElement canvas = query('#container');
   canvas.width = canvas.clientWidth;
+  
   GameLoop gameLoop = new GameLoop(canvas);
   
   AsteroidsScene scene = new AsteroidsScene();
   SceneRenderer renderer = new SceneRenderer(scene, canvas.context2d, gameLoop.width, gameLoop.height);
+  PhysicsSimulator simulator = new PhysicsSimulator(scene);
   
   var player = new Entity("Player", new vec3(0, 0, 0));
-  player.addComponent(new RenderComponent());
+  player.addComponent(new GraphicsComponent());
+  PhysicsComponent playerPhysics = new PhysicsComponent();
+  player.addComponent(playerPhysics);
   scene.entities.add(player);
   
   const num rotationSpeed = 1;
-  const num playerSpeed = 10;
 
   Map keyDownMap = new Map();
   keyDownMap[GameLoopKeyboard.LEFT] = (GameLoop gameLoop){
@@ -38,10 +44,10 @@ void main() {
     player.orientation += gameLoop.dt * rotationSpeed;
   };
   keyDownMap[GameLoopKeyboard.UP] = (GameLoop gameLoop){
-    player.position.y -= gameLoop.dt * playerSpeed;
+    playerPhysics.accelerate();
   };
   keyDownMap[GameLoopKeyboard.DOWN] = (GameLoop gameLoop){
-    player.position.y += gameLoop.dt * playerSpeed;
+    playerPhysics.decelerate();
   };
   
   gameLoop.onUpdate = (gameLoop) {
@@ -51,6 +57,8 @@ void main() {
     keys.forEach((key) { 
       keyDownMap[key](gameLoop);
     }); 
+    
+    simulator.simulate(gameLoop.dt);
   };
   
   gameLoop.onRender = (gameLoop) {
@@ -68,6 +76,7 @@ double fpsAverage;
  * Display the animation's FPS in a div.
  */
 void showFps(num fps) {
+  
   if (fpsAverage == null) {
     fpsAverage = fps;
   }

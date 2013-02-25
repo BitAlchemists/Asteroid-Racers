@@ -24,7 +24,7 @@ class SceneRenderer {
    void drawMovables() {
      scene.entities.forEach((Entity entity) {
        entity.components.forEach( (Component component) {
-         if(component is RenderComponent) {
+         if(component is GraphicsComponent) {
            component.draw(context, new vec3(width / 2, height / 2, 0)); 
          }
        });
