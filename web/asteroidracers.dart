@@ -1,7 +1,7 @@
 library asteroidracers;
 
 import 'dart:html';
-import 'dart:math';
+import 'dart:math' as Math;
 import 'package:game_loop/game_loop.dart';
 import 'package:vector_math/vector_math.dart';
 
@@ -11,6 +11,7 @@ part 'core/component.dart';
 
 part 'graphics/scene_renderer.dart';
 part 'graphics/graphics_component.dart';
+part 'graphics/camera_component.dart';
 
 part 'physics/physics_simulator.dart';
 part 'physics/physics_component.dart';
@@ -24,14 +25,17 @@ void main() {
   
   GameLoop gameLoop = new GameLoop(canvas);
   
-  AsteroidsScene scene = new AsteroidsScene();
+  AsteroidsScene scene = new AsteroidsScene(500, 2000, 2000);
   SceneRenderer renderer = new SceneRenderer(scene, canvas.context2d, gameLoop.width, gameLoop.height);
   PhysicsSimulator simulator = new PhysicsSimulator(scene);
   
   var player = new Entity("Player", new vec3(0, 0, 0));
-  player.addComponent(new GraphicsComponent());
+  player.addComponent(new GraphicsComponent.triangle());
   PhysicsComponent playerPhysics = new PhysicsComponent();
   player.addComponent(playerPhysics);
+  CameraComponent camera = new CameraComponent();
+  renderer.camera = camera;
+  player.addComponent(camera);
   scene.entities.add(player);
   
   const num rotationSpeed = 1;
@@ -64,6 +68,7 @@ void main() {
   gameLoop.onRender = (gameLoop) {
     //print('${gameLoop.frame}: ${gameLoop.requestAnimationFrameTime} [dt = ${gameLoop.dt}].');
     renderer.render();
+    showFps(1.0 / gameLoop.dt);
   };
   
   gameLoop.start();

@@ -2,34 +2,36 @@ part of asteroidracers;
 
 class GraphicsComponent extends Component {
   
-  void draw(CanvasRenderingContext2D context, vec3 center) {
-    context.save();
+  List<vec3> vertices;
+  String color;
+  
+  GraphicsComponent.triangle() {
+    vertices = new List<vec3>();
+    vertices.add(new vec3(-5, -5, 0));
+    vertices.add(new vec3(0, 10, 0));
+    vertices.add(new vec3(5, -5, 0));
+    color = "green";
+  }
+  
+  GraphicsComponent.asteroid() {
+    vertices = new List<vec3>();
     
-    try {
-      context.lineWidth = 0.5;
-      context.fillStyle = "black ";
-      context.strokeStyle = "green";
-
-      context.beginPath();
-      mat4 transform = new mat4.identity().translate(center).translate(entity.position).rotateZ(entity.orientation * PI);
+    Math.Random random = new Math.Random();
+    
+    num minRadius = 3;
+    num maxRadius = 30;
+    num outerRadius = random.nextDouble() * (maxRadius - minRadius) + minRadius;
+    num innerRadius = outerRadius * 0.75;
+    int numVertices = outerRadius.toInt();
+    
+    for(int i = 0; i < numVertices; i++) {
+      num angle = (i.toDouble() / numVertices.toDouble());
+      num radius = random.nextDouble() * (outerRadius - innerRadius) + innerRadius;
       
-      //context.arc(position.x, position.y, 20, 0, PI * 2, false);
-      vec3 p1 = transform.transform3(new vec3(-5, -5, 0));
-      vec3 p2 = transform.transform3(new vec3(0, 10, 0));
-      vec3 p3 = transform.transform3(new vec3(5, -5, 0));
-      
-      //transform.transform3(p3);
-
-      
-      context.moveTo(p1.x, p1.y);
-      context.lineTo(p2.x, p2.y);
-      context.lineTo(p3.x, p3.y);
-      context.lineTo(p1.x, p1.y);
-      context.stroke();
-      context.closePath();
-    } finally {
-      context.restore();
+      vec3 vector = new vec3(Math.cos(angle * Math.PI*2) * radius, Math.sin(angle * Math.PI*2) * radius, 0);
+      vertices.add(vector);
     }
+    color = "yellow";
   }
   
 }
