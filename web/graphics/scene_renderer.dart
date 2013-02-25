@@ -6,6 +6,7 @@ class SceneRenderer {
   num height;
   CanvasRenderingContext2D context;
   Scene scene;
+  CameraComponent camera;
   
   SceneRenderer(this.scene, this.context, this.width, this.height);
   
@@ -22,7 +23,7 @@ class SceneRenderer {
    }
 
    void drawMovables() {
-     vec3 center = new vec3(width / 2, height / 2, 0); 
+     vec3 center = new vec3(width / 2, height / 2, 0) - camera.entity.position; 
      
      scene.entities.forEach((Entity entity) {
        entity.components.forEach( (Component component) {
@@ -32,8 +33,8 @@ class SceneRenderer {
            
            try {
              context.lineWidth = 0.5;
-             context.fillStyle = "black ";
-             context.strokeStyle = "green";
+             context.fillStyle = "black";
+             context.strokeStyle = component.color;
 
              context.beginPath();
              mat4 transform = new mat4.identity().translate(center).translate(entity.position).rotateZ(entity.orientation * Math.PI);

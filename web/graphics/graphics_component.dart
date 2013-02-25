@@ -3,12 +3,14 @@ part of asteroidracers;
 class GraphicsComponent extends Component {
   
   List<vec3> vertices;
+  String color;
   
   GraphicsComponent.triangle() {
     vertices = new List<vec3>();
     vertices.add(new vec3(-5, -5, 0));
     vertices.add(new vec3(0, 10, 0));
     vertices.add(new vec3(5, -5, 0));
+    color = "green";
   }
   
   GraphicsComponent.asteroid() {
@@ -30,8 +32,9 @@ class GraphicsComponent extends Component {
       print(vector);
       vertices.add(vector);
     }
+    color = "yellow";
   }
-
+  
 }
 
 /*

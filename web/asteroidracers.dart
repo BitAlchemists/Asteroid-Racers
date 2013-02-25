@@ -11,6 +11,7 @@ part 'core/component.dart';
 
 part 'graphics/scene_renderer.dart';
 part 'graphics/graphics_component.dart';
+part 'graphics/camera_component.dart';
 
 part 'physics/physics_simulator.dart';
 part 'physics/physics_component.dart';
@@ -32,6 +33,9 @@ void main() {
   player.addComponent(new GraphicsComponent.triangle());
   PhysicsComponent playerPhysics = new PhysicsComponent();
   player.addComponent(playerPhysics);
+  CameraComponent camera = new CameraComponent();
+  renderer.camera = camera;
+  player.addComponent(camera);
   scene.entities.add(player);
   
   const num rotationSpeed = 1;
