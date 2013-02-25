@@ -25,7 +25,7 @@ class SceneRenderer {
      scene.entities.forEach((Entity entity) {
        entity.components.forEach( (Component component) {
          if(component is RenderComponent) {
-           component.draw(context, new Point(width / 2, height / 2)); 
+           component.draw(context, new vec3(width / 2, height / 2, 0)); 
          }
        });
      });

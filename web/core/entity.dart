@@ -2,12 +2,14 @@ part of asteroidracers;
 
 class Entity {
   final String name;
-  Point position;
+  vec3 position;
+  double orientation;
   List<Component> components;
 
-  Entity(String this.name, Point this.position) {
+  Entity(String this.name, vec3 this.position) {
 
     components = new List<Component>();
+    orientation = 0.0;
     //bodySize = solarSystem.normalizePlanetSize(bodySize);
   }
   
@@ -15,10 +17,4 @@ class Entity {
     components.add(component);
     component.entity = this;
   }
-  
-  void updatePosition() {
-    position.x += speed.x;
-    position.y += speed.y;
-  }
- 
 }

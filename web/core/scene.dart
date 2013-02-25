@@ -17,7 +17,7 @@ class AsteroidsScene extends Scene {
     for (int i = 0; i < count; i++) {
       int xDistance = 500;
       int yDistance = 500;
-      Point point = new Point(random.nextDouble() * 2 * xDistance - xDistance, random.nextDouble() * 2 * yDistance - yDistance);
+      vec3 point = new vec3(random.nextDouble() * 2 * xDistance - xDistance, random.nextDouble() * 2 * yDistance - yDistance, 0);
       Entity entity = new Entity("asteroid", point);
       entities.add(entity);
     }
