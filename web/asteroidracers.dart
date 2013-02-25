@@ -25,7 +25,7 @@ void main() {
   
   GameLoop gameLoop = new GameLoop(canvas);
   
-  AsteroidsScene scene = new AsteroidsScene();
+  AsteroidsScene scene = new AsteroidsScene(500, 2000, 2000);
   SceneRenderer renderer = new SceneRenderer(scene, canvas.context2d, gameLoop.width, gameLoop.height);
   PhysicsSimulator simulator = new PhysicsSimulator(scene);
   
@@ -68,6 +68,7 @@ void main() {
   gameLoop.onRender = (gameLoop) {
     //print('${gameLoop.frame}: ${gameLoop.requestAnimationFrameTime} [dt = ${gameLoop.dt}].');
     renderer.render();
+    showFps(1.0 / gameLoop.dt);
   };
   
   gameLoop.start();

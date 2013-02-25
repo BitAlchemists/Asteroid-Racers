@@ -29,7 +29,6 @@ class GraphicsComponent extends Component {
       num radius = random.nextDouble() * (outerRadius - innerRadius) + innerRadius;
       
       vec3 vector = new vec3(Math.cos(angle * Math.PI*2) * radius, Math.sin(angle * Math.PI*2) * radius, 0);
-      print(vector);
       vertices.add(vector);
     }
     color = "yellow";

@@ -7,17 +7,24 @@ class Scene {
 
 class AsteroidsScene extends Scene {
 
-  AsteroidsScene() {
-    addAsteroidBelt(30); 
+  AsteroidsScene(int count, int xDistance, int yDistance) {
+    addAsteroidBelt(count, xDistance, yDistance);
   }
 
-  void addAsteroidBelt(int count) {
+  void addAsteroidBelt(int count, int xDistance, int yDistance) {
     Math.Random random = new Math.Random();
 
     for (int i = 0; i < count; i++) {
-      int xDistance = 500;
-      int yDistance = 500;
+      //rectangle 
       vec3 point = new vec3(random.nextDouble() * 2 * xDistance - xDistance, random.nextDouble() * 2 * yDistance - yDistance, 0);
+      
+      /*
+      //circle
+      num angle = random.nextDouble() * 2 * Math.PI;
+      num radius = random.nextDouble();
+      vec3 point = new vec3(radius * xDistance * cos(angle), radius * yDistance * sin(angle), 0);
+      */
+      
       Entity entity = new Entity("asteroid", point);
       entity.addComponent(new GraphicsComponent.asteroid());
       entities.add(entity);
