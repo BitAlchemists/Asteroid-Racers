@@ -1,7 +1,7 @@
 library asteroidracers;
 
 import 'dart:html';
-import 'dart:math';
+import 'dart:math' as Math;
 import 'package:game_loop/game_loop.dart';
 import 'package:vector_math/vector_math.dart';
 
@@ -29,7 +29,7 @@ void main() {
   PhysicsSimulator simulator = new PhysicsSimulator(scene);
   
   var player = new Entity("Player", new vec3(0, 0, 0));
-  player.addComponent(new GraphicsComponent());
+  player.addComponent(new GraphicsComponent.triangle());
   PhysicsComponent playerPhysics = new PhysicsComponent();
   player.addComponent(playerPhysics);
   scene.entities.add(player);

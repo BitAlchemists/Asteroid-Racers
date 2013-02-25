@@ -12,13 +12,14 @@ class AsteroidsScene extends Scene {
   }
 
   void addAsteroidBelt(int count) {
-    Random random = new Random();
+    Math.Random random = new Math.Random();
 
     for (int i = 0; i < count; i++) {
       int xDistance = 500;
       int yDistance = 500;
       vec3 point = new vec3(random.nextDouble() * 2 * xDistance - xDistance, random.nextDouble() * 2 * yDistance - yDistance, 0);
       Entity entity = new Entity("asteroid", point);
+      entity.addComponent(new GraphicsComponent.asteroid());
       entities.add(entity);
     }
   }
