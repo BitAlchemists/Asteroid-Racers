@@ -16,58 +16,29 @@ part 'graphics/camera_component.dart';
 part 'physics/physics_simulator.dart';
 part 'physics/physics_component.dart';
 
+part 'game/space_scene.dart';
+part 'game/menu/menu_scene.dart';
+part 'game/menu/menu_renderer.dart';
+
 /**
  * The entry point to the application.
  */
 void main() {
   CanvasElement canvas = query('#container');
   canvas.width = canvas.clientWidth;
-  
   GameLoop gameLoop = new GameLoop(canvas);
   
-  AsteroidsScene scene = new AsteroidsScene(500, 2000, 2000);
-  SceneRenderer renderer = new SceneRenderer(scene, canvas.context2d, gameLoop.width, gameLoop.height);
-  PhysicsSimulator simulator = new PhysicsSimulator(scene);
-  
-  var player = new Entity("Player", new vec3(0, 0, 0));
-  player.addComponent(new GraphicsComponent.triangle());
-  PhysicsComponent playerPhysics = new PhysicsComponent();
-  player.addComponent(playerPhysics);
-  CameraComponent camera = new CameraComponent();
-  renderer.camera = camera;
-  player.addComponent(camera);
-  scene.entities.add(player);
-  
-  const num rotationSpeed = 1;
-
-  Map keyDownMap = new Map();
-  keyDownMap[GameLoopKeyboard.LEFT] = (GameLoop gameLoop){
-    player.orientation -= gameLoop.dt * rotationSpeed;
-  };
-  keyDownMap[GameLoopKeyboard.RIGHT] = (GameLoop gameLoop){
-    player.orientation += gameLoop.dt * rotationSpeed;
-  };
-  keyDownMap[GameLoopKeyboard.UP] = (GameLoop gameLoop){
-    playerPhysics.accelerate();
-  };
-  keyDownMap[GameLoopKeyboard.DOWN] = (GameLoop gameLoop){
-    playerPhysics.decelerate();
-  };
+  Scene spaceScene = new SpaceScene(gameLoop);
+  Scene menuScene = new MenuScene(gameLoop);
+  List scenes = [spaceScene, menuScene];
   
   gameLoop.onUpdate = (gameLoop) {
-    //scene.entities.forEach((Entity entity) => entity.updatePosition());
-    var keys = keyDownMap.keys.where((key) => gameLoop.keyboard.isDown(key));
-    
-    keys.forEach((key) { 
-      keyDownMap[key](gameLoop);
-    }); 
-    
-    simulator.simulate(gameLoop.dt);
+    scenes.forEach((Scene scene) => scene.onUpdate(gameLoop));
   };
   
   gameLoop.onRender = (gameLoop) {
     //print('${gameLoop.frame}: ${gameLoop.requestAnimationFrameTime} [dt = ${gameLoop.dt}].');
-    renderer.render();
+    scenes.forEach((Scene scene) => scene.onRender(gameLoop));
     showFps(1.0 / gameLoop.dt);
   };
   

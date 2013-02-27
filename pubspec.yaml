@@ -4,5 +4,4 @@ dependencies:
   browser: any
   vector_math:
     git: https://github.com/johnmccutchan/DartVectorMath.git
-  game_loop:
-    git: https://github.com/BitAlchemists/game_loop.git
+  game_loop: any
