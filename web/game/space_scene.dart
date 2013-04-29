@@ -1,11 +1,10 @@
 part of asteroidracers;
 
 class SpaceScene extends Scene {
-  List<Entity> entities = new List<Entity>();
   PhysicsSimulator simulator;
   SceneRenderer renderer;
   
-  SpaceScene(GameLoop gameLoop) {
+  SpaceScene(GameLoopHtml gameLoop) {
     simulator = new PhysicsSimulator(this);
 
     addAsteroidBelt(500, 2000, 2000);
@@ -23,16 +22,16 @@ class SpaceScene extends Scene {
     const num rotationSpeed = 1;
 
     keyDownMap = new Map();
-    keyDownMap[KeyCode.LEFT] = (GameLoop gameLoop){
+    keyDownMap[KeyCode.LEFT] = (GameLoopHtml gameLoop){
       player.orientation -= gameLoop.dt * rotationSpeed;
     };
-    keyDownMap[KeyCode.RIGHT] = (GameLoop gameLoop){
+    keyDownMap[KeyCode.RIGHT] = (GameLoopHtml gameLoop){
       player.orientation += gameLoop.dt * rotationSpeed;
     };
-    keyDownMap[KeyCode.UP] = (GameLoop gameLoop){
+    keyDownMap[KeyCode.UP] = (GameLoopHtml gameLoop){
       playerPhysics.accelerate();
     };
-    keyDownMap[KeyCode.DOWN] = (GameLoop gameLoop){
+    keyDownMap[KeyCode.DOWN] = (GameLoopHtml gameLoop){
       playerPhysics.decelerate();
     };
   }
@@ -58,7 +57,7 @@ class SpaceScene extends Scene {
   }
 
   
-  void onUpdate(GameLoop gameLoop) {
+  void onUpdate(GameLoopHtml gameLoop) {
     var keys = keyDownMap.keys.where((key) => gameLoop.keyboard.isDown(key));
     
     keys.forEach((key) { 

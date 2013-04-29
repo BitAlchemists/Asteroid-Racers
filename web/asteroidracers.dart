@@ -1,8 +1,11 @@
 library asteroidracers;
 
-import 'package:game_loop/game_loop.dart';
+import '../../god_engine/lib/god_engine.dart';
+import 'package:game_loop/game_loop_html.dart';
+import 'package:vector_math/vector_math.dart';
 
-
+import 'dart:html';
+import 'dart:math' as Math;
 
 part 'game/space_scene.dart';
 part 'game/menu/menu_scene.dart';
@@ -14,7 +17,7 @@ part 'game/menu/menu_renderer.dart';
 void main() {
   CanvasElement canvas = query('#container');
   canvas.width = canvas.clientWidth;
-  GameLoop gameLoop = new GameLoop(canvas);
+  GameLoopHtml gameLoop = new GameLoopHtml(canvas);
   
   Scene spaceScene = new SpaceScene(gameLoop);
   Scene menuScene = new MenuScene(gameLoop);
