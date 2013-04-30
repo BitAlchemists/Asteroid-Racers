@@ -10,7 +10,7 @@ class SpaceScene extends Scene {
     addAsteroidBelt(500, 2000, 2000);
     renderer = new SceneRenderer(this, (gameLoop.element as CanvasElement).context2d, gameLoop.width, gameLoop.height);
     
-    var player = new Entity("Player", new vec3(0, 0, 0));
+    var player = new Entity("Player", new vec3(0.0, 0.0, 0.0));
     player.addComponent(new GraphicsComponent.triangle());
     PhysicsComponent playerPhysics = new PhysicsComponent();
     player.addComponent(playerPhysics);
@@ -41,7 +41,7 @@ class SpaceScene extends Scene {
 
     for (int i = 0; i < count; i++) {
       //rectangle 
-      vec3 point = new vec3(random.nextDouble() * 2 * xDistance - xDistance, random.nextDouble() * 2 * yDistance - yDistance, 0);
+      vec3 point = new vec3(random.nextDouble() * 2 * xDistance - xDistance, random.nextDouble() * 2 * yDistance - yDistance, 0.0);
       
       /*
       //circle

@@ -1,6 +1,7 @@
 library asteroidracers;
 
-import '../../god_engine/lib/god_engine.dart';
+//import '../../god_engine/lib/god_engine.dart';
+import 'package:god_engine/god_engine.dart';
 import 'package:game_loop/game_loop_html.dart';
 import 'package:vector_math/vector_math.dart';
 
