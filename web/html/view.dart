@@ -1,4 +1,4 @@
-part of chatclient;
+part of god_html;
 
 abstract class View<T> {
   final T elem;

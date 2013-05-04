@@ -1,4 +1,4 @@
-part of chatclient;
+part of god_html;
 
 class MessageInput extends View<InputElement> {
   MessageInput(InputElement elem) : super(elem);

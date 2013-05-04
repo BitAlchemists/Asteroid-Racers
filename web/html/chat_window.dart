@@ -1,4 +1,4 @@
-part of chatclient;
+part of god_html;
 
 class ChatWindow extends View<TextAreaElement> {
   ChatWindow(TextAreaElement elem) : super(elem);

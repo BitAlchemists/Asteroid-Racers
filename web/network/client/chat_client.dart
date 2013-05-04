@@ -4,16 +4,12 @@ import 'dart:html';
 import 'dart:json' as JSON;
 import 'dart:async';
 
+import '../../html/god_html.dart';
+import '../../logging/logger_client.dart';
+
 part 'src/chat_connection.dart';
-part 'src/view.dart';
-part 'src/message_input_view.dart';
-part 'src/username_input_view.dart';
-part 'src/chat_window.dart';
 
 ChatConnection chatConnection;
-MessageInput messageInput;
-UsernameInput usernameInput;
-ChatWindow chatWindow;
 
 
 startupChat() {
