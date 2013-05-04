@@ -12,11 +12,15 @@ part 'game/space_scene.dart';
 part 'game/menu/menu_scene.dart';
 part 'game/menu/menu_renderer.dart';
 
+import 'network/client/chat_client.dart';
+
 /**
  * The entry point to the application.
  */
 void main() {
-  CanvasElement canvas = query('#container');
+  startupChat();
+  
+  CanvasElement canvas = query('#gamecanvas');
   canvas.width = canvas.clientWidth;
   GameLoopHtml gameLoop = new GameLoopHtml(canvas);
   

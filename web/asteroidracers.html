@@ -11,15 +11,33 @@
     
     <p>To play: Click the canvas. Use your arrow keys. Experiment. Have fun =)</p>
     
-    <div>
-      <canvas id="container" width="800px" height="500px"></canvas>
-    </div>
-
-    <footer>
-      <p id="summary"> </p>
-      <p id="notes"> </p>
-    </footer>
-
+    <div id="container">
+      <div id="infobox">
+        <div>
+          <textarea id="chat-display" rows="10" disabled></textarea>
+        </div>
+    
+        <div>
+          <label for="chat-username">Username:</label>
+          <input id="chat-username" name="chat-username" type="text">
+        </div>
+        <div>
+          <label for="chat-message">Message:</label>
+          <input id="chat-message" name="chat-message" type="text" disabled value="enter message...">
+        </div>
+        
+        <div>
+          <p id="summary"> </p>
+          <p id="notes"> </p>  
+        </div>
+      </div>
+      
+      <div id="gamecanvascontainer">
+        <canvas id="gamecanvas" height="500px"></canvas>
+      </div>        
+      <div class="clear"></div>
+    </div>    
+    
     <script type="application/dart" src="asteroidracers.dart"></script>
     <script src="packages/browser/dart.js"></script>
   </body>

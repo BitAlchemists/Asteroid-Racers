@@ -1,3 +1,6 @@
+/* Copyright (c) 2012, the Dart project authors.  Please see the AUTHORS file */
+/* for details. All rights reserved. Use of this source code is governed by a */
+/* BSD-style license that can be found in the LICENSE file. */
 
 body {
   background-color: #F8F8F8;
@@ -8,34 +11,17 @@ body {
   margin: 15px;
 }
 
-#container {
-   padding: 0;
-  }
-
-h1, p {
+p {
   color: #333;
 }
 
-#gamecanvascontainer{
-  margin-left: 210px;  
-}
-
-
-#gamecanvas {
-  height: 100%;
-  width: 95%;
+#canvas-content {
+  width: 100%;
+  height: 400px;
+  position: relative;
   border: 1px solid #ccc;
   background-color: #fff;
-  margin: 15px 0 15px 15px;
-  padding: 1%;
 }
-
-#infobox {
-  float: left;
-  width: 200px;
-  margin: 15px 15px 15px 0;
-}
-
 
 #summary {
   float: left;
@@ -68,15 +54,4 @@ h1 img {
 
 #chat-display, #chat-message {
   width: 100%;
-}
-
-
-
-.clear {
-   height: 0;
-   font-size: 1px;
-   margin: 0;
-   padding: 0;
-   line-height: 0;
-   clear: both;
 }
