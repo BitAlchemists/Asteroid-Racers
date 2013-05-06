@@ -1,4 +1,4 @@
-part of asteroidracers;
+part of ar_client;
 
 class SpaceScene extends Scene {
   PhysicsSimulator simulator;
@@ -11,12 +11,10 @@ class SpaceScene extends Scene {
     renderer = new SceneRenderer(this, (gameLoop.element as CanvasElement).context2d, gameLoop.width, gameLoop.height);
     
     var player = new Entity("Player", new vec3(0.0, 0.0, 0.0));
-    player.addComponent(new GraphicsComponent.triangle());
-    PhysicsComponent playerPhysics = new PhysicsComponent();
-    player.addComponent(playerPhysics);
-    CameraComponent camera = new CameraComponent();
+    player.renderChunk = new RenderChunk.triangle();
+    Camera camera = new Camera();
     renderer.camera = camera;
-    player.addComponent(camera);
+    camera.entity = player;
     entities.add(player);
     
     const num rotationSpeed = 1;
@@ -29,10 +27,10 @@ class SpaceScene extends Scene {
       player.orientation += gameLoop.dt * rotationSpeed;
     };
     keyDownMap[KeyCode.UP] = (GameLoopHtml gameLoop){
-      playerPhysics.accelerate();
+      player.accelerate();
     };
     keyDownMap[KeyCode.DOWN] = (GameLoopHtml gameLoop){
-      playerPhysics.decelerate();
+      player.decelerate();
     };
   }
 
@@ -51,7 +49,7 @@ class SpaceScene extends Scene {
       */
       
       Entity entity = new Entity("asteroid", point);
-      entity.addComponent(new GraphicsComponent.asteroid());
+      entity.renderChunk = new RenderChunk.asteroid();
       entities.add(entity);
     }
   }

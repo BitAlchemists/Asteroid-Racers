@@ -1,4 +1,4 @@
-part of asteroidracers;
+part of ar_client;
 
 class MenuScene extends Scene {
   

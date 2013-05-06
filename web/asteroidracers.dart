@@ -1,18 +1,13 @@
 library asteroidracers;
 
-//import '../../god_engine/lib/god_engine.dart';
-import 'package:god_engine/god_engine.dart';
+//import 'package:god_engine/god_engine.dart';
 import 'package:game_loop/game_loop_html.dart';
-import 'package:vector_math/vector_math.dart';
 
 import 'dart:html';
-import 'dart:math' as Math;
 
-import 'network/client/chat_client.dart';
+import '../lib/network/client/chat_client.dart';
 
-part 'game/space_scene.dart';
-part 'game/menu/menu_scene.dart';
-part 'game/menu/menu_renderer.dart';
+import '../lib/client/ar_client.dart';
 
 
 /**

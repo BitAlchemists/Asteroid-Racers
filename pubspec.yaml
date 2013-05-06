@@ -1,7 +1,6 @@
 name: AsteroidRacers
 description: A sample web application
 dependencies:
-  god_engine: 0.1.1
   browser: any
   vector_math: 1.1.0
   game_loop: 0.8.0
