@@ -1,4 +1,4 @@
-part of server;
+part of ar_server;
 
 class StaticFileHandler {
   final Path basePath;

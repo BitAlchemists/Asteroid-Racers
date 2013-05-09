@@ -5,7 +5,7 @@ import 'package:game_loop/game_loop_html.dart';
 
 import 'dart:html';
 
-import '../lib/network/client/chat_client.dart';
+import '../lib/client/chat/chat_client.dart';
 
 import '../lib/client/ar_client.dart';
 
@@ -15,6 +15,8 @@ import '../lib/client/ar_client.dart';
  */
 void main() {
   startupChat();
+  
+  var connectionHandler = new ClientConnectionHandler("ws://127.0.0.1:1337/ws");
   
   CanvasElement canvas = query('#gamecanvas');
   canvas.width = canvas.clientWidth;

@@ -1,4 +1,4 @@
-part of god_html;
+part of chatclient;
 
 class UsernameInput extends View<InputElement> {
   UsernameInput(InputElement elem) : super(elem);
@@ -9,9 +9,9 @@ class UsernameInput extends View<InputElement> {
 
   _onUsernameChange() {
     if (!elem.value.isEmpty) {
-      messageInput.enable();
+      _messageInput.enable();
     } else {
-      messageInput.disable();
+      _messageInput.disable();
     }
   }
 

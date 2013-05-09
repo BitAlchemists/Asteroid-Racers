@@ -1,14 +1,13 @@
-part of server;
+part of ar_server;
 
-class ConnectionHandler {
+class ServerConnectionHandler {
   Set<WebSocket> webSockets = new Set<WebSocket>();
 
-  ConnectionHandler(Path basePath) {
-    Path loggingPath = basePath.append('connection-log.txt');
+  ServerConnectionHandler(Path basePath) {
+    Path loggingPath = basePath.append('logs/connection-log.txt');
     log.initLogging(loggingPath);
   }
 
-  // closures!
   onConnection(WebSocket webSocket) {
     void onMessage(message) {
       print('new ws msg: $message');
