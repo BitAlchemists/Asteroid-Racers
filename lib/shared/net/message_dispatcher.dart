@@ -7,7 +7,7 @@ class MessageDispatcher {
   
   Map<String, MessageHandler> messageHandlers;
   
-  factory MessageDispatcher.instance() {
+  static MessageDispatcher get instance {
     return _instance;
   }
   

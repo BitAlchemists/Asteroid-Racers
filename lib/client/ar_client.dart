@@ -35,6 +35,8 @@ part 'menu/menu_renderer.dart';
 
 part 'net/client_connection_handler.dart';
 
+ClientConnectionHandler connectionHandler;
+
 runClient(CanvasElement canvas) {
   GameLoopHtml gameLoop = new GameLoopHtml(canvas);
   
@@ -44,7 +46,7 @@ runClient(CanvasElement canvas) {
   
   new ChatController(); //does this get destroyed?
   
-  var connectionHandler = new ClientConnectionHandler("ws://127.0.0.1:1337/ws");
+  connectionHandler = new ClientConnectionHandler("ws://127.0.0.1:1337/ws");
 
   gameLoop.onUpdate = (gameLoop) {
     scenes.forEach((Scene scene) => scene.onUpdate(gameLoop));

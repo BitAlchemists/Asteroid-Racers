@@ -38,3 +38,9 @@ runServer(Path basePath, int port) {
     onError: (error) => print("Error starting HTTP server: $error"));
 }
 
+main() {
+    File script = new File(new Options().script);
+    Directory directory = script.directorySync();
+    Path basePath = new Path(directory.path);
+    runServer(basePath, 1337);    
+}

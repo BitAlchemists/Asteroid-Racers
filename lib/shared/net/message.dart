@@ -4,6 +4,8 @@ class Message {
   String messageType;
   var payload;
   
+  Message();
+  
   factory Message.fromJson(String json)
   {
     try {
@@ -11,8 +13,7 @@ class Message {
       var map = JSON.parse(json);
       if(map is Map) {
         message.messageType = map['messageType'];
-        var payload = map['payload'];
-        message.payload = JSON.parse(this.payload);
+        message.payload = map['payload'];
       }
       
       return message;
@@ -28,8 +29,7 @@ class Message {
   
   String toJson() {
     String json = null;
-    try {
-      var payload = JSON.stringify(this.payload);      
+    try {   
       Map map = {'messageType': this.messageType, 'payload': payload};
       json = JSON.stringify(map);
     }
@@ -37,6 +37,6 @@ class Message {
       print('error during Message.toJson(): $e');
     }
     
-    return map;
+    return json;
   }
 }

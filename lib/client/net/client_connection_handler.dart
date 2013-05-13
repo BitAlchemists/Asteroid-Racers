@@ -37,12 +37,12 @@ class ClientConnectionHandler {
 
   send(Message message) {
     String json = message.toJson();
-    _sendEncodedMessage(encoded);
+    _sendEncodedMessage(json);
   }
 
   _receivedEncodedMessage(String encodedMessage) {
-    Message message = Message.fromJson(encodedMessage);
-    MessageDispatcher.instance().dispatch(message);
+    Message message = new Message.fromJson(encodedMessage);
+    MessageDispatcher.instance.dispatch(message);
   }
 
   _sendEncodedMessage(String encodedMessage) {
@@ -54,8 +54,3 @@ class ClientConnectionHandler {
   }
 }
 
-/*
-if (message['f'] != null) {
-chatWindow.displayMessage(message['m'], message['f']);
-}
-*/
