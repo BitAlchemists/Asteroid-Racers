@@ -1,16 +1,13 @@
 part of ar_shared;
 
+typedef MessageHandler(Message message);
+
 class MessageDispatcher {
-  static final MessageDispatcher _instance;
-  typedef MessageHandler(Message message);
+  static final MessageDispatcher _instance = new MessageDispatcher._internal();
   
   Map<String, MessageHandler> messageHandlers;
   
   factory MessageDispatcher.instance() {
-    if(_instance == null) {
-      _instance = new MessageDispatcher._internal();
-    }
-    
     return _instance;
   }
   

@@ -1,15 +1,7 @@
-part of chatclient;
+part of ar_client;
 
 class MessageInput extends View<InputElement> {
   MessageInput(InputElement elem) : super(elem);
-
-  bind() {
-    elem.onChange.listen((e) {
-      chatConnection.send(usernameInput.username, message);
-      chatWindow.displayMessage(message, usernameInput.username);
-      elem.value = '';
-    });
-  }
 
   disable() {
     elem.disabled = true;
