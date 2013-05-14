@@ -1,4 +1,4 @@
-part of ar_client;
+part of chat_client;
 
 abstract class View<T> {
   final T elem;

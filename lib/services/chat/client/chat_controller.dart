@@ -1,12 +1,10 @@
-part of ar_client;
-
+part of chat_client;
 
 class ChatController {
-  
   MessageInput _messageInput;
   UsernameInput _usernameInput;
   ChatWindow _chatWindow;
-  
+
   ChatController() {
     TextAreaElement chatElem = query('#chat-display');
     InputElement usernameElem = query('#chat-username');
@@ -33,18 +31,12 @@ class ChatController {
 
 
     MessageDispatcher.instance.registerHandler('chat', (Message chatMessage){
-      _chatWindow.displayMessage(chatMessage.payload.toString());
+      Map message = chatMessage.payload;
+      _chatWindow.displayMessage(message['m'], message['f']);
     });
     
     ClientLogger.instance.stdout.listen((String message) {
       _chatWindow.displayNotice(message);
-    });
-
+    });  
   }
 }
-
-/*
-if (message['f'] != null) {
-chatWindow.displayMessage(message['m'], message['f']);
-}
-*/

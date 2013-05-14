@@ -8,7 +8,7 @@ class SpaceScene extends Scene {
     simulator = new PhysicsSimulator(this);
 
     addAsteroidBelt(500, 2000, 2000);
-    renderer = new SceneRenderer(this, (gameLoop.element as CanvasElement).context2d, gameLoop.width, gameLoop.height);
+    renderer = new SceneRenderer(this, (gameLoop.element as CanvasElement).context2D, gameLoop.width, gameLoop.height);
     
     var player = new Entity("Player", new vec3(0.0, 0.0, 0.0));
     player.renderChunk = new RenderChunk.triangle();

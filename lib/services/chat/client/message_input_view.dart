@@ -1,4 +1,4 @@
-part of ar_client;
+part of chat_client;
 
 class MessageInput extends View<InputElement> {
   MessageInput(InputElement elem) : super(elem);

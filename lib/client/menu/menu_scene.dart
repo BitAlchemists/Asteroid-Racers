@@ -6,7 +6,7 @@ class MenuScene extends Scene {
   List menuItems;
   
   MenuScene(GameLoopHtml gameLoop) {
-    renderer = new MenuRenderer((gameLoop.element as CanvasElement).context2d, gameLoop.width, gameLoop.height);
+    renderer = new MenuRenderer((gameLoop.element as CanvasElement).context2D, gameLoop.width, gameLoop.height);
     menuItems = [new MenuButton("hello"), new MenuButton("world")];
   }
   

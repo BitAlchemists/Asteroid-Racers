@@ -4,7 +4,7 @@ import 'dart:io';
 import 'dart:isolate';
 import 'dart:async';
 
-import '../shared/ar_shared.dart';
+import '../core/shared/ar_shared.dart';
 
 import 'utils/file-logger.dart' as log;
 import 'utils/server-utils.dart';
