@@ -17,7 +17,7 @@ class ServerConnectionHandler {
           queue(() => aWebSocket.add(message));
         }
       });
-      time('send to isolate', () => log.log(message));
+      //time('send to isolate', () => log.log(message));
     }
     
     print('new ws conn');

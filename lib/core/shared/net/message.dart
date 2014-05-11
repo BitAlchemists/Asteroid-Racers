@@ -31,7 +31,7 @@ class Message {
     String json = null;
     try {   
       Map map = {'messageType': this.messageType, 'payload': payload};
-      json = JSON.stringify(map);
+      json = JSON.encode(map);
     }
     catch (e) {
       print('error during Message.toJson(): $e');

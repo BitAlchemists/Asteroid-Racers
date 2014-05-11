@@ -1,0 +1,1 @@
+*) make sure the StaticFileHandler does not expose files out of its baseFolder scope
