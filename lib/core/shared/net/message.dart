@@ -10,7 +10,7 @@ class Message {
   {
     try {
       Message message = new Message._internal();
-      var map = JSON.parse(json);
+      var map = JSON.decode(json);
       if(map is Map) {
         message.messageType = map['messageType'];
         message.payload = map['payload'];

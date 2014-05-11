@@ -2,7 +2,7 @@ library ar_client;
 
 import 'dart:html';
 import 'dart:math' as Math;
-import 'dart:json' as JSON;
+//import 'dart:convert';
 
 import 'package:vector_math/vector_math.dart';
 import 'package:game_loop/game_loop_html.dart';

@@ -1,6 +1,6 @@
 library ar_shared;
 
-import 'dart:json' as JSON;
+import 'dart:convert';
 
 part 'net/message.dart';
 part 'net/message_dispatcher.dart';

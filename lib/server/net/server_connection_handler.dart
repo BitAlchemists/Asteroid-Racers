@@ -3,9 +3,9 @@ part of ar_server;
 class ServerConnectionHandler {
   Set<WebSocket> webSockets = new Set<WebSocket>();
 
-  ServerConnectionHandler(Path basePath) {
-    Path loggingPath = basePath.append('logs/connection-log.txt');
-    log.initLogging(loggingPath);
+  ServerConnectionHandler(String basePath) {
+    //String loggingPath = basePath.append('logs/connection-log.txt');
+    //log.initLogging(loggingPath);
   }
 
   onConnection(WebSocket webSocket) {

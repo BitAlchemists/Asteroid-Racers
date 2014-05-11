@@ -1,7 +1,7 @@
 part of ar_server;
 
 class StaticFileHandler {
-  final Path basePath;
+  final String basePath;
 
   StaticFileHandler(this.basePath);
 
@@ -12,20 +12,15 @@ class StaticFileHandler {
 
   // TODO: etags, last-modified-since support
   onRequest(HttpRequest request) {
-    final String path =
+    final String localPath =
         request.uri.path == '/' ? '/index.html' : request.uri.path;
-    Path filePath = basePath.append(path);
-    final File file = new File(filePath.toNativePath());
+    
+    String filePath = path.join(basePath, localPath);
+    
+    final File file = new File(filePath);
     file.exists().then((bool found) {
       if (found) {
-        file.fullPath().then((String fullPath) {
-          if (!fullPath.startsWith(basePath.toNativePath())) {
-            _send404(request.response);
-          } else {
-            file.openRead().pipe(request.response)
-              .catchError((e) => print(e));
-          }
-        });
+        file.openRead().pipe(request.response).catchError((e) => print(e));
       } else {
         _send404(request.response);
       }

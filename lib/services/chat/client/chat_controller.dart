@@ -6,9 +6,10 @@ class ChatController {
   ChatWindow _chatWindow;
 
   ChatController() {
-    TextAreaElement chatElem = query('#chat-display');
-    InputElement usernameElem = query('#chat-username');
-    InputElement messageElem = query('#chat-message');
+    
+    TextAreaElement chatElem = querySelector('#chat-display');
+    InputElement usernameElem = querySelector('#chat-username');
+    InputElement messageElem = querySelector('#chat-message');
     _chatWindow = new ChatWindow(chatElem);
     _usernameInput = new UsernameInput(usernameElem);
     _messageInput = new MessageInput(messageElem);
