@@ -2,7 +2,7 @@ library chat_client;
 
 import 'dart:html';
 
-import '../../core/ar_client_core.dart';
+import '../../shared/ar_shared.dart';
 
 part 'client/chat_controller.dart';
 part 'client/chat_window.dart';

@@ -1,6 +1,6 @@
-part of ar_client_core;
+part of ar_client;
 
-class ClientConnectionHandler {
+class ClientConnectionHandler implements IConnectionHandler {
   WebSocket webSocket;
   String url;
 

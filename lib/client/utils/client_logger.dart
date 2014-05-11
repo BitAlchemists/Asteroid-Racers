@@ -1,4 +1,4 @@
-part of ar_client_core;
+part of ar_client;
 
 final ClientLogger _instance = new ClientLogger._internal();
 
