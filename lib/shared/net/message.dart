@@ -12,7 +12,7 @@ class Message {
       if(map is Map) {
         message.messageType = map['messageType'];
         var payload = map['payload'];
-        message.payload = JSON.parse(this.payload);
+        message.payload = JSON.parse(payload);
       }
       
       return message;
