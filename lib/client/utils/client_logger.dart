@@ -28,3 +28,7 @@ class ClientLogger {
     _streamController.add(message);
   }  
 }
+/*
+ClientLogger.instance.stdout.listen((String message) {
+  _chatWindow.displayNotice(message);
+});*/ 
