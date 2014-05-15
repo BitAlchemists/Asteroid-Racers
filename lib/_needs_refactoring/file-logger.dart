@@ -1,7 +1,7 @@
 library filelogger;
 import 'dart:isolate';
 import 'dart:io';
-import 'server-utils.dart';
+import '../server/utils/server-utils.dart';
 
 startLogging() {
   print('started logger');
@@ -28,6 +28,6 @@ void log(String message) {
 }
 
 void initLogging(Path logFileName) {
-  _loggingPort = spawnFunction(startLogging);
+  _loggingPort = Isolate.spawn(startLogging);
   _loggingPort.send(logFileName.toNativePath());
 }

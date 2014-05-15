@@ -2,5 +2,6 @@ name: AsteroidRacers
 description: A sample web application
 dependencies:
   browser: any
-  vector_math: 1.1.0
-  game_loop: 0.8.0
+  vector_math: any
+  game_loop: 0.9.4
+  path: any
