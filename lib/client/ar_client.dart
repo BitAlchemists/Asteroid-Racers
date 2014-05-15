@@ -6,15 +6,12 @@ import "dart:async";
 //import 'dart:convert';
 
 import 'package:vector_math/vector_math.dart';
-import 'package:game_loop/game_loop_html.dart';
-
 import '../shared/ar_shared.dart';
-
 import '../services/chat/chat_client.dart';
+import 'package:stagexl/stagexl.dart' as stagexl;
 
 
 part 'core/entity.dart';
-part 'core/scene.dart';
 
 part 'graphics/scene_renderer.dart';
 part 'graphics/render_chunk.dart';
@@ -23,33 +20,37 @@ part 'graphics/camera.dart';
 part 'physics/physics_simulator.dart';
 
 part 'space_scene.dart';
-part 'menu/menu_scene.dart';
-part 'menu/menu_renderer.dart';
 
 part 'utils/client_logger.dart';
 part 'net/client_connection_handler.dart';
 
 runClient(CanvasElement canvas) {
-  GameLoopHtml gameLoop = new GameLoopHtml(canvas);
+  Renderer renderer = new Renderer(canvas);
   
-  Scene spaceScene = new SpaceScene(gameLoop);
+/*  Scene spaceScene = new SpaceScene(gameLoop);
   Scene menuScene = new MenuScene(gameLoop);
   List scenes = [spaceScene, menuScene];
-
+*/
   ClientConnectionHandler connectionHandler;
   connectionHandler = new ClientConnectionHandler("ws://127.0.0.1:1337/ws");
 
-  new ChatController(connectionHandler); //does this get destroyed?
+  new ChatController(connectionHandler);
+}
 
-  gameLoop.onUpdate = (gameLoop) {
-    scenes.forEach((Scene scene) => scene.onUpdate(gameLoop));
-  };
+class Renderer {
+  stagexl.Stage _stage;
   
-  gameLoop.onRender = (gameLoop) {
-    //print('${gameLoop.frame}: ${gameLoop.requestAnimationFrameTime} [dt = ${gameLoop.dt}].');
-    scenes.forEach((Scene scene) => scene.onRender(gameLoop));
-    //showFps(1.0 / gameLoop.dt);
-  };
-  
-  gameLoop.start();
+  Renderer(CanvasElement canvas) {
+    _stage = new stagexl.Stage(canvas);
+    _stage.doubleClickEnabled = true;
+    var renderLoop = new stagexl.RenderLoop();
+    renderLoop.addStage(_stage);
+
+    var background = new stagexl.Shape();
+    background.graphics.rect(0, 0, canvas.clientWidth, canvas.clientHeight);
+    background.graphics.fillColor(stagexl.Color.Black);
+    _stage.addChild(background);
+    
+    _stage.addChild(new SpaceScene());
+  }
 }

@@ -3,5 +3,5 @@ description: A sample web application
 dependencies:
   browser: any
   vector_math: any
-  game_loop: 0.9.4
+  stagexl: any
   path: any

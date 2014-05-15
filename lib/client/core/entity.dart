@@ -2,7 +2,7 @@ part of ar_client;
 
 class Entity {
   final String name;
-  vec3 position;
+  vec2 position;
   double orientation;
   RenderChunk renderChunk;
 
@@ -12,7 +12,7 @@ class Entity {
   
   //physics
   double acceleration = 0.0;
-  vec3 speed = new vec3.zero();
+  vec3 velocity = new vec3.zero();
   
   void accelerate() {
     acceleration = 1.0;  
