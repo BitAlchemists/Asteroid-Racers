@@ -1,15 +1,13 @@
 part of ar_client;
 
 class EntityController {
-  Entity _entity;
+  final Entity _entity;
   Entity get entity => _entity;
   
-  stagexl.Sprite _sprite;
+  final stagexl.Sprite _sprite = new stagexl.Sprite();
   stagexl.Sprite get sprite => _sprite;
   
-  EntityController(Vector2 position){
-    _entity = new Entity(position);
-    _sprite = new stagexl.Sprite();
+  EntityController(Entity this._entity){
     updateSprite();
   }
   

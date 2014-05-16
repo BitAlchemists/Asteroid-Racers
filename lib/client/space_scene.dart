@@ -4,13 +4,18 @@ class SpaceSceneController implements stagexl.Animatable {
   PhysicsSimulator _simulator;
   stagexl.Stage _stage;
   PlayerController _player;
+  World _world;
   
   SpaceSceneController(stagexl.Stage stage) {
     _stage = stage;
     _simulator = new PhysicsSimulator();
+    _world = new World();
+    _world.generateAsteroidBelt(500, 2000, 2000);
+    
     addBackground();
     addPlayer();
-    addAsteroidBelt(500, 2000, 2000);
+    renderEntities();
+    
     _stage.juggler.add(this);
     
     
@@ -33,7 +38,7 @@ class SpaceSceneController implements stagexl.Animatable {
   }
   
   void addPlayer(){
-    _player = new PlayerController(new Vector2(100.0, 100.0));
+    _player = new PlayerController(new Entity(EntityType.SHIP, new Vector2(100.0, 100.0)));
     _stage.addChild(_player.sprite);
     
     _stage.onKeyDown.listen((stagexl.KeyboardEvent ke){
@@ -60,21 +65,10 @@ class SpaceSceneController implements stagexl.Animatable {
     _simulator.addEntity(_player.entity);
   }
   
-  void addAsteroidBelt(int count, int xDistance, int yDistance) {
-    Math.Random random = new Math.Random();
+  void renderEntities() {
 
-    for (int i = 0; i < count; i++) {
-      //rectangle 
-      Vector2 point = new Vector2(random.nextDouble() * 2 * xDistance - xDistance, random.nextDouble() * 2 * yDistance - yDistance);
-      
-      /*
-      //circle
-      num angle = random.nextDouble() * 2 * Math.PI;
-      num radius = random.nextDouble();
-      vec3 point = new vec3(radius * xDistance * cos(angle), radius * yDistance * sin(angle), 0);
-      */
-      
-      var asteroid = new EntityController(point);
+    for (Entity entity in _world.entities) {      
+      var asteroid = new EntityController(entity);
       RenderHelper.applyAsteroid(asteroid.sprite.graphics);
       _stage.addChild(asteroid.sprite);
     }

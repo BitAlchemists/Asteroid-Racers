@@ -1,2 +1,8 @@
-*) make sure the StaticFileHandler does not expose files out of its baseFolder scope
+
+Client
 *) add key buffering like in game_loop library and make it frame-based for more precise control over user input
+*) make Camera work again
+
+Server
+*) make server side file logger work again
+*) make sure the StaticFileHandler does not expose files out of its baseFolder scope
