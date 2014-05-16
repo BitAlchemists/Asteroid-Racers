@@ -10,11 +10,10 @@ import '../shared/ar_shared.dart';
 import '../services/chat/chat_client.dart';
 import 'package:stagexl/stagexl.dart' as stagexl;
 
-
+part "core/entity_controller.dart";
 part 'core/player_controller.dart';
-part "core/entity.dart";
 
-part 'core/render_chunk.dart';
+part 'core/render_helper.dart';
 part 'graphics/camera.dart';
 
 part 'physics/physics_simulator.dart';

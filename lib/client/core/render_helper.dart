@@ -1,6 +1,6 @@
 part of ar_client;
 
-class RenderChunk extends stagexl.Sprite {
+class RenderHelper {
   
   static applyTriangle(stagexl.Graphics graphics) {
     Vector2 pos1 = new Vector2(-5.0,-5.0);
@@ -16,7 +16,7 @@ class RenderChunk extends stagexl.Sprite {
     graphics.closePath();        
   }
   
-  RenderChunk.asteroid() {
+  static applyAsteroid(stagexl.Graphics graphics) {
     
     Math.Random random = new Math.Random();
     
@@ -26,7 +26,7 @@ class RenderChunk extends stagexl.Sprite {
     num innerRadius = outerRadius * 0.75;
     int numVertices = outerRadius.toInt();
     
-    this.graphics.beginPath();
+    graphics.beginPath();
     Vector2 firstVertex = null;
     
     for(int i = 0; i < numVertices; i++) {
@@ -37,16 +37,16 @@ class RenderChunk extends stagexl.Sprite {
       
       if(i == 0){
         firstVertex = vector;
-        this.graphics.moveTo(vector.x, vector.y);
+        graphics.moveTo(vector.x, vector.y);
       }
       else {
-        this.graphics.lineTo(vector.x, vector.y);
+        graphics.lineTo(vector.x, vector.y);
       }
     }
     
-    this.graphics.lineTo(firstVertex.x, firstVertex.y);
-    this.graphics.strokeColor(stagexl.Color.Yellow);
-    this.graphics.closePath();        
+    graphics.lineTo(firstVertex.x, firstVertex.y);
+    graphics.strokeColor(stagexl.Color.Yellow);
+    graphics.closePath();        
 
   }
   

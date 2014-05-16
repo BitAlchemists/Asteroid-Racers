@@ -1,33 +1,17 @@
 part of ar_client;
 
-class PlayerController  {
+class PlayerController extends EntityController  {
   final double _maxPlayerSpeed = 100.0;
   final double _rotationSpeed = 10.0;
 
-  Entity _entity;
-  Entity get entity => _entity;
-  
-  stagexl.Sprite _sprite;
-  stagexl.Sprite get sprite => _sprite;
 
-  PlayerController(Vector2 position) {
-    _entity = new Entity(position);
-    _sprite = new stagexl.Sprite();
-    updateSprite();
-    RenderChunk.applyTriangle(_sprite.graphics);
+  PlayerController(Vector2 position) : super(position) {
+    RenderHelper.applyTriangle(_sprite.graphics);
   }
-  
-  updateSprite(){
-    _sprite.x = _entity.position.x;
-    _sprite.y = _entity.position.y;
-    
-    _sprite.rotation = _entity.orientation;
-  }
+ 
 
   static num count = 0;
   void rotateLeft(){
-    print("keypress: " + count.toString());
-    count++;
     _entity.rotationSpeed = -_rotationSpeed;
   }
   
