@@ -13,10 +13,15 @@ class PhysicsSimulator {
   
   void simulate(num dt) {
     
-    for(Entity entity in _entities) {      
+    for(Entity entity in _entities) {  
+      //position
       entity.velocity += entity.acceleration * dt;
       entity.position += entity.velocity * dt;
       entity.acceleration = new Vector2.zero();
+      
+      //orientation
+      entity.orientation += entity.rotationSpeed * dt;
+      entity.rotationSpeed = 0.0;
     }
   }
   

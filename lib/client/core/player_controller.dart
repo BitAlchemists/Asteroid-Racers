@@ -1,7 +1,8 @@
 part of ar_client;
 
 class PlayerController  {
-  final num _maxPlayerSpeed = 100.0;
+  final double _maxPlayerSpeed = 100.0;
+  final double _rotationSpeed = 10.0;
 
   Entity _entity;
   Entity get entity => _entity;
@@ -19,15 +20,19 @@ class PlayerController  {
   updateSprite(){
     _sprite.x = _entity.position.x;
     _sprite.y = _entity.position.y;
+    
+    _sprite.rotation = _entity.orientation;
   }
 
-  
+  static num count = 0;
   void rotateLeft(){
-    
+    print("keypress: " + count.toString());
+    count++;
+    _entity.rotationSpeed = -_rotationSpeed;
   }
   
   void rotateRight(){
-    
+    _entity.rotationSpeed = _rotationSpeed;
   }
   
   void accelerateForward() {
