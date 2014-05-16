@@ -13,7 +13,6 @@ import 'package:stagexl/stagexl.dart' as stagexl;
 
 part 'core/entity.dart';
 
-part 'graphics/scene_renderer.dart';
 part 'graphics/render_chunk.dart';
 part 'graphics/camera.dart';
 

@@ -3,11 +3,12 @@ import 'dart:isolate';
 import 'dart:io';
 import '../server/utils/server-utils.dart';
 
-startLogging() {
+
+startLogging(ReceivePort _receivePort) {
   print('started logger');
   File logFile;
   IOSink out;
-  port.receive((msg, replyTo) {
+  _receivePort.listen((msg) {
     if (logFile == null) {
       print("Opening file $msg");
       logFile = new File(msg);
@@ -23,11 +24,12 @@ startLogging() {
 
 SendPort _loggingPort;
 
+
 void log(String message) {
   _loggingPort.send(message);
 }
 
-void initLogging(Path logFileName) {
-  _loggingPort = Isolate.spawn(startLogging);
-  _loggingPort.send(logFileName.toNativePath());
+void initLogging(String logFileName) {
+  //_loggingPort = Isolate.spawn(startLogging);
+  //_loggingPort.send(logFileName.toNativePath());
 }

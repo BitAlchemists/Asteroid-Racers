@@ -17,7 +17,7 @@ Future runServer(String webPath, String logPath, int port) {
   ServerConnectionHandler connectionHandler = new ServerConnectionHandler(logPath);
   StaticFileHandler fileHandler = new StaticFileHandler(webPath);
   
-  return HttpServer.bind('127.0.0.1', port).then((HttpServer server) {
+  return HttpServer.bind('0.0.0.0', port).then((HttpServer server) {
     print('listening for connections on $port');
       
     //we will hand over new connections to the connectionHandler.onConnection method

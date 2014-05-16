@@ -2,7 +2,6 @@ part of ar_client;
 
 class SpaceScene extends stagexl.Sprite {
   PhysicsSimulator simulator;
-  SceneRenderer renderer;
   
   SpaceScene() {
     
