@@ -1,6 +1,6 @@
 library ar_client;
 
-import 'dart:html';
+import 'dart:html' as html;
 import 'dart:math' as Math;
 import "dart:async";
 //import 'dart:convert';
@@ -11,9 +11,10 @@ import '../services/chat/chat_client.dart';
 import 'package:stagexl/stagexl.dart' as stagexl;
 
 
-part 'core/entity.dart';
+part 'core/player_controller.dart';
+part "core/entity.dart";
 
-part 'graphics/render_chunk.dart';
+part 'core/render_chunk.dart';
 part 'graphics/camera.dart';
 
 part 'physics/physics_simulator.dart';
@@ -23,7 +24,7 @@ part 'space_scene.dart';
 part 'utils/client_logger.dart';
 part 'net/client_connection_handler.dart';
 
-runClient(CanvasElement canvas) {
+runClient(html.CanvasElement canvas) {
   Renderer renderer = new Renderer(canvas);
   
 /*  Scene spaceScene = new SpaceScene(gameLoop);
@@ -31,29 +32,25 @@ runClient(CanvasElement canvas) {
   List scenes = [spaceScene, menuScene];
 */
   ClientConnectionHandler connectionHandler;
-  var domain = document.domain;
-  Location location = window.location;
+  var domain = html.document.domain;
+  html.Location location = html.window.location;
   var port = 1337;
   var wsPath = "ws://" + location.hostname + ":" + port.toString() + "/ws";
   connectionHandler = new ClientConnectionHandler(wsPath);
 
-  new ChatController(connectionHandler);
+  new ChatController(connectionHandler); //refactor this so that we register that chatcontroller with the connection handler. make chatController implement an interface
 }
 
 class Renderer {
   stagexl.Stage _stage;
   
-  Renderer(CanvasElement canvas) {
+  Renderer(html.CanvasElement canvas) {
     _stage = new stagexl.Stage(canvas);
     _stage.doubleClickEnabled = true;
     var renderLoop = new stagexl.RenderLoop();
     renderLoop.addStage(_stage);
-
-    var background = new stagexl.Shape();
-    background.graphics.rect(0, 0, canvas.clientWidth, canvas.clientHeight);
-    background.graphics.fillColor(stagexl.Color.Black);
-    _stage.addChild(background);
+    _stage.focus = _stage;
     
-    _stage.addChild(new SpaceScene());
+    var spaceScene = new SpaceSceneController(_stage);
   }
 }

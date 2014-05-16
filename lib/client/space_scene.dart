@@ -1,41 +1,66 @@
 part of ar_client;
 
-class SpaceScene extends stagexl.Sprite {
-  PhysicsSimulator simulator;
+class SpaceSceneController implements stagexl.Animatable {
+  PhysicsSimulator _simulator;
+  stagexl.Stage _stage;
+  PlayerController _player;
   
-  SpaceScene() {
-    
-    var player = new RenderChunk.triangle();
-    this.addChild(player);
-
-//simulator = new PhysicsSimulator(this);
-
+  SpaceSceneController(stagexl.Stage stage) {
+    _stage = stage;
+    _simulator = new PhysicsSimulator();
+    addBackground();
+    addPlayer();
     addAsteroidBelt(500, 2000, 2000);
+    _stage.juggler.add(this);
     
     
 /*    Camera camera = new Camera();
     renderer.camera = camera;
-    camera.entity = player; */
-    
-    const num rotationSpeed = 1;
-
-    /*
-    keyDownMap = new Map();
-    keyDownMap[KeyCode.LEFT] = (GameLoopHtml gameLoop){
-      player.orientation -= gameLoop.dt * rotationSpeed;
-    };
-    keyDownMap[KeyCode.RIGHT] = (GameLoopHtml gameLoop){
-      player.orientation += gameLoop.dt * rotationSpeed;
-    };
-    keyDownMap[KeyCode.UP] = (GameLoopHtml gameLoop){
-      player.accelerate();
-    };
-    keyDownMap[KeyCode.DOWN] = (GameLoopHtml gameLoop){
-      player.decelerate();
-    };
-    * */
+    camera.entity = player; */    
   }
 
+  bool advanceTime(num time){
+    _simulator.simulate(time);
+    _player.updateSprite();
+    return true;
+  }
+  
+  void addBackground(){
+    var background = new stagexl.Shape();
+    background.graphics.rect(0, 0, _stage.contentRectangle.width, _stage.contentRectangle.height);
+    background.graphics.fillColor(stagexl.Color.Black);
+    _stage.addChild(background);
+  }
+  
+  void addPlayer(){
+    _player = new PlayerController(new Vector2(100.0, 100.0));
+    _stage.addChild(_player.sprite);
+    
+    _stage.onKeyDown.listen((stagexl.KeyboardEvent ke){
+      switch(ke.keyCode)
+      {
+        case html.KeyCode.LEFT:
+          _player.rotateLeft(); 
+          break; 
+          
+        case html.KeyCode.RIGHT:      
+          _player.rotateRight();
+          break; 
+          
+        case html.KeyCode.UP:        
+          _player.accelerateForward();
+          break; 
+          
+        case html.KeyCode.DOWN:
+          _player.accelerateBackward();
+          break;
+        
+      }
+    });
+
+    _simulator.addEntity(_player.entity);
+  }
+  
   void addAsteroidBelt(int count, int xDistance, int yDistance) {
     Math.Random random = new Math.Random();
 
@@ -53,7 +78,7 @@ class SpaceScene extends stagexl.Sprite {
       var entity = new RenderChunk.asteroid();
       entity.x = point.x;
       entity.y = point.y;
-      this.addChild(entity);
+      _stage.addChild(entity);
     }
   }
 }

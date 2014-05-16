@@ -1,24 +1,23 @@
 part of ar_client;
 
 class PhysicsSimulator {
-  var scene;
+  List<Entity> _entities = new List<Entity>();
   
-  PhysicsSimulator(this.scene);
+  PhysicsSimulator();
+  
+  addEntity(Entity entity)
+  {
+    _entities.add(entity);
+  }
+  
   
   void simulate(num dt) {
-    const num maxPlayerSpeed = 100;
     
-    scene.entities.forEach((Entity entity) {
-      Vector2 acceleration = new Vector2.zero();
-        //new Matrix3.identity();//.
-        //rotationZ(entity.orientation * Math.PI).
-        //translate(0.0, entity.acceleration * maxPlayerSpeed).
-        //getTranslation();
-          
-      entity.velocity += acceleration * dt;
+    for(Entity entity in _entities) {      
+      entity.velocity += entity.acceleration * dt;
       entity.position += entity.velocity * dt;
-      entity.acceleration = 0.0;
-    });
+      entity.acceleration = new Vector2.zero();
+    }
   }
   
 }

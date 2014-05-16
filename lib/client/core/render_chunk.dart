@@ -2,18 +2,18 @@ part of ar_client;
 
 class RenderChunk extends stagexl.Sprite {
   
-  RenderChunk.triangle() {
+  static applyTriangle(stagexl.Graphics graphics) {
     Vector2 pos1 = new Vector2(-5.0,-5.0);
     Vector2 pos2 = new Vector2(0.0,10.0);
     Vector2 pos3 = new Vector2(5.0,-5.0);
     
-    this.graphics.beginPath();
-    this.graphics.moveTo(pos1.x, pos1.y);
-    this.graphics.lineTo(pos2.x, pos2.y);
-    this.graphics.lineTo(pos3.x, pos3.y);
-    this.graphics.lineTo(pos1.x, pos1.y);
-    this.graphics.strokeColor(stagexl.Color.Green);
-    this.graphics.closePath();        
+    graphics.beginPath();
+    graphics.moveTo(pos1.x, pos1.y);
+    graphics.lineTo(pos2.x, pos2.y);
+    graphics.lineTo(pos3.x, pos3.y);
+    graphics.lineTo(pos1.x, pos1.y);
+    graphics.strokeColor(stagexl.Color.Green);
+    graphics.closePath();        
   }
   
   RenderChunk.asteroid() {
