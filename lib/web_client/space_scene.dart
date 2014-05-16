@@ -10,7 +10,6 @@ class SpaceSceneController implements stagexl.Animatable {
     _stage = stage;
     _simulator = new PhysicsSimulator();
     _world = new World();
-    _world.generateAsteroidBelt(500, 2000, 2000);
     
     addBackground();
     addPlayer();

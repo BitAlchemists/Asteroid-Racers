@@ -8,7 +8,8 @@ import 'dart:math' as Math;
 //net
 part 'net/message.dart';
 part 'net/message_dispatcher.dart';
-part "net/connection_handler.dart";
+part "net/base_connection_handler.dart";
+part "net/message_type.dart";
 
 //world
 part "world/world.dart";

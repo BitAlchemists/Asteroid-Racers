@@ -2,6 +2,7 @@
 Client
 *) add key buffering like in game_loop library and make it frame-based for more precise control over user input
 *) make Camera work again
+*) make console logging on client work
 
 Server
 *) make server side file logger work again

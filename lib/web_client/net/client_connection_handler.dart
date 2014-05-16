@@ -1,6 +1,6 @@
 part of ar_client;
 
-class ClientConnectionHandler implements IConnectionHandler {
+class ClientConnectionHandler extends BaseConnectionHandler {
   html.WebSocket webSocket;
   String url;
 
@@ -31,18 +31,13 @@ class ClientConnectionHandler implements IConnectionHandler {
 
     webSocket.onMessage.listen((html.MessageEvent e) {
       log('received message ${e.data}');
-      _receivedEncodedMessage(e.data);
+      receivedEncodedMessage(e.data);
     });
   }
-
+  
   send(Message message) {
     String json = message.toJson();
     _sendEncodedMessage(json);
-  }
-
-  _receivedEncodedMessage(String encodedMessage) {
-    Message message = new Message.fromJson(encodedMessage);
-    MessageDispatcher.instance.dispatch(message);
   }
 
   _sendEncodedMessage(String encodedMessage) {

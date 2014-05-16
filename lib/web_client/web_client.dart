@@ -26,18 +26,18 @@ part 'net/client_connection_handler.dart';
 runClient(html.CanvasElement canvas) {
   Renderer renderer = new Renderer(canvas);
   
-/*  Scene spaceScene = new SpaceScene(gameLoop);
-  Scene menuScene = new MenuScene(gameLoop);
-  List scenes = [spaceScene, menuScene];
-*/
-  ClientConnectionHandler connectionHandler;
+  ClientConnectionHandler server;
   var domain = html.document.domain;
   html.Location location = html.window.location;
   var port = 1337;
   var wsPath = "ws://" + location.hostname + ":" + port.toString() + "/ws";
-  connectionHandler = new ClientConnectionHandler(wsPath);
+  server = new ClientConnectionHandler(wsPath);
 
-  new ChatController(connectionHandler); //refactor this so that we register that chatcontroller with the connection handler. make chatController implement an interface
+  new ChatController(server);
+  
+  Message message = new Message();
+  message.messageType = MessageType.REQUEST_ALL_ENTITIES;
+  server.send(message);
 }
 
 class Renderer {

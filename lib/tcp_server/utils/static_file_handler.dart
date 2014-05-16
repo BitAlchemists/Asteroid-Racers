@@ -1,4 +1,4 @@
-part of ar_server;
+part of tcp_server;
 
 class StaticFileHandler {
   final String basePath;

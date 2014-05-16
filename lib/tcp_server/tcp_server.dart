@@ -1,9 +1,11 @@
-library ar_server;
+library tcp_server;
 
 import 'dart:io';
 //import 'dart:isolate';
 import 'dart:async';
 import 'package:path/path.dart' as path;
+import "../shared/ar_shared.dart";
+import "../world_server/world_server.dart";
 
 //import '../core/shared/ar_shared.dart';
 
@@ -11,10 +13,10 @@ import 'package:path/path.dart' as path;
 import 'utils/server-utils.dart';
 
 part 'utils/static_file_handler.dart';
-part 'net/server_connection_handler.dart';
+part 'net/web_socket_connection_handler.dart';
 
 Future runServer(String webPath, String logPath, int port) {
-  ServerConnectionHandler connectionHandler = new ServerConnectionHandler(logPath);
+  WebSocketConnectionHandler connectionHandler = new WebSocketConnectionHandler(logPath);
   StaticFileHandler fileHandler = new StaticFileHandler(webPath);
   
   return HttpServer.bind('0.0.0.0', port).then((HttpServer server) {
@@ -24,6 +26,8 @@ Future runServer(String webPath, String logPath, int port) {
     var sc = new StreamController();
     sc.stream.transform(new WebSocketTransformer()).listen(connectionHandler.onConnection);
 
+    WorldServer worldServer = new WorldServer();
+    
     //begin to listen for connections
     server.listen((HttpRequest request) {
       try {

@@ -2,7 +2,7 @@ library asteroidracers;
 
 import 'dart:html';
 
-import '../lib/client/ar_client.dart';
+import '../lib/web_client/web_client.dart';
 
 
 /**

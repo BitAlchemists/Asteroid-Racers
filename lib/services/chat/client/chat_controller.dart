@@ -20,7 +20,7 @@ class ChatController {
     
     messageElem.onChange.listen((e) {
       Message chatMessage = new Message();
-      chatMessage.messageType = "chat";
+      chatMessage.messageType = MessageType.CHAT;
       chatMessage.payload = {'from': _usernameInput.username, 'message': _messageInput.message};
       _connectionHandler.send(chatMessage);
       _chatWindow.displayMessage(_messageInput.message, _usernameInput.username);
@@ -35,7 +35,7 @@ class ChatController {
       }
     });
 
-    MessageDispatcher.instance.registerHandler('chat', (Message chatMessage){
+    MessageDispatcher.instance.registerHandler(MessageType.CHAT, (Message chatMessage){
       Map message = chatMessage.payload;
       _chatWindow.displayMessage(message['message'], message['from']);
     }); 
