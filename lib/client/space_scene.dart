@@ -36,10 +36,15 @@ class SpaceSceneController implements stagexl.Animatable {
     _player = new PlayerController(new Vector2(100.0, 100.0));
     _stage.addChild(_player.sprite);
     
+    num count = 0;
+    num time = 0.0;
     _stage.onKeyDown.listen((stagexl.KeyboardEvent ke){
       switch(ke.keyCode)
       {
         case html.KeyCode.LEFT:
+          print("key count: " + count.toString() + " dt: " + time.toString());
+        count++;
+        time += gameLoop.dt;
           _player.rotateLeft(); 
           break; 
           
