@@ -31,7 +31,11 @@ runClient(CanvasElement canvas) {
   List scenes = [spaceScene, menuScene];
 */
   ClientConnectionHandler connectionHandler;
-  connectionHandler = new ClientConnectionHandler("ws://127.0.0.1:1337/ws");
+  var domain = document.domain;
+  Location location = window.location;
+  var port = 1337;
+  var wsPath = "ws://" + location.hostname + ":" + port.toString() + "/ws";
+  connectionHandler = new ClientConnectionHandler(wsPath);
 
   new ChatController(connectionHandler);
 }

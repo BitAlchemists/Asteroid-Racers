@@ -14,7 +14,7 @@ class StaticFileHandler {
   // TODO: etags, last-modified-since support
   onRequest(HttpRequest request) {
     final String localPath =
-        request.uri.path == '/' ? 'index.html' : request.uri.path.substring(1, request.uri.path.length);
+        request.uri.path == '/' ? 'asteroidracers.html' : request.uri.path.substring(1, request.uri.path.length);
     
     String filePath = path.join(basePath, localPath);
     final File file = new File(filePath);
