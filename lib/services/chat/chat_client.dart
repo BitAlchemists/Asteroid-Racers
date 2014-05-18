@@ -1,6 +1,7 @@
 library chat_client;
 
 import 'dart:html';
+import "dart:async";
 
 import '../../shared/ar_shared.dart';
 

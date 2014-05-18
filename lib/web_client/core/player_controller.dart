@@ -1,4 +1,4 @@
-part of ar_client;
+part of web_client;
 
 class PlayerController extends EntityController  {
   final double _maxPlayerSpeed = 100.0;

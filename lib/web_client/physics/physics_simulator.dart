@@ -1,4 +1,4 @@
-part of ar_client;
+part of web_client;
 
 class PhysicsSimulator {
   List<Entity> _entities = new List<Entity>();

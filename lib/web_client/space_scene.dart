@@ -1,4 +1,4 @@
-part of ar_client;
+part of web_client;
 
 class SpaceSceneController implements stagexl.Animatable {
   PhysicsSimulator _simulator;

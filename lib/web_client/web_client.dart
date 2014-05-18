@@ -1,4 +1,4 @@
-library ar_client;
+library web_client;
 
 import 'dart:html' as html;
 import 'dart:math' as Math;
@@ -21,24 +21,39 @@ part 'physics/physics_simulator.dart';
 part 'space_scene.dart';
 
 part 'utils/client_logger.dart';
-part 'net/client_connection_handler.dart';
+
+//server connection
+part "server_connection/connection.dart";
+part "server_connection/connection_handler.dart";
+part "server_connection/local/local_connection_handler.dart";
+part 'server_connection/net/web_socket_connection.dart';
 
 runClient(html.CanvasElement canvas) {
   Renderer renderer = new Renderer(canvas);
   
-  ClientConnectionHandler server;
+  ConnectionHandler server;
   var domain = html.document.domain;
   html.Location location = html.window.location;
   var port = 1337;
   var wsPath = "ws://" + location.hostname + ":" + port.toString() + "/ws";
-  server = new ClientConnectionHandler(wsPath);
-
-  new ChatController(server);
+  Connection netConnection = new WebSocketConnection(wsPath);
+  server = new ConnectionHandler(netConnection);
   
-  Message message = new Message();
-  message.messageType = MessageType.REQUEST_ALL_ENTITIES;
-  server.send(message);
+  server.onMessage.listen((Message message){
+    log("receiving message ${message.toJson()}");
+  });
+  
+  server.connect().then((_){
+    Message message = new Message();
+    message.messageType = MessageType.REQUEST_ALL_ENTITIES;
+    server.send(message);
+  });
+
+  ChatController chat = new ChatController();
+  chat.onSendChatMesage.listen(server.send);
+  server.onMessage.where((Message message) => message.messageType == chat.messageType).listen(chat.onReceiveMessage);
 }
+
 
 class Renderer {
   stagexl.Stage _stage;

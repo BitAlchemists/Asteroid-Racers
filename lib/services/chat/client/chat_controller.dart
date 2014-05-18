@@ -4,11 +4,12 @@ class ChatController {
   MessageInput _messageInput;
   UsernameInput _usernameInput;
   ChatWindow _chatWindow;
-  IConnectionHandler _connectionHandler;
+  final StreamController _sendChatMessageStreamController = new StreamController();
+  
+  Stream get onSendChatMesage => _sendChatMessageStreamController.stream;
+  String get messageType => MessageType.CHAT; 
 
-  ChatController(IConnectionHandler connectionHandler) {
-    
-    _connectionHandler = connectionHandler;
+  ChatController() {
     
     TextAreaElement chatElem = querySelector('#chat-display');
     InputElement usernameElem = querySelector('#chat-username');
@@ -22,7 +23,7 @@ class ChatController {
       Message chatMessage = new Message();
       chatMessage.messageType = MessageType.CHAT;
       chatMessage.payload = {'from': _usernameInput.username, 'message': _messageInput.message};
-      _connectionHandler.send(chatMessage);
+      _sendChatMessageStreamController.add(chatMessage);
       _chatWindow.displayMessage(_messageInput.message, _usernameInput.username);
       e.target.value = '';
     });
@@ -39,5 +40,10 @@ class ChatController {
       Map message = chatMessage.payload;
       _chatWindow.displayMessage(message['message'], message['from']);
     }); 
+  }
+  
+  onReceiveMessage(Message message) {
+    Map chatMessage = message.payload;
+    _chatWindow.displayMessage(chatMessage['message'], chatMessage['from']);
   }
 }

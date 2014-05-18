@@ -1,6 +1,5 @@
-library serverutils;
+part of tcp_server;
 
-import 'dart:async';
 
 time(msg, callback()) {
   var sw = new Stopwatch()..start();

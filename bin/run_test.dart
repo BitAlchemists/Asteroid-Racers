@@ -1,4 +1,4 @@
-import "../lib/server/ar_server.dart" as ar_server;
+import "../lib/tcp_server/tcp_server.dart" as ar_server;
 import "dart:io";
 import "package:path/path.dart" as path;
 

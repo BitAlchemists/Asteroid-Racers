@@ -9,19 +9,21 @@ class WebSocketConnectionHandler {
   }
 
   onConnection(WebSocket webSocket) {
-    
-    
     print('new ws conn');
     webSockets.add(webSocket);
-    webSocket.listen(onMessage,
+    webSocket.listen((var message){
+      //if(message.messageType == "CHAT") {
+        queue(() => webSocket.add(message));
+      //}
+    },
       onDone: () => webSockets.remove(webSocket),
       onError: (e) => webSockets.remove(webSocket)
     );
   }
   
   void onMessage(Message message) {
-        print('new ws msg: $message');
-      }
+    print('new ws msg: $message');
+  }
 }
 
 //Echo

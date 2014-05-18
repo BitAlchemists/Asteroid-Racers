@@ -10,9 +10,11 @@ import "../world_server/world_server.dart";
 //import '../core/shared/ar_shared.dart';
 
 //import '../_needs_refactoring/file-logger.dart' as log;
-import 'utils/server-utils.dart';
+//import 'utils/server-utils.dart';
 
 part 'utils/static_file_handler.dart';
+part "utils/server-utils.dart";
+
 part 'net/web_socket_connection_handler.dart';
 
 Future runServer(String webPath, String logPath, int port) {
