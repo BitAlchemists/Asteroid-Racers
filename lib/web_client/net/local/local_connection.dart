@@ -1,17 +1,17 @@
 part of web_client;
 
-class LocalConnectionHandler implements Connection {
+class LocalConnection implements Connection {
   Function onReceiveMessageDelegate;
   
-  LocalConnectionHandler _inverseConnectionHandler;
+  LocalConnection _inverseConnectionHandler;
   
   ClientProxy _clientProxy; 
   
-  LocalConnectionHandler();
-  LocalConnectionHandler._inverse(this._inverseConnectionHandler);
+  LocalConnection();
+  LocalConnection._inverse(this._inverseConnectionHandler);
   
   Future open(){
-    _inverseConnectionHandler = new LocalConnectionHandler._inverse(this);
+    _inverseConnectionHandler = new LocalConnection._inverse(this);
     ConnectionHandler serverConnectionHandler = new ConnectionHandler(_inverseConnectionHandler);
     _clientProxy = new ClientProxy(serverConnectionHandler);
     return new Future.value();

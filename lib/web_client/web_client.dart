@@ -29,7 +29,7 @@ part 'utils/client_logger.dart';
 
 //server connection
 
-part "net/local/local_connection_handler.dart";
+part "net/local/local_connection.dart";
 part 'net/web/web_socket_connection.dart';
 
 runClient(html.CanvasElement canvas) {
@@ -65,7 +65,7 @@ Connection webConnection(){
 }
 
 Connection localConnection(){
-  return new LocalConnectionHandler();
+  return new LocalConnection();
 }
 
 class Renderer {
