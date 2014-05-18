@@ -1,8 +1,8 @@
-part of web_client;
+part of ar_shared;
 
 abstract class Connection {
   Function onReceiveMessageDelegate;
   
   Future open();
-  void sendEncodedMessage(String encodedMessage);
+  void send(Message message);
 }

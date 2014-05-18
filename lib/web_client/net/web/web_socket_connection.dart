@@ -24,12 +24,12 @@ class WebSocketConnection implements Connection {
     _webSocket.onError.listen((e) => scheduleReconnect());
 
     _webSocket.onMessage.listen((html.MessageEvent e) {
-      onReceiveMessageDelegate(e.data);
+      Message message = new Message.fromJson(e.data);
+      onReceiveMessageDelegate(message);
     });  
     
     return _onConnectCompleter.future;
   }
-  
 
   scheduleReconnect() {
     log('web socket closed, retrying in $_retrySeconds seconds');
@@ -40,7 +40,9 @@ class WebSocketConnection implements Connection {
     _encounteredError = true;
   }
 
-  void sendEncodedMessage(String encodedMessage) {
+  void send(Message message) {
+    String encodedMessage = message.toJson();
+    
     if (_webSocket != null && _webSocket.readyState == html.WebSocket.OPEN) {
       _webSocket.send(encodedMessage);
     } else {

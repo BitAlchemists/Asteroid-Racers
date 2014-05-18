@@ -1,14 +1,19 @@
 library web_client;
 
+//Dart
 import 'dart:html' as html;
 import 'dart:math' as Math;
 import "dart:async";
-//import 'dart:convert';
 
+//Packages
 import 'package:vector_math/vector_math.dart';
+import 'package:stagexl/stagexl.dart' as stagexl;
+
+//Ours
 import '../shared/ar_shared.dart';
 import '../services/chat/chat_client.dart';
-import 'package:stagexl/stagexl.dart' as stagexl;
+import "../world_server/world_server.dart";
+
 
 part "core/entity_controller.dart";
 part 'core/player_controller.dart';
@@ -23,21 +28,17 @@ part 'space_scene.dart';
 part 'utils/client_logger.dart';
 
 //server connection
-part "server_connection/connection.dart";
-part "server_connection/connection_handler.dart";
-part "server_connection/local/local_connection_handler.dart";
-part 'server_connection/net/web_socket_connection.dart';
+
+part "net/local/local_connection_handler.dart";
+part 'net/web/web_socket_connection.dart';
 
 runClient(html.CanvasElement canvas) {
   Renderer renderer = new Renderer(canvas);
   
-  ConnectionHandler server;
-  var domain = html.document.domain;
-  html.Location location = html.window.location;
-  var port = 1337;
-  var wsPath = "ws://" + location.hostname + ":" + port.toString() + "/ws";
-  Connection netConnection = new WebSocketConnection(wsPath);
-  server = new ConnectionHandler(netConnection);
+  
+  Connection connection = localConnection();
+  
+  var server = new ConnectionHandler(connection);
   
   server.onMessage.listen((Message message){
     log("receiving message ${message.toJson()}");
@@ -54,6 +55,18 @@ runClient(html.CanvasElement canvas) {
   server.onMessage.where((Message message) => message.messageType == chat.messageType).listen(chat.onReceiveMessage);
 }
 
+Connection webConnection(){
+  ConnectionHandler server;
+  var domain = html.document.domain;
+  html.Location location = html.window.location;
+  var port = 1337;
+  var wsPath = "ws://" + location.hostname + ":" + port.toString() + "/ws";
+  return new WebSocketConnection(wsPath);
+}
+
+Connection localConnection(){
+  return new LocalConnectionHandler();
+}
 
 class Renderer {
   stagexl.Stage _stage;

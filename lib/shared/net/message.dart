@@ -39,4 +39,6 @@ class Message {
     
     return json;
   }
+  
+  String toString() => toJson();
 }

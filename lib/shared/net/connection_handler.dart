@@ -1,4 +1,4 @@
-part of web_client;
+part of ar_shared;
 
 class ConnectionHandler {
   final Connection _connection;
@@ -7,15 +7,7 @@ class ConnectionHandler {
   Stream<Message> get onMessage => _messageStreamController.stream;
   
   ConnectionHandler(this._connection){
-    _connection.onReceiveMessageDelegate = receivedEncodedMessage;
-  }
-  
-  receivedEncodedMessage(String encodedMessage) {
-    log('received message $encodedMessage');
-
-    Message message = new Message.fromJson(encodedMessage);
-    
-    _messageStreamController.add(message);
+    _connection.onReceiveMessageDelegate = onReceiveMessage;
   }
   
   Future connect(){
@@ -23,7 +15,10 @@ class ConnectionHandler {
   }
   
   void send(Message message) {
-    String json = message.toJson();
-    _connection.sendEncodedMessage(json);
+    _connection.send(message);
+  }
+  
+  void onReceiveMessage(Message message) {
+    _messageStreamController.add(message);
   }
 }
