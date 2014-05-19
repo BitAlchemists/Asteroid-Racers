@@ -1,8 +1,7 @@
 part of ar_shared;
 
 abstract class Connection {
-  Function onReceiveMessageDelegate;
+  Stream<Message> get onReceiveMessage;
   
-  Future open();
   void send(Message message);
 }

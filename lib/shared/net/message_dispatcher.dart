@@ -3,17 +3,14 @@ part of ar_shared;
 typedef MessageHandler(Message message);
 
 class MessageDispatcher {
-  static final MessageDispatcher _instance = new MessageDispatcher._internal();
-  
-  Map<String, MessageHandler> messageHandlers;
+  static final MessageDispatcher _instance = new MessageDispatcher();
+  final Map<String, MessageHandler> messageHandlers = new Map<String, MessageHandler>();
   
   static MessageDispatcher get instance {
     return _instance;
   }
-  
-  MessageDispatcher._internal() {
-    messageHandlers = new Map<String, MessageHandler>();
-  }
+ 
+  MessageDispatcher();
   
   registerHandler(String messageType, MessageHandler messageHandler) {
     messageHandlers[messageType] = messageHandler;

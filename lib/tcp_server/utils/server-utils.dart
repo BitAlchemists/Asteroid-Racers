@@ -10,5 +10,7 @@ time(msg, callback()) {
 
 // runs the callback on the event loop at the next opportunity
 Future queue(callback()) {
-  return new Future.delayed(Duration.ZERO, callback);
+  return (new Future.delayed(Duration.ZERO, callback)).catchError((e){
+    print("error in queue()ed callback: ${e.toString()}");
+  });
 }

@@ -1,17 +1,22 @@
 part of web_client;
 
-class WebSocketConnection implements Connection {
+class WebSocketServerConnection implements ServerConnection {
+  //Private Fields
   html.WebSocket _webSocket;
   String _url;
   int _retrySeconds = 2;
   bool _encounteredError = false;
   Completer _onConnectCompleter = new Completer();
+  final StreamController<Message> _receiveMessageStreamController = new StreamController<Message>.broadcast();
   
-  Function onReceiveMessageDelegate;
+  //Public properties
+  Stream<Message> get onReceiveMessage => _receiveMessageStreamController.stream;
   
-  WebSocketConnection(this._url);
+  //ctor
+  WebSocketServerConnection(this._url);
   
-  Future open(){
+  //Connection Logic
+  Future connect(){
     log("Connecting to Web socket");
     _webSocket = new html.WebSocket(_url);
 
@@ -20,26 +25,24 @@ class WebSocketConnection implements Connection {
       _onConnectCompleter.complete();
     });
 
-    _webSocket.onClose.listen((e) => scheduleReconnect());
-    _webSocket.onError.listen((e) => scheduleReconnect());
+    _webSocket.onClose.listen((e) => _scheduleReconnect());
+    _webSocket.onError.listen((e) => _scheduleReconnect());
 
-    _webSocket.onMessage.listen((html.MessageEvent e) {
-      Message message = new Message.fromJson(e.data);
-      onReceiveMessageDelegate(message);
-    });  
+    _webSocket.onMessage.listen(_onReceiveMessage);  
     
     return _onConnectCompleter.future;
   }
 
-  scheduleReconnect() {
+  _scheduleReconnect() {
     log('web socket closed, retrying in $_retrySeconds seconds');
     if (!_encounteredError) {
       _retrySeconds *= 2;
-      new Timer(new Duration(seconds:_retrySeconds),open);
+      new Timer(new Duration(seconds:_retrySeconds),connect);
     }
     _encounteredError = true;
   }
 
+  // Message handling
   void send(Message message) {
     String encodedMessage = message.toJson();
     
@@ -48,6 +51,11 @@ class WebSocketConnection implements Connection {
     } else {
       log('WebSocket not connected, message $encodedMessage not sent');
     }
+  }
+  
+  _onReceiveMessage(html.MessageEvent e) {
+    Message message = new Message.fromJson(e.data);
+    _receiveMessageStreamController.add(message);
   }
 }
 

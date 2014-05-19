@@ -23,61 +23,67 @@ part 'graphics/camera.dart';
 
 part 'physics/physics_simulator.dart';
 
-part 'space_scene.dart';
+part 'game_controller.dart';
 
 part 'utils/client_logger.dart';
 
 //server connection
+part "net/server_connection.dart";
+part "net/local_server_connection.dart";
+part 'net/web_socket_server_connection.dart';
+part "server_proxy.dart";
 
-part "net/local/local_connection.dart";
-part 'net/web/web_socket_connection.dart';
-
-runClient(html.CanvasElement canvas) {
+runClient(html.CanvasElement canvas, [bool localServer = true]) {
+  bool debug = true;
+  
   Renderer renderer = new Renderer(canvas);
+  GameController gameController = new GameController(renderer.stage);
+
+  ServerConnection serverConnection;
   
+  if(localServer) {
+    serverConnection = localConnection(debug);    
+  }
+  else
+  {
+    serverConnection = webConnection();  
+  }
+   
+  ServerProxy server = new ServerProxy(serverConnection, gameController);
   
-  Connection connection = localConnection();
-  
-  var server = new ConnectionHandler(connection);
-  
-  server.onMessage.listen((Message message){
-    log("receiving message ${message.toJson()}");
-  });
-  
-  server.connect().then((_){
+  serverConnection.connect().then((_){
     Message message = new Message();
     message.messageType = MessageType.REQUEST_ALL_ENTITIES;
-    server.send(message);
+    serverConnection.send(message);
   });
 
   ChatController chat = new ChatController();
-  chat.onSendChatMesage.listen(server.send);
-  server.onMessage.where((Message message) => message.messageType == chat.messageType).listen(chat.onReceiveMessage);
+  chat.onSendChatMesage.listen(serverConnection.send);
+  serverConnection.onReceiveMessage.where((Message message) => message.messageType == chat.messageType).listen(chat.onReceiveMessage);
 }
 
 Connection webConnection(){
-  ConnectionHandler server;
+  ServerConnection server;
   var domain = html.document.domain;
   html.Location location = html.window.location;
   var port = 1337;
   var wsPath = "ws://" + location.hostname + ":" + port.toString() + "/ws";
-  return new WebSocketConnection(wsPath);
+  return new WebSocketServerConnection(wsPath);
 }
 
-Connection localConnection(){
-  return new LocalConnection();
+Connection localConnection(bool debug){
+  return new LocalServerConnection(debug);
 }
 
 class Renderer {
   stagexl.Stage _stage;
+  stagexl.Stage get stage => _stage;
   
   Renderer(html.CanvasElement canvas) {
     _stage = new stagexl.Stage(canvas);
     _stage.doubleClickEnabled = true;
     var renderLoop = new stagexl.RenderLoop();
     renderLoop.addStage(_stage);
-    _stage.focus = _stage;
-    
-    var spaceScene = new SpaceSceneController(_stage);
+    _stage.focus = _stage;    
   }
 }

@@ -1,19 +1,17 @@
 part of web_client;
 
-class SpaceSceneController implements stagexl.Animatable {
+class GameController implements stagexl.Animatable {
   PhysicsSimulator _simulator;
   stagexl.Stage _stage;
   PlayerController _player;
   World _world;
   
-  SpaceSceneController(stagexl.Stage stage) {
+  GameController(stagexl.Stage stage) {
     _stage = stage;
     _simulator = new PhysicsSimulator();
     _world = new World();
     
     addBackground();
-    addPlayer();
-    renderEntities();
     
     _stage.juggler.add(this);
     
@@ -25,7 +23,9 @@ class SpaceSceneController implements stagexl.Animatable {
 
   bool advanceTime(num time){
     _simulator.simulate(time);
-    _player.updateSprite();
+    if(_player != null) {
+      _player.updateSprite();      
+    }
     return true;
   }
   
@@ -64,12 +64,14 @@ class SpaceSceneController implements stagexl.Animatable {
     _simulator.addEntity(_player.entity);
   }
   
-  void renderEntities() {
+  void updateEntity(Entity entity) {
 
-    for (Entity entity in _world.entities) {      
-      var asteroid = new EntityController(entity);
-      RenderHelper.applyAsteroid(asteroid.sprite.graphics);
-      _stage.addChild(asteroid.sprite);
+    switch(entity.type) {
+      case EntityType.ASTEROID:
+        var asteroid = new EntityController(entity);
+        RenderHelper.applyAsteroid(asteroid.sprite.graphics);
+        _stage.addChild(asteroid.sprite);        
+        break;
     }
   }
 }

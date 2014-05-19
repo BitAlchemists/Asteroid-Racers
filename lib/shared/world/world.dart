@@ -4,11 +4,13 @@ class World
 {
   final List<Entity> _entities = new List<Entity>();
   List<Entity> get entities => _entities;
+  int _nextEntityId = 0;
   
   World();
   
   void addEntity(Entity entity)
   {
+    entity.id = _nextEntityId++;
     _entities.add(entity);
   }
   

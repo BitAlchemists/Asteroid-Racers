@@ -20,11 +20,13 @@ class ChatController {
     _messageInput = new MessageInput(messageElem);
     
     messageElem.onChange.listen((e) {
-      Message chatMessage = new Message();
-      chatMessage.messageType = MessageType.CHAT;
+      Message chatMessage = new Message(MessageType.CHAT);
       chatMessage.payload = {'from': _usernameInput.username, 'message': _messageInput.message};
+      
       _sendChatMessageStreamController.add(chatMessage);
+      
       _chatWindow.displayMessage(_messageInput.message, _usernameInput.username);
+      
       e.target.value = '';
     });
 

@@ -4,7 +4,7 @@ class Message {
   String messageType;
   var payload;
   
-  Message();
+  Message([this.messageType = null, this.payload = null]);
   
   factory Message.fromJson(String json)
   {
@@ -19,7 +19,7 @@ class Message {
       return message;
     }
     catch (e) {
-      print('error during Message.fromJson(): $e');      
+      print('error during Message.fromJson(), json: $json, error: $e');      
     }
     
     return null;
@@ -34,7 +34,7 @@ class Message {
       json = JSON.encode(map);
     }
     catch (e) {
-      print('error during Message.toJson(): $e');
+      print("error during Message.toJson() with payload object of type '${payload.runtimeType}': $e");
     }
     
     return json;
