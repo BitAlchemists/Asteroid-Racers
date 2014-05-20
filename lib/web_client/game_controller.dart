@@ -36,8 +36,8 @@ class GameController implements stagexl.Animatable {
     _stage.addChild(background);
   }
   
-  void addPlayer(){
-    _player = new PlayerController(new Entity(EntityType.SHIP, new Vector2(100.0, 100.0)));
+  void createPlayer(Entity entity){
+    _player = new PlayerController(entity);
     _stage.addChild(_player.sprite);
     
     _stage.onKeyDown.listen((stagexl.KeyboardEvent ke){

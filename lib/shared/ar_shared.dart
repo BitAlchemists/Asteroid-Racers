@@ -1,9 +1,9 @@
 library ar_shared;
 
 import 'dart:convert';
-import "package:vector_math/vector_math.dart";
 import 'dart:math' as Math;
 import "dart:async";
+import "package:vector_math/vector_math.dart";
 
 //net
 part 'net/message.dart';

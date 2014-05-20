@@ -13,8 +13,19 @@ class ServerProxy {
     
     _messageHandlers = 
       {
-        MessageType.ENTITY: this._onEntity
+        MessageType.ENTITY: this._onEntity,
+        MessageType.PLAYER: this._onPlayer
       };
+  }
+  
+  connect(){
+    _serverConnection.connect().then((_) => _onConnect());
+  }
+  
+  _onConnect(){
+      Message message = new Message();
+      message.messageType = MessageType.HANDSHAKE;
+      _serverConnection.send(message);
   }
   
   _onReceiveMessage(Message message) {
@@ -39,6 +50,13 @@ class ServerProxy {
       print("exception during ServerProxy.onMessage: ${e.toString()}");
     }
   }
+  
+  _onPlayer(Message message)
+  {
+    Entity entity = new Entity.fromJson(message.payload);
+    _gameController.createPlayer(entity);
+  }
+
   
   _onEntity(Message message)
   {

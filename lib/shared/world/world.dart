@@ -14,6 +14,10 @@ class World
     _entities.add(entity);
   }
   
+  void removeEntity(Entity entity){
+    _entities.remove(entity);
+  }
+  
   void generateAsteroidBelt(int count, int xDistance, int yDistance) {
     Math.Random random = new Math.Random();
 

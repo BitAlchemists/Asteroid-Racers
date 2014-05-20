@@ -50,13 +50,8 @@ runClient(html.CanvasElement canvas, [bool localServer = true]) {
   }
    
   ServerProxy server = new ServerProxy(serverConnection, gameController);
+  server.connect();
   
-  serverConnection.connect().then((_){
-    Message message = new Message();
-    message.messageType = MessageType.REQUEST_ALL_ENTITIES;
-    serverConnection.send(message);
-  });
-
   ChatController chat = new ChatController();
   chat.onSendChatMesage.listen(serverConnection.send);
   serverConnection.onReceiveMessage.where((Message message) => message.messageType == chat.messageType).listen(chat.onReceiveMessage);

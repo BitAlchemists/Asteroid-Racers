@@ -9,8 +9,9 @@ class ClientProxy
   static final Map<String, MessageHandler> _messageHandlers = 
     {
       MessageType.CHAT: onChatMessage,
-      MessageType.REQUEST_ALL_ENTITIES: onRequestAllEntities
+      MessageType.HANDSHAKE: onHandshake
     };
+  Entity playerEntity;
   
   ClientProxy(this._connection){
     _connection.onReceiveMessage.listen(onMessage);
@@ -48,10 +49,19 @@ class ClientProxy
     worldServer.broadcastFromPlayer(client, message);
   }
   
-  static onRequestAllEntities(ClientProxy client, Message message)
+  static onHandshake(ClientProxy client, Message message)
   {
+    //create player entity in world
+    client.playerEntity = worldServer.registerPlayer(client);
+    
+    //send all entities
     for(Entity entity in worldServer.world.entities){
-      client.send(new Message(MessageType.ENTITY, entity));
+      if(entity == client.playerEntity) {
+        client.send(new Message(MessageType.PLAYER, entity));
+      }
+      else {
+        client.send(new Message(MessageType.ENTITY, entity));        
+      }
     }
   }
 }

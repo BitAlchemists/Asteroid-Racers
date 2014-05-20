@@ -1,6 +1,8 @@
 library world_server;
 
+import "package:vector_math/vector_math.dart";
 import "../shared/ar_shared.dart";
+
 
 part "client_proxy.dart";
 
@@ -21,7 +23,16 @@ class WorldServer {
   
   void disconnectClient(ClientProxy client){
     _clients.remove(client);
+    if(client.playerEntity != null){
+      _world.removeEntity(client.playerEntity);      
+    }
   }  
+  
+  Entity registerPlayer(ClientProxy client){
+     Entity player = new Entity(EntityType.SHIP, new Vector2.zero());
+     _world.addEntity(player);
+     return player;
+  }
   
   void broadcastFromPlayer(ClientProxy sender, Message message) {
     for(ClientProxy client in _clients) {
