@@ -32,7 +32,7 @@ class PlayerController extends EntityController  {
     //TODO: this can most propably be calculated in a simpler way. do it!
     Vector3 acceleration3 = 
       new Matrix4.identity().
-      rotateZ(_entity.orientation * Math.PI).
+      rotateZ(_entity.orientation).
       translate(direction.x, direction.y).
       getTranslation();
     
