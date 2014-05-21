@@ -12,7 +12,7 @@ class RenderHelper {
     graphics.lineTo(pos2.x, pos2.y);
     graphics.lineTo(pos3.x, pos3.y);
     graphics.lineTo(pos1.x, pos1.y);
-    graphics.strokeColor(stagexl.Color.Green);
+    graphics.strokeColor(stagexl.Color.LightGreen);
     graphics.closePath();        
   }
   
