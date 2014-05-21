@@ -1,10 +1,15 @@
+= Milestone 1 =
+*) Multiple Players connecting to the same server
+*) moving around
+*) seeing each other move around
+
+
+= Future =
 Common
 *) sanitize message handling
 
-
 Client
 *) add key buffering like in game_loop library and make it frame-based for more precise control over user input
-*) make Camera work again
 *) make console logging on client work
 
 Server
