@@ -4,17 +4,16 @@ class EntityController {
   final Entity _entity;
   Entity get entity => _entity;
   
-  final stagexl.Sprite _sprite = new stagexl.Sprite();
-  stagexl.Sprite get sprite => _sprite;
+  stagexl.Sprite sprite;
   
-  EntityController(Entity this._entity){
+  EntityController(Entity this._entity, this.sprite){
     updateSprite();
   }
   
   updateSprite(){
-    _sprite.x = _entity.position.x;
-    _sprite.y = _entity.position.y;
+    sprite.x = _entity.position.x;
+    sprite.y = _entity.position.y;
     
-    _sprite.rotation = _entity.orientation;
+    sprite.rotation = _entity.orientation;
   }
 }

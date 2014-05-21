@@ -2,19 +2,16 @@ part of web_client;
 
 class GameController implements stagexl.Animatable {
   PhysicsSimulator _simulator;
-  stagexl.Stage _stage;
+  final stagexl.Stage _stage;
   PlayerController _player;
-  World _world;
-  stagexl.Sprite _rootNode;
+  final stagexl.Sprite _rootNode = new stagexl.Sprite();
+  final Map<int, EntityController> _entityControllers = new Map<int, EntityController>(); //int is the entityId
   
-  GameController(stagexl.Stage stage) {
-    _stage = stage;
-    _simulator = new PhysicsSimulator();
-    _world = new World();
-    
-    _rootNode = new stagexl.Sprite();
+  GameController(this._stage) {
     _stage.addChild(_rootNode);
     _stage.backgroundColor = stagexl.Color.Black;
+    
+    _simulator = new PhysicsSimulator();
     
     _stage.juggler.add(this);    
   }
@@ -30,8 +27,8 @@ class GameController implements stagexl.Animatable {
   }
     
   void createPlayer(Entity entity){
-    _player = new PlayerController(entity);
-    _rootNode.addChild(_player.sprite);
+    stagexl.Sprite sprite = _createSprite(entity);
+    _player = new PlayerController(entity, sprite);
     
     _stage.onKeyDown.listen((stagexl.KeyboardEvent ke){
       switch(ke.keyCode)
@@ -54,18 +51,41 @@ class GameController implements stagexl.Animatable {
       }
     });
 
-    _simulator.addEntity(_player.entity);
+    _simulator.addEntity(_player.entity);   
   }
   
   void updateEntity(Entity entity) {
+    EntityController ec;
+    
+    if(!_entityControllers.containsKey(entity.id)){
+      stagexl.Sprite sprite = _createSprite(entity);
+      ec = new EntityController(entity, sprite);
+      _entityControllers[entity.id] = ec; 
+    }
+    else {
+      ec = _entityControllers[entity.id];
+    }
+    
+    ec.updateSprite();
+  }
+  
+  stagexl.Sprite _createSprite(Entity entity) {
+    
+    stagexl.Sprite sprite = new stagexl.Sprite();
 
-    switch(entity.type) {
+    
+    switch(entity.type){
       case EntityType.ASTEROID:
-        var asteroid = new EntityController(entity);
-        RenderHelper.applyAsteroid(asteroid.sprite.graphics);
-        _rootNode.addChild(asteroid.sprite);        
+        RenderHelper.applyAsteroid(sprite.graphics);
+        break;
+      case EntityType.SHIP:
+        RenderHelper.applyTriangle(sprite.graphics);
         break;
     }
+    
+    _rootNode.addChild(sprite);
+    
+    return sprite;
   }
 }
 

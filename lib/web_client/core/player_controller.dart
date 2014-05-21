@@ -5,10 +5,7 @@ class PlayerController extends EntityController  {
   final double _rotationSpeed = 10.0;
 
 
-  PlayerController(Entity entity) : super(entity) {
-    RenderHelper.applyTriangle(_sprite.graphics);
-  }
- 
+  PlayerController(entity, sprite) : super(entity, sprite); 
 
   static num count = 0;
   void rotateLeft(){
