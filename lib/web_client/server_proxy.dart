@@ -28,6 +28,10 @@ class ServerProxy {
       _serverConnection.send(message);
   }
   
+  send(Message message){
+    _serverConnection.send(message);
+  }
+  
   _onReceiveMessage(Message message) {
     try {      
       if(message.messageType == null) {

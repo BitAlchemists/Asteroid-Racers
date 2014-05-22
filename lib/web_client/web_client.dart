@@ -19,7 +19,6 @@ part "core/entity_controller.dart";
 part 'core/player_controller.dart';
 
 part 'core/render_helper.dart';
-part 'graphics/camera.dart';
 
 part 'physics/physics_simulator.dart';
 
@@ -51,6 +50,7 @@ runClient(html.CanvasElement canvas, [bool localServer = true]) {
    
   ServerProxy server = new ServerProxy(serverConnection, gameController);
   server.connect();
+  gameController.server = server;
   
   ChatController chat = new ChatController();
   chat.onSendChatMesage.listen(serverConnection.send);

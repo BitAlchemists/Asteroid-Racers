@@ -1,19 +1,28 @@
 = Milestone 1  v0.1 =
-*) Multiple Players connecting to the same server
-*) moving around
-*) seeing each other move around
++ Multiple Players connecting to the same server
++ moving around
++ seeing each other move around
 
-ToDo:
-+ send player position to server
-+ remove disconnected players
+Known Issues:
+- Players are sometimes beeing cloned 
 
 = v0.2 =
-
++ remove disconnected players
 + allow players to set the name on login
-+ show player names next to the playern
++ show player names next to the player
 ~ make sure chat works as intended
++ show own coordinates
+
+= Bugs =
+- Players are beeing cloned
 
 = Future =
+
+Wishes:
++ colission detection
++ player list with coordinates
++ Player colors
+
 Common
 *) sanitize message handling
 

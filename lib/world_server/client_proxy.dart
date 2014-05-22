@@ -9,7 +9,8 @@ class ClientProxy
   static final Map<String, MessageHandler> _messageHandlers = 
     {
       MessageType.CHAT: onChatMessage,
-      MessageType.HANDSHAKE: onHandshake
+      MessageType.HANDSHAKE: onHandshake,
+      MessageType.PLAYER: onPlayerUpdate
     };
   Entity playerEntity;
   
@@ -41,6 +42,9 @@ class ClientProxy
     catch (e)
     {
       print("exception during ClientProxy.onMessage: ${e.toString()}");
+      if(message.messageType != null){
+        print("affected message type: ${message.messageType}");  
+      }
     }
   }
   
@@ -55,7 +59,7 @@ class ClientProxy
     client.playerEntity = worldServer.registerPlayer(client);
     
     //send all entities
-    for(Entity entity in worldServer.world.entities){
+    for(Entity entity in worldServer.world.entities.values){
       if(entity == client.playerEntity) {
         client.send(new Message(MessageType.PLAYER, entity));
       }
@@ -63,5 +67,11 @@ class ClientProxy
         client.send(new Message(MessageType.ENTITY, entity));        
       }
     }
+  }
+  
+  static onPlayerUpdate(ClientProxy client, Message message){
+    Entity entity = new Entity.fromJson(message.payload);
+
+    worldServer.updateEntity(entity);
   }
 }

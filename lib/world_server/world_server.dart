@@ -41,4 +41,10 @@ class WorldServer {
       }
     }
   }
+  
+  void updateEntity(Entity entity){
+    for(ClientProxy client in _clients) {
+      client.send(new Message(MessageType.ENTITY, entity));
+    }
+  }
 }

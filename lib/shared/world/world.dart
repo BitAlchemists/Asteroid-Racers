@@ -2,8 +2,8 @@ part of ar_shared;
 
 class World
 {
-  final List<Entity> _entities = new List<Entity>();
-  List<Entity> get entities => _entities;
+  final Map<int, Entity> _entities = new Map<int, Entity>();
+  Map<int, Entity> get entities => _entities;
   int _nextEntityId = 0;
   
   World();
@@ -11,11 +11,11 @@ class World
   void addEntity(Entity entity)
   {
     entity.id = _nextEntityId++;
-    _entities.add(entity);
+    _entities[entity.id] = entity;
   }
   
   void removeEntity(Entity entity){
-    _entities.remove(entity);
+    _entities.remove(entity.id);
   }
   
   void generateAsteroidBelt(int count, int xDistance, int yDistance) {

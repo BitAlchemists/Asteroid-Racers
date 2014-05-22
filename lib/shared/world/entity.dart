@@ -19,11 +19,11 @@ class Entity
   Entity.fromJson(List list){
     id = list[0];
     type = list[1];
-    position = new Vector2(list[2], list[3]);
-    rotationSpeed = list[4];
-    orientation = list[5];
-    acceleration = new Vector2(list[6], list[7]);
-    velocity = new Vector2(list[8], list[9]);
+    position = new Vector2((list[2] as num).toDouble(), (list[3] as num).toDouble());
+    rotationSpeed = (list[4] as num).toDouble();
+    orientation = (list[5] as num).toDouble();
+    acceleration = new Vector2((list[6] as num).toDouble(), (list[7] as num).toDouble());
+    velocity = new Vector2((list[8] as num).toDouble(), (list[9] as num).toDouble());
   }
   
   toJson(){
@@ -39,5 +39,15 @@ class Entity
                      velocity.x,    //8
                      velocity.y];   //9
     return list;// JSON.encode(list);
+  }
+  
+  void copyFrom(Entity entity) {
+    id = entity.id;
+    type = entity.type;
+    position = entity.position;
+    rotationSpeed = entity.rotationSpeed;
+    orientation = entity.orientation;
+    acceleration = entity.acceleration;
+    velocity = entity.velocity;
   }
 }

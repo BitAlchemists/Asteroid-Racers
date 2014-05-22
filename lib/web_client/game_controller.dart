@@ -7,6 +7,8 @@ class GameController implements stagexl.Animatable {
   final stagexl.Sprite _rootNode = new stagexl.Sprite();
   final Map<int, EntityController> _entityControllers = new Map<int, EntityController>(); //int is the entityId
   
+  ServerProxy server;
+  
   GameController(this._stage) {
     _stage.addChild(_rootNode);
     _stage.backgroundColor = stagexl.Color.Black;
@@ -22,6 +24,10 @@ class GameController implements stagexl.Animatable {
       _player.updateSprite();
       _rootNode.x = _stage.stageWidth/2.0 -_player.sprite.x;
       _rootNode.y = _stage.stageHeight/2.0 -_player.sprite.y;
+      
+      if(server != null){
+        server.send(new Message(MessageType.PLAYER, _player.entity));
+      }
     }
     return true;
   }
@@ -65,6 +71,8 @@ class GameController implements stagexl.Animatable {
     else {
       ec = _entityControllers[entity.id];
     }
+    
+    ec.entity.copyFrom(entity);
     
     ec.updateSprite();
   }
