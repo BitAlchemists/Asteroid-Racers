@@ -1,8 +1,17 @@
-= Milestone 1 =
+= Milestone 1  v0.1 =
 *) Multiple Players connecting to the same server
 *) moving around
 *) seeing each other move around
 
+ToDo:
++ send player position to server
++ remove disconnected players
+
+= v0.2 =
+
++ allow players to set the name on login
++ show player names next to the playern
+~ make sure chat works as intended
 
 = Future =
 Common
@@ -15,3 +24,7 @@ Client
 Server
 *) make server side file logger work again
 *) make sure the StaticFileHandler does not expose files out of its baseFolder scope
+
+Racing Mode
+*) create different scene controllers for different playing modes?
+*) move control over position to server
