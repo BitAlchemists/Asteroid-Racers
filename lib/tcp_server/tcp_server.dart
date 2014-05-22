@@ -26,6 +26,8 @@ Future runServer(String webPath, String logPath, int port) {
   return HttpServer.bind('0.0.0.0', port).then((HttpServer server) {
     print('listening for connections on $port');
         
+    ClientProxy.worldServer = new WorldServer();
+    
     //begin to listen for connections
     server.listen((HttpRequest request) {
       try {

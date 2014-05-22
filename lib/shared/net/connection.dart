@@ -5,4 +5,5 @@ abstract class Connection {
   Function onDisconnectDelegate;
   
   void send(Message message);
+  void disconnect();
 }

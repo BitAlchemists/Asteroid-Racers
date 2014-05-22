@@ -11,7 +11,15 @@ import '../lib/web_client/web_client.dart';
 void main() {  
   CanvasElement canvas = querySelector('#gamecanvas');
   canvas.width = canvas.clientWidth;
-  runClient(canvas, true);
+  
+  GameConfig config = new GameConfig();
+  config.localServer = false;
+  config.debugJson = true;
+  
+  GameController gameController = new GameController(config);
+  gameController.setup(canvas);
+  gameController.start();
+
 }
 
 

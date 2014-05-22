@@ -9,11 +9,15 @@ Known Issues:
 = v0.2 =
 Done:
 + remove disconnected players
++ add connect/disconnect buttons
++ players may select a username before connecting
++ give a random username if the user does not provide one
++ player names are shown next to the model
 
 ToDo:
-+ allow players to set the name on login
-+ show player names next to the player
-~ make sure chat works as intended
+- make sure position updates are only sent when the position updates
+~ make chat work again
+~ make console logging on client work
 + show own coordinates
 
 = Bugs =
@@ -32,8 +36,6 @@ Common
 
 Client
 + add key buffering like in game_loop library and make it frame-based for more precise control over user input
-~ make console logging on client work
-~ make sure reconnects are handled correctly
 
 Server
 ~ make server side file logger work again

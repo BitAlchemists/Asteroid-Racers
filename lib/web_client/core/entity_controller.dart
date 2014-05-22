@@ -29,6 +29,7 @@ class EntityController {
       textField.textColor = stagexl.Color.White;
       textField.y = 10;
       textField.x = - textField.textWidth / 2.0;
+      textField.width = textField.textWidth;
       sprite.addChild(textField);
     }
     

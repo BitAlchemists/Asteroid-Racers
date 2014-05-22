@@ -20,19 +20,39 @@ class WebSocketServerConnection implements ServerConnection {
     log("Connecting to Web socket");
     _webSocket = new html.WebSocket(_url);
 
+    bool isConnecting = true;
+    
     _webSocket.onOpen.listen((e) {
       log('Connected');
+      isConnecting = false;
       _onConnectCompleter.complete();
     });
+    
+    onDisconnect(e){
+      if(isConnecting){
+        _onConnectCompleter.completeError(e);
+      }
+      else
+      {
+        onDisconnectDelegate();        
+      }
+    }
 
-    _webSocket.onClose.listen((e) => onDisconnectDelegate());
-    _webSocket.onError.listen((e) => onDisconnectDelegate());
+    _webSocket.onClose.listen(onDisconnect);
+    _webSocket.onError.listen(onDisconnect);
 
     _webSocket.onMessage.listen(_onReceiveMessage);  
     
     return _onConnectCompleter.future;
   }
+ 
 
+  void disconnect(){
+    _webSocket.close();
+    _webSocket = null;
+    this.onDisconnectDelegate();
+    this.onDisconnectDelegate = null;
+  }
 
   // Message handling
   void send(Message message) {

@@ -1,33 +1,103 @@
 part of web_client;
 
+class GameConfig {
+  bool localServer;
+  bool debugJson;
+}
+
 class GameController implements stagexl.Animatable {
+  GameConfig _config;
   PhysicsSimulator _simulator;
-  final stagexl.Stage _stage;
+  stagexl.Stage _stage;
   PlayerController _player;
-  final stagexl.Sprite _rootNode = new stagexl.Sprite();
+  stagexl.Sprite _rootNode;
+  html.ButtonElement _connectButton;
   final Map<int, EntityController> _entityControllers = new Map<int, EntityController>(); //int is the entityId
   
   ServerProxy server;
   
-  GameController(this._stage) {
-    _stage.addChild(_rootNode);
+  GameController(this._config) {    
+    _simulator = new PhysicsSimulator();  
+    
+    _connectButton = html.querySelector("#connect-button");
+    _connectButton.onClick.listen((_)=>_onTapConnect());
+
+    /*
+    ChatController chat = new ChatController();
+    chat.onSendChatMesage.listen(server.connection.send);
+    server.connection.onReceiveMessage.where((Message message) => message.messageType == chat.messageType).listen(chat.onReceiveMessage);
+    */
+    server = new ServerProxy(this);
+    server.onDisconnectDelegate = _onDisconnect;
+  }
+  
+  setup(html.CanvasElement canvas){
+    _stage = new stagexl.Stage(canvas);
     _stage.backgroundColor = stagexl.Color.Black;
-    
-    _simulator = new PhysicsSimulator();
-    
-    _stage.juggler.add(this);    
+    _stage.doubleClickEnabled = true;
+    var renderLoop = new stagexl.RenderLoop();
+    renderLoop.addStage(_stage);
+    _stage.focus = _stage; 
+  }
+  
+  _onTapConnect(){
+    switch(server.state){
+        case ServerConnectionState.DISCONNECTED:
+          start();
+          break;
+        case ServerConnectionState.IS_CONNECTING:
+          break;
+        case ServerConnectionState.CONNECTED:
+          stop();
+          break;
+      }
+  }
+  
+  _updateConnectButton(){
+    switch(server.state){
+      case ServerConnectionState.DISCONNECTED:
+        _connectButton.text = "Connect";
+        break;
+      case ServerConnectionState.IS_CONNECTING:
+        _connectButton.text = "Connecting...";
+        break;
+      case ServerConnectionState.CONNECTED:
+        _connectButton.text = "Disconnect";
+        break;
+    }
   }
   
   start(){
-    html.InputElement usernameField = html.querySelector("#chat-username");
-    String username = usernameField.text;
-    if(username == null || username == ""){
-      username = "Bernd";
-    }
+    _rootNode = new stagexl.Sprite();
+    _stage.addChild(_rootNode);
+    _stage.juggler.add(this);    
     
-    server.connect(username);
+    html.InputElement usernameField = html.querySelector("#chat-username");
+    String username = usernameField.value;
+    
+    server.connect(_config.localServer, _config.debugJson, username).then((_){
+      _updateConnectButton();
+    });
+    
+    _updateConnectButton();
   }
-
+  
+  stop(){
+    server.disconnect();
+  }
+  
+  _onDisconnect(){
+    _updateConnectButton();
+    _stage.juggler.remove(this);
+    _rootNode.removeFromParent();
+    _rootNode = null;
+    
+    _player = null;    
+    _simulator.reset();
+    
+    _entityControllers.clear();
+  }
+  
   bool advanceTime(num time){
     _simulator.simulate(time);
     if(_player != null) {

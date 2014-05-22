@@ -10,6 +10,9 @@ class PhysicsSimulator {
     _entities.add(entity);
   }
   
+  void reset(){
+    _entities.clear();
+  }
   
   void simulate(num dt) {
     

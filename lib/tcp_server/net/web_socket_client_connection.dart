@@ -16,8 +16,14 @@ class WebSocketClientConnection implements Connection {
     _webSocket.listen(_onReceiveMessage, onDone: _onDisconnect, onError: _onDisconnect);
   }
   
+  disconnect(){
+    _webSocket.close();
+    _onDisconnect();
+  }
+  
   _onDisconnect([e]){
     this.onDisconnectDelegate(e);
+    this.onDisconnectDelegate = null;
   }
   
   // Message Handling

@@ -1,5 +1,7 @@
 library world_server;
 
+import "dart:math" as Math;
+
 import "package:vector_math/vector_math.dart";
 import "../shared/ar_shared.dart";
 
@@ -14,7 +16,6 @@ class WorldServer {
   
   WorldServer(){
     _world.generateAsteroidBelt(500, 2000, 2000);  
-    ClientProxy.worldServer = this;
   }
   
   void connectClient(ClientProxy client){
@@ -64,6 +65,7 @@ class WorldServer {
   }
   
   void updatePlayerEntity(ClientProxy client, Entity entity){
+    print("Updating player entity");
     Entity playerEntity = _world.entities[client.playerEntity.id];
     playerEntity.copyFrom(entity);
     

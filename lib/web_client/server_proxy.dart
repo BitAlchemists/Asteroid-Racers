@@ -2,19 +2,24 @@ part of web_client;
 
 typedef void MessageHandler(Message message);
 
+class ServerConnectionState {
+  static const int DISCONNECTED = 0;
+  static const int IS_CONNECTING = 1;
+  static const int CONNECTED = 2; 
+}
+
 class ServerProxy {
   ServerConnection _serverConnection;
   GameController _gameController;
   Map<String, MessageHandler> _messageHandlers;
-  int _retrySeconds = 2;
-  bool _encounteredError = false;
-  String _desiredUsername = null;
+  Function onDisconnectDelegate;
+  int _state = ServerConnectionState.DISCONNECTED;
   
-  ServerProxy(this._serverConnection, this._gameController)
-  {
-    _serverConnection.onReceiveMessage.listen(_onReceiveMessage);
-    _serverConnection.onDisconnectDelegate = _onDisconnect;
-    
+  int get state => _state;
+  ServerConnection get connection => _serverConnection;
+  
+  ServerProxy(this._gameController)
+  {    
     _messageHandlers = 
       {
         MessageType.ENTITY: this._onEntity,
@@ -23,34 +28,64 @@ class ServerProxy {
       };
   }
   
-  connect(String desiredUsername){
-    _desiredUsername = desiredUsername;
-    _serverConnection.connect().then((_) => _onConnect());
-  }
-  
-  _onConnect(){
-      Message message = new Message(MessageType.HANDSHAKE, _desiredUsername);
-      _serverConnection.send(message);
-  }
-  
-  // TODO: if we are going to do a handshake again, remove all objects.
-  _onDisconnect(){
-    //reconnect
-    log('web socket closed, retrying in $_retrySeconds seconds');
-    if (!_encounteredError) {
-      _retrySeconds *= 2;
-      new Timer(new Duration(seconds:_retrySeconds),_serverConnection.connect);
+  Future connect(bool local, bool debugJson, String desiredUsername)
+  {
+    if(local) {
+      _serverConnection = localConnection(debugJson);    
     }
-    _encounteredError = true;    
+    else
+    {
+      _serverConnection = webConnection();  
+    }
+    
+    _serverConnection.onReceiveMessage.listen(_onReceiveMessage);
+    _serverConnection.onDisconnectDelegate = _onDisconnect;
+    
+    _state = ServerConnectionState.IS_CONNECTING;
+    return _serverConnection.connect().then((_){
+      _state = ServerConnectionState.CONNECTED;
+      Message message = new Message(MessageType.HANDSHAKE, desiredUsername);
+      _serverConnection.send(message);        
+    });
   }
   
-  send(Message message){
+  Connection webConnection()
+  {
+    ServerConnection server;
+    var domain = html.document.domain;
+    html.Location location = html.window.location;
+    var port = 1337;
+    var wsPath = "ws://" + location.hostname + ":" + port.toString() + "/ws";
+    return new WebSocketServerConnection(wsPath);
+  }
+
+  Connection localConnection(bool debug)
+  {
+    return new LocalServerConnection(debug);
+  }
+  
+  disconnect()
+  {
+    _serverConnection.disconnect();
+  }
+  
+  _onDisconnect()
+  {
+    _state = ServerConnectionState.DISCONNECTED;
+    _serverConnection = null;
+    this.onDisconnectDelegate();
+  }
+  
+  send(Message message)
+  {
     _serverConnection.send(message);
   }
   
-  _onReceiveMessage(Message message) {
+  _onReceiveMessage(Message message) 
+  {
     try {      
-      if(message.messageType == null) {
+      if(message.messageType == null) 
+      {
         print("message type == null");
         //TODO: disconnect this client
         return;
@@ -88,3 +123,18 @@ class ServerProxy {
     _gameController.createPlayer(entity);
   }
 }
+
+/*
+
+//reconnect
+log('web socket closed, retrying in $_retrySeconds seconds');
+if (!_encounteredError) {
+  _retrySeconds *= 2;
+  new Timer(new Duration(seconds:_retrySeconds),_serverConnection.connect);
+}
+_encounteredError = true;    
+* 
+*   int _retrySeconds = 2;
+  bool _encounteredError = false;
+
+*/
