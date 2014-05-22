@@ -29,6 +29,12 @@ class RenderHelper {
     graphics.beginPath();
     Vector2 firstVertex = null;
     
+    List colors = [stagexl.Color.Yellow, 
+                         stagexl.Color.Brown, 
+                         stagexl.Color.Orange,
+                         stagexl.Color.Wheat,
+                         stagexl.Color.Red];
+    
     for(int i = 0; i < numVertices; i++) {
       num angle = (i.toDouble() / numVertices.toDouble());
       num radius = random.nextDouble() * (outerRadius - innerRadius) + innerRadius;
@@ -41,11 +47,16 @@ class RenderHelper {
       }
       else {
         graphics.lineTo(vector.x, vector.y);
+        var i = random.nextInt(colors.length);
+        var color = colors[i];
+        graphics.strokeColor(color);
       }
     }
     
     graphics.lineTo(firstVertex.x, firstVertex.y);
-    graphics.strokeColor(stagexl.Color.Yellow);
+    var i = random.nextInt(colors.length);
+    var color = colors[i];
+    graphics.strokeColor(color);
     graphics.closePath();        
 
   }
