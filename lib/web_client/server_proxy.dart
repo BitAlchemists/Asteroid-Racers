@@ -6,10 +6,14 @@ class ServerProxy {
   ServerConnection _serverConnection;
   GameController _gameController;
   Map<String, MessageHandler> _messageHandlers;
+  int _retrySeconds = 2;
+  bool _encounteredError = false;
+
   
   ServerProxy(this._serverConnection, this._gameController)
   {
     _serverConnection.onReceiveMessage.listen(_onReceiveMessage);
+    _serverConnection.onDisconnectDelegate = _onDisconnect;
     
     _messageHandlers = 
       {
@@ -26,6 +30,16 @@ class ServerProxy {
       Message message = new Message();
       message.messageType = MessageType.HANDSHAKE;
       _serverConnection.send(message);
+  }
+  
+  _onDisconnect(){
+    //reconnect
+    log('web socket closed, retrying in $_retrySeconds seconds');
+    if (!_encounteredError) {
+      _retrySeconds *= 2;
+      new Timer(new Duration(seconds:_retrySeconds),_serverConnection.connect);
+    }
+    _encounteredError = true;    
   }
   
   send(Message message){

@@ -16,6 +16,11 @@ class ClientProxy
   
   ClientProxy(this._connection){
     _connection.onReceiveMessage.listen(onMessage);
+    _connection.onDisconnectDelegate = _onDisconnect;
+  }
+  
+  _onDisconnect([e]){
+    worldServer.disconnectClient(this);
   }
   
   void send(Message message) {

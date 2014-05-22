@@ -22,18 +22,20 @@ Wishes:
 + colission detection
 + player list with coordinates
 + Player colors
++ show other players directions when they are out of screen
 
 Common
-*) sanitize message handling
+~ sanitize message handling
 
 Client
-*) add key buffering like in game_loop library and make it frame-based for more precise control over user input
-*) make console logging on client work
++ add key buffering like in game_loop library and make it frame-based for more precise control over user input
+~ make console logging on client work
+~ make sure reconnects are handled correctly
 
 Server
-*) make server side file logger work again
-*) make sure the StaticFileHandler does not expose files out of its baseFolder scope
+~ make server side file logger work again
++ make sure the StaticFileHandler does not expose files out of its baseFolder scope
 
 Racing Mode
-*) create different scene controllers for different playing modes?
-*) move control over position to server
++ create different scene controllers for different playing modes?
++ move control over position to server

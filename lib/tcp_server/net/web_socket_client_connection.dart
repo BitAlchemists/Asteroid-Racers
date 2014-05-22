@@ -8,15 +8,16 @@ class WebSocketClientConnection implements Connection {
 
   // Public Properties
   Stream<Message> get onReceiveMessage => _receiveMessageStreamController.stream;
+  Function onDisconnectDelegate;
   
   // ctor
   WebSocketClientConnection(this._webSocket)
   {
-    _webSocket.listen(_onReceiveMessage
-    //,
-    //      onDone: () => _connections.remove(webSocket),
-    //      onError: (e) => _connections.remove(webSocket)
-    );
+    _webSocket.listen(_onReceiveMessage, onDone: _onDisconnect, onError: _onDisconnect);
+  }
+  
+  _onDisconnect([e]){
+    this.onDisconnectDelegate(e);
   }
   
   // Message Handling

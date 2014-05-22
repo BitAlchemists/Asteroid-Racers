@@ -21,9 +21,6 @@ class WebSocketClientConnectionManager {
     
     Connection connection = new WebSocketClientConnection(webSocket);
     ClientProxy clientProxy = new ClientProxy(connection);
-    _worldServer.connectClient(clientProxy);
-    
-    print('new ws conn');
-    //_connections.add(connection);
+    _worldServer.connectClient(clientProxy);    
   }
 }

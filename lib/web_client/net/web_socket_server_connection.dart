@@ -4,13 +4,13 @@ class WebSocketServerConnection implements ServerConnection {
   //Private Fields
   html.WebSocket _webSocket;
   String _url;
-  int _retrySeconds = 2;
-  bool _encounteredError = false;
+  
   Completer _onConnectCompleter = new Completer();
   final StreamController<Message> _receiveMessageStreamController = new StreamController<Message>.broadcast();
   
   //Public properties
   Stream<Message> get onReceiveMessage => _receiveMessageStreamController.stream;
+  Function onDisconnectDelegate;
   
   //ctor
   WebSocketServerConnection(this._url);
@@ -25,22 +25,14 @@ class WebSocketServerConnection implements ServerConnection {
       _onConnectCompleter.complete();
     });
 
-    _webSocket.onClose.listen((e) => _scheduleReconnect());
-    _webSocket.onError.listen((e) => _scheduleReconnect());
+    _webSocket.onClose.listen((e) => onDisconnectDelegate());
+    _webSocket.onError.listen((e) => onDisconnectDelegate());
 
     _webSocket.onMessage.listen(_onReceiveMessage);  
     
     return _onConnectCompleter.future;
   }
 
-  _scheduleReconnect() {
-    log('web socket closed, retrying in $_retrySeconds seconds');
-    if (!_encounteredError) {
-      _retrySeconds *= 2;
-      new Timer(new Duration(seconds:_retrySeconds),connect);
-    }
-    _encounteredError = true;
-  }
 
   // Message handling
   void send(Message message) {

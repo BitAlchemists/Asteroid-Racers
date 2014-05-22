@@ -18,10 +18,12 @@ class WorldServer {
   }
   
   void connectClient(ClientProxy client){
+    print("player connected");
     _clients.add(client);
   }
   
   void disconnectClient(ClientProxy client){
+    print("player disconnected");
     _clients.remove(client);
     if(client.playerEntity != null){
       _world.removeEntity(client.playerEntity);      

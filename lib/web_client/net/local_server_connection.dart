@@ -10,6 +10,7 @@ class LocalServerConnection implements ServerConnection {
   final StreamController<Message> _receiveMessageStreamController = new StreamController<Message>.broadcast();
   
   Stream<Message> get onReceiveMessage => _receiveMessageStreamController.stream;
+  Function onDisconnectDelegate;
   
   LocalServerConnection([bool this._debug = false]);
   LocalServerConnection._inverse(this._inverseConnection, this._debug);
@@ -20,6 +21,7 @@ class LocalServerConnection implements ServerConnection {
     _clientProxy = new ClientProxy(_inverseConnection);
     return new Future.value();
   }
+  
   
   void send(var message){
     if(_debug) {
