@@ -17,6 +17,16 @@ class GameController implements stagexl.Animatable {
     
     _stage.juggler.add(this);    
   }
+  
+  start(){
+    html.InputElement usernameField = html.querySelector("#chat-username");
+    String username = usernameField.text;
+    if(username == null || username == ""){
+      username = "Bernd";
+    }
+    
+    server.connect(username);
+  }
 
   bool advanceTime(num time){
     _simulator.simulate(time);
@@ -33,8 +43,8 @@ class GameController implements stagexl.Animatable {
   }
     
   void createPlayer(Entity entity){
-    stagexl.Sprite sprite = _createSprite(entity);
-    _player = new PlayerController(entity, sprite);
+    _player = new PlayerController(entity);
+    _rootNode.addChild(_player.sprite);
     
     _stage.onKeyDown.listen((stagexl.KeyboardEvent ke){
       switch(ke.keyCode)
@@ -64,8 +74,8 @@ class GameController implements stagexl.Animatable {
     EntityController ec;
     
     if(!_entityControllers.containsKey(entity.id)){
-      stagexl.Sprite sprite = _createSprite(entity);
-      ec = new EntityController(entity, sprite);
+      ec = new EntityController(entity);
+      _rootNode.addChild(ec.sprite);
       _entityControllers[entity.id] = ec; 
     }
     else {
@@ -84,25 +94,6 @@ class GameController implements stagexl.Animatable {
       _rootNode.removeChild(ec.sprite);
       _entityControllers.remove(entityId);
     }
-  }
-  
-  stagexl.Sprite _createSprite(Entity entity) {
-    
-    stagexl.Sprite sprite = new stagexl.Sprite();
-
-    
-    switch(entity.type){
-      case EntityType.ASTEROID:
-        RenderHelper.applyAsteroid(sprite.graphics);
-        break;
-      case EntityType.SHIP:
-        RenderHelper.applyTriangle(sprite.graphics);
-        break;
-    }
-    
-    _rootNode.addChild(sprite);
-    
-    return sprite;
   }
 }
 

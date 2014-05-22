@@ -11,7 +11,7 @@ import '../lib/web_client/web_client.dart';
 void main() {  
   CanvasElement canvas = querySelector('#gamecanvas');
   canvas.width = canvas.clientWidth;
-  runClient(canvas, false);
+  runClient(canvas, true);
 }
 
 

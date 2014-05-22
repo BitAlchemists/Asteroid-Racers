@@ -8,9 +8,9 @@ Known Issues:
 
 = v0.2 =
 Done:
++ remove disconnected players
 
 ToDo:
-+ remove disconnected players
 + allow players to set the name on login
 + show player names next to the player
 ~ make sure chat works as intended

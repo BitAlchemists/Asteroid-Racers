@@ -51,10 +51,12 @@ class WorldServer {
     }
   }
   
-  Entity registerPlayer(ClientProxy client){
-     Entity player = new Entity(EntityType.SHIP, new Vector2.zero());
-     _world.addEntity(player);
-     return player;
+  Entity registerPlayer(ClientProxy client, String desiredUsername){
+    print("player identifies as $desiredUsername");    
+    Entity player = new Entity(EntityType.SHIP, new Vector2.zero());
+    player.displayName = desiredUsername;
+    _world.addEntity(player);
+    return player;
   }
   
   void broadcastFromPlayer(ClientProxy sender, Message message) {

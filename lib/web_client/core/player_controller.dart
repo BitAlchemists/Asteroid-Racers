@@ -5,7 +5,7 @@ class PlayerController extends EntityController  {
   final double _rotationSpeed = 10.0;
 
 
-  PlayerController(entity, sprite) : super(entity, sprite); 
+  PlayerController(entity) : super(entity); 
 
   static num count = 0;
   void rotateLeft(){

@@ -49,12 +49,13 @@ runClient(html.CanvasElement canvas, [bool localServer = true]) {
   }
    
   ServerProxy server = new ServerProxy(serverConnection, gameController);
-  server.connect();
   gameController.server = server;
   
   ChatController chat = new ChatController();
   chat.onSendChatMesage.listen(serverConnection.send);
   serverConnection.onReceiveMessage.where((Message message) => message.messageType == chat.messageType).listen(chat.onReceiveMessage);
+  
+  gameController.start();
 }
 
 Connection webConnection(){

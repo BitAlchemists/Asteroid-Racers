@@ -9,6 +9,7 @@ class Entity
 {
   int id;
   String type;
+  String displayName;
   Vector2 position;
   double rotationSpeed = 0.0;
   double orientation = 0.0;
@@ -24,20 +25,22 @@ class Entity
     orientation = (list[5] as num).toDouble();
     acceleration = new Vector2((list[6] as num).toDouble(), (list[7] as num).toDouble());
     velocity = new Vector2((list[8] as num).toDouble(), (list[9] as num).toDouble());
+    displayName = list[10];
   }
   
   toJson(){
     List list = [
-                     id,            //0
-                     type,          //1
-                     position.x,    //2
-                     position.y,    //3
-                     rotationSpeed, //4
-                     orientation,   //5
-                     acceleration.x,//6
-                     acceleration.y,//7
-                     velocity.x,    //8
-                     velocity.y];   //9
+                     id,            // 0
+                     type,          // 1
+                     position.x,    // 2
+                     position.y,    // 3
+                     rotationSpeed, // 4
+                     orientation,   // 5
+                     acceleration.x,// 6
+                     acceleration.y,// 7
+                     velocity.x,    // 8
+                     velocity.y,    // 9
+                     displayName];  //10
     return list;// JSON.encode(list);
   }
   
@@ -49,5 +52,6 @@ class Entity
     orientation = entity.orientation;
     acceleration = entity.acceleration;
     velocity = entity.velocity;
+    displayName = entity.displayName;
   }
 }

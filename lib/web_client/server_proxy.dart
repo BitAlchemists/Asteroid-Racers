@@ -8,7 +8,7 @@ class ServerProxy {
   Map<String, MessageHandler> _messageHandlers;
   int _retrySeconds = 2;
   bool _encounteredError = false;
-
+  String _desiredUsername = null;
   
   ServerProxy(this._serverConnection, this._gameController)
   {
@@ -23,16 +23,17 @@ class ServerProxy {
       };
   }
   
-  connect(){
+  connect(String desiredUsername){
+    _desiredUsername = desiredUsername;
     _serverConnection.connect().then((_) => _onConnect());
   }
   
   _onConnect(){
-      Message message = new Message();
-      message.messageType = MessageType.HANDSHAKE;
+      Message message = new Message(MessageType.HANDSHAKE, _desiredUsername);
       _serverConnection.send(message);
   }
   
+  // TODO: if we are going to do a handshake again, remove all objects.
   _onDisconnect(){
     //reconnect
     log('web socket closed, retrying in $_retrySeconds seconds');

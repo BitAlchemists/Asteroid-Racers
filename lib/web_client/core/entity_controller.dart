@@ -4,10 +4,35 @@ class EntityController {
   final Entity _entity;
   Entity get entity => _entity;
   
-  stagexl.Sprite sprite;
+  stagexl.Sprite _sprite = new stagexl.Sprite();
+  stagexl.Sprite get sprite => _sprite;
   
-  EntityController(Entity this._entity, this.sprite){
+  EntityController(Entity this._entity){
+    _createSprite(_entity);
     updateSprite();
+  }
+  
+  stagexl.Sprite _createSprite(Entity entity) {
+    switch(entity.type){
+      case EntityType.ASTEROID:
+        RenderHelper.applyAsteroid(sprite.graphics);
+        break;
+      case EntityType.SHIP:
+        RenderHelper.applyTriangle(sprite.graphics);
+        break;
+    }
+        
+    if(entity.displayName != null && entity.displayName != "")
+    {
+      stagexl.TextField textField = new stagexl.TextField();
+      textField.text = entity.displayName;
+      textField.textColor = stagexl.Color.White;
+      textField.y = 10;
+      textField.x = - textField.textWidth / 2.0;
+      sprite.addChild(textField);
+    }
+    
+    return sprite;
   }
   
   updateSprite(){

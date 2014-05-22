@@ -53,15 +53,10 @@ class ClientProxy
     }
   }
   
-  static onChatMessage(ClientProxy client, Message message)
-  {
-    worldServer.broadcastFromPlayer(client, message);
-  }
-  
   static onHandshake(ClientProxy client, Message message)
   {
     //create player entity in world
-    client.playerEntity = worldServer.registerPlayer(client);
+    client.playerEntity = worldServer.registerPlayer(client, message.payload);
     
     //send all entities
     for(Entity entity in worldServer.world.entities.values){
@@ -72,6 +67,11 @@ class ClientProxy
         client.send(new Message(MessageType.ENTITY, entity));        
       }
     }
+  }
+  
+  static onChatMessage(ClientProxy client, Message message)
+  {
+    worldServer.broadcastFromPlayer(client, message);
   }
   
   static onPlayerUpdate(ClientProxy client, Message message){
