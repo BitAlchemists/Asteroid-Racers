@@ -18,6 +18,7 @@ class ServerProxy {
     _messageHandlers = 
       {
         MessageType.ENTITY: this._onEntity,
+        MessageType.ENTITY_REMOVE: this._onEntityRemove,
         MessageType.PLAYER: this._onPlayer
       };
   }
@@ -69,16 +70,20 @@ class ServerProxy {
     }
   }
   
-  _onPlayer(Message message)
+  _onEntityRemove(Message message)
   {
-    Entity entity = new Entity.fromJson(message.payload);
-    _gameController.createPlayer(entity);
+    _gameController.removeEntity(message.payload);
   }
 
-  
   _onEntity(Message message)
   {
     Entity entity = new Entity.fromJson(message.payload);
     _gameController.updateEntity(entity);
+  }
+  
+  _onPlayer(Message message)
+  {
+    Entity entity = new Entity.fromJson(message.payload);
+    _gameController.createPlayer(entity);
   }
 }

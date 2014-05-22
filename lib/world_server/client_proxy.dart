@@ -77,6 +77,12 @@ class ClientProxy
   static onPlayerUpdate(ClientProxy client, Message message){
     Entity entity = new Entity.fromJson(message.payload);
 
-    worldServer.updateEntity(entity);
+    if(client.playerEntity.id != entity.id){
+      print("client attempting to update entity other than itself");
+      worldServer.disconnectClient(client);
+      return;
+    }
+    
+    worldServer.updatePlayerEntity(client, entity);
   }
 }

@@ -7,6 +7,9 @@ Known Issues:
 - Players are sometimes beeing cloned 
 
 = v0.2 =
+Done:
+
+ToDo:
 + remove disconnected players
 + allow players to set the name on login
 + show player names next to the player

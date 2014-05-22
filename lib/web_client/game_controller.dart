@@ -77,6 +77,15 @@ class GameController implements stagexl.Animatable {
     ec.updateSprite();
   }
   
+  void removeEntity(int entityId){
+    if(_entityControllers.containsKey(entityId))
+    {
+      EntityController ec = _entityControllers[entityId];
+      _rootNode.removeChild(ec.sprite);
+      _entityControllers.remove(entityId);
+    }
+  }
+  
   stagexl.Sprite _createSprite(Entity entity) {
     
     stagexl.Sprite sprite = new stagexl.Sprite();

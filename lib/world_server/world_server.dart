@@ -8,7 +8,7 @@ part "client_proxy.dart";
 
 class WorldServer {
   final World _world = new World();
-  final List<ClientProxy> _clients = new List<ClientProxy>();
+  final Set<ClientProxy> _clients = new Set<ClientProxy>();
 
   World get world => _world;
   
@@ -24,11 +24,32 @@ class WorldServer {
   
   void disconnectClient(ClientProxy client){
     print("player disconnected");
+    
     _clients.remove(client);
+    
     if(client.playerEntity != null){
       _world.removeEntity(client.playerEntity);      
     }
+    
+    Message message = new Message(MessageType.ENTITY_REMOVE, client.playerEntity.id);
+    _sendToClientsExcept(message, client);
   }  
+  
+  _sendToClientsExcept(Message message, ClientProxy client){
+    _sendToClients(message, blacklist:new Set()..add(client));
+  }
+  
+  _sendToClients(Message message, {Set<ClientProxy> blacklist}) {
+    Set<ClientProxy> recipients = _clients;
+    
+    if(blacklist != null){
+      recipients = recipients.difference(blacklist);      
+    }
+    
+    for(ClientProxy client in recipients) {
+      client.send(message);
+    }
+  }
   
   Entity registerPlayer(ClientProxy client){
      Entity player = new Entity(EntityType.SHIP, new Vector2.zero());
@@ -37,16 +58,14 @@ class WorldServer {
   }
   
   void broadcastFromPlayer(ClientProxy sender, Message message) {
-    for(ClientProxy client in _clients) {
-      if(client != sender){
-        client.send(message);
-      }
-    }
+    _sendToClientsExcept(message, sender);
   }
   
-  void updateEntity(Entity entity){
-    for(ClientProxy client in _clients) {
-      client.send(new Message(MessageType.ENTITY, entity));
-    }
+  void updatePlayerEntity(ClientProxy client, Entity entity){
+    Entity playerEntity = _world.entities[client.playerEntity.id];
+    playerEntity.copyFrom(entity);
+    
+    Message message = new Message(MessageType.ENTITY, entity);
+    _sendToClientsExcept(message, client);
   }
 }
