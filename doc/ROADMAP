@@ -1,36 +1,11 @@
-= Milestone 1  v0.1 =
-This version allows you to run a server, where multiple players can connect to and see each other move around.
-
-+ Multiple Players connecting to the same server
-+ moving around
-+ seeing each other move around
-
-Known Issues:
-- Players are sometimes beeing cloned 
-
-= v0.2 =
-This version provides a more polished version of 0.1 and mainly focused on infrastructure.
-
-Changelog:
-+ players may select a username before connecting
-  + player names are shown next to the model
-  + give a random username if the user does not provide one
-+ show own coordinates to allow coordination of players
-
-+ disconnecting/reconnecting now supported
-  + connect/disconnect buttons
-+ remove disconnected players
-+ colorful asteroids
-~ only notify the server of position updates when they actually happen
-  This reduces a bit of server load, but not much. Since when the player starts moving, these are happening all of the time.
-~ make chat work again
-~ make console logging on client work
-
-Known Issues: 
-- The coordinate system shown ist that of typical 2D graphics libraries with the positive y-axis extending downwards. I want it the other way.
-
 = v0.3 =
++ add collision detection
+  + debug field to show collision areas
+
 ToDo:
++ colission detection
++ add heart beat
+  + move colission detection to heart beat
 
 = Milestone 2 =
 + colission detection
@@ -57,6 +32,9 @@ Wishes:
 + Render Asteroid lines with gradient, yellow, orange, brown
 + add alternate player controllers (mouse based)
 + rename player without disconnecting
++ Space Stations!
++ Health Bar
+  + Health Bar loss on colissions
 
 Common
 ~ sanitize message handling
@@ -71,3 +49,38 @@ Server
 Racing Mode
 + create different scene controllers for different playing modes?
 + move control over position to server
+
+
+== v0.2 ==
+This version provides a more polished version of 0.1 and mainly focused on infrastructure.
+
+Changelog:
++ players may select a username before connecting
+  + player names are shown next to the model
+  + give a random username if the user does not provide one
++ show own coordinates to allow coordination of players
+
++ disconnecting/reconnecting now supported
+  + connect/disconnect buttons
++ remove disconnected players
++ colorful asteroids
+~ only notify the server of position updates when they actually happen
+  This reduces a bit of server load, but not much. Since when the player starts moving, these are happening all of the time.
+~ make chat work again
+~ make console logging on client work
+
+Known Issues: 
+- The coordinate system shown ist that of typical 2D graphics libraries with the positive y-axis extending downwards. I want it the other way.
+
+
+= Milestone 1 =
+== v0.1 ==
+This version allows you to run a server, where multiple players can connect to and see each other move around.
+
++ Multiple Players connecting to the same server
++ moving around
++ seeing each other move around
+
+Known Issues:
+- Players are sometimes beeing cloned 
+

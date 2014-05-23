@@ -1,8 +1,9 @@
 part of web_client;
 
 class GameConfig {
-  bool localServer;
-  bool debugJson;
+  bool localServer = true;
+  bool debugJson = false;
+  bool debugCollisions = false; 
 }
 
 class GameController implements stagexl.Animatable {
@@ -170,6 +171,10 @@ class GameController implements stagexl.Animatable {
           break;
       }
     });
+    
+    if(_config.debugCollisions){
+      RenderHelper.applyCircle(_player.sprite, entity.radius);
+    }
 
     _simulator.addEntity(_player.entity);
     
@@ -188,6 +193,10 @@ class GameController implements stagexl.Animatable {
           entity.displayName != null &&
           entity.displayName != ""){
         log("'${entity.displayName}' appearing on our radars.");
+      }
+      
+      if(_config.debugCollisions){
+        RenderHelper.applyCircle(ec.sprite, entity.radius);
       }
     }
     else {

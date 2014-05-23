@@ -16,15 +16,12 @@ class RenderHelper {
     graphics.closePath();        
   }
   
-  static applyAsteroid(stagexl.Graphics graphics) {
+  static applyAsteroid(stagexl.Graphics graphics, double radius) {
     
     Math.Random random = new Math.Random();
     
-    num minRadius = 3;
-    num maxRadius = 30;
-    num outerRadius = random.nextDouble() * (maxRadius - minRadius) + minRadius;
-    num innerRadius = outerRadius * 0.75;
-    int numVertices = outerRadius.toInt();
+    num innerRadius = radius * 0.75;
+    int numVertices = radius.toInt();
     
     graphics.beginPath();
     Vector2 firstVertex = null;
@@ -37,9 +34,9 @@ class RenderHelper {
     
     for(int i = 0; i < numVertices; i++) {
       num angle = (i.toDouble() / numVertices.toDouble());
-      num radius = random.nextDouble() * (outerRadius - innerRadius) + innerRadius;
+      num vertexRadius = random.nextDouble() * (radius - innerRadius) + innerRadius;
       
-      Vector2 vector = new Vector2(Math.cos(angle * Math.PI*2) * radius, Math.sin(angle * Math.PI*2) * radius);
+      Vector2 vector = new Vector2(Math.cos(angle * Math.PI*2) * vertexRadius, Math.sin(angle * Math.PI*2) * vertexRadius);
       
       if(i == 0){
         firstVertex = vector;
@@ -61,6 +58,12 @@ class RenderHelper {
 
   }
   
+  static applyCircle(stagexl.Sprite sprite, double radius){
+    stagexl.Sprite circle = new stagexl.Sprite();
+    circle.graphics.circle(0, 0, radius);
+    circle.graphics.strokeColor(stagexl.Color.White);
+    sprite.addChildAt(circle, 0);
+  }
 }
 
 /*

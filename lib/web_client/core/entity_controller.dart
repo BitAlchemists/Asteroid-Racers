@@ -3,7 +3,7 @@ part of web_client;
 class EntityController {
   final Entity _entity;
   Entity get entity => _entity;
-  
+    
   stagexl.Sprite _sprite = new stagexl.Sprite();
   stagexl.Sprite get sprite => _sprite;
   
@@ -15,7 +15,7 @@ class EntityController {
   stagexl.Sprite _createSprite(Entity entity) {
     switch(entity.type){
       case EntityType.ASTEROID:
-        RenderHelper.applyAsteroid(sprite.graphics);
+        RenderHelper.applyAsteroid(sprite.graphics, entity.radius);
         break;
       case EntityType.SHIP:
         RenderHelper.applyTriangle(sprite.graphics);
