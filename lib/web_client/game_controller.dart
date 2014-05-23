@@ -134,14 +134,6 @@ class GameController implements stagexl.Animatable {
 
     }
     
-    time += dt;
-    if(time > 5.0){
-      time = 0.0;
-      log("ping $ping");
-      server.send(new Message(MessageType.PING_PONG, ping++));
-    }
-    
-    
     return true;
   }
     

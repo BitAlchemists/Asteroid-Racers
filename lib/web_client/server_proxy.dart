@@ -147,4 +147,12 @@ _encounteredError = true;
 *   int _retrySeconds = 2;
   bool _encounteredError = false;
 
+* 
+* ping
+*     time += dt;
+    if(time > 5.0){
+      time = 0.0;
+      log("ping $ping");
+      server.send(new Message(MessageType.PING_PONG, ping++));
+    }
 */
