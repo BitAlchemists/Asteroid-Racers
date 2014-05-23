@@ -224,5 +224,12 @@ class GameController implements stagexl.Animatable {
       }
     }
   }
+  
+  handleCollision(int entityId)
+  {
+    if(_player.entity.id == entityId){
+      log("ouch");
+    }
+  }
 }
 

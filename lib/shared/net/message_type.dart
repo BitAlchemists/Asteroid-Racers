@@ -7,4 +7,5 @@ class MessageType {
   static const String HANDSHAKE = "HANDSHAKE";
   static const String PLAYER = "PLAYER";
   static const String PING_PONG = "PING_PONG";
+  static const String COLLISION = "COLLISION";
 }

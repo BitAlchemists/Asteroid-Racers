@@ -25,7 +25,8 @@ class ServerProxy {
         MessageType.ENTITY: this._onEntityUpdate,
         MessageType.ENTITY_REMOVE: this._onEntityRemove,
         MessageType.PLAYER: this._onPlayer,
-        MessageType.PING_PONG: this._onPingPong
+        MessageType.PING_PONG: this._onPingPong,
+        MessageType.COLLISION: this._onCollision
       };
   }
   
@@ -136,6 +137,10 @@ class ServerProxy {
   
   _onPingPong(Message message){
     log("pong ${message.payload}");
+  }
+  
+  _onCollision(Message message){
+    _gameController.handleCollision(message.payload);
   }
 }
 

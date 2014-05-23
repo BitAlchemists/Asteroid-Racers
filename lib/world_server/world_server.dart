@@ -100,7 +100,13 @@ class WorldServer {
   
   void _checkCollisions()
   {
-    Iterable<Entity> _collidingEntities = _collisionDetector.detectCollisions();
+    Iterable<Entity> collidingEntities = _collisionDetector.detectCollisions();
     
+    for(Entity entity in collidingEntities)
+    {
+      _collisionDetector.players.remove(entity);
+      Message message = new Message(MessageType.COLLISION, entity.id);
+      _sendToClients(message);
+    }
   }
 }

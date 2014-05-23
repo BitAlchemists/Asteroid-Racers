@@ -27,6 +27,7 @@ class LocalServerConnection implements ServerConnection {
     ClientProxy.worldServer = new WorldServer();
     _inverseConnection = new LocalServerConnection._inverse(this, _debug);
     _clientProxy = new ClientProxy(_inverseConnection);
+    ClientProxy.worldServer.connectClient(_clientProxy);
     return new Future.value();
   }
   
