@@ -24,6 +24,7 @@ class StaticFileHandler {
     }
     else {
       _send404(request.response);
+      print("failed to load file $filePath");
     }
   }
 }

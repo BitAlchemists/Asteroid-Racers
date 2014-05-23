@@ -27,7 +27,7 @@ class Entity
     acceleration = new Vector2((list[6] as num).toDouble(), (list[7] as num).toDouble());
     velocity = new Vector2((list[8] as num).toDouble(), (list[9] as num).toDouble());
     displayName = list[10];
-    radius = list[11];
+    radius = (list[11] as num).toDouble();
   }
   
   toJson(){
