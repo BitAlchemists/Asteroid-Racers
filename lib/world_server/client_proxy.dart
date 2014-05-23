@@ -8,10 +8,10 @@ class ClientProxy
   static WorldServer worldServer;
   static final Map<String, MessageHandler> _messageHandlers = 
     {
-      MessageType.CHAT: onChatMessage,
-      MessageType.HANDSHAKE: onHandshake,
-      MessageType.PLAYER: onPlayerUpdate,
-      MessageType.PING_PONG: onPingPong,
+      MessageType.CHAT: _onChatMessage,
+      MessageType.HANDSHAKE: _onHandshake,
+      MessageType.PLAYER: _onPlayerUpdate,
+      MessageType.PING_PONG: _onPingPong,
     };
   Entity playerEntity;
   
@@ -54,7 +54,7 @@ class ClientProxy
     }
   }
   
-  static onHandshake(ClientProxy client, Message message)
+  static _onHandshake(ClientProxy client, Message message)
   {
     String username = message.payload;
     if(username == null || username == ""){
@@ -162,12 +162,12 @@ class ClientProxy
     }
   }
   
-  static onChatMessage(ClientProxy client, Message message)
+  static _onChatMessage(ClientProxy client, Message message)
   {
     worldServer.broadcastFromPlayer(client, message);
   }
   
-  static onPlayerUpdate(ClientProxy client, Message message){
+  static _onPlayerUpdate(ClientProxy client, Message message){
     Entity entity = new Entity.fromJson(message.payload);
 
     if(client.playerEntity.id != entity.id){
@@ -179,7 +179,7 @@ class ClientProxy
     worldServer.updatePlayerEntity(client, entity);
   }
     
-  static onPingPong(ClientProxy client, Message message){ 
+  static _onPingPong(ClientProxy client, Message message){ 
     print("ping ${message.payload} from ${client.playerEntity.displayName}");
     client.send(message);
   }
