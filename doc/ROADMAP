@@ -1,4 +1,6 @@
 = Milestone 1  v0.1 =
+This version allows you to run a server, where multiple players can connect to and see each other move around.
+
 + Multiple Players connecting to the same server
 + moving around
 + seeing each other move around
@@ -7,35 +9,54 @@ Known Issues:
 - Players are sometimes beeing cloned 
 
 = v0.2 =
-Done:
-+ remove disconnected players
-+ add connect/disconnect buttons
+This version provides a more polished version of 0.1 and mainly focused on infrastructure.
+
+Changelog:
 + players may select a username before connecting
-+ give a random username if the user does not provide one
-+ player names are shown next to the model
+  + player names are shown next to the model
+  + give a random username if the user does not provide one
++ show own coordinates to allow coordination of players
+
++ disconnecting/reconnecting now supported
+  + connect/disconnect buttons
++ remove disconnected players
 + colorful asteroids
 ~ only notify the server of position updates when they actually happen
-
-ToDo:
+  This reduces a bit of server load, but not much. Since when the player starts moving, these are happening all of the time.
 ~ make chat work again
 ~ make console logging on client work
-+ show own coordinates
+
+Known Issues: 
+- The coordinate system shown ist that of typical 2D graphics libraries with the positive y-axis extending downwards. I want it the other way.
+
+= v0.3 =
+ToDo:
+
+= Milestone 2 =
++ colission detection
+  + collide with asteroids
+  + rockets
+  
+= Milestone 3 =
++ racing mode
+  + checkpoints
++ Player colors
++ player list with coordinates
+
+= Milestone 4 =
++ add zoom in zoom out on mouse button
++ show other players directions when they are out of screen
+
 
 = Bugs =
-- Players are beeing cloned
+?- Players are beeing cloned
 
 = Future =
 
 Wishes:
-+ colission detection
-+ player list with coordinates
-+ Player colors
-+ show other players directions when they are out of screen
-+ Render Asteroid lines with gradiend, yellow, orange, brown
-+ add zoom in zoom out on mouse button
++ Render Asteroid lines with gradient, yellow, orange, brown
 + add alternate player controllers (mouse based)
-+ add rockets
-+ add checkpoints
++ rename player without disconnecting
 
 Common
 ~ sanitize message handling

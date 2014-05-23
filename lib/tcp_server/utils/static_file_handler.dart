@@ -13,7 +13,7 @@ class StaticFileHandler {
 
   // TODO: etags, last-modified-since support
   onRequest(HttpRequest request) {
-    print("incoming file request");
+    //print("incoming file request");
     final String localPath =
         request.uri.path == '/' ? 'asteroidracers.html' : request.uri.path.substring(1, request.uri.path.length);
     

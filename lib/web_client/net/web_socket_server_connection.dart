@@ -18,7 +18,7 @@ class WebSocketServerConnection implements ServerConnection {
   
   //Connection Logic
   Future connect(){
-    log("Connecting to Web socket");
+    //log("Connecting to Web socket");
     _webSocket = new html.WebSocket(_url);
     
     _webSocket.onOpen.listen(_onConnected);
@@ -31,7 +31,7 @@ class WebSocketServerConnection implements ServerConnection {
   }
  
   _onConnected(e) {
-    log('Connected to Web Socket');
+    log('Connected');
     _isConnecting = false;
     _onConnectCompleter.complete();
     _onConnectCompleter = null;
@@ -44,7 +44,7 @@ class WebSocketServerConnection implements ServerConnection {
   
   _onDisconnected(e){
     if(_isConnecting){
-      log("Disconnected before connection was established");
+      log("Could not connect");
       _isConnecting = false;
       _onConnectCompleter.completeError(e);
       _onConnectCompleter = null;

@@ -13,6 +13,8 @@ class GameController implements stagexl.Animatable {
   stagexl.Sprite _rootNode;
   html.ButtonElement _connectButton;
   final Map<int, EntityController> _entityControllers = new Map<int, EntityController>(); //int is the entityId
+  ChatController _chat;
+  html.ParagraphElement _debugOutput;
   
   ServerProxy server;
   
@@ -21,14 +23,17 @@ class GameController implements stagexl.Animatable {
     
     _connectButton = html.querySelector("#connect-button");
     _connectButton.onClick.listen((_)=>_onTapConnect());
-
-    /*
-    ChatController chat = new ChatController();
-    chat.onSendChatMesage.listen(server.connection.send);
-    server.connection.onReceiveMessage.where((Message message) => message.messageType == chat.messageType).listen(chat.onReceiveMessage);
-    */
+        
     server = new ServerProxy(this);
     server.onDisconnectDelegate = _onDisconnect;
+    
+    _chat = new ChatController();
+    _chat.onSendChatMesage.listen(server.send);
+    server.registerMessageHandler(MessageType.CHAT, _chat.onReceiveMessage);
+    ClientLogger.instance.stdout.listen(_chat.onReceiveLogMessage);
+    
+    _debugOutput = html.querySelector("#debug-output");
+    
   }
   
   setup(html.CanvasElement canvas){
@@ -75,13 +80,15 @@ class GameController implements stagexl.Animatable {
     html.InputElement usernameField = html.querySelector("#chat-username");
     String username = usernameField.value;
     
-    server.connect(_config.localServer, _config.debugJson, username).then((_){
-      _updateConnectButton();
-    }).catchError((html.Event e){
+    server.connect(_config.localServer, _config.debugJson, username).then(_onConnect).catchError((html.Event e){
       log("could not connect.");
       _onDisconnect();
     });
     
+    _updateConnectButton();
+  }
+  
+  _onConnect(_){
     _updateConnectButton();
   }
   
@@ -121,7 +128,9 @@ class GameController implements stagexl.Animatable {
           _player.entity.orientation != previousOrientation)
       {
         _player.updateSprite();
-       
+        
+        _debugOutput.innerHtml = "x: ${_player.entity.position.x.toInt()}<br/>y: ${_player.entity.position.y.toInt()}";
+        
         //notify the server
         if(server != null){
           server.send(new Message(MessageType.PLAYER, _player.entity));
@@ -162,7 +171,9 @@ class GameController implements stagexl.Animatable {
       }
     });
 
-    _simulator.addEntity(_player.entity);   
+    _simulator.addEntity(_player.entity);
+    
+    _chat.username = entity.displayName;
   }
   
   void updateEntity(Entity entity) {
@@ -171,7 +182,13 @@ class GameController implements stagexl.Animatable {
     if(!_entityControllers.containsKey(entity.id)){
       ec = new EntityController(entity);
       _rootNode.addChild(ec.sprite);
-      _entityControllers[entity.id] = ec; 
+      _entityControllers[entity.id] = ec;
+      
+      if(entity.type == EntityType.SHIP &&
+          entity.displayName != null &&
+          entity.displayName != ""){
+        log("'${entity.displayName}' appearing on our radars.");
+      }
     }
     else {
       ec = _entityControllers[entity.id];
@@ -188,6 +205,14 @@ class GameController implements stagexl.Animatable {
       EntityController ec = _entityControllers[entityId];
       _rootNode.removeChild(ec.sprite);
       _entityControllers.remove(entityId);
+      
+      Entity entity = ec.entity;
+      
+      if(entity.type == EntityType.SHIP &&
+          entity.displayName != null &&
+          entity.displayName != ""){
+        log("'${entity.displayName}' disappeared from our radars.");
+      }
     }
   }
 }

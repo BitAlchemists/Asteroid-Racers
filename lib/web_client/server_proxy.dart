@@ -22,11 +22,16 @@ class ServerProxy {
   {    
     _messageHandlers = 
       {
-        MessageType.ENTITY: this._onEntity,
+        MessageType.ENTITY: this._onEntityUpdate,
         MessageType.ENTITY_REMOVE: this._onEntityRemove,
         MessageType.PLAYER: this._onPlayer,
         MessageType.PING_PONG: this._onPingPong
       };
+  }
+  
+  registerMessageHandler(String messageType, MessageHandler messageHandler)
+  {
+    _messageHandlers[messageType] = messageHandler;
   }
   
   Future connect(bool local, bool debugJson, String desiredUsername)
@@ -112,7 +117,7 @@ class ServerProxy {
     _gameController.removeEntity(message.payload);
   }
 
-  _onEntity(Message message)
+  _onEntityUpdate(Message message)
   {
     Entity entity = new Entity.fromJson(message.payload);
     

@@ -51,15 +51,12 @@ class WorldServer {
   }
   
   _sendToClients(Message message, {Set<ClientProxy> blacklist}) {
-    print("connected clients: ${_clients.length}");
     Set<ClientProxy> recipients = new Set<ClientProxy>.from(_clients);    
-    print("${recipients.length} possible recipients. applying blacklist.");
     
     if(blacklist != null){
       recipients = recipients.difference(blacklist);      
     }
     
-    print("sending message to ${recipients.length} recipients");
     
     for(ClientProxy client in recipients) {
       client.send(message);

@@ -149,6 +149,7 @@ class ClientProxy
     
     //create player entity in world
     client.playerEntity = worldServer.registerPlayer(client, username);
+    worldServer.updatePlayerEntity(client, client.playerEntity);
     
     //send all entities
     for(Entity entity in worldServer.world.entities.values){
@@ -167,7 +168,6 @@ class ClientProxy
   }
   
   static onPlayerUpdate(ClientProxy client, Message message){
-    print("getting position from ${client.playerEntity.displayName}");
     Entity entity = new Entity.fromJson(message.payload);
 
     if(client.playerEntity.id != entity.id){
