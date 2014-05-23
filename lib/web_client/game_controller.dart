@@ -77,6 +77,9 @@ class GameController implements stagexl.Animatable {
     
     server.connect(_config.localServer, _config.debugJson, username).then((_){
       _updateConnectButton();
+    }).catchError((html.Event e){
+      log("could not connect.");
+      _onDisconnect();
     });
     
     _updateConnectButton();
@@ -89,8 +92,11 @@ class GameController implements stagexl.Animatable {
   _onDisconnect(){
     _updateConnectButton();
     _stage.juggler.remove(this);
-    _rootNode.removeFromParent();
-    _rootNode = null;
+    
+    if(_rootNode != null){
+      _rootNode.removeFromParent();
+      _rootNode = null;      
+    }
     
     _player = null;    
     _simulator.reset();
@@ -98,17 +104,44 @@ class GameController implements stagexl.Animatable {
     _entityControllers.clear();
   }
   
-  bool advanceTime(num time){
-    _simulator.simulate(time);
+  double time = 0.0;
+  int ping = 0;
+  
+  bool advanceTime(num dt){
+    
     if(_player != null) {
-      _player.updateSprite();
+      Vector2 previousPosition = new Vector2.copy(_player.entity.position);
+      double previousOrientation = _player.entity.orientation;
+      
+      _simulator.simulate(dt);
+      
+      //if the player position changed...
+      if( _player.entity.position.x != previousPosition.x ||
+          _player.entity.position.y != previousPosition.y ||
+          _player.entity.orientation != previousOrientation)
+      {
+        _player.updateSprite();
+       
+        //notify the server
+        if(server != null){
+          server.send(new Message(MessageType.PLAYER, _player.entity));
+        }   
+      }
+      
+      //update the camera
       _rootNode.x = _stage.stageWidth/2.0 -_player.sprite.x;
       _rootNode.y = _stage.stageHeight/2.0 -_player.sprite.y;
-      
-      if(server != null){
-        server.send(new Message(MessageType.PLAYER, _player.entity));
-      }
+
     }
+    
+    time += dt;
+    if(time > 5.0){
+      time = 0.0;
+      log("ping $ping");
+      server.send(new Message(MessageType.PING_PONG, ping++));
+    }
+    
+    
     return true;
   }
     

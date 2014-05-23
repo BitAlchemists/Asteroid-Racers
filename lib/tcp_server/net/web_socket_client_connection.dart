@@ -18,7 +18,6 @@ class WebSocketClientConnection implements Connection {
   
   disconnect(){
     _webSocket.close();
-    _onDisconnect();
   }
   
   _onDisconnect([e]){

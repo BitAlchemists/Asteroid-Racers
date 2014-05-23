@@ -20,13 +20,14 @@ part "net/web_socket_client_connection_manager.dart";
 
 Future runServer(String webPath, String logPath, int port) {
   WorldServer worldServer = new WorldServer();
+  ClientProxy.worldServer = worldServer;
   WebSocketClientConnectionManager connectionManager = new WebSocketClientConnectionManager(worldServer);
   StaticFileHandler fileHandler = new StaticFileHandler(webPath);
   
   return HttpServer.bind('0.0.0.0', port).then((HttpServer server) {
     print('listening for connections on $port');
         
-    ClientProxy.worldServer = new WorldServer();
+    
     
     //begin to listen for connections
     server.listen((HttpRequest request) {

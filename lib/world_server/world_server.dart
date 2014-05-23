@@ -21,12 +21,22 @@ class WorldServer {
   void connectClient(ClientProxy client){
     print("player connected");
     _clients.add(client);
+    print("connected clients: ${_clients.length}");
   }
   
   void disconnectClient(ClientProxy client){
-    print("player disconnected");
+    
+    if(client.playerEntity != null && client.playerEntity.displayName != null)
+    {
+      print("player ${client.playerEntity.displayName} disconnected");      
+    }
+    else
+    {
+      print("client disconnected before handshake");
+    }
     
     _clients.remove(client);
+    print("connected clients: ${_clients.length}");
     
     if(client.playerEntity != null){
       _world.removeEntity(client.playerEntity);      
@@ -41,11 +51,15 @@ class WorldServer {
   }
   
   _sendToClients(Message message, {Set<ClientProxy> blacklist}) {
-    Set<ClientProxy> recipients = _clients;
+    print("connected clients: ${_clients.length}");
+    Set<ClientProxy> recipients = new Set<ClientProxy>.from(_clients);    
+    print("${recipients.length} possible recipients. applying blacklist.");
     
     if(blacklist != null){
       recipients = recipients.difference(blacklist);      
     }
+    
+    print("sending message to ${recipients.length} recipients");
     
     for(ClientProxy client in recipients) {
       client.send(message);
@@ -65,7 +79,6 @@ class WorldServer {
   }
   
   void updatePlayerEntity(ClientProxy client, Entity entity){
-    print("Updating player entity");
     Entity playerEntity = _world.entities[client.playerEntity.id];
     playerEntity.copyFrom(entity);
     

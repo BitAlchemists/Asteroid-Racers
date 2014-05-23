@@ -14,9 +14,9 @@ Done:
 + give a random username if the user does not provide one
 + player names are shown next to the model
 + colorful asteroids
+~ only notify the server of position updates when they actually happen
 
 ToDo:
-~ make sure position updates are only sent when the position updates
 ~ make chat work again
 ~ make console logging on client work
 + show own coordinates

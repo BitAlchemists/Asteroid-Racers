@@ -4,6 +4,7 @@ class WebSocketServerConnection implements ServerConnection {
   //Private Fields
   html.WebSocket _webSocket;
   String _url;
+  bool _isConnecting = false;
   
   Completer _onConnectCompleter = new Completer();
   final StreamController<Message> _receiveMessageStreamController = new StreamController<Message>.broadcast();
@@ -19,39 +20,40 @@ class WebSocketServerConnection implements ServerConnection {
   Future connect(){
     log("Connecting to Web socket");
     _webSocket = new html.WebSocket(_url);
-
-    bool isConnecting = true;
     
-    _webSocket.onOpen.listen((e) {
-      log('Connected');
-      isConnecting = false;
-      _onConnectCompleter.complete();
-    });
-    
-    onDisconnect(e){
-      if(isConnecting){
-        _onConnectCompleter.completeError(e);
-      }
-      else
-      {
-        onDisconnectDelegate();        
-      }
-    }
-
-    _webSocket.onClose.listen(onDisconnect);
-    _webSocket.onError.listen(onDisconnect);
+    _webSocket.onOpen.listen(_onConnected);
+    _webSocket.onClose.listen(_onDisconnected);
+    _webSocket.onError.listen(_onDisconnected);
 
     _webSocket.onMessage.listen(_onReceiveMessage);  
     
     return _onConnectCompleter.future;
   }
  
-
+  _onConnected(e) {
+    log('Connected to Web Socket');
+    _isConnecting = false;
+    _onConnectCompleter.complete();
+    _onConnectCompleter = null;
+  }
+  
   void disconnect(){
     _webSocket.close();
     _webSocket = null;
-    this.onDisconnectDelegate();
-    this.onDisconnectDelegate = null;
+  }
+  
+  _onDisconnected(e){
+    if(_isConnecting){
+      log("Disconnected before connection was established");
+      _isConnecting = false;
+      _onConnectCompleter.completeError(e);
+      _onConnectCompleter = null;
+    }
+    else
+    {
+      log("Disconnected");
+      onDisconnectDelegate();        
+    }
   }
 
   // Message handling
@@ -66,6 +68,7 @@ class WebSocketServerConnection implements ServerConnection {
   }
   
   _onReceiveMessage(html.MessageEvent e) {
+    //print("onReceiveMessage");
     Message message = new Message.fromJson(e.data);
     _receiveMessageStreamController.add(message);
   }

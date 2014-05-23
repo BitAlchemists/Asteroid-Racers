@@ -10,7 +10,8 @@ class ClientProxy
     {
       MessageType.CHAT: onChatMessage,
       MessageType.HANDSHAKE: onHandshake,
-      MessageType.PLAYER: onPlayerUpdate
+      MessageType.PLAYER: onPlayerUpdate,
+      MessageType.PING_PONG: onPingPong,
     };
   Entity playerEntity;
   
@@ -166,6 +167,7 @@ class ClientProxy
   }
   
   static onPlayerUpdate(ClientProxy client, Message message){
+    print("getting position from ${client.playerEntity.displayName}");
     Entity entity = new Entity.fromJson(message.payload);
 
     if(client.playerEntity.id != entity.id){
@@ -175,5 +177,10 @@ class ClientProxy
     }
     
     worldServer.updatePlayerEntity(client, entity);
+  }
+    
+  static onPingPong(ClientProxy client, Message message){ 
+    print("ping ${message.payload} from ${client.playerEntity.displayName}");
+    client.send(message);
   }
 }

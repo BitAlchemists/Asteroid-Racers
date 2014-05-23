@@ -24,7 +24,8 @@ class ServerProxy {
       {
         MessageType.ENTITY: this._onEntity,
         MessageType.ENTITY_REMOVE: this._onEntityRemove,
-        MessageType.PLAYER: this._onPlayer
+        MessageType.PLAYER: this._onPlayer,
+        MessageType.PING_PONG: this._onPingPong
       };
   }
   
@@ -114,6 +115,11 @@ class ServerProxy {
   _onEntity(Message message)
   {
     Entity entity = new Entity.fromJson(message.payload);
+    
+    if(entity.displayName != null && entity.displayName != ""){
+      print("receiving entity update from ${entity.displayName}");
+    }
+    
     _gameController.updateEntity(entity);
   }
   
@@ -121,6 +127,10 @@ class ServerProxy {
   {
     Entity entity = new Entity.fromJson(message.payload);
     _gameController.createPlayer(entity);
+  }
+  
+  _onPingPong(Message message){
+    log("pong ${message.payload}");
   }
 }
 
