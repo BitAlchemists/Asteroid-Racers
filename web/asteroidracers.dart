@@ -13,9 +13,9 @@ void main() {
   canvas.width = canvas.clientWidth;
   
   GameConfig config = new GameConfig();
-  config.localServer = false;
+  config.localServer = true;
   config.debugJson = true;
-  config.debugCollisions = false;
+  config.debugCollisions = true;
   
   GameController gameController = new GameController(config);
   gameController.setup(canvas);

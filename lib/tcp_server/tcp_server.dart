@@ -21,6 +21,7 @@ part "net/web_socket_client_connection_manager.dart";
 Future runServer(String webPath, String logPath, int port) {
   WorldServer worldServer = new WorldServer();
   ClientProxy.worldServer = worldServer;
+  worldServer.start();
   WebSocketClientConnectionManager connectionManager = new WebSocketClientConnectionManager(worldServer);
   StaticFileHandler fileHandler = new StaticFileHandler(webPath);
   

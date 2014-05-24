@@ -1,13 +1,11 @@
 = v0.3 =
++ add heart beat to server
 + add collision detection
   + debug field to show collision areas
 
 ToDo:
-+ heartbeat
-+ colission detection
-+ add heart beat
-  + move colission detection to heart beat
 - first message on chat does not appear
+- slow on Acer Aspire One
 
 = v0.4 =
 + console interpreter
@@ -42,6 +40,7 @@ Wishes:
 + Space Stations!
 + Health Bar
   + Health Bar loss on colissions
++ mouse control over ship
 
 Common
 ~ sanitize message handling

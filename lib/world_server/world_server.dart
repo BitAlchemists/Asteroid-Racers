@@ -2,9 +2,10 @@ library world_server;
 
 import "dart:math" as Math;
 
+import 'package:game_loop/game_loop_isolate.dart';
 import "package:vector_math/vector_math.dart";
-import "../shared/ar_shared.dart";
 
+import "../shared/ar_shared.dart";
 
 part "client_proxy.dart";
 part "collision_detector.dart";
@@ -27,6 +28,18 @@ class WorldServer {
     dummyPlayer.displayName = "Dummy";
     _world.addEntity(dummyPlayer);
     _collisionDetector.players.add(dummyPlayer);
+  }
+  
+  start(){
+      // Construct a game loop.
+      GameLoop gameLoop = new GameLoopIsolate();
+      gameLoop.onUpdate = (_onHeartBeat);
+      gameLoop.start();
+  }
+  
+  _onHeartBeat(GameLoop gameLoop){
+    //print('${gameLoop.frame}: ${gameLoop.gameTime} [dt = ${gameLoop.dt}].');
+    _checkCollisions();
   }
   
   void connectClient(ClientProxy client){
@@ -91,9 +104,7 @@ class WorldServer {
   void updatePlayerEntity(ClientProxy client, Entity entity){
     Entity playerEntity = _world.entities[client.playerEntity.id];
     playerEntity.copyFrom(entity);
-    
-    _checkCollisions();
-    
+        
     Message message = new Message(MessageType.ENTITY, entity);
     _sendToClientsExcept(message, client);
   }
