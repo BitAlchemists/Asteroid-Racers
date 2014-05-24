@@ -37,10 +37,26 @@ class WorldServer {
       gameLoop.start();
   }
   
+  //Heart Beat
+  
   _onHeartBeat(GameLoop gameLoop){
     //print('${gameLoop.frame}: ${gameLoop.gameTime} [dt = ${gameLoop.dt}].');
     _checkCollisions();
   }
+  
+  void _checkCollisions()
+  {
+    Iterable<Entity> collidingEntities = _collisionDetector.detectCollisions();
+    
+    for(Entity entity in collidingEntities)
+    {
+      _collisionDetector.players.remove(entity);
+      Message message = new Message(MessageType.COLLISION, entity.id);
+      _sendToClients(message);
+    }
+  }
+  
+  //Client-Server communication
   
   void connectClient(ClientProxy client){
     print("player connected");
@@ -109,15 +125,5 @@ class WorldServer {
     _sendToClientsExcept(message, client);
   }
   
-  void _checkCollisions()
-  {
-    Iterable<Entity> collidingEntities = _collisionDetector.detectCollisions();
-    
-    for(Entity entity in collidingEntities)
-    {
-      _collisionDetector.players.remove(entity);
-      Message message = new Message(MessageType.COLLISION, entity.id);
-      _sendToClients(message);
-    }
-  }
+
 }
