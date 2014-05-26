@@ -16,25 +16,41 @@ class RenderHelper {
     graphics.closePath();        
   }
   
-  static applyAsteroid(stagexl.Graphics graphics, double radius) {
-    
-    Math.Random random = new Math.Random();
-    
-    num innerRadius = radius * 0.75;
-    int numVertices = radius.toInt();
-    
-    graphics.beginPath();
-    Vector2 firstVertex = null;
-    
+  static applyAsteroid(stagexl.Graphics graphics, double outerRadius) {
+    double innerRadius = outerRadius * 0.75;
+    int numVertices = outerRadius.toInt();
     List colors = [stagexl.Color.Yellow, 
                          stagexl.Color.Brown, 
                          stagexl.Color.Orange,
                          stagexl.Color.Wheat,
                          stagexl.Color.Red];
     
+    applyCobweb(graphics, outerRadius, innerRadius, colors, numVertices);
+  }
+  
+  static applyExplosion(stagexl.Graphics graphics, double outerRadius){
+    double innerRadius = outerRadius * 0.1;
+    int numVertices = 30;
+    List colors = [stagexl.Color.Red];
+    
+    applyCobweb(graphics, outerRadius, innerRadius, colors, numVertices);
+  }
+  
+  static applyCobweb(
+      stagexl.Graphics graphics, 
+      double outerRadius, 
+      double innerRadius, 
+      List<int>colorPalette,
+      int numVertices){
+    
+    Math.Random random = new Math.Random();
+    
+    graphics.beginPath();
+    Vector2 firstVertex = null;
+    
     for(int i = 0; i < numVertices; i++) {
       num angle = (i.toDouble() / numVertices.toDouble());
-      num vertexRadius = random.nextDouble() * (radius - innerRadius) + innerRadius;
+      num vertexRadius = random.nextDouble() * (outerRadius - innerRadius) + innerRadius;
       
       Vector2 vector = new Vector2(Math.cos(angle * Math.PI*2) * vertexRadius, Math.sin(angle * Math.PI*2) * vertexRadius);
       
@@ -44,20 +60,20 @@ class RenderHelper {
       }
       else {
         graphics.lineTo(vector.x, vector.y);
-        var i = random.nextInt(colors.length);
-        var color = colors[i];
+        var i = random.nextInt(colorPalette.length);
+        int color = colorPalette[i];
         graphics.strokeColor(color);
       }
     }
     
     graphics.lineTo(firstVertex.x, firstVertex.y);
-    var i = random.nextInt(colors.length);
-    var color = colors[i];
+    var i = random.nextInt(colorPalette.length);
+    var color = colorPalette[i];
     graphics.strokeColor(color);
     graphics.closePath();        
-
   }
   
+
   static applyCircle(stagexl.Sprite sprite, double radius){
     stagexl.Sprite circle = new stagexl.Sprite();
     circle.graphics.circle(0, 0, radius);

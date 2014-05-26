@@ -112,11 +112,8 @@ class GameController implements stagexl.Animatable {
     _entityControllers.clear();
   }
   
-  double time = 0.0;
-  int ping = 0;
-  
   bool advanceTime(num dt){
-    
+        
     if(_player != null) {
       Vector2 previousPosition = new Vector2.copy(_player.entity.position);
       double previousOrientation = _player.entity.orientation;
@@ -150,6 +147,7 @@ class GameController implements stagexl.Animatable {
   void createPlayer(Entity entity){
     _player = new PlayerController(entity);
     _rootNode.addChild(_player.sprite);
+    _stage.juggler.add(_player);
     
     _stage.onKeyDown.listen((stagexl.KeyboardEvent ke){
       switch(ke.keyCode)
@@ -228,7 +226,7 @@ class GameController implements stagexl.Animatable {
   handleCollision(int entityId)
   {
     if(_player.entity.id == entityId){
-      log("ouch");
+      _player.triggerExplosion();
     }
   }
 }

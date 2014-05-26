@@ -20,6 +20,8 @@ class EntityController {
       case EntityType.SHIP:
         RenderHelper.applyTriangle(sprite.graphics);
         break;
+      default:
+        print("cant _createSprite() for unknown entity.");
     }
         
     if(entity.displayName != null && entity.displayName != "")

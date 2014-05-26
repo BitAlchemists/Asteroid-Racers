@@ -107,9 +107,9 @@ class ServerProxy {
         print("no appropriate message handler for messageType ${message.messageType} found.");
       }            
     }
-    catch (e)
+    catch (e, stack)
     {
-      print("exception during ServerProxy.onMessage: ${e.toString()}");
+      print("exception during ServerProxy.onMessage: ${e.toString()}\nStack:\n$stack");
     }
   }
   
