@@ -147,7 +147,6 @@ class GameController implements stagexl.Animatable {
   void createPlayer(Entity entity){
     _player = new PlayerController(entity);
     _rootNode.addChild(_player.sprite);
-    _stage.juggler.add(_player);
     
     _stage.onKeyDown.listen((stagexl.KeyboardEvent ke){
       switch(ke.keyCode)
@@ -226,7 +225,7 @@ class GameController implements stagexl.Animatable {
   handleCollision(int entityId)
   {
     if(_player.entity.id == entityId){
-      _player.triggerExplosion();
+      Explosion.renderExplosion(_stage, _player.sprite, _player.entity.radius);
     }
   }
 }

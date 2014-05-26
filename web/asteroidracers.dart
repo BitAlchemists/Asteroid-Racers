@@ -15,7 +15,7 @@ void main() {
   GameConfig config = new GameConfig();
   config.localServer = true;
   config.debugJson = true;
-  config.debugCollisions = true;
+  config.debugCollisions = false;
   
   GameController gameController = new GameController(config);
   gameController.setup(canvas);
