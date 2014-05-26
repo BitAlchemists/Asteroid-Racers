@@ -9,9 +9,13 @@ class GameConfig {
 class GameController implements stagexl.Animatable {
   GameConfig _config;
   PhysicsSimulator _simulator;
+
   stagexl.Stage _stage;
-  PlayerController _player;
   stagexl.Sprite _rootNode;
+  StarBackground _background;
+  
+  PlayerController _player;
+
   html.ButtonElement _connectButton;
   final Map<int, EntityController> _entityControllers = new Map<int, EntityController>(); //int is the entityId
   ChatController _chat;
@@ -74,6 +78,10 @@ class GameController implements stagexl.Animatable {
   }
   
   start(){
+    _background = new StarBackground(2000.0, 2000.0, _stage);
+    _stage.addChild(_background);  
+    _stage.juggler.add(_background);
+    
     _rootNode = new stagexl.Sprite();
     _stage.addChild(_rootNode);
     _stage.juggler.add(this);    
@@ -106,6 +114,11 @@ class GameController implements stagexl.Animatable {
       _rootNode = null;      
     }
     
+    if(_background != null){
+      _background.removeFromParent();
+      _background = null;
+    }
+    
     _player = null;    
     _simulator.reset();
     
@@ -113,6 +126,8 @@ class GameController implements stagexl.Animatable {
   }
   
   bool advanceTime(num dt){
+    
+    String debugOutput = ""; 
         
     if(_player != null) {
       Vector2 previousPosition = new Vector2.copy(_player.entity.position);
@@ -127,7 +142,7 @@ class GameController implements stagexl.Animatable {
       {
         _player.updateSprite();
         
-        _debugOutput.innerHtml = "x: ${_player.entity.position.x.toInt()}<br/>y: ${_player.entity.position.y.toInt()}";
+        debugOutput += "x: ${_player.entity.position.x.toInt()}<br/>y: ${_player.entity.position.y.toInt()}<br/>";
         
         //notify the server
         if(server != null){
@@ -141,12 +156,34 @@ class GameController implements stagexl.Animatable {
 
     }
     
+    double newFps = updateFps(1/dt);
+    debugOutput += "FPS: ${newFps.toInt()}";
+
+    _debugOutput.innerHtml = debugOutput;
+    
     return true;
   }
+  
+  double fpsAverage;
+  /**
+   * Display the animation's FPS in a div.
+   */
+  double updateFps(num fps) {
+    
+    if (fpsAverage == null) {
+      fpsAverage = fps;
+    }
+
+    fpsAverage = fps * 0.05 + fpsAverage * 0.95;
+    
+    return fpsAverage;
+  }
+  
     
   void createPlayer(Entity entity){
     _player = new PlayerController(entity);
     _rootNode.addChild(_player.sprite);
+    _background.player = _player;
     
     _stage.onKeyDown.listen((stagexl.KeyboardEvent ke){
       switch(ke.keyCode)

@@ -10,6 +10,8 @@ import "../shared/ar_shared.dart";
 part "client_proxy.dart";
 part "collision_detector.dart";
 
+Math.Random random = new Math.Random();
+
 class WorldServer {
   final World _world = new World();
   CollisionDetector _collisionDetector;

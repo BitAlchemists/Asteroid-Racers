@@ -3,6 +3,8 @@
 + add collision detection
   + debug field to show collision areas
   + explosion animation
++ add fps counter
++ add star background with parallax effect
 
 ToDo:
 - first message on chat does not appear
@@ -42,6 +44,9 @@ Wishes:
 + Health Bar
   + Health Bar loss on colissions
 + mouse control over ship
++ add stars to the background & paralax effect
++ star signs
++ paging of the background
 
 Common
 ~ sanitize message handling

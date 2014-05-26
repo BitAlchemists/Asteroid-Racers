@@ -60,9 +60,6 @@ class RenderHelper {
       }
       else {
         graphics.lineTo(vector.x, vector.y);
-        var i = random.nextInt(colorPalette.length);
-        int color = colorPalette[i];
-        graphics.strokeColor(color);
       }
     }
     
@@ -70,6 +67,7 @@ class RenderHelper {
     var i = random.nextInt(colorPalette.length);
     var color = colorPalette[i];
     graphics.strokeColor(color);
+    graphics.fillColor(stagexl.Color.Black);
     graphics.closePath();        
   }
   
