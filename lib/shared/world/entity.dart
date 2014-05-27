@@ -16,6 +16,7 @@ class Entity
   Vector2 acceleration = new Vector2.zero();
   Vector2 velocity = new Vector2.zero();
   double radius = 1.0;
+  bool canMove = false;
     
   Entity(this.type, this.position, this.radius);
   Entity.fromJson(List list){
@@ -28,22 +29,24 @@ class Entity
     velocity = new Vector2((list[8] as num).toDouble(), (list[9] as num).toDouble());
     displayName = list[10];
     radius = (list[11] as num).toDouble();
+    canMove = list[12];
   }
   
   toJson(){
     List list = [
-                     id,            // 0
-                     type,          // 1
-                     position.x,    // 2
-                     position.y,    // 3
-                     rotationSpeed, // 4
-                     orientation,   // 5
-                     acceleration.x,// 6
-                     acceleration.y,// 7
-                     velocity.x,    // 8
-                     velocity.y,    // 9
-                     displayName,   //10
-                     radius];       //11
+                     id,                    // 0
+                     type,                  // 1
+                     position.x,            // 2
+                     position.y,            // 3
+                     rotationSpeed,         // 4
+                     orientation,           // 5
+                     acceleration.x,        // 6
+                     acceleration.y,        // 7
+                     velocity.x,            // 8
+                     velocity.y,            // 9
+                     displayName,           //10
+                     radius,                //11
+                     canMove];//12
     return list;// JSON.encode(list);
   }
   
@@ -57,5 +60,6 @@ class Entity
     velocity = entity.velocity;
     displayName = entity.displayName;
     radius = entity.radius;
+    canMove = entity.canMove;
   }
 }

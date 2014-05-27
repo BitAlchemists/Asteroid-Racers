@@ -53,6 +53,7 @@ class WorldServer {
     for(Entity entity in collidingEntities)
     {
       _collisionDetector.players.remove(entity);
+      entity.canMove = false;
       Message message = new Message(MessageType.COLLISION, entity.id);
       _sendToClients(message);
     }
@@ -110,6 +111,7 @@ class WorldServer {
     print("player identifies as $desiredUsername");    
     Entity player = new Entity(EntityType.SHIP, new Vector2.zero(), 10.0);
     player.displayName = desiredUsername;
+    player.canMove = true;
     _world.addEntity(player);
     _collisionDetector.players.add(player);
     return player;

@@ -18,6 +18,10 @@ class PhysicsSimulator {
     
     for(Entity entity in _entities) {  
       //position
+      if(!entity.canMove){
+        continue;
+      }
+      
       entity.velocity += entity.acceleration * dt;
       entity.position += entity.velocity * dt;
       entity.acceleration = new Vector2.zero();

@@ -184,6 +184,7 @@ class GameController implements stagexl.Animatable {
     _player = new PlayerController(entity);
     _rootNode.addChild(_player.sprite);
     _background.player = _player;
+    _entityControllers[entity.id] = _player;
     
     _stage.onKeyDown.listen((stagexl.KeyboardEvent ke){
       switch(ke.keyCode)
@@ -237,6 +238,10 @@ class GameController implements stagexl.Animatable {
       ec = _entityControllers[entity.id];
     }
     
+    if(ec == _player){
+      return;
+    }
+    
     ec.entity.copyFrom(entity);
     
     ec.updateSprite();
@@ -261,9 +266,11 @@ class GameController implements stagexl.Animatable {
   
   handleCollision(int entityId)
   {
-    if(_player.entity.id == entityId){
-      Explosion.renderExplosion(_stage, _player.sprite, _player.entity.radius);
-    }
+    EntityController ec = _entityControllers[entityId];
+    
+    ec.entity.canMove = false;
+    
+    Explosion.renderExplosion(_stage, _player.sprite, _player.entity.radius);
   }
 }
 

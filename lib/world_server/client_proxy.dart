@@ -176,6 +176,11 @@ class ClientProxy
       return;
     }
     
+    if(!client.playerEntity.canMove){
+      print("client sent player update during !canMove");
+      return;
+    }
+    
     worldServer.updatePlayerEntity(client, entity);
   }
     
