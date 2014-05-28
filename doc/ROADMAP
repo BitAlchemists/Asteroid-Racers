@@ -5,11 +5,12 @@
   + explosion animation
 + add fps counter
 + add star background with parallax effect
+  + collide with asteroids
++ autofocus on canvas
 
 ToDo:
 - first message on chat does not appear
 - slow on Acer Aspire One
-  + collide with asteroids
 
 
 = v0.4 =
@@ -18,7 +19,6 @@ ToDo:
   + warp
 
 = Milestone 2 =
-+ rockets
   
 = Milestone 3 =
 + racing mode
@@ -49,6 +49,8 @@ Wishes:
 + paging of the background
 + particle effects
 + hide ship during explosion
++ rockets
+
 
 Common
 ~ sanitize message handling

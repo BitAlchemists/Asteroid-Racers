@@ -13,13 +13,15 @@ void main() {
   canvas.width = canvas.clientWidth;
   
   GameConfig config = new GameConfig();
-  config.localServer = true;
+  config.localServer = false;
   config.debugJson = true;
   config.debugCollisions = false;
   
   GameController gameController = new GameController(config);
   gameController.setup(canvas);
   gameController.start();
+  
+  canvas.focus();
 
 }
 
