@@ -238,13 +238,7 @@ class GameController implements stagexl.Animatable {
       ec = _entityControllers[entity.id];
     }
     
-    if(ec == _player){
-      return;
-    }
-    
-    ec.entity.copyFrom(entity);
-    
-    ec.updateSprite();
+    ec.updateFromServer(entity);    
   }
   
   void removeEntity(int entityId){

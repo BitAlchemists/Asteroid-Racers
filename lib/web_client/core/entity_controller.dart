@@ -44,4 +44,9 @@ class EntityController {
     
     sprite.rotation = _entity.orientation;
   }
+  
+  updateFromServer(Entity entity){
+    _entity.copyFrom(entity);
+    updateSprite();
+  }
 }

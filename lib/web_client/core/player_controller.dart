@@ -34,4 +34,11 @@ class PlayerController extends EntityController  {
     
     _entity.acceleration = new Vector2(acceleration3.x, acceleration3.y);
   }
+  
+  updateFromServer(Entity entity){
+    //we only accept updates that reactivate our player
+    if(_entity.canMove == false){
+      super.updateFromServer(entity);
+    }
+  }
 }

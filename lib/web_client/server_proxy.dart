@@ -121,11 +121,6 @@ class ServerProxy {
   _onEntityUpdate(Message message)
   {
     Entity entity = new Entity.fromJson(message.payload);
-    
-    if(entity.displayName != null && entity.displayName != ""){
-      print("receiving entity update from ${entity.displayName}");
-    }
-    
     _gameController.updateEntity(entity);
   }
   

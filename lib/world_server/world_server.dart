@@ -1,6 +1,7 @@
 library world_server;
 
 import "dart:math" as Math;
+import "dart:async";
 
 import 'package:game_loop/game_loop_isolate.dart';
 import "package:vector_math/vector_math.dart";
@@ -56,6 +57,17 @@ class WorldServer {
       entity.canMove = false;
       Message message = new Message(MessageType.COLLISION, entity.id);
       _sendToClients(message);
+      new Future.delayed(new Duration(seconds:1), (){
+        entity.canMove = true;
+        _collisionDetector.players.add(entity);
+        entity.position = new Vector2.zero();
+        entity.velocity = new Vector2.zero();
+        entity.acceleration = new Vector2.zero();
+        entity.orientation = 0.0;
+        entity.rotationSpeed = 0.0;
+        Message message = new Message(MessageType.ENTITY, entity);
+        _sendToClients(message);
+      });
     }
   }
   
