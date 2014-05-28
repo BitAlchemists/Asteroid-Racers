@@ -261,10 +261,8 @@ class GameController implements stagexl.Animatable {
   handleCollision(int entityId)
   {
     EntityController ec = _entityControllers[entityId];
-    
     ec.entity.canMove = false;
-    
-    Explosion.renderExplosion(_stage, _player.sprite, _player.entity.radius);
+    Explosion.renderExplosion(_stage, ec.sprite, ec.entity.radius);
   }
 }
 

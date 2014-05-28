@@ -30,7 +30,7 @@ class WorldServer {
     Entity dummyPlayer = new Entity(EntityType.SHIP, new Vector2(50.0, 50.0), 10.0);
     dummyPlayer.displayName = "Dummy";
     _world.addEntity(dummyPlayer);
-    _collisionDetector.players.add(dummyPlayer);
+    _collisionDetector.asteroids.add(dummyPlayer);
   }
   
   start(){
@@ -58,15 +58,18 @@ class WorldServer {
       Message message = new Message(MessageType.COLLISION, entity.id);
       _sendToClients(message);
       new Future.delayed(new Duration(seconds:1), (){
-        entity.canMove = true;
-        _collisionDetector.players.add(entity);
-        entity.position = new Vector2.zero();
-        entity.velocity = new Vector2.zero();
-        entity.acceleration = new Vector2.zero();
-        entity.orientation = 0.0;
-        entity.rotationSpeed = 0.0;
-        Message message = new Message(MessageType.ENTITY, entity);
-        _sendToClients(message);
+        //if the entity still exists
+        if(_world.entities.containsKey(entity.id)){
+          entity.canMove = true;
+          _collisionDetector.players.add(entity);
+          entity.position = new Vector2.zero();
+          entity.velocity = new Vector2.zero();
+          entity.acceleration = new Vector2.zero();
+          entity.orientation = 0.0;
+          entity.rotationSpeed = 0.0;
+          Message message = new Message(MessageType.ENTITY, entity);
+          _sendToClients(message);          
+        }
       });
     }
   }

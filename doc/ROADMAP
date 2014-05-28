@@ -9,9 +9,13 @@
 + autofocus on canvas
 
 ToDo:
++ add spawn zone
++ make sure asteroids dont lie in spawn zone
+
+Known Issues:
 - first message on chat does not appear
 - slow on Acer Aspire One
-
+- sort order of an explosion is not on top
 
 = v0.4 =
 + console interpreter
