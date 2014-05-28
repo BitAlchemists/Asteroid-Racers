@@ -20,6 +20,7 @@ part 'core/player_controller.dart';
 part 'core/render_helper.dart';
 part "core/explosion.dart";
 part "core/star_background.dart";
+part "core/satellite.dart";
 
 part 'physics/physics_simulator.dart';
 

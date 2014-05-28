@@ -38,7 +38,6 @@ class GameController implements stagexl.Animatable {
     ClientLogger.instance.stdout.listen(_chat.onReceiveLogMessage);
     
     _debugOutput = html.querySelector("#debug-output");
-    
   }
   
   setup(html.CanvasElement canvas){
@@ -48,6 +47,13 @@ class GameController implements stagexl.Animatable {
     var renderLoop = new stagexl.RenderLoop();
     renderLoop.addStage(_stage);
     _stage.focus = _stage; 
+    
+    Satellite satellite = new Satellite();
+    satellite.x = 200;
+    satellite.y = 100;
+    satellite.rotation = 0.5;
+    _stage.addChild(satellite);
+    _stage.juggler.add(satellite.juggler);
   }
   
   _onTapConnect(){

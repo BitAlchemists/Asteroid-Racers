@@ -13,7 +13,7 @@ void main() {
   canvas.width = canvas.clientWidth;
   
   GameConfig config = new GameConfig();
-  config.localServer = false;
+  config.localServer = true;
   config.debugJson = true;
   config.debugCollisions = false;
   

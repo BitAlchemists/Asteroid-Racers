@@ -1,5 +1,8 @@
 = Milestone 3 =
 == v0.4 ==
++ added satellite
+
+ToDo:
 + console interpreter
   + respawn
   + warp
@@ -49,7 +52,9 @@
 + rockets
 + level editor
 + Player colors
-
++ npc village
++ nearby planet
++ collision trigger
 
 Common
 ~ sanitize message handling
