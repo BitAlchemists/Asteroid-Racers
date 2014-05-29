@@ -13,5 +13,7 @@ class ParallaxLayer extends stagexl.Sprite implements stagexl.Animatable {
       this.x = _stage.stageWidth/2.0 - player.sprite.x * parallaxFactor;
       this.y = _stage.stageHeight/2.0 - player.sprite.y * parallaxFactor;      
     }
+    
+    return true;
   }
 }

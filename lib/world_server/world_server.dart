@@ -127,6 +127,7 @@ class WorldServer {
   Entity registerPlayer(ClientProxy client, String desiredUsername){
     print("player identifies as $desiredUsername");    
     Entity player = new Entity(EntityType.SHIP, new Vector2.zero(), 10.0);
+    player.orientation = Math.PI;
     player.displayName = desiredUsername;
     player.canMove = true;
     _world.addEntity(player);
