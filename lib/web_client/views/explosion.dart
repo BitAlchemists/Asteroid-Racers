@@ -9,7 +9,9 @@ class Explosion extends stagexl.Sprite implements stagexl.Animatable {
   int _explosionState = _EXPLODING;
   double _explosionScale = 0.1;
   
-  Explosion(this._onComplete) : super();  
+  Explosion(this._onComplete, num radius){
+    RenderHelper.applyExplosion(graphics, radius);
+  }
   
   bool advanceTime(num dt){
     
@@ -49,8 +51,7 @@ class Explosion extends stagexl.Sprite implements stagexl.Animatable {
       explosion.removeFromParent();
     }
     
-    Explosion explosion = new Explosion(_onComplete);
-    RenderHelper.applyExplosion(explosion.graphics, radius);
+    Explosion explosion = new Explosion(_onComplete, radius);
     
     target.addChild(explosion);
     stage.juggler.add(explosion);

@@ -13,8 +13,8 @@ class Planet extends stagexl.Sprite {
     graphics.fillColor(baseColor);
     
     for(int i = 0; i < continentalFragments; i++){
-      num outerRadius = 60;
-      num innerRadius = 20;
+      num outerRadius = radius*0.6;
+      num innerRadius = radius*0.2;
       num numVertices = 7;
       int xPos = radius - random.nextInt(radius*2);
       int yPos = radius - random.nextInt(radius*2);

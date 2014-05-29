@@ -30,7 +30,14 @@ class RenderHelper {
     int numVertices = 30;
     
     applyCobweb(graphics, outerRadius, innerRadius, numVertices, strokeColor: stagexl.Color.Red);
-    graphics.fillColor(stagexl.Color.Black);
+    
+    stagexl.GraphicsGradient gradient = new stagexl.GraphicsGradient.radial(0,0,0,
+                                                                            0,0,outerRadius);
+    gradient.addColorStop(0.0, stagexl.Color.White);
+    gradient.addColorStop(0.3, stagexl.Color.Red);
+    gradient.addColorStop(0.5, stagexl.Color.Brown);
+    gradient.addColorStop(0.7, stagexl.Color.Black);
+    graphics.fillGradient(gradient);
   }
   
   static applyCobweb(

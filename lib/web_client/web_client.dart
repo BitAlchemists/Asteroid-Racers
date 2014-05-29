@@ -18,6 +18,7 @@ import "../world_server/world_server.dart";
 part 'views/render_helper.dart';
 part "views/explosion.dart";
 part "views/star_background.dart";
+part "views/parallax_layer.dart";
 part "views/satellite.dart";
 part "views/sun.dart";
 part "views/planet.dart";

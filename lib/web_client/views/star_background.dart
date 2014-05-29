@@ -1,6 +1,6 @@
 part of web_client;
 
-class StarBackground extends stagexl.Sprite implements stagexl.Animatable {
+class StarBackground extends ParallaxLayer {
   
   static const int _CHILLAXING = 0;
   static const int _BLINK_IN = 1;
@@ -8,10 +8,6 @@ class StarBackground extends stagexl.Sprite implements stagexl.Animatable {
   
   static const double _numOfStarsPerArea = 50.0 / 1000000;
   static const double _blinkPauseLength = 10.0;
-  static const double _parallaxFactor = 0.3;
-  
-  stagexl.Stage _stage;
-  PlayerController player;
   
   double _width;
   double _height;
@@ -21,7 +17,7 @@ class StarBackground extends stagexl.Sprite implements stagexl.Animatable {
   int _blinkState = _CHILLAXING;
   double _blinkScale; 
   
-  StarBackground(this._width, this._height, this._stage) : super() {
+  StarBackground(this._width, this._height, stagexl.Stage stage) : super(stage, 0.1) {
         
     int numOfStars = (_numOfStarsPerArea * _width * _height).toInt();
     
@@ -60,25 +56,11 @@ class StarBackground extends stagexl.Sprite implements stagexl.Animatable {
     sun.y = -230;
     sun.applyCache(-100, -100, 200, 200);
     this.addChild(sun);
-    
-    Planet earth = new Planet(400, stagexl.Color.DarkBlue, stagexl.Color.Green);
-    earth.x = -500;
-    this.addChild(earth);
-    
-    Satellite satellite = new Satellite();
-    satellite.x = 270;
-    satellite.y = 150;
-    satellite.rotation = 0.5;
-    addChild(satellite);
-    _stage.juggler.add(satellite.juggler);
   }
   
   bool advanceTime(num dt){
     
-    if(player != null){
-      this.x = _stage.stageWidth/2.0 - player.sprite.x * _parallaxFactor;
-      this.y = _stage.stageHeight/2.0 - player.sprite.y * _parallaxFactor;      
-    }
+    super.advanceTime(dt);
     
     final double blinkInTime = 0.3;
     final double blinkOutTime = 0.3;

@@ -13,6 +13,7 @@ class GameController implements stagexl.Animatable {
   stagexl.Stage _stage;
   stagexl.Sprite _rootNode;
   StarBackground _background;
+  ParallaxLayer _earthLayer;
   
   PlayerController _player;
 
@@ -80,6 +81,21 @@ class GameController implements stagexl.Animatable {
     _background = new StarBackground(2000.0, 2000.0, _stage);
     _stage.addChild(_background);  
     _stage.juggler.add(_background);
+    
+    _earthLayer = new ParallaxLayer(_stage, 0.3);
+    _stage.addChild(_earthLayer);
+    _stage.juggler.add(_earthLayer);
+    
+    Planet earth = new Planet(400, stagexl.Color.DarkBlue, stagexl.Color.Green);
+    earth.x = -500;
+    _earthLayer.addChild(earth);
+    
+    Satellite satellite = new Satellite();
+    satellite.x = 270;
+    satellite.y = 150;
+    satellite.rotation = 0.5;
+    _earthLayer.addChild(satellite);
+    _stage.juggler.add(satellite.juggler);
     
     _rootNode = new stagexl.Sprite();
     _stage.addChild(_rootNode);
@@ -183,6 +199,7 @@ class GameController implements stagexl.Animatable {
     _player = new PlayerController(entity);
     _rootNode.addChild(_player.sprite);
     _background.player = _player;
+    _earthLayer.player = _player;
     _entityControllers[entity.id] = _player;
     
     _stage.onKeyDown.listen((stagexl.KeyboardEvent ke){
