@@ -2,19 +2,84 @@ part of web_client;
 
 class RenderHelper {
   
-  static applyTriangle(stagexl.Graphics graphics) {
-    Vector2 pos1 = new Vector2(-5.0,-5.0);
-    Vector2 pos2 = new Vector2(0.0,10.0);
-    Vector2 pos3 = new Vector2(5.0,-5.0);
+  /*
+   *          /\
+   *         |  |
+   *         |  |
+   *    ||___/  \__||
+   *   <  ____  ___  >
+   *    ||   /  \  ||
+   * 
+   * 
+   * */
+  
+  static applySpaceship(stagexl.Graphics graphics) {
     
+    double coneHeight = 5.0;
+    double centerWidth = 15.0;
+    double centerHeight = 30.0;
+    
+    double thrusterHeight = 5.0;
+    double thrusterWidthStart = 5.0;
+    double thrusterWidthEnd = 10.0;
+    
+    double wingWidth = 15.0;
+    double wingHeight = 15.0;
+    
+    Vector2 front = new Vector2(0.0, 0.0);
+    Vector2 ulCenter = new Vector2(-centerWidth/2, -coneHeight);
+    Vector2 urCenter = new Vector2(centerWidth/2, -coneHeight);
+    Vector2 llCenter = new Vector2(ulCenter.x, ulCenter.y - centerHeight);
+    Vector2 lrCenter = new Vector2(urCenter.x, urCenter.y - centerHeight);
+    
+    Vector2 ulThruster = new Vector2(-thrusterWidthStart/2, llCenter.y);
+    Vector2 urThruster = new Vector2(thrusterWidthStart/2, lrCenter.y);
+    Vector2 llThruster = new Vector2(-thrusterWidthEnd/2, ulThruster.y - thrusterHeight);
+    Vector2 lrThruster = new Vector2(thrusterWidthEnd/2, urThruster.y - thrusterHeight);
+    
+    Vector2 leftWingTip = new Vector2(llCenter.x - wingWidth, llCenter.y);
+    Vector2 leftWingTop = new Vector2(llCenter.x, llCenter.y + wingHeight);
+    
+    Vector2 rightWingTip = new Vector2(lrCenter.x + wingWidth, lrCenter.y);
+    Vector2 rightWingTop = new Vector2(lrCenter.x, lrCenter.y + wingHeight);
+
     graphics.beginPath();
-    graphics.moveTo(pos1.x, pos1.y);
-    graphics.lineTo(pos2.x, pos2.y);
-    graphics.lineTo(pos3.x, pos3.y);
-    graphics.lineTo(pos1.x, pos1.y);
+    graphics.moveTo(front.x, front.y);
+    graphics.lineTo(ulCenter.x, ulCenter.y);
+    graphics.lineTo(llCenter.x, llCenter.y);
+    graphics.lineTo(lrCenter.x, lrCenter.y);
+    graphics.lineTo(urCenter.x, urCenter.y);
+    graphics.lineTo(front.x, front.y);
     graphics.strokeColor(stagexl.Color.LightGreen);
     graphics.closePath();            
-  }
+
+    graphics.beginPath();
+    graphics.moveTo(ulThruster.x, ulThruster.y);
+    graphics.lineTo(urThruster.x, urThruster.y);
+    graphics.lineTo(lrThruster.x, lrThruster.y);
+    graphics.lineTo(llThruster.x, llThruster.y);
+    graphics.lineTo(ulThruster.x, ulThruster.y);
+    graphics.strokeColor(stagexl.Color.LightGreen);
+    graphics.closePath();            
+
+    //left wing
+    graphics.beginPath();
+    graphics.moveTo(llCenter.x, llCenter.y);
+    graphics.lineTo(leftWingTip.x, leftWingTip.y);
+    graphics.lineTo(leftWingTop.x, leftWingTop.y);
+    graphics.lineTo(llCenter.x, llCenter.y);
+    graphics.strokeColor(stagexl.Color.LightGreen);
+    graphics.closePath();            
+
+    //right wing
+    graphics.beginPath();
+    graphics.moveTo(lrCenter.x, lrCenter.y);
+    graphics.lineTo(rightWingTip.x, rightWingTip.y);
+    graphics.lineTo(rightWingTop.x, rightWingTop.y);
+    graphics.lineTo(lrCenter.x, lrCenter.y);
+    graphics.strokeColor(stagexl.Color.LightGreen);
+    graphics.closePath();            
+}
   
   static applyAsteroid(stagexl.Graphics graphics, double outerRadius) {
     double innerRadius = outerRadius * 0.75;

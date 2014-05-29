@@ -1,7 +1,10 @@
 = Milestone 3 =
 == v0.4 ==
-+ added satellite
-+ added sun
++ added sun to star background
++ add second parallax layer
+  + added earth
+  + added satellite
+
 
 ToDo:
 + console interpreter
