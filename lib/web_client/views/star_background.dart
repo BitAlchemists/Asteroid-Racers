@@ -57,8 +57,20 @@ class StarBackground extends stagexl.Sprite implements stagexl.Animatable {
     
     Sun sun = new Sun();
     sun.x = 200;
-    sun.y = 230;
+    sun.y = -230;
+    sun.applyCache(-100, -100, 200, 200);
     this.addChild(sun);
+    
+    Planet earth = new Planet(400, stagexl.Color.DarkBlue, stagexl.Color.Green);
+    earth.x = -500;
+    this.addChild(earth);
+    
+    Satellite satellite = new Satellite();
+    satellite.x = 270;
+    satellite.y = 150;
+    satellite.rotation = 0.5;
+    addChild(satellite);
+    _stage.juggler.add(satellite.juggler);
   }
   
   bool advanceTime(num dt){

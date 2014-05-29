@@ -27,10 +27,12 @@ class WorldServer {
     _collisionDetector = new CollisionDetector();
     _collisionDetector.asteroids = asteroids;
     
+    /* Dummy player
     Entity dummyPlayer = new Entity(EntityType.SHIP, new Vector2(50.0, 50.0), 10.0);
     dummyPlayer.displayName = "Dummy";
     _world.addEntity(dummyPlayer);
     _collisionDetector.asteroids.add(dummyPlayer);
+    */
   }
   
   start(){

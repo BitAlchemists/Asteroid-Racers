@@ -20,6 +20,7 @@ part "views/explosion.dart";
 part "views/star_background.dart";
 part "views/satellite.dart";
 part "views/sun.dart";
+part "views/planet.dart";
 
 //Controllers
 part "controllers/entity_controller.dart";

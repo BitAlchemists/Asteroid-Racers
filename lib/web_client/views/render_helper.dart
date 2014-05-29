@@ -13,26 +13,15 @@ class RenderHelper {
     graphics.lineTo(pos3.x, pos3.y);
     graphics.lineTo(pos1.x, pos1.y);
     graphics.strokeColor(stagexl.Color.LightGreen);
-    graphics.closePath();        
+    graphics.closePath();            
   }
   
   static applyAsteroid(stagexl.Graphics graphics, double outerRadius) {
     double innerRadius = outerRadius * 0.75;
     int numVertices = outerRadius.toInt();
     
-    int minColorAmount = 80;
-    int maxColorAmount = 512;
-    int colorAmount = random.nextInt(maxColorAmount-minColorAmount) + minColorAmount;
-    
-    int r = random.nextInt(Math.min(colorAmount, 256));
-    colorAmount -= r;
-    int g = random.nextInt(Math.min(colorAmount, 256));
-    colorAmount -= g;
-    int b = colorAmount;
-    
-    int color = 0xFF000000 + (r << 16) + (g << 8) + b;
-    
-    applyCobweb(graphics, outerRadius, innerRadius, numVertices, color);
+    int color = randColor(80,512);
+    applyCobweb(graphics, outerRadius, innerRadius, numVertices, strokeColor: color);
     graphics.fillColor(0xFF080808);
   }
   
@@ -40,16 +29,16 @@ class RenderHelper {
     double innerRadius = outerRadius * 0.1;
     int numVertices = 30;
     
-    applyCobweb(graphics, outerRadius, innerRadius, numVertices, stagexl.Color.Red);
+    applyCobweb(graphics, outerRadius, innerRadius, numVertices, strokeColor: stagexl.Color.Red);
     graphics.fillColor(stagexl.Color.Black);
   }
   
   static applyCobweb(
       stagexl.Graphics graphics, 
-      double outerRadius, 
-      double innerRadius, 
-      int numVertices,[
-      int strokeColor]){
+      num outerRadius, 
+      num innerRadius, 
+      int numVertices,{
+      int strokeColor, num x: 0, num y: 0}){
     
     Math.Random random = new Math.Random();
     
@@ -64,14 +53,14 @@ class RenderHelper {
       
       if(i == 0){
         firstVertex = vector;
-        graphics.moveTo(vector.x, vector.y);
+        graphics.moveTo(x + vector.x, y + vector.y);
       }
       else {
-        graphics.lineTo(vector.x, vector.y);
+        graphics.lineTo(x + vector.x, y + vector.y);
       }
     }
     
-    graphics.lineTo(firstVertex.x, firstVertex.y);
+    graphics.lineTo(x + firstVertex.x, y + firstVertex.y);
     if(strokeColor != null){
       graphics.strokeColor(strokeColor);      
     }
@@ -85,6 +74,20 @@ class RenderHelper {
     circle.graphics.circle(0, 0, radius);
     circle.graphics.strokeColor(stagexl.Color.White);
     sprite.addChildAt(circle, 0);
+  }
+  
+  static int randColor(int minVolume, int maxVolume){
+    int colorAmount = random.nextInt(maxVolume-minVolume) + minVolume;
+    
+    int r = random.nextInt(Math.min(colorAmount, 256));
+    colorAmount -= r;
+    int g = random.nextInt(Math.min(colorAmount, 256));
+    colorAmount -= g;
+    int b = colorAmount;
+    
+    int color = 0xFF000000 + (r << 16) + (g << 8) + b;
+    
+    return color;
   }
 }
 
