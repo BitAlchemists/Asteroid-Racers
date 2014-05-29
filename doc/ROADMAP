@@ -1,6 +1,7 @@
 = Milestone 3 =
 == v0.4 ==
 + added satellite
++ added sun
 
 ToDo:
 + console interpreter

@@ -14,13 +14,16 @@ import '../shared/ar_shared.dart';
 import '../services/chat/chat_client.dart';
 import "../world_server/world_server.dart";
 
+//Views
+part 'views/render_helper.dart';
+part "views/explosion.dart";
+part "views/star_background.dart";
+part "views/satellite.dart";
+part "views/sun.dart";
 
-part "core/entity_controller.dart";
-part 'core/player_controller.dart';
-part 'core/render_helper.dart';
-part "core/explosion.dart";
-part "core/star_background.dart";
-part "core/satellite.dart";
+//Controllers
+part "controllers/entity_controller.dart";
+part 'controllers/player_controller.dart';
 
 part 'physics/physics_simulator.dart';
 

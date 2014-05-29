@@ -19,29 +19,37 @@ class RenderHelper {
   static applyAsteroid(stagexl.Graphics graphics, double outerRadius) {
     double innerRadius = outerRadius * 0.75;
     int numVertices = outerRadius.toInt();
-    List colors = [stagexl.Color.Yellow, 
-                         stagexl.Color.Brown, 
-                         stagexl.Color.Orange,
-                         stagexl.Color.Wheat,
-                         stagexl.Color.Red];
     
-    applyCobweb(graphics, outerRadius, innerRadius, colors, numVertices);
+    int minColorAmount = 80;
+    int maxColorAmount = 512;
+    int colorAmount = random.nextInt(maxColorAmount-minColorAmount) + minColorAmount;
+    
+    int r = random.nextInt(Math.min(colorAmount, 256));
+    colorAmount -= r;
+    int g = random.nextInt(Math.min(colorAmount, 256));
+    colorAmount -= g;
+    int b = colorAmount;
+    
+    int color = 0xFF000000 + (r << 16) + (g << 8) + b;
+    
+    applyCobweb(graphics, outerRadius, innerRadius, numVertices, color);
+    graphics.fillColor(0xFF080808);
   }
   
   static applyExplosion(stagexl.Graphics graphics, double outerRadius){
     double innerRadius = outerRadius * 0.1;
     int numVertices = 30;
-    List colors = [stagexl.Color.Red];
     
-    applyCobweb(graphics, outerRadius, innerRadius, colors, numVertices);
+    applyCobweb(graphics, outerRadius, innerRadius, numVertices, stagexl.Color.Red);
+    graphics.fillColor(stagexl.Color.Black);
   }
   
   static applyCobweb(
       stagexl.Graphics graphics, 
       double outerRadius, 
       double innerRadius, 
-      List<int>colorPalette,
-      int numVertices){
+      int numVertices,[
+      int strokeColor]){
     
     Math.Random random = new Math.Random();
     
@@ -64,10 +72,10 @@ class RenderHelper {
     }
     
     graphics.lineTo(firstVertex.x, firstVertex.y);
-    var i = random.nextInt(colorPalette.length);
-    var color = colorPalette[i];
-    graphics.strokeColor(color);
-    graphics.fillColor(stagexl.Color.Black);
+    if(strokeColor != null){
+      graphics.strokeColor(strokeColor);      
+    }
+    
     graphics.closePath();        
   }
   
