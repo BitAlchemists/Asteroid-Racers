@@ -54,6 +54,17 @@ class StarBackground extends stagexl.Sprite implements stagexl.Animatable {
     _blink.graphics.lineTo(0.0, 10.0);
     _blink.graphics.strokeColor(stagexl.Color.White);
     _blink.graphics.closePath();
+    
+    //sun
+    
+    graphics.circle(200, 200, 50);
+    stagexl.GraphicsGradient gradient = new stagexl.GraphicsGradient.radial(0,0,50,
+                                                                            50,50,50);
+    gradient.addColorStop(0.0, stagexl.Color.Red);
+    gradient.addColorStop(0.5, stagexl.Color.Orange);
+    gradient.addColorStop(1.0, stagexl.Color.Yellow);
+    graphics.fillGradient(gradient);
+
   }
   
   bool advanceTime(num dt){
