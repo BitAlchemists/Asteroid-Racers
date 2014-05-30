@@ -9,20 +9,20 @@ import '../lib/web_client/web_client.dart';
  * The entry point to the application.
  */
 void main() {  
-  CanvasElement canvas = querySelector('#gamecanvas');
-  canvas.width = canvas.clientWidth;
+  var canvas = querySelector('#stage');
   
   GameConfig config = new GameConfig();
   config.localServer = true;
   config.debugJson = true;
   config.debugCollisions = false;
+  config.fullscreen = true;
   
   GameController gameController = new GameController(config);
   gameController.setup(canvas);
   gameController.start();
   
   canvas.focus();
-
+  
 }
 
 

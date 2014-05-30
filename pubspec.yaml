@@ -7,3 +7,4 @@ dependencies:
   path: '>=1.1.0'
   unittest: ">=0.11.0"
   game_loop: ">=0.9.4"
+  stagexl_particle: ">=0.3.2"

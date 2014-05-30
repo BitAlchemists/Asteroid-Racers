@@ -4,6 +4,7 @@ class GameConfig {
   bool localServer = true;
   bool debugJson = false;
   bool debugCollisions = false; 
+  bool fullscreen = false;
 }
 
 class GameController implements stagexl.Animatable {
@@ -11,13 +12,16 @@ class GameController implements stagexl.Animatable {
   PhysicsSimulator _simulator;
 
   stagexl.Stage _stage;
-  stagexl.Sprite _rootNode;
   StarBackground _background;
   ParallaxLayer _earthLayer;
+  stagexl.Sprite _frontLayer;
+  stagexl.Sprite _uiLayer;
   
   PlayerController _player;
 
-  html.ButtonElement _connectButton;
+  Button _connectButton;
+  stagexl.TextField _usernameField;
+  
   final Map<int, EntityController> _entityControllers = new Map<int, EntityController>(); //int is the entityId
   ChatController _chat;
   html.ParagraphElement _debugOutput;
@@ -26,31 +30,88 @@ class GameController implements stagexl.Animatable {
   
   GameController(this._config) {    
     _simulator = new PhysicsSimulator();  
-    
-    _connectButton = html.querySelector("#connect-button");
-    _connectButton.onClick.listen((_)=>_onTapConnect());
         
     server = new ServerProxy(this);
     server.onDisconnectDelegate = _onDisconnect;
     
-    _chat = new ChatController();
+    _configureChat();
+    _debugOutput = html.querySelector("#debug-output");
+     
+  }
+  
+  _configureChat(){
+    html.TextAreaElement chatElem = html.querySelector('#chat-display');
+    html.InputElement messageElem = html.querySelector('#chat-message');
+
+    _chat = new ChatController(chatElem, messageElem);
     _chat.onSendChatMesage.listen(server.send);
     server.registerMessageHandler(MessageType.CHAT, _chat.onReceiveMessage);
     ClientLogger.instance.stdout.listen(_chat.onReceiveLogMessage);
-    
-    _debugOutput = html.querySelector("#debug-output");
   }
   
   setup(html.CanvasElement canvas){
     _stage = new stagexl.Stage(canvas);
+    if(_config.fullscreen){
+      _stage.scaleMode = stagexl.StageScaleMode.NO_SCALE;
+      _stage.align = stagexl.StageAlign.TOP_LEFT;      
+    }
     _stage.backgroundColor = stagexl.Color.Black;
     _stage.doubleClickEnabled = true;
     var renderLoop = new stagexl.RenderLoop();
     renderLoop.addStage(_stage);
-    _stage.focus = _stage;     
+    _stage.focus = _stage;
+      
+    _buildUILayer();
   }
   
-  _onTapConnect(){
+  _buildUILayer(){
+    
+    num yOffset = 10;
+    num xOffset = 10;
+    num buttonHeight = 40;
+    num boxWidth = 150;
+    num contentWidth = boxWidth - 2*xOffset;
+    num textFieldHeight = 20;
+    
+    num boxHeight = yOffset + buttonHeight + yOffset + textFieldHeight*2 + yOffset; 
+    
+    _uiLayer = new stagexl.Sprite();
+    _uiLayer.graphics.rectRound(0, 0, boxWidth, boxHeight, 10, 10);
+    _uiLayer.graphics.fillColor(0x88888888);
+    _uiLayer.x = 10;
+    _uiLayer.y = 10;
+    _stage.addChild(_uiLayer);
+       
+    stagexl.TextField usernameCaptionField = new stagexl.TextField()
+    ..textColor = stagexl.Color.White
+    ..x = xOffset
+    ..y = yOffset
+    ..width = contentWidth
+    ..height = textFieldHeight
+    ..text = "Username:"
+    ..addTo(_uiLayer);
+    
+    _usernameField = new stagexl.TextField()
+    ..type = stagexl.TextFieldType.INPUT
+    ..backgroundColor = stagexl.Color.White
+    ..textColor = stagexl.Color.Black
+    ..x = xOffset
+    ..y = yOffset + textFieldHeight
+    ..width = contentWidth
+    ..height = textFieldHeight
+    ..background = true
+    ..addTo(_uiLayer);
+    _usernameField.onMouseClick.listen((_) => _stage.focus = _usernameField);
+    
+    _connectButton = new Button(contentWidth, buttonHeight)
+    ..x = xOffset
+    ..y = yOffset + textFieldHeight*2 + yOffset
+    ..text = "Hello World";
+    _uiLayer.addChild(_connectButton);
+    _connectButton.onMouseClick.listen(_onTapConnect);
+  }
+    
+  _onTapConnect(_){
     switch(server.state){
         case ServerConnectionState.DISCONNECTED:
           start();
@@ -78,12 +139,14 @@ class GameController implements stagexl.Animatable {
   }
   
   start(){
+    //Background
     _background = new StarBackground(2000.0, 2000.0, _stage);
-    _stage.addChild(_background);  
+    _stage.addChildAt(_background, 0);  
     _stage.juggler.add(_background);
     
+    //Earth layer
     _earthLayer = new ParallaxLayer(_stage, 0.3);
-    _stage.addChild(_earthLayer);
+    _stage.addChildAt(_earthLayer, 1);
     _stage.juggler.add(_earthLayer);
     
     Planet earth = new Planet(400, stagexl.Color.DarkBlue, stagexl.Color.Green);
@@ -97,19 +160,19 @@ class GameController implements stagexl.Animatable {
     _earthLayer.addChild(satellite);
     _stage.juggler.add(satellite.juggler);
     
-    _rootNode = new stagexl.Sprite();
-    _stage.addChild(_rootNode);
+    //Front layer
+    _frontLayer = new stagexl.Sprite();
+    _stage.addChildAt(_frontLayer, 2);
     _stage.juggler.add(this);    
     
-    html.InputElement usernameField = html.querySelector("#chat-username");
-    String username = usernameField.value;
+    String username = _usernameField.text;   
     
     server.connect(_config.localServer, _config.debugJson, username).then(_onConnect).catchError((html.Event e){
       log("could not connect.");
       _onDisconnect();
     });
     
-    _updateConnectButton();
+    _updateConnectButton();      
   }
   
   _onConnect(_){
@@ -124,17 +187,28 @@ class GameController implements stagexl.Animatable {
     _updateConnectButton();
     _stage.juggler.remove(this);
     
-    if(_rootNode != null){
-      _rootNode.removeFromParent();
-      _rootNode = null;      
+    if(_frontLayer != null){
+      _frontLayer.removeFromParent();
+      _frontLayer = null;      
     }
     
     if(_background != null){
       _background.removeFromParent();
+      _stage.juggler.remove(_background);
       _background = null;
     }
     
-    _player = null;    
+    if(_earthLayer != null){
+      _earthLayer.removeFromParent();
+      _stage.juggler.remove(_earthLayer);
+      _earthLayer = null;
+    }
+    
+    if(_player != null){
+      _stage.juggler.remove(_player);
+      _player = null;
+    }
+    
     _simulator.reset();
     
     _entityControllers.clear();
@@ -166,15 +240,15 @@ class GameController implements stagexl.Animatable {
       }
       
       //update the camera
-      _rootNode.x = _stage.stageWidth/2.0 -_player.sprite.x;
-      _rootNode.y = _stage.stageHeight/2.0 -_player.sprite.y;
+      _frontLayer.x = _stage.stageWidth/2.0 -_player.sprite.x;
+      _frontLayer.y = _stage.stageHeight/2.0 -_player.sprite.y;
 
     }
     
     double newFps = updateFps(1/dt);
     debugOutput += "FPS: ${newFps.toInt()}";
 
-    _debugOutput.innerHtml = debugOutput;
+    _debugOutput.innerHtml = debugOutput;      
     
     return true;
   }
@@ -196,32 +270,13 @@ class GameController implements stagexl.Animatable {
   
     
   void createPlayer(Entity entity){
-    _player = new PlayerController(entity);
-    _rootNode.addChild(_player.sprite);
+    _player = new PlayerController(entity, _stage);
+    _frontLayer.addChild(_player.sprite);
+    _frontLayer.addChild(_player.particleEmitter);
     _background.player = _player;
     _earthLayer.player = _player;
     _entityControllers[entity.id] = _player;
-    
-    _stage.onKeyDown.listen((stagexl.KeyboardEvent ke){
-      switch(ke.keyCode)
-      {
-        case html.KeyCode.LEFT:
-          _player.rotateLeft(); 
-          break; 
-          
-        case html.KeyCode.RIGHT:      
-          _player.rotateRight();
-          break; 
-          
-        case html.KeyCode.UP:        
-          _player.accelerateForward();
-          break; 
-          
-        case html.KeyCode.DOWN:
-          _player.accelerateBackward();
-          break;
-      }
-    });
+    _stage.juggler.add(_player);
     
     if(_config.debugCollisions){
       RenderHelper.applyCircle(_player.sprite, entity.radius);
@@ -237,7 +292,7 @@ class GameController implements stagexl.Animatable {
     
     if(!_entityControllers.containsKey(entity.id)){
       ec = new EntityController(entity);
-      _rootNode.addChild(ec.sprite);
+      _frontLayer.addChild(ec.sprite);
       _entityControllers[entity.id] = ec;
       
       if(entity.type == EntityType.SHIP &&
@@ -261,7 +316,7 @@ class GameController implements stagexl.Animatable {
     if(_entityControllers.containsKey(entityId))
     {
       EntityController ec = _entityControllers[entityId];
-      _rootNode.removeChild(ec.sprite);
+      _frontLayer.removeChild(ec.sprite);
       _entityControllers.remove(entityId);
       
       Entity entity = ec.entity;

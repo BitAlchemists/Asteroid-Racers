@@ -15,6 +15,20 @@ class RenderHelper {
   
   static applySpaceship(stagexl.Graphics graphics) {
     
+    Vector2 pos1 = new Vector2(-5.0,-5.0);
+    Vector2 pos2 = new Vector2(0.0,10.0);
+    Vector2 pos3 = new Vector2(5.0,-5.0);
+    
+    graphics.beginPath();
+    graphics.moveTo(pos1.x, pos1.y);
+    graphics.lineTo(pos2.x, pos2.y);
+    graphics.lineTo(pos3.x, pos3.y);
+    graphics.lineTo(pos1.x, pos1.y);
+    graphics.strokeColor(stagexl.Color.LightGreen);
+    graphics.closePath(); 
+    
+    return;
+    /*
     double coneHeight = 5.0;
     double centerWidth = 15.0;
     double centerHeight = 30.0;
@@ -78,7 +92,8 @@ class RenderHelper {
     graphics.lineTo(rightWingTop.x, rightWingTop.y);
     graphics.lineTo(lrCenter.x, lrCenter.y);
     graphics.strokeColor(stagexl.Color.LightGreen);
-    graphics.closePath();            
+    graphics.closePath();
+    */            
 }
   
   static applyAsteroid(stagexl.Graphics graphics, double outerRadius) {
@@ -87,7 +102,7 @@ class RenderHelper {
     
     int color = randColor(80,512);
     applyCobweb(graphics, outerRadius, innerRadius, numVertices, strokeColor: color);
-    graphics.fillColor(0xFF080808);
+    graphics.fillColor(0xFF333333);
   }
   
   static applyExplosion(stagexl.Graphics graphics, double outerRadius){

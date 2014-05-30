@@ -21,7 +21,7 @@ class WorldServer {
   World get world => _world;
   
   WorldServer(){
-    List<Entity> asteroids = _world.generateAsteroidBelt(500, 2000, 2000);
+    List<Entity> asteroids = _world.generateAsteroidBelt(1000, -1000, 100, 8000, 4000);
     _world.addEntities(asteroids);
     
     _collisionDetector = new CollisionDetector();
@@ -33,6 +33,11 @@ class WorldServer {
     _world.addEntity(dummyPlayer);
     _collisionDetector.asteroids.add(dummyPlayer);
     */
+    
+    Entity checkpoint = new Entity(EntityType.CHECKPOINT, new Vector2(50.0, 50.0), 10.0);
+    checkpoint.displayName = "Dummy";
+    _world.addEntity(checkpoint);
+    _collisionDetector.asteroids.add(checkpoint);
   }
   
   start(){
@@ -127,7 +132,6 @@ class WorldServer {
   Entity registerPlayer(ClientProxy client, String desiredUsername){
     print("player identifies as $desiredUsername");    
     Entity player = new Entity(EntityType.SHIP, new Vector2.zero(), 10.0);
-    player.orientation = Math.PI;
     player.displayName = desiredUsername;
     player.canMove = true;
     _world.addEntity(player);

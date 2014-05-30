@@ -11,18 +11,15 @@ class ChatController {
   
   String username;
 
-  ChatController() {
-    
-    TextAreaElement chatElem = querySelector('#chat-display');
-    InputElement messageElem = querySelector('#chat-message');
-    
+  ChatController(TextAreaElement chatElem, InputElement messageElem) {
+            
     _chatWindow = new ChatWindow(chatElem);
     _messageInput = new MessageInput(messageElem);
     
     messageElem.onChange.listen((e) {
       Message chatMessage = new Message(MessageType.CHAT);
       chatMessage.payload = {'from': username, 'message': _messageInput.message};
-      
+ 
       _sendChatMessageStreamController.add(chatMessage);
       
       _chatWindow.displayMessage(_messageInput.message, username);

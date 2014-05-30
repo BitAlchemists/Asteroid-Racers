@@ -8,6 +8,7 @@ import "dart:async";
 //Packages
 import 'package:vector_math/vector_math.dart';
 import 'package:stagexl/stagexl.dart' as stagexl;
+import "package:stagexl_particle/stagexl_particle.dart" as stagexl_particle;
 
 //Ours
 import '../shared/ar_shared.dart';
@@ -22,6 +23,7 @@ part "views/parallax_layer.dart";
 part "views/satellite.dart";
 part "views/sun.dart";
 part "views/planet.dart";
+part "views/ui/button.dart";
 
 //Controllers
 part "controllers/entity_controller.dart";

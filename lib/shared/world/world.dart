@@ -55,7 +55,7 @@ class World
     */
   }
   
-  List<Entity> generateAsteroidBelt(int count, int xDistance, int yDistance) {
+  List<Entity> generateAsteroidBelt(int count, num x, num y, num width, num height) {
     
     List<Entity> asteroids = new List<Entity>();
     
@@ -63,7 +63,9 @@ class World
 
     for (int i = 0; i < count; i++) {
       //rectangle 
-      Vector2 point = new Vector2(random.nextDouble() * 2 * xDistance - xDistance, random.nextDouble() * 2 * yDistance - yDistance);
+      Vector2 point = new Vector2(
+          x + random.nextDouble() * width,
+          y + random.nextDouble() * height);
       
       /*
       //circle

@@ -3,6 +3,7 @@ part of ar_shared;
 class EntityType {
   static const String ASTEROID = "ASTEROID";
   static const String SHIP = "SHIP";
+  static const String CHECKPOINT = "CHECKPOINT";
 }
 
 class Entity
