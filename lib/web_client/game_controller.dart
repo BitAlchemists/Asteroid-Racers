@@ -19,12 +19,13 @@ class GameController implements stagexl.Animatable {
   
   PlayerController _player;
 
+  //UI
   Button _connectButton;
   stagexl.TextField _usernameField;
+  stagexl.TextField _debugOutput;
   
   final Map<int, EntityController> _entityControllers = new Map<int, EntityController>(); //int is the entityId
   ChatController _chat;
-  html.ParagraphElement _debugOutput;
   
   ServerProxy server;
   
@@ -35,7 +36,6 @@ class GameController implements stagexl.Animatable {
     server.onDisconnectDelegate = _onDisconnect;
     
     _configureChat();
-    _debugOutput = html.querySelector("#debug-output");
      
   }
   
@@ -72,43 +72,56 @@ class GameController implements stagexl.Animatable {
     num boxWidth = 150;
     num contentWidth = boxWidth - 2*xOffset;
     num textFieldHeight = 20;
-    
-    num boxHeight = yOffset + buttonHeight + yOffset + textFieldHeight*2 + yOffset; 
-    
+        
     _uiLayer = new stagexl.Sprite();
-    _uiLayer.graphics.rectRound(0, 0, boxWidth, boxHeight, 10, 10);
-    _uiLayer.graphics.fillColor(0x88888888);
     _uiLayer.x = 10;
     _uiLayer.y = 10;
     _stage.addChild(_uiLayer);
-       
+    
+    num y = yOffset;
+    
     stagexl.TextField usernameCaptionField = new stagexl.TextField()
     ..textColor = stagexl.Color.White
     ..x = xOffset
-    ..y = yOffset
+    ..y = y
     ..width = contentWidth
     ..height = textFieldHeight
     ..text = "Username:"
     ..addTo(_uiLayer);
+    y = usernameCaptionField.y + usernameCaptionField.height;
     
     _usernameField = new stagexl.TextField()
     ..type = stagexl.TextFieldType.INPUT
     ..backgroundColor = stagexl.Color.White
     ..textColor = stagexl.Color.Black
     ..x = xOffset
-    ..y = yOffset + textFieldHeight
+    ..y = y
     ..width = contentWidth
     ..height = textFieldHeight
     ..background = true
     ..addTo(_uiLayer);
     _usernameField.onMouseClick.listen((_) => _stage.focus = _usernameField);
+    y = _usernameField.y + _usernameField.height + yOffset;
     
     _connectButton = new Button(contentWidth, buttonHeight)
     ..x = xOffset
-    ..y = yOffset + textFieldHeight*2 + yOffset
+    ..y = y
     ..text = "Hello World";
     _uiLayer.addChild(_connectButton);
     _connectButton.onMouseClick.listen(_onTapConnect);
+    y = _connectButton.y + buttonHeight + yOffset;
+    
+    _debugOutput = new stagexl.TextField()
+    ..textColor = stagexl.Color.White
+    ..x = xOffset
+    ..y = y
+    ..width = contentWidth
+    ..height = textFieldHeight * 3
+    ..addTo(_uiLayer);
+    y = _debugOutput.y + _debugOutput.height + yOffset;
+    
+    _uiLayer.graphics.rectRound(0, 0, boxWidth, y, 10, 10);
+    _uiLayer.graphics.fillColor(0x88888888);
   }
     
   _onTapConnect(_){
@@ -231,7 +244,7 @@ class GameController implements stagexl.Animatable {
       {
         _player.updateSprite();
         
-        debugOutput += "x: ${_player.entity.position.x.toInt()}<br/>y: ${_player.entity.position.y.toInt()}<br/>";
+        
         
         //notify the server
         if(server != null){
@@ -245,10 +258,11 @@ class GameController implements stagexl.Animatable {
 
     }
     
+    debugOutput += "x: ${_player.entity.position.x.toInt()}\ny: ${_player.entity.position.y.toInt()}";
     double newFps = updateFps(1/dt);
-    debugOutput += "FPS: ${newFps.toInt()}";
+    debugOutput = "FPS: ${newFps.toInt()}\n$debugOutput";
 
-    _debugOutput.innerHtml = debugOutput;      
+    _debugOutput.text = debugOutput;      
     
     return true;
   }
@@ -291,7 +305,7 @@ class GameController implements stagexl.Animatable {
     EntityController ec;
     
     if(!_entityControllers.containsKey(entity.id)){
-      ec = new EntityController(entity);
+      ec = new EntityController.factory(entity);
       _frontLayer.addChild(ec.sprite);
       _entityControllers[entity.id] = ec;
       

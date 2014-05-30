@@ -157,10 +157,8 @@ class RenderHelper {
   
 
   static applyCircle(stagexl.Sprite sprite, double radius){
-    stagexl.Sprite circle = new stagexl.Sprite();
-    circle.graphics.circle(0, 0, radius);
-    circle.graphics.strokeColor(stagexl.Color.White);
-    sprite.addChildAt(circle, 0); 
+    sprite.graphics.circle(0, 0, radius);
+    sprite.graphics.strokeColor(stagexl.Color.White);
   }
   
   static int randColor(int minVolume, int maxVolume){

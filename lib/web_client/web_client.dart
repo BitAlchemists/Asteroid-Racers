@@ -28,6 +28,7 @@ part "views/ui/button.dart";
 //Controllers
 part "controllers/entity_controller.dart";
 part 'controllers/player_controller.dart';
+part "controllers/checkpoint_controller.dart";
 
 part 'physics/physics_simulator.dart';
 

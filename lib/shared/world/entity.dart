@@ -6,6 +6,12 @@ class EntityType {
   static const String CHECKPOINT = "CHECKPOINT";
 }
 
+class CheckpointState {
+  static const int CLEARED = 0;
+  static const int CURRENT = 1;
+  static const int FUTURE = 2;
+}
+
 class Entity
 {
   int id;
@@ -18,6 +24,7 @@ class Entity
   Vector2 velocity = new Vector2.zero();
   double radius = 1.0;
   bool canMove = false;
+  dynamic state;
     
   Entity(this.type, {this.position, this.radius});
   Entity.fromJson(List list){
@@ -31,6 +38,7 @@ class Entity
     displayName = list[10];
     radius = (list[11] as num).toDouble();
     canMove = list[12];
+    state = list[13];
   }
   
   toJson(){
@@ -47,7 +55,8 @@ class Entity
                      velocity.y,            // 9
                      displayName,           //10
                      radius,                //11
-                     canMove];//12
+                     canMove,               //12
+                     state];                //13
     return list;// JSON.encode(list);
   }
   
@@ -62,5 +71,6 @@ class Entity
     displayName = entity.displayName;
     radius = entity.radius;
     canMove = entity.canMove;
+    state = entity.state;
   }
 }

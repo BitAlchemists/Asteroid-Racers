@@ -1,6 +1,6 @@
 part of world_server;
 
-class CheckpointController {
+class RaceController {
   List<Entity> _checkpoints = new List<Entity>();
   CollisionDetector _checkpointCollisionDetector = new CollisionDetector();
   final Map<int, Entity> _playerCheckpoints = new Map<int, Entity>();
@@ -8,12 +8,18 @@ class CheckpointController {
   List<Entity> get checkpoints => _checkpoints;
   
   Entity addCheckpoint(double x, double y){
-    Entity entity = new Entity(EntityType.CHECKPOINT, position: new Vector2(50.0, 50.0), radius: 10.0);
+    Entity entity = new Entity(EntityType.CHECKPOINT);
+    entity.position = new Vector2(x, y);
     entity.radius = 100.0;
     
     _checkpoints.add(entity);
+    _checkpointCollisionDetector.passiveEntitities.add(entity);
     
     return entity;
+  }
+  
+  update(){
+    Set<Entity> collisions = _checkpointCollisionDetector.detectCollisions();
   }
   
   addPlayer(Entity player){

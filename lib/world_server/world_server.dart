@@ -10,7 +10,7 @@ import "../shared/ar_shared.dart";
 
 part "client_proxy.dart";
 part "collision_detector.dart";
-part "checkpoint_controller.dart";
+part "race_controller.dart";
 
 Math.Random random = new Math.Random();
 
@@ -18,7 +18,8 @@ class WorldServer {
   final World _world = new World();
   CollisionDetector _crashCollisionDetector; 
   final Set<ClientProxy> _clients = new Set<ClientProxy>();
-  CheckpointController _checkpointController;
+  RaceController _race;
+  Entity _spawn;
 
   World get world => _world;
   
@@ -30,9 +31,16 @@ class WorldServer {
     _crashCollisionDetector.activeEntitiesCanCollide = true;
     _crashCollisionDetector.passiveEntitities = asteroids;
     
-    _checkpointController = new CheckpointController();
-    Entity spawn = _checkpointController.addCheckpoint(50.0, 50.0);
-    _world.addEntity(spawn);
+    _race = new RaceController();
+    _race.addCheckpoint(100.0, 0.0);
+    _race.addCheckpoint(100.0, 300.0);
+    _race.addCheckpoint(100.0, 600.0);
+        
+    _world.addEntities(_race.checkpoints);
+    
+    _spawn = new Entity(null);
+    _spawn.position = new Vector2(0.0, 0.0);
+    _spawn.radius = 100.0;
     
     /* Dummy player
     Entity dummyPlayer = new Entity(EntityType.SHIP, new Vector2(50.0, 50.0), 10.0);
@@ -55,6 +63,7 @@ class WorldServer {
   _onHeartBeat(GameLoop gameLoop){
     //print('${gameLoop.frame}: ${gameLoop.gameTime} [dt = ${gameLoop.dt}].');
     _checkCollisions();
+    _race.update();
   }
   
   void _checkCollisions()
@@ -103,7 +112,7 @@ class WorldServer {
     if(client.playerEntity != null){
       _world.removeEntity(client.playerEntity);
       _crashCollisionDetector.activeEntities.remove(client.playerEntity);
-      _checkpointController.removePlayer(client.playerEntity);
+      _race.removePlayer(client.playerEntity);
     }
     
     Message message = new Message(MessageType.ENTITY_REMOVE, client.playerEntity.id);
@@ -133,7 +142,7 @@ class WorldServer {
     player.displayName = desiredUsername;
     player.canMove = true;    
     _world.addEntity(player);
-    _checkpointController.addPlayer(player);
+    //_race.addPlayer(player);
 
     _spawnPlayer(player);
     
@@ -141,10 +150,13 @@ class WorldServer {
   }
   
   _spawnPlayer(Entity player){
-    Entity spawnPoint = _checkpointController.lastCheckpointForPlayer(player);
+    Entity spawn = _race.lastCheckpointForPlayer(player);
+    if(spawn == null){
+      spawn = _spawn;
+    }
     
     Vector2 randomPoint = randomPointInCircle();
-    player.position = spawnPoint.position + randomPoint * spawnPoint.radius;
+    player.position = spawn.position + randomPoint * spawn.radius;
     
     player.canMove = true;
     _crashCollisionDetector.activeEntities.add(player);

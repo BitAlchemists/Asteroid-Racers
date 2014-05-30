@@ -7,9 +7,23 @@ class EntityController {
   stagexl.Sprite _sprite = new stagexl.Sprite();
   stagexl.Sprite get sprite => _sprite;
   
-  EntityController(Entity this._entity){
+  EntityController(Entity this._entity)
+  {
     _createSprite(_entity);
     updateSprite();
+  }
+  
+  factory EntityController.factory(Entity entity){
+    switch(entity.type){
+      case EntityType.ASTEROID:
+        return new EntityController(entity);
+      
+      case EntityType.CHECKPOINT:
+        return new CheckpointController(entity);
+        
+      default:
+        print("cant create entity controller for unknown entity $entity");
+    }
   }
   
   stagexl.Sprite _createSprite(Entity entity) {
