@@ -2,8 +2,9 @@ part of world_server;
 
 class CollisionDetector {
   
-  List<Entity> asteroids = new List<Entity>();
-  List<Entity> players = new List<Entity>();
+  bool activeEntitiesCanCollide = false;
+  List<Entity> passiveEntitities = new List<Entity>();
+  List<Entity> activeEntities = new List<Entity>();
 
   CollisionDetector();
   
@@ -11,12 +12,12 @@ class CollisionDetector {
     
     Set<Entity> collidingEntities = new Set<Entity>();
     
-    //detect colissions between ships
-    for(int i = 0; i < players.length; i++){
-      Entity a = players[i];
-      for(int j = i+1; j < players.length; j++)
+    //detect colissions between activeEntities
+    for(int i = 0; i < activeEntities.length; i++){
+      Entity a = activeEntities[i];
+      for(int j = i+1; j < activeEntities.length; j++)
       {
-        Entity b = players[j];
+        Entity b = activeEntities[j];
         if(_collision(a, b))
         {
           print("Collision between ${a.displayName} and ${b.displayName}");
@@ -26,18 +27,21 @@ class CollisionDetector {
       }
     }
 
-    //detect colissions between ships and asteroids
-    for(int i = 0; i < asteroids.length; i++){
-      Entity asteroid = asteroids[i];
-      for(int j = 0; j < players.length; j++)
-      {
-        Entity player = players[j];
-        if(_collision(asteroid, player))
+    //detect colissions between active and passive entities
+    if(activeEntitiesCanCollide)
+    {
+      for(int i = 0; i < passiveEntitities.length; i++){
+        Entity asteroid = passiveEntitities[i];
+        for(int j = 0; j < activeEntities.length; j++)
         {
-          print("${player.displayName} crashes into an asteroid");
-          collidingEntities.add(player);
+          Entity activeEntity = activeEntities[j];
+          if(_collision(asteroid, activeEntity))
+          {
+            print("${activeEntity.displayName} crashes into an asteroid");
+            collidingEntities.add(activeEntity);
+          }
         }
-      }
+      }      
     }
     
     return collidingEntities;

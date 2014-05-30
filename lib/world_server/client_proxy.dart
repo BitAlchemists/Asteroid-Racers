@@ -45,11 +45,12 @@ class ClientProxy
         print("no appropriate message handler for messageType ${message.messageType} found.");
       }            
     }
-    catch (e)
+    catch (e, stack)
     {
       print("exception during ClientProxy.onMessage: ${e.toString()}");
       if(message.messageType != null){
-        print("affected message type: ${message.messageType}");  
+        print("affected message type: ${message.messageType}");
+        print("stack:\n$stack");
       }
     }
   }
