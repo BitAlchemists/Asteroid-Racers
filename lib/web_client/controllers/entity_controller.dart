@@ -20,6 +20,9 @@ class EntityController {
       case EntityType.SHIP:
         RenderHelper.applySpaceship(sprite.graphics);
         break;
+      case EntityType.CHECKPOINT:
+        RenderHelper.applyCircle(sprite, entity.radius);
+        break;
       default:
         print("cant _createSprite() for unknown entity.");
     }

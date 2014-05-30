@@ -17,11 +17,13 @@ class WorldServer {
   final World _world = new World();
   CollisionDetector _collisionDetector;
   final Set<ClientProxy> _clients = new Set<ClientProxy>();
+  final Map<int, Entity> _spawnPoints = new Map<int, Entity>();
+  Entity _spawn;
 
   World get world => _world;
   
   WorldServer(){
-    List<Entity> asteroids = _world.generateAsteroidBelt(1000, -1000, 100, 8000, 4000);
+    List<Entity> asteroids = _world.generateAsteroidBelt(1000, -4000, 250, 8000, 4000);
     _world.addEntities(asteroids);
     
     _collisionDetector = new CollisionDetector();
@@ -34,10 +36,10 @@ class WorldServer {
     _collisionDetector.asteroids.add(dummyPlayer);
     */
     
-    Entity checkpoint = new Entity(EntityType.CHECKPOINT, new Vector2(50.0, 50.0), 10.0);
-    checkpoint.displayName = "Dummy";
-    _world.addEntity(checkpoint);
-    _collisionDetector.asteroids.add(checkpoint);
+    _spawn = new Entity(EntityType.CHECKPOINT, position: new Vector2(50.0, 50.0), radius: 10.0);
+    //_spawn.displayName = "Spawn";
+    _spawn.radius = 100.0;
+    _world.addEntity(_spawn);
   }
   
   start(){
@@ -67,13 +69,7 @@ class WorldServer {
       new Future.delayed(new Duration(seconds:1), (){
         //if the entity still exists
         if(_world.entities.containsKey(entity.id)){
-          entity.canMove = true;
-          _collisionDetector.players.add(entity);
-          entity.position = new Vector2.zero();
-          entity.velocity = new Vector2.zero();
-          entity.acceleration = new Vector2.zero();
-          entity.orientation = 0.0;
-          entity.rotationSpeed = 0.0;
+          _spawnPlayer(entity);
           Message message = new Message(MessageType.ENTITY, entity);
           _sendToClients(message);          
         }
@@ -131,13 +127,44 @@ class WorldServer {
   
   Entity registerPlayer(ClientProxy client, String desiredUsername){
     print("player identifies as $desiredUsername");    
-    Entity player = new Entity(EntityType.SHIP, new Vector2.zero(), 10.0);
+    Entity player = new Entity(EntityType.SHIP, radius: 10.0);
     player.displayName = desiredUsername;
-    player.canMove = true;
+    player.canMove = true;    
     _world.addEntity(player);
-    _collisionDetector.players.add(player);
+    _spawnPoints[player.id] = _spawn;
+
+    _spawnPlayer(player);
+    
     return player;
   }
+  
+  _spawnPlayer(Entity player){
+    Entity spawnPoint = _spawnPoints[player.id];
+    
+    Vector2 randomPoint = randomPointInCircle();
+    player.position = spawnPoint.position + randomPoint * spawnPoint.radius;
+    
+    player.canMove = true;
+    _collisionDetector.players.add(player);
+    player.velocity = new Vector2.zero();
+    player.acceleration = new Vector2.zero();
+    player.orientation = 0.0;
+    player.rotationSpeed = 0.0;    
+  }
+  
+  Vector2 randomPointInCircle(){
+    double x = random.nextDouble()*2 - 1;
+    double y = random.nextDouble()*2 - 1;
+    Vector2 point = new Vector2(x,y);
+    if(point.length <= 1)
+    {
+      return point;
+    }
+    else
+    {
+      return randomPointInCircle();
+    }
+  }   
   
   void broadcastFromPlayer(ClientProxy sender, Message message) {
     _sendToClientsExcept(message, sender);

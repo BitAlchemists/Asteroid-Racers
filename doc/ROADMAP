@@ -8,7 +8,7 @@
 + better spaceship control
 + particle effect for spaceship
 + fullscreen
-
++ spawnpoints
 
 ToDo:
 + console interpreter
@@ -16,6 +16,8 @@ ToDo:
   + warp
 + add spawn zone (as an entity? technical checkpoint?)
 + make sure asteroids dont lie in spawn zone
++ make debug text field visible again
++ make chat work again
 
 == v0.5 ==
 + checkpoints

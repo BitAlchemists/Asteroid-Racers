@@ -19,7 +19,7 @@ class Entity
   double radius = 1.0;
   bool canMove = false;
     
-  Entity(this.type, this.position, this.radius);
+  Entity(this.type, {this.position, this.radius});
   Entity.fromJson(List list){
     id = list[0];
     type = list[1];

@@ -78,7 +78,7 @@ class World
       num maxRadius = 30;
       num radius = random.nextDouble() * (maxRadius - minRadius) + minRadius;
       
-      Entity entity = new Entity(EntityType.ASTEROID, point, radius);
+      Entity entity = new Entity(EntityType.ASTEROID, position: point, radius: radius);
       asteroids.add(entity);
     }
     
