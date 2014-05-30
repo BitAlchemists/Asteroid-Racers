@@ -32,9 +32,17 @@ class WorldServer {
     _crashCollisionDetector.passiveEntitities = asteroids;
     
     _race = new RaceController();
-    _race.addCheckpoint(100.0, 0.0);
-    _race.addCheckpoint(100.0, 300.0);
-    _race.addCheckpoint(100.0, 600.0);
+    _race.addCheckpoint(200.0, 0.0);
+    _race.addCheckpoint(200.0, 300.0, 70.0);
+    _race.addCheckpoint(400.0, 500.0, 50.0);
+    _race.addCheckpoint(100.0, 600.0, 50.0);
+    _race.addCheckpoint(200.0, 900.0, 100.0);
+
+    /*for(int i = 0; i < 5; i++){
+      _race.addRandomCheckpoint(400.0, 50.0);      
+    }
+    _race.addRandomCheckpoint(400.0, 100.0);*/
+    
         
     _world.addEntities(_race.checkpoints);
     
@@ -68,9 +76,9 @@ class WorldServer {
   
   void _checkCollisions()
   {
-    Iterable<Entity> collidingEntities = _crashCollisionDetector.detectCollisions();
+    Map<Entity, List<Entity>> collidingEntities = _crashCollisionDetector.detectCollisions();
     
-    for(Entity entity in collidingEntities)
+    for(Entity entity in collidingEntities.keys)
     {
       _crashCollisionDetector.activeEntities.remove(entity);
       entity.canMove = false;
@@ -112,7 +120,7 @@ class WorldServer {
     if(client.playerEntity != null){
       _world.removeEntity(client.playerEntity);
       _crashCollisionDetector.activeEntities.remove(client.playerEntity);
-      _race.removePlayer(client.playerEntity);
+      _race.removePlayer(client);
     }
     
     Message message = new Message(MessageType.ENTITY_REMOVE, client.playerEntity.id);
@@ -142,28 +150,32 @@ class WorldServer {
     player.displayName = desiredUsername;
     player.canMove = true;    
     _world.addEntity(player);
-    //_race.addPlayer(player);
+    
+    client.playerEntity = player;
+    
+    _race.addPlayer(client);
 
     _spawnPlayer(player);
+    updatePlayerEntity(client, client.playerEntity);
     
     return player;
   }
   
-  _spawnPlayer(Entity player){
-    Entity spawn = _race.lastCheckpointForPlayer(player);
+  _spawnPlayer(Entity playerEntity){
+    Entity spawn = _race.lastCheckpointForPlayerEntity(playerEntity);
     if(spawn == null){
       spawn = _spawn;
     }
-    
+        
     Vector2 randomPoint = randomPointInCircle();
-    player.position = spawn.position + randomPoint * spawn.radius;
+    playerEntity.position = spawn.position + randomPoint * spawn.radius;
     
-    player.canMove = true;
-    _crashCollisionDetector.activeEntities.add(player);
-    player.velocity = new Vector2.zero();
-    player.acceleration = new Vector2.zero();
-    player.orientation = 0.0;
-    player.rotationSpeed = 0.0;    
+    playerEntity.canMove = true;
+    _crashCollisionDetector.activeEntities.add(playerEntity);
+    playerEntity.velocity = new Vector2.zero();
+    playerEntity.acceleration = new Vector2.zero();
+    playerEntity.orientation = 0.0;
+    playerEntity.rotationSpeed = 0.0;    
   }
   
   Vector2 randomPointInCircle(){

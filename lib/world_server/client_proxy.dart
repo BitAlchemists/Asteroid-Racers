@@ -149,8 +149,7 @@ class ClientProxy
     }
     
     //create player entity in world
-    client.playerEntity = worldServer.registerPlayer(client, username);
-    worldServer.updatePlayerEntity(client, client.playerEntity);
+    worldServer.registerPlayer(client, username);
     
     //send all entities
     for(Entity entity in worldServer.world.entities.values){

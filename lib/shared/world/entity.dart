@@ -41,6 +41,10 @@ class Entity
     state = list[13];
   }
   
+  Entity.copy(Entity entity){
+    copyFrom(entity);
+  }
+  
   toJson(){
     List list = [
                      id,                    // 0

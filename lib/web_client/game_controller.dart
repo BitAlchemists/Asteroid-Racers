@@ -256,9 +256,9 @@ class GameController implements stagexl.Animatable {
       _frontLayer.x = _stage.stageWidth/2.0 -_player.sprite.x;
       _frontLayer.y = _stage.stageHeight/2.0 -_player.sprite.y;
 
+      debugOutput += "x: ${_player.entity.position.x.toInt()}\ny: ${_player.entity.position.y.toInt()}";
     }
     
-    debugOutput += "x: ${_player.entity.position.x.toInt()}\ny: ${_player.entity.position.y.toInt()}";
     double newFps = updateFps(1/dt);
     debugOutput = "FPS: ${newFps.toInt()}\n$debugOutput";
 

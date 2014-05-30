@@ -5,6 +5,9 @@ class CheckpointController extends EntityController {
   CheckpointController(entity) : super(entity);
   
   updateSprite(){
+    sprite.graphics.clear();
+    RenderHelper.applyCircle(sprite, entity.radius);
+    
     super.updateSprite();
     switch(entity.state)
     {

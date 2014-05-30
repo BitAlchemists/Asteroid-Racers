@@ -1,28 +1,11 @@
 = Milestone 3 =
-== v0.4 ==
-+ added sun to star background
-+ add second parallax layer
-  + added earth
-  + added satellite
-+ custom UI elements
-+ better spaceship control
-+ particle effect for spaceship
-+ fullscreen
-+ spawnpoints
 
-ToDo:
+== v0.5 ==
+
 + console interpreter
   + respawn
   + warp
-+ add spawn zone (as an entity? technical checkpoint?)
-+ make sure asteroids dont lie in spawn zone
-+ make debug text field visible again
 + make chat work again
-
-== v0.5 ==
-+ checkpoints
-+ respawn on checkpoints
-+ order for checkpoints
 
 + hand-made level
 
@@ -79,6 +62,25 @@ Server
 Racing Mode
 + create different scene controllers for different playing modes?
 + move control over position to server
+
+== v0.4 - 2014-05-31 ==
+This release adds a lot of depth to the game. 
+
+There is now a checkpoint system that adds the possibility to fly routes thru the asteroid belt. If you crash into an asteroid, you will respawn at the last reached checkpoint. The ship is now smoother to navigate with doe to better input handling.
+
+There is also a richer background with two parallax layers, the sun, the earth and a nearby satellite. Asteroids got a little makeover. The game now shines in fullscreen mode and provides native UI controls.
+
++ added sun to star background
++ add second parallax layer
+  + added earth
+  + added satellite
++ custom UI elements
++ better spaceship control
++ particle effect for spaceship
++ fullscreen
++ checkpoint system
+  + order in which they have to be touched
+  + respawn on checkpoints
 
 
 = Milestone 2 =
