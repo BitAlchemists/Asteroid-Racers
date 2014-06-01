@@ -12,6 +12,10 @@
 - fix spawn point (spawn-radius - player.radius)
 
 == v0.5 ==
++ players spawn in spawn orientation
++ fix offset errors in generateAsteroidBelt and spawnPlayer
+
+ToDo:
 + make chat work again
 + racing mode
   + start zone
