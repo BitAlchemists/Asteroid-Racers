@@ -1,53 +1,76 @@
 = Milestone 3 =
++ Racing mode
+  + state machine
+    + join game
+    + leave game
+  + start circle
+    + start positions
+    + rendering
+    + fix players in space
+  + player list with coordinates/points
+- fix asteroid field generation (field size - radius)
+- fix spawn point (spawn-radius - player.radius)
 
 == v0.5 ==
-
-+ console interpreter
-  + respawn
-  + warp
 + make chat work again
++ racing mode
+  + start zone
+  + finish marker
 
-+ hand-made level
 
 = Milestone 4 =
-+ racing mode part II.
-  + start & finish line
-  + player list with coordinates/points
-  
++ Level Editor
++ more than one player on one computer
+
 == v0.6 ==
-+ add zoom in zoom out on mouse button
-+ add alternate player controllers (mouse based)
-
 == v0.7 ==
-
-
-+ show other players directions when they are out of screen
-
-
 = Known Issues =
 - first message on chat does not appear
 - slow on Acer Aspire One
 - z index of explosions not correct. they are children of the entity that is exploding and when an entity that was added later is above it, the explosion is behind the other entity
 
 = Future =
-+ rockets
-+ Render Asteroid lines with gradient, yellow, orange, brown
 + rename player without disconnecting
-+ Space Stations!
 + Health Bar
   + Health Bar loss on colissions
 + mouse control over ship
 + add stars to the background & paralax effect
-+ star signs
 + paging of the background
-+ particle effects
 + hide ship during explosion
 + rockets
-+ level editor
 + Player colors
-+ npc village
-+ nearby planet
++ in station mode
 + collision trigger
++ add zoom in zoom out on mouse button
++ add alternate player controllers (mouse based)
++ show other players directions when they are out of screen
++ show next checkpoints direction in Hud
++ console interpreter
+  + respawn
+  + warp
+
+World:
+  + npc village
+  + black holes
+  + giant asteroid
+  + mothership
+  + space station
+  + milky way
+  + sternschnuppen
+  + star signs
+  + Mars in front, Earth in back
+  + Moon moves around the world
+  
+The Challenges
+  + the triangle
+  + the reactangle
+  + fly around the world
+  + level 1
+  
+
+World Builder Mode:
+  + race mode
+  
 
 Common
 ~ sanitize message handling

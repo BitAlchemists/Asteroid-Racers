@@ -166,6 +166,11 @@ class GameController implements stagexl.Animatable {
     earth.x = -500;
     _earthLayer.addChild(earth);
     
+    Planet moon = new Planet(50, stagexl.Color.LightGray, stagexl.Color.DarkGray);
+    moon.x = -100;
+    moon.y = -300;
+    _earthLayer.addChild(moon);      
+    
     Satellite satellite = new Satellite();
     satellite.x = 270;
     satellite.y = 150;

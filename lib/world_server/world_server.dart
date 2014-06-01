@@ -24,20 +24,38 @@ class WorldServer {
   World get world => _world;
   
   WorldServer(){
-    List<Entity> asteroids = _world.generateAsteroidBelt(1000, -4000, 250, 8000, 4000);
+    List<Entity> asteroids = new List<Entity>();
+    asteroids.addAll(_world.generateAsteroidBelt(1000, -4000, 250, 8000, 4000));
+    _world.addEntities(asteroids);
+
+    asteroids.addAll(_world.generateAsteroidBelt(20, -250, -100, 200, -1000));
+    _world.addEntities(asteroids);
+
+    asteroids.addAll(_world.generateAsteroidBelt(20, 150, -100, 200, -1000));
     _world.addEntities(asteroids);
     
+
+    asteroids.addAll(_world.generateAsteroidBelt(20, -150, -1300, 300, -300));
+    _world.addEntities(asteroids);
+        
+    //asteroids = _world.generateAsteroidBelt(1000, -4000, 250, 8000, 4000);
+    //_world.addEntities(asteroids);
+
     _crashCollisionDetector = new CollisionDetector();
     _crashCollisionDetector.activeEntitiesCanCollide = true;
     _crashCollisionDetector.passiveEntitities = asteroids;
     
     _race = new RaceController();
-    _race.addCheckpoint(200.0, 0.0);
+/*
+ *     _race.addCheckpoint(200.0, 0.0);
     _race.addCheckpoint(200.0, 300.0, 70.0);
     _race.addCheckpoint(400.0, 500.0, 50.0);
     _race.addCheckpoint(100.0, 600.0, 50.0);
-    _race.addCheckpoint(200.0, 900.0, 100.0);
+    _race.addCheckpoint(200.0, 900.0, 100.0);*/
 
+    _race.addCheckpoint(0.0, 0.0).orientation = Math.PI;
+    _race.addCheckpoint(0.0, -1700.0);
+    
     /*for(int i = 0; i < 5; i++){
       _race.addRandomCheckpoint(400.0, 50.0);      
     }
@@ -49,6 +67,7 @@ class WorldServer {
     _spawn = new Entity(null);
     _spawn.position = new Vector2(0.0, 0.0);
     _spawn.radius = 100.0;
+    _spawn.orientation = Math.PI;
     
     /* Dummy player
     Entity dummyPlayer = new Entity(EntityType.SHIP, new Vector2(50.0, 50.0), 10.0);
@@ -169,12 +188,12 @@ class WorldServer {
         
     Vector2 randomPoint = randomPointInCircle();
     playerEntity.position = spawn.position + randomPoint * spawn.radius;
+    playerEntity.orientation = spawn.orientation;
     
     playerEntity.canMove = true;
     _crashCollisionDetector.activeEntities.add(playerEntity);
     playerEntity.velocity = new Vector2.zero();
     playerEntity.acceleration = new Vector2.zero();
-    playerEntity.orientation = 0.0;
     playerEntity.rotationSpeed = 0.0;    
   }
   
