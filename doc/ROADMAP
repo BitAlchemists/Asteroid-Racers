@@ -14,6 +14,7 @@
 == v0.5 ==
 + players spawn in spawn orientation
 + fix offset errors in generateAsteroidBelt and spawnPlayer
++ introduce subtypes of Entity, especially Movable
 
 ToDo:
 + make chat work again
@@ -71,7 +72,9 @@ The Challenges
   + fly around the world
   + level 1
   
-
+Sound
+  + Ambient space music
+  + Radio sounds
 World Builder Mode:
   + race mode
   

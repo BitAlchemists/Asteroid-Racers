@@ -65,7 +65,7 @@ class WorldServer {
     _world.addEntities(_race.checkpoints);
     
     _spawn = new Entity(null);
-    _spawn.position = new Vector2(0.0, 0.0);
+    _spawn.position = new Vector2(-100.0, 0.0);
     _spawn.radius = 100.0;
     _spawn.orientation = Math.PI;
     
@@ -97,17 +97,17 @@ class WorldServer {
   {
     Map<Entity, List<Entity>> collidingEntities = _crashCollisionDetector.detectCollisions();
     
-    for(Entity entity in collidingEntities.keys)
+    for(Movable movable in collidingEntities.keys)
     {
-      _crashCollisionDetector.activeEntities.remove(entity);
-      entity.canMove = false;
-      Message message = new Message(MessageType.COLLISION, entity.id);
+      _crashCollisionDetector.activeEntities.remove(movable);
+     movable.canMove = false;
+      Message message = new Message(MessageType.COLLISION,movable.id);
       _sendToClients(message);
       new Future.delayed(new Duration(seconds:1), (){
         //if the entity still exists
-        if(_world.entities.containsKey(entity.id)){
-          _spawnPlayer(entity);
-          Message message = new Message(MessageType.ENTITY, entity);
+        if(_world.entities.containsKey(movable.id)){
+          _spawnPlayer(movable);
+          Message message = new Message(MessageType.ENTITY,movable);
           _sendToClients(message);          
         }
       });
@@ -165,14 +165,16 @@ class WorldServer {
   
   Entity registerPlayer(ClientProxy client, String desiredUsername){
     print("player identifies as $desiredUsername");    
-    Entity player = new Entity(EntityType.SHIP, radius: 10.0);
+    Movable player = new Movable();
+    player.type = EntityType.SHIP;
+    player.radius = 10.0;
     player.displayName = desiredUsername;
     player.canMove = true;    
     _world.addEntity(player);
     
     client.playerEntity = player;
     
-    _race.addPlayer(client);
+    //_race.addPlayer(client);
 
     _spawnPlayer(player);
     updatePlayerEntity(client, client.playerEntity);
@@ -180,7 +182,7 @@ class WorldServer {
     return player;
   }
   
-  _spawnPlayer(Entity playerEntity){
+  _spawnPlayer(Movable playerEntity){
     Entity spawn = _race.lastCheckpointForPlayerEntity(playerEntity);
     if(spawn == null){
       spawn = _spawn;
@@ -215,8 +217,8 @@ class WorldServer {
     _sendToClientsExcept(message, sender);
   }
   
-  void updatePlayerEntity(ClientProxy client, Entity entity){
-    Entity playerEntity = _world.entities[client.playerEntity.id];
+  void updatePlayerEntity(ClientProxy client, Movable entity){
+    Movable playerEntity = _world.entities[client.playerEntity.id];
     playerEntity.copyFrom(entity);
         
     Message message = new Message(MessageType.ENTITY, entity);

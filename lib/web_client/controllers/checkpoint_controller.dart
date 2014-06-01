@@ -2,14 +2,18 @@ part of web_client;
 
 class CheckpointController extends EntityController {
   
+  Checkpoint get _checkpoint => entity;
+  
   CheckpointController(entity) : super(entity);
   
   updateSprite(){
+    Checkpoint checkpoint = entity as Checkpoint;
+    
     sprite.graphics.clear();
-    RenderHelper.applyCircle(sprite, entity.radius);
+    RenderHelper.applyCircle(sprite, _checkpoint.radius);
     
     super.updateSprite();
-    switch(entity.state)
+    switch(_checkpoint.state)
     {
       case CheckpointState.CLEARED:
         sprite.graphics.strokeColor(stagexl.Color.Green);        

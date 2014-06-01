@@ -6,6 +6,8 @@ class PlayerController extends EntityController implements stagexl.Animatable  {
   final double _rotationSpeed = 5.0;
   bool accelerate = false;
     
+  Movable get _movable => entity;
+  
   stagexl_particle.ParticleEmitter _particleEmitter;
   stagexl_particle.ParticleEmitter get particleEmitter => _particleEmitter;
   
@@ -123,15 +125,15 @@ class PlayerController extends EntityController implements stagexl.Animatable  {
   }
     
   void rotateLeft(){
-    _entity.rotationSpeed = -_rotationSpeed;
+    _movable.rotationSpeed = -_rotationSpeed;
   }
   
   void rotateRight(){
-    _entity.rotationSpeed = _rotationSpeed;
+    _movable.rotationSpeed = _rotationSpeed;
   }
   
   void stopRotation(){
-    _entity.rotationSpeed = 0.0;
+    _movable.rotationSpeed = 0.0;
   }
     
   void _accelerate(Vector2 direction){
@@ -143,12 +145,12 @@ class PlayerController extends EntityController implements stagexl.Animatable  {
       translate(direction.x, direction.y).
       getTranslation();
     
-    _entity.acceleration = new Vector2(acceleration3.x, acceleration3.y);
+    _movable.acceleration = new Vector2(acceleration3.x, acceleration3.y);
   }
   
   updateFromServer(Entity entity){
     //we only accept updates that reactivate our player
-    if(_entity.canMove == false){
+    if(_movable.canMove == false){
       super.updateFromServer(entity);
     }
   }

@@ -120,13 +120,13 @@ class ServerProxy {
 
   _onEntityUpdate(Message message)
   {
-    Entity entity = new Entity.fromJson(message.payload);
+    Entity entity = new Entity.deserialize(message.payload);
     _gameController.updateEntity(entity);
   }
   
   _onPlayer(Message message)
   {
-    Entity entity = new Entity.fromJson(message.payload);
+    Entity entity = new Movable.fromJson(message.payload);
     _gameController.createPlayer(entity);
   }
   

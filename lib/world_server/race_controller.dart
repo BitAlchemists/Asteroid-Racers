@@ -1,5 +1,6 @@
 part of world_server;
 
+
 class RaceController {
   List<Entity> _checkpoints = new List<Entity>();
   CollisionDetector _checkpointCollisionDetector = new CollisionDetector();
@@ -9,21 +10,21 @@ class RaceController {
   List<Entity> get checkpoints => _checkpoints;
   
   Entity addCheckpoint(double x, double y, [double radius = 100.0]){
-    Entity entity = new Entity(EntityType.CHECKPOINT);
-    entity.position = new Vector2(x, y);
-    entity.radius = radius;
+    Checkpoint checkpoint = new Checkpoint();
+    checkpoint.position = new Vector2(x, y);
+    checkpoint.radius = radius;
     
     if(_checkpoints.length == 0){
-      entity.state = CheckpointState.CURRENT;
+      checkpoint.state = CheckpointState.CURRENT;
     }
     else {
-      entity.state = CheckpointState.FUTURE;
+      checkpoint.state = CheckpointState.FUTURE;
     }
     
-    _checkpoints.add(entity);
-    _checkpointCollisionDetector.passiveEntitities.add(entity);
+    _checkpoints.add(checkpoint);
+    _checkpointCollisionDetector.passiveEntitities.add(checkpoint);
     
-    return entity;
+    return checkpoint;
   }
   
   Entity addRandomCheckpoint(double distanceToPrevious, double radius){
@@ -45,13 +46,13 @@ class RaceController {
       
       Entity nextCheckpoint = _checkpoints[lastTouchedCheckpointIndex+1];
       
-      for(Entity checkpoint in collisions[playerEntity]){
+      for(Checkpoint checkpoint in collisions[playerEntity]){
         if(checkpoint == nextCheckpoint){
           _lastTouchedCheckpointIndex[playerEntity.id] = lastTouchedCheckpointIndex + 1;
           
           ClientProxy player = _players[playerEntity.id];
           
-          Entity messageEntity = new Entity.copy(nextCheckpoint);
+          Checkpoint messageEntity = new Entity.copy(nextCheckpoint);
           messageEntity.state = CheckpointState.CLEARED;
           Message message = new Message(MessageType.ENTITY, messageEntity); 
           player.send(message);

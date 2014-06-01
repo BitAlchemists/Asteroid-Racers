@@ -13,7 +13,7 @@ class ClientProxy
       MessageType.PLAYER: _onPlayerUpdate,
       MessageType.PING_PONG: _onPingPong,
     };
-  Entity playerEntity;
+  Movable playerEntity;
   
   ClientProxy(this._connection){
     _connection.onReceiveMessage.listen(onMessage);
@@ -168,9 +168,9 @@ class ClientProxy
   }
   
   static _onPlayerUpdate(ClientProxy client, Message message){
-    Entity entity = new Entity.fromJson(message.payload);
+    Movable movable = new Movable.fromJson(message.payload);
 
-    if(client.playerEntity.id != entity.id){
+    if(client.playerEntity.id != movable.id){
       print("client attempting to update entity other than itself");
       worldServer.disconnectClient(client);
       return;
@@ -181,7 +181,7 @@ class ClientProxy
       return;
     }
     
-    worldServer.updatePlayerEntity(client, entity);
+    worldServer.updatePlayerEntity(client, movable);
   }
     
   static _onPingPong(ClientProxy client, Message message){ 

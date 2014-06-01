@@ -1,22 +1,22 @@
 part of web_client;
 
 class PhysicsSimulator {
-  List<Entity> _entities = new List<Entity>();
+  List<Movable> _movables = new List<Movable>();
   
   PhysicsSimulator();
   
-  addEntity(Entity entity)
+  addMovable(Movable entity)
   {
-    _entities.add(entity);
+    _movables.add(entity);
   }
   
   void reset(){
-    _entities.clear();
+    _movables.clear();
   }
   
   void simulate(num dt) {
     
-    for(Entity entity in _entities) {  
+    for(Movable entity in _movables) {  
       //position
       if(!entity.canMove){
         continue;

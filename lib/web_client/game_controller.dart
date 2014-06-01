@@ -192,9 +192,9 @@ class GameController implements stagexl.Animatable {
     start.graphics.fillColor(0x4000ff00);
     
     for(int i = 0; i < 4; i++){
-      double angle = Math.PI/2 + Math.PI/3*i;
+      double angle = Math.PI/2 - Math.PI/3*i;
       Vector2 vec = new Vector2(Math.sin(angle), Math.cos(angle));
-      vec *= circleRadius/2;
+      vec *= circleRadius * 0.7;
       stagexl.Sprite start1 = new stagexl.Sprite();
       start1.graphics.circle(vec.x,vec.y,15);
       start1.graphics.fillColor(stagexl.Color.Gray);
@@ -323,12 +323,14 @@ class GameController implements stagexl.Animatable {
       RenderHelper.applyCircle(_player.sprite, entity.radius);
     }
 
-    _simulator.addEntity(_player.entity);
+    _simulator.addMovable(_player.entity);
     
     _chat.username = entity.displayName;
   }
   
   void updateEntity(Entity entity) {
+    assert(entity != null);
+    
     EntityController ec;
     
     if(!_entityControllers.containsKey(entity.id)){
@@ -373,7 +375,9 @@ class GameController implements stagexl.Animatable {
   handleCollision(int entityId)
   {
     EntityController ec = _entityControllers[entityId];
-    ec.entity.canMove = false;
+    if(ec.entity is Movable){
+      (ec.entity as Movable).canMove = false;      
+    }
     Explosion.renderExplosion(_stage, ec.sprite, ec.entity.radius);
   }
 }
