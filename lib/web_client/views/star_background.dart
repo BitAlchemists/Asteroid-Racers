@@ -56,6 +56,7 @@ class StarBackground extends ParallaxLayer {
     sun.y = -230;
     sun.applyCache(-100, -100, 200, 200);
     this.addChild(sun);
+    
   }
   
   bool advanceTime(num dt){

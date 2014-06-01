@@ -31,7 +31,7 @@ class RaceController {
     Vector2 direction = new Vector2(Math.sin(t), Math.cos(t));
     Vector2 newPosition = _checkpoints.last.position + direction * distanceToPrevious;
     
-    addCheckpoint(newPosition.x, newPosition.y, radius);
+    return addCheckpoint(newPosition.x, newPosition.y, radius);
   }
   
   update(){

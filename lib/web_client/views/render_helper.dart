@@ -13,18 +13,20 @@ class RenderHelper {
    * 
    * */
   
-  static applySpaceship(stagexl.Graphics graphics) {
+  static applySpaceship(stagexl.Graphics graphics, double radius) {
     
-    Vector2 pos1 = new Vector2(-5.0,-5.0);
-    Vector2 pos2 = new Vector2(0.0,10.0);
-    Vector2 pos3 = new Vector2(5.0,-5.0);
+    //To keep the triangle centered around the centroid, pos2 y must be double that of -y on po1 & pos3
+    Vector2 pos1 = new Vector2(-radius/2,-radius/2);
+    Vector2 pos2 = new Vector2(0.0,radius);
+    Vector2 pos3 = new Vector2(radius/2,-radius/2);
     
     graphics.beginPath();
     graphics.moveTo(pos1.x, pos1.y);
     graphics.lineTo(pos2.x, pos2.y);
     graphics.lineTo(pos3.x, pos3.y);
     graphics.lineTo(pos1.x, pos1.y);
-    graphics.strokeColor(stagexl.Color.LightGreen);
+    graphics.fillColor(stagexl.Color.DarkBlue);
+    graphics.strokeColor(stagexl.Color.LightBlue);
     graphics.closePath(); 
     
     return;

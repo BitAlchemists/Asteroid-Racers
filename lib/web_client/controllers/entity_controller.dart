@@ -32,7 +32,7 @@ class EntityController {
         RenderHelper.applyAsteroid(sprite.graphics, entity.radius);
         break;
       case EntityType.SHIP:
-        RenderHelper.applySpaceship(sprite.graphics);
+        RenderHelper.applySpaceship(sprite.graphics, entity.radius);
         break;
       default:
         print("cant _createSprite() for unknown entity.");
