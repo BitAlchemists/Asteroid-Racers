@@ -28,10 +28,10 @@ class WorldServer {
     asteroids.addAll(_world.generateAsteroidBelt(1000, -4000, 250, 8000, 4000));
     _world.addEntities(asteroids);
 
-    asteroids.addAll(_world.generateAsteroidBelt(20, -250, -100, 200, -1000));
+    asteroids.addAll(_world.generateAsteroidBelt(20, -300, -100, 200, -1000));
     _world.addEntities(asteroids);
 
-    asteroids.addAll(_world.generateAsteroidBelt(20, 150, -100, 200, -1000));
+    asteroids.addAll(_world.generateAsteroidBelt(20, 100, -100, 200, -1000));
     _world.addEntities(asteroids);
     
 
@@ -187,7 +187,7 @@ class WorldServer {
     }
         
     Vector2 randomPoint = randomPointInCircle();
-    playerEntity.position = spawn.position + randomPoint * spawn.radius;
+    playerEntity.position = spawn.position + randomPoint * (spawn.radius - playerEntity.radius);
     playerEntity.orientation = spawn.orientation;
     
     playerEntity.canMove = true;

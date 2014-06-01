@@ -55,17 +55,25 @@ class World
     */
   }
   
+  /**
+   * Please only give positive values for acurate rectangle border
+   * */
   List<Entity> generateAsteroidBelt(int count, num x, num y, num width, num height) {
-    
     List<Entity> asteroids = new List<Entity>();
+    Vector2 offset = new Vector2(x.toDouble(), y.toDouble());
+    num minRadius = 3;
+    num maxRadius = 30;
     
     Math.Random random = new Math.Random();
 
     for (int i = 0; i < count; i++) {
+      num radius = random.nextDouble() * (maxRadius - minRadius) + minRadius;
+      
       //rectangle 
-      Vector2 point = new Vector2(
-          x + random.nextDouble() * width,
-          y + random.nextDouble() * height);
+      Vector2 point = offset + new Vector2(
+          //negatives width/height values will lead to wrong borders here
+          radius + random.nextDouble() * (width - 2*radius), 
+          radius + random.nextDouble() * (height - 2*radius));
       
       /*
       //circle
@@ -74,9 +82,6 @@ class World
       vec3 point = new vec3(radius * xDistance * cos(angle), radius * yDistance * sin(angle), 0);
       */
       
-      num minRadius = 3;
-      num maxRadius = 30;
-      num radius = random.nextDouble() * (maxRadius - minRadius) + minRadius;
       
       Entity entity = new Entity(EntityType.ASTEROID, position: point, radius: radius);
       asteroids.add(entity);
