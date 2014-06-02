@@ -17,7 +17,8 @@ class LaunchPlatform extends Entity {
     List list = super.toJson();
     List rawPositions = [];
     for(Entity position in positions){
-      list.add(position.toJson());
+      List rawPosition = position.toJson();
+      rawPositions.add(rawPosition);
     }
     list.add(rawPositions);
     return list;

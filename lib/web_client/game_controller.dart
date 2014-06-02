@@ -182,28 +182,20 @@ class GameController implements stagexl.Animatable {
     _frontLayer = new stagexl.Sprite();
     _stage.addChildAt(_frontLayer, 2);
     _stage.juggler.add(this);    
-    
-    
-    double circleRadius = 100.0;
-    
-    stagexl.Sprite start;
-    start = new stagexl.Sprite();
-    start.graphics.circle(0,0,circleRadius);
-    start.graphics.fillColor(0x4000ff00);
-    
-    for(int i = 0; i < 4; i++){
-      double angle = Math.PI/2 - Math.PI/3*i;
-      Vector2 vec = new Vector2(Math.sin(angle), Math.cos(angle));
-      vec *= circleRadius * 0.7;
-      stagexl.Sprite start1 = new stagexl.Sprite();
-      start1.graphics.circle(vec.x,vec.y,15);
-      start1.graphics.fillColor(stagexl.Color.Gray);
-      start.addChild(start1);      
+
+    stagexl.Sprite finish = new stagexl.Sprite();
+    finish.x = 200;
+    double radius = 100.0;
+    double sideLength = radius/5;
+    for(double x = -radius; x < radius; x += sideLength){
+      for(double y = -radius; y < radius; y += sideLength) {
+        finish.graphics.rect(x, y, sideLength, sideLength);
+      }
     }
     
+    finish.graphics.fillColor(stagexl.Color.White);
     
-    _frontLayer.addChild(start);
-
+    _frontLayer.addChild(finish);
     
     String username = _usernameField.text;   
     

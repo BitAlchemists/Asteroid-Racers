@@ -18,7 +18,7 @@ class Entity
   String type;
   int id;
   String displayName;
-  Vector2 position = new Vector2.zero();
+  Vector2 position;
   double orientation = 0.0;
   double radius;
   
@@ -61,6 +61,8 @@ class Entity
   }
   
   toJson(){
+    assert(position != null);
+    
     List list = [
                      type,                  // 0
                      id,                    // 1

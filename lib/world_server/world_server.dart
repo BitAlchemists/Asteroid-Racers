@@ -71,7 +71,9 @@ class WorldServer {
     
     double circleRadius = 100.0;
     LaunchPlatform lp = new LaunchPlatform();
+    lp.position = new Vector2.zero();
     lp.radius = 100.0;
+    lp.orientation = Math.PI;
     for(int i = 0; i < 4; i++){
       double angle = Math.PI/2 - Math.PI/3*i;
       Vector2 vec = new Vector2(Math.sin(angle), Math.cos(angle));
