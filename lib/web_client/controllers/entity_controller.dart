@@ -17,10 +17,10 @@ class EntityController {
     switch(entity.type){
       case EntityType.ASTEROID:
         return new EntityController(entity);
-      
       case EntityType.CHECKPOINT:
         return new CheckpointController(entity);
-        
+      case EntityType.LAUNCH_PLATFORM:
+        return new PlatformController(entity);
       default:
         print("cant create entity controller for unknown entity $entity");
     }

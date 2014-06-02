@@ -4,7 +4,7 @@ class EntityType {
   static const String ASTEROID = "ASTEROID";
   static const String SHIP = "SHIP";
   static const String CHECKPOINT = "CHECKPOINT";
-  static const String RACE_STARTING_POINT = "RACE_STARTING_POINT";
+  static const String LAUNCH_PLATFORM = "LAUNCH_PLATFORM";
 }
 
 class CheckpointState {
@@ -18,11 +18,11 @@ class Entity
   String type;
   int id;
   String displayName;
-  Vector2 position;
+  Vector2 position = new Vector2.zero();
   double orientation = 0.0;
-  double radius = 1.0;
+  double radius;
   
-  Entity(this.type, {this.position, this.radius});
+  Entity(this.type, {this.position, this.radius: 1.0});
   
   factory Entity.deserialize(List list){
     Entity entity;
@@ -34,10 +34,9 @@ class Entity
       case EntityType.SHIP:
         entity = new Movable.fromJson(list);
         break;
-      case EntityType.RACE_STARTING_POINT:
-        
+      case EntityType.LAUNCH_PLATFORM:
+        entity = new LaunchPlatform.fromJson(list);
         break;
-        
       case EntityType.CHECKPOINT:
         entity = new Checkpoint.fromJson(list);
         break;
