@@ -183,19 +183,19 @@ class GameController implements stagexl.Animatable {
     _stage.addChildAt(_frontLayer, 2);
     _stage.juggler.add(this);    
 
-    stagexl.Sprite finish = new stagexl.Sprite();
-    finish.x = 200;
-    double radius = 100.0;
-    double sideLength = radius/5;
-    for(double x = -radius; x < radius; x += sideLength){
-      for(double y = -radius; y < radius; y += sideLength) {
-        finish.graphics.rect(x, y, sideLength, sideLength);
-      }
-    }
-    
-    finish.graphics.fillColor(stagexl.Color.White);
-    
+
+
+    stagexl.Sprite finish;
+    finish = new stagexl.Sprite();  
+    finish.x = -200;
+    RenderHelper.applyFinishCircle(finish);
     _frontLayer.addChild(finish);
+    
+    stagexl.Sprite arrows;
+    arrows = new stagexl.Sprite();
+    arrows.y = -200;
+    RenderHelper.applyArrows(arrows);
+    _frontLayer.addChild(arrows);
     
     String username = _usernameField.text;   
     

@@ -11,6 +11,9 @@ class PlayerController extends EntityController implements stagexl.Animatable  {
   stagexl_particle.ParticleEmitter _particleEmitter;
   stagexl_particle.ParticleEmitter get particleEmitter => _particleEmitter;
   
+  stagexl.TextField _displayNameTextField;
+  stagexl.Sprite _model;
+  
   var particleConfig = {
                         "maxParticles": 20,
                         "duration": 0.1,
@@ -102,6 +105,33 @@ class PlayerController extends EntityController implements stagexl.Animatable  {
       }
     });
   }
+  
+  _createSprite(Entity entity){
+    _model = new stagexl.Sprite();
+    RenderHelper.applySpaceship(_model.graphics, entity.radius);
+    
+    sprite.addChild(_model);
+    
+    if(entity.displayName != null && entity.displayName != "")
+    {
+      _displayNameTextField = new stagexl.TextField();
+      _displayNameTextField.text = entity.displayName;
+      _displayNameTextField.textColor = stagexl.Color.LightBlue;
+      _displayNameTextField.y = entity.radius;
+      _displayNameTextField.x = - _displayNameTextField.textWidth / 2.0;
+      _displayNameTextField.width = _displayNameTextField.textWidth;
+      sprite.addChild(_displayNameTextField);
+    }
+
+  }
+  
+  updateSprite(){
+    sprite.x = _entity.position.x;
+    sprite.y = _entity.position.y;
+    
+    _model.rotation = _entity.orientation;
+  }
+
   
   bool advanceTime(num dt){
     num angle = (this.entity.orientation / Math.PI / 2 * 360 - 90) % 360;

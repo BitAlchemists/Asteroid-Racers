@@ -69,6 +69,7 @@ class WorldServer {
     _spawn.radius = 100.0;
     _spawn.orientation = Math.PI;
     
+    /*
     double circleRadius = 100.0;
     LaunchPlatform lp = new LaunchPlatform();
     lp.position = new Vector2.zero();
@@ -84,7 +85,7 @@ class WorldServer {
       lp.positions.add(start);      
     }
     _world.addEntity(lp);
-    
+    */
     /* Dummy player
     Entity dummyPlayer = new Entity(EntityType.SHIP, new Vector2(50.0, 50.0), 10.0);
     dummyPlayer.displayName = "Dummy";

@@ -26,30 +26,14 @@ class EntityController {
     }
   }
   
-  stagexl.Sprite _createSprite(Entity entity) {
+  _createSprite(Entity entity) {
     switch(entity.type){
       case EntityType.ASTEROID:
         RenderHelper.applyAsteroid(sprite.graphics, entity.radius);
         break;
-      case EntityType.SHIP:
-        RenderHelper.applySpaceship(sprite.graphics, entity.radius);
-        break;
       default:
         print("cant _createSprite() for unknown entity.");
-    }
-        
-    if(entity.displayName != null && entity.displayName != "")
-    {
-      stagexl.TextField textField = new stagexl.TextField();
-      textField.text = entity.displayName;
-      textField.textColor = stagexl.Color.White;
-      textField.y = 10;
-      textField.x = - textField.textWidth / 2.0;
-      textField.width = textField.textWidth;
-      sprite.addChild(textField);
-    }
-    
-    return sprite;
+    }            
   }
   
   updateSprite(){
