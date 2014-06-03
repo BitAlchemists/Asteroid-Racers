@@ -15,6 +15,9 @@
 + players spawn in spawn orientation
 + fix offset errors in generateAsteroidBelt and spawnPlayer
 + introduce subtypes of Entity, especially Movable
++ add start zone
++ add finish zone
++ add arrows
 
 ToDo:
 + make chat work again
@@ -65,12 +68,15 @@ World:
   + star signs
   + Mars in front, Earth in back
   + Moon moves around the world
+  + nebula
+  + warp portals
   
 The Challenges
   + the triangle
   + the reactangle
   + fly around the world
   + level 1
+  + pass the asteroid field as fast as possible (best 3 out of 5)
   
 Sound
   + Ambient space music

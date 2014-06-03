@@ -6,9 +6,7 @@ class CheckpointController extends EntityController {
   
   CheckpointController(entity) : super(entity);
   
-  updateSprite(){
-    Checkpoint checkpoint = entity as Checkpoint;
-    
+  updateSprite(){    
     sprite.graphics.clear();
     RenderHelper.applyCircle(sprite, _checkpoint.radius);
     

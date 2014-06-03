@@ -13,7 +13,9 @@ class ClientProxy
       MessageType.PLAYER: _onPlayerUpdate,
       MessageType.PING_PONG: _onPingPong,
     };
+  
   Movable playerEntity;
+  RaceController race;
   
   ClientProxy(this._connection){
     _connection.onReceiveMessage.listen(onMessage);
@@ -143,7 +145,9 @@ class ClientProxy
                     "Escape Pod",
                     "EVA Pod",
                     "Narcissus",
-                    "TARDIS"];
+                    "TARDIS",
+                    "ISEE-3/ICE", //http://blog.xkcd.com/2014/05/30/isee-3/
+                    "XKCD-303"];
       int index = new Math.Random().nextInt(names.length);
       username = names[index];
     }

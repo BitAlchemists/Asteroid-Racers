@@ -20,6 +20,7 @@ class WorldServer {
   final Set<ClientProxy> _clients = new Set<ClientProxy>();
   RaceController _race;
   Entity _spawn;
+  Map<Entity, ClientProxy> _entityToClientMap = new Map<Entity, ClientProxy>();
 
   World get world => _world;
   
@@ -52,9 +53,11 @@ class WorldServer {
     _race.addCheckpoint(400.0, 500.0, 50.0);
     _race.addCheckpoint(100.0, 600.0, 50.0);
     _race.addCheckpoint(200.0, 900.0, 100.0);*/
-
-    _race.addCheckpoint(0.0, 0.0).orientation = Math.PI;
+    _race.addStart(0.0, 0.0, Math.PI);
+    _race.addCheckpoint(0.0, -500.0);
     _race.addCheckpoint(0.0, -1700.0);
+        
+    
     
     /*for(int i = 0; i < 5; i++){
       _race.addRandomCheckpoint(400.0, 50.0);      
@@ -63,29 +66,13 @@ class WorldServer {
     
         
     _world.addEntities(_race.checkpoints);
+    _world.addEntity(_race.start);
     
     _spawn = new Entity(null);
-    _spawn.position = new Vector2(-100.0, 0.0);
+    _spawn.position = new Vector2(-200.0, 0.0);
     _spawn.radius = 100.0;
     _spawn.orientation = Math.PI;
     
-    /*
-    double circleRadius = 100.0;
-    LaunchPlatform lp = new LaunchPlatform();
-    lp.position = new Vector2.zero();
-    lp.radius = 100.0;
-    lp.orientation = Math.PI;
-    for(int i = 0; i < 4; i++){
-      double angle = Math.PI/2 - Math.PI/3*i;
-      Vector2 vec = new Vector2(Math.sin(angle), Math.cos(angle));
-      vec *= circleRadius * 0.7;
-      Entity start = new Entity(null);
-      start.position = vec;
-      start.radius = 15.0;
-      lp.positions.add(start);      
-    }
-    _world.addEntity(lp);
-    */
     /* Dummy player
     Entity dummyPlayer = new Entity(EntityType.SHIP, new Vector2(50.0, 50.0), 10.0);
     dummyPlayer.displayName = "Dummy";
@@ -123,7 +110,8 @@ class WorldServer {
       new Future.delayed(new Duration(seconds:1), (){
         //if the entity still exists
         if(_world.entities.containsKey(movable.id)){
-          _spawnPlayer(movable);
+          ClientProxy client = _clientForEntity(movable);
+          _spawnPlayer(client);
           Message message = new Message(MessageType.ENTITY,movable);
           _sendToClients(message);          
         }
@@ -157,6 +145,7 @@ class WorldServer {
       _world.removeEntity(client.playerEntity);
       _crashCollisionDetector.activeEntities.remove(client.playerEntity);
       _race.removePlayer(client);
+      _entityToClientMap.remove(client.playerEntity);
     }
     
     Message message = new Message(MessageType.ENTITY_REMOVE, client.playerEntity.id);
@@ -189,31 +178,39 @@ class WorldServer {
     player.canMove = true;    
     _world.addEntity(player);
     
+    _entityToClientMap[player] = client;
+    
     client.playerEntity = player;
     
-    //_race.addPlayer(client);
+    _race.addPlayer(client);
 
-    _spawnPlayer(player);
+    _spawnPlayer(client);
     updatePlayerEntity(client, client.playerEntity);
     
     return player;
   }
   
-  _spawnPlayer(Movable playerEntity){
-    Entity spawn = _race.lastCheckpointForPlayerEntity(playerEntity);
-    if(spawn == null){
-      spawn = _spawn;
+  _spawnPlayer(ClientProxy client){
+    
+    Movable movable = client.playerEntity;
+    
+    if(client.race != null){
+      Entity spawn = _race.spawnEntityForPlayer(client);
+      movable.position = spawn.position;
+      movable.orientation = spawn.orientation;
+    }
+    else {
+      Vector2 randomPoint = randomPointInCircle();
+      movable.position = _spawn.position + randomPoint * (_spawn.radius - movable.radius);
+      movable.orientation = _spawn.orientation;      
     }
         
-    Vector2 randomPoint = randomPointInCircle();
-    playerEntity.position = spawn.position + randomPoint * (spawn.radius - playerEntity.radius);
-    playerEntity.orientation = spawn.orientation;
     
-    playerEntity.canMove = true;
-    _crashCollisionDetector.activeEntities.add(playerEntity);
-    playerEntity.velocity = new Vector2.zero();
-    playerEntity.acceleration = new Vector2.zero();
-    playerEntity.rotationSpeed = 0.0;    
+    movable.canMove = true;
+    _crashCollisionDetector.activeEntities.add(movable);
+    movable.velocity = new Vector2.zero();
+    movable.acceleration = new Vector2.zero();
+    movable.rotationSpeed = 0.0;    
   }
   
   Vector2 randomPointInCircle(){
@@ -242,5 +239,7 @@ class WorldServer {
     _sendToClientsExcept(message, client);
   }
   
-
+  ClientProxy _clientForEntity(Entity entity){
+    return _entityToClientMap[entity];
+  }
 }
