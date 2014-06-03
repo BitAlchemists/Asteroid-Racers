@@ -196,58 +196,66 @@ class RenderHelper {
   {
     double thickness = 10.0;
     double radius = thickness / 2;
-        
-    Vector2 up = new Vector2(0.0, -thickness/2);
-    Vector2 down = new Vector2(0.0, thickness/2);
-    Vector2 right = new Vector2(thickness/2, 0.0);
-    Vector2 left = new Vector2(-thickness/2, 0.0);
+    double distance = 20.0;
+    double sideLength = 50.0;
     
-    Vector2 corner = new Vector2(0.0, 0.0);
-    Vector2 cornerInnerControl = corner + right + down;
-    Vector2 cornerOuterControl = corner + left + up;
-    Vector2 cornerOuterSide = corner + up;
-    Vector2 cornerOuterBottom = corner + left;
-    Vector2 cornerInnerSide = cornerInnerControl + right;
-    Vector2 cornerInnerBottom = cornerInnerControl + down;
-    
-    //outside in
-    Vector2 side = new Vector2(50.0, 0.0);
-    Vector2 sideA = side + up;
-    Vector2 sideAB = side + up + right;
-    Vector2 sideB = side + right;
-    Vector2 sideBC = side + right + down;
-    Vector2 sideC = side + down;
-    
-    //inside out
-    Vector2 bottom = new Vector2(0.0, 50.0);
-    Vector2 bottomA = bottom + right;
-    Vector2 bottomAB = bottom + right + down;
-    Vector2 bottomB = bottom + down;
-    Vector2 bottomBC = bottom + down + left;
-    Vector2 bottomC = bottom + left;
-    
-    stagexl.Graphics g = arrows.graphics;
-    g.beginPath();
-    
-    //side
-    g.moveTo(cornerOuterSide.x, cornerOuterSide.y);
-    g.lineTo(sideA.x, sideA.y);
-    g.arcTo(sideAB.x, sideAB.y, sideB.x, sideB.y, radius);
-    g.arcTo(sideBC.x, sideBC.y, sideC.x, sideC.y, radius);
-    //inner corner
-    g.lineTo(cornerInnerSide.x, cornerInnerSide.y);
-    g.arcTo(cornerInnerControl.x, cornerInnerControl.y, cornerInnerBottom.x, cornerInnerBottom.y, radius);
-    //bottom
-    g.lineTo(bottomA.x, bottomA.y);
-    g.arcTo(bottomAB.x, bottomAB.y, bottomB.x, bottomB.y, radius);
-    g.arcTo(bottomBC.x, bottomBC.y, bottomC.x, bottomC.y, radius);
-    //outer corner
-    g.lineTo(cornerOuterBottom.x, cornerOuterBottom.y);
-    g.arcTo(cornerOuterControl.x, cornerOuterControl.y, cornerOuterSide.x, cornerOuterSide.y, radius);
+    for(int i = 0; i < numArrows; i++) {
+      Vector2 offset = new Vector2(distance, distance) * i.toDouble();
+      
+      Vector2 up = new Vector2(0.0, -thickness/2);
+      Vector2 down = new Vector2(0.0, thickness/2);
+      Vector2 right = new Vector2(thickness/2, 0.0);
+      Vector2 left = new Vector2(-thickness/2, 0.0);
+      
+      Vector2 corner = new Vector2(0.0, 0.0) + offset;
+      Vector2 cornerInnerControl = corner + right + down;
+      Vector2 cornerOuterControl = corner + left + up;
+      Vector2 cornerOuterSide = corner + up;
+      Vector2 cornerOuterBottom = corner + left;
+      Vector2 cornerInnerSide = cornerInnerControl + right;
+      Vector2 cornerInnerBottom = cornerInnerControl + down;
+      
+      //outside in
+      Vector2 side = new Vector2(sideLength, 0.0) + offset;
+      Vector2 sideA = side + up;
+      Vector2 sideAB = side + up + right;
+      Vector2 sideB = side + right;
+      Vector2 sideBC = side + right + down;
+      Vector2 sideC = side + down;
+      
+      //inside out
+      Vector2 bottom = new Vector2(0.0, sideLength) + offset;
+      Vector2 bottomA = bottom + right;
+      Vector2 bottomAB = bottom + right + down;
+      Vector2 bottomB = bottom + down;
+      Vector2 bottomBC = bottom + down + left;
+      Vector2 bottomC = bottom + left;
+      
+      stagexl.Graphics g = arrows.graphics;
+      g.beginPath();
+      
+      //side
+      g.moveTo(cornerOuterSide.x, cornerOuterSide.y);
+      g.lineTo(sideA.x, sideA.y);
+      g.arcTo(sideAB.x, sideAB.y, sideB.x, sideB.y, radius);
+      g.arcTo(sideBC.x, sideBC.y, sideC.x, sideC.y, radius);
+      //inner corner
+      g.lineTo(cornerInnerSide.x, cornerInnerSide.y);
+      g.arcTo(cornerInnerControl.x, cornerInnerControl.y, cornerInnerBottom.x, cornerInnerBottom.y, radius);
+      //bottom
+      g.lineTo(bottomA.x, bottomA.y);
+      g.arcTo(bottomAB.x, bottomAB.y, bottomB.x, bottomB.y, radius);
+      g.arcTo(bottomBC.x, bottomBC.y, bottomC.x, bottomC.y, radius);
+      //outer corner
+      g.lineTo(cornerOuterBottom.x, cornerOuterBottom.y);
+      g.arcTo(cornerOuterControl.x, cornerOuterControl.y, cornerOuterSide.x, cornerOuterSide.y, radius);
 
-    g.closePath();
-    g.strokeColor(stagexl.Color.Blue);
-    g.fillColor(stagexl.Color.LightBlue);
+      g.closePath();
+      g.strokeColor(stagexl.Color.Blue);
+      g.fillColor(stagexl.Color.LightBlue);
+    }
+        
+
 
   }
   
