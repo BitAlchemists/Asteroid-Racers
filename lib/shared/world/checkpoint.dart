@@ -17,5 +17,6 @@ class Checkpoint extends Entity {
   
   copyFrom(Checkpoint entity){
     super.copyFrom(entity);
+    state = entity.state;
   }
 }

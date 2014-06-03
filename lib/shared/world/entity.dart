@@ -5,6 +5,8 @@ class EntityType {
   static const String SHIP = "SHIP";
   static const String CHECKPOINT = "CHECKPOINT";
   static const String LAUNCH_PLATFORM = "LAUNCH_PLATFORM";
+  static const String ARROWS = "ARROWS";
+  static const String FINISH = "FINISH";
 }
 
 class CheckpointState {
@@ -28,9 +30,6 @@ class Entity
     Entity entity;
     
     switch(list[0]){
-      case EntityType.ASTEROID:
-        entity = new Entity.fromJson(list);
-        break;
       case EntityType.SHIP:
         entity = new Movable.fromJson(list);
         break;
@@ -39,6 +38,9 @@ class Entity
         break;
       case EntityType.CHECKPOINT:
         entity = new Checkpoint.fromJson(list);
+        break;
+      default:
+        entity = new Entity.fromJson(list);
         break;
     }
     

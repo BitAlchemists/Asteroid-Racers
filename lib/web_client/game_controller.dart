@@ -183,55 +183,6 @@ class GameController implements stagexl.Animatable {
     _stage.addChildAt(_frontLayer, 2);
     _stage.juggler.add(this);    
 
-
-
-    stagexl.Sprite finish;
-    finish = new stagexl.Sprite();  
-    finish.x = -1400;
-    RenderHelper.applyFinishCircle(finish);
-    _frontLayer.addChild(finish);
-    
-    stagexl.Sprite arrows;
-    arrows = new stagexl.Sprite();
-    arrows.y = -500;
-    arrows.rotation = Math.PI;
-    RenderHelper.applyArrows(arrows);
-    _frontLayer.addChild(arrows);
-    
-    arrows = new stagexl.Sprite();
-    arrows.y = -200;
-    arrows.rotation = Math.PI;
-    RenderHelper.applyArrows(arrows);
-    _frontLayer.addChild(arrows);
-    
-    arrows = new stagexl.Sprite();
-    arrows.y = -1200;
-    arrows.x = 100;
-    arrows.rotation = Math.PI * 1.25;
-    RenderHelper.applyArrows(arrows);
-    _frontLayer.addChild(arrows);
-    
-    arrows = new stagexl.Sprite();
-    arrows.y = -1200;
-    arrows.x = -100;
-    arrows.rotation = Math.PI * 0.75;
-    RenderHelper.applyArrows(arrows);
-    _frontLayer.addChild(arrows);
-
-    arrows = new stagexl.Sprite();
-    arrows.y = -1700;
-    arrows.x = 150;
-    arrows.rotation = Math.PI * 0.5;
-    RenderHelper.applyArrows(arrows);
-    _frontLayer.addChild(arrows);
-    
-    arrows = new stagexl.Sprite();
-    arrows.y = -1700;
-    arrows.x = -150;
-    arrows.rotation = Math.PI * 1.5;
-    RenderHelper.applyArrows(arrows);
-    _frontLayer.addChild(arrows);
-
     String username = _usernameField.text;   
     
     server.connect(_config.localServer, _config.debugJson, username).then(_onConnect).catchError((html.Event e){
@@ -377,9 +328,8 @@ class GameController implements stagexl.Animatable {
     }
     else {
       ec = _entityControllers[entity.id];
-    }
-    
-    ec.updateFromServer(entity);    
+      ec.updateFromServer(entity);
+    }    
   }
   
   void removeEntity(int entityId){

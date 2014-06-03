@@ -56,18 +56,28 @@ class WorldServer {
     _race.addStart(0.0, 0.0, Math.PI);
     _race.addCheckpoint(0.0, -500.0);
     _race.addCheckpoint(0.0, -1700.0);
-        
-    
-    
-    /*for(int i = 0; i < 5; i++){
-      _race.addRandomCheckpoint(400.0, 50.0);      
-    }
-    _race.addRandomCheckpoint(400.0, 100.0);*/
-    
-        
+
     _world.addEntities(_race.checkpoints);
     _world.addEntity(_race.start);
+
+    _addArrows({num x: 0.0, num y: 0.0, double orientation: 0.0}){
+      Entity arrows = new Entity(EntityType.ARROWS);
+      arrows.position = new Vector2(x.toDouble(), y.toDouble());
+      arrows.orientation = orientation;
+      arrows.radius = 100.0;
+      _world.addEntity(arrows);
+    }
     
+    Entity finish = new Entity(EntityType.FINISH, position: new Vector2(0.0, -1700.0), radius: 100.0);
+    _world.addEntity(finish);
+    
+    _addArrows(y: -500, orientation: Math.PI);
+    _addArrows(y: -200, orientation: Math.PI);    
+    _addArrows(x: 100, y: -1200, orientation: Math.PI * 1.25);    
+    _addArrows(x: -100, y: -1200, orientation: Math.PI * 0.75);    
+    _addArrows(x: 150, y: -1700, orientation: Math.PI * 0.5);    
+    _addArrows(x: -150, y: -1700, orientation: Math.PI * 1.5);        
+            
     _spawn = new Entity(null);
     _spawn.position = new Vector2(-200.0, 0.0);
     _spawn.radius = 100.0;

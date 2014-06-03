@@ -163,7 +163,7 @@ class RenderHelper {
     sprite.graphics.strokeColor(stagexl.Color.White);
   }
   
-  static applyFinishCircle(stagexl.Sprite finish, [double radius = 100.0, double sideLength = 20.0]){
+  static applyFinishCircle(stagexl.Sprite finish, {double radius: 100.0, double sideLength: 20.0}){
     stagexl.Sprite whitePattern;
     stagexl.Sprite blackPattern;
     whitePattern = new stagexl.Sprite();
@@ -192,11 +192,14 @@ class RenderHelper {
     finish.alpha = 0.8;
   }
   
-  static applyArrows(stagexl.Sprite arrows, [int numArrows = 3, double width = 100.0, double height = 100.0])
+  static applyArrows(stagexl.Sprite arrows, {int numArrows: 3, double radius: 100.0})
   {
+    double width = radius;
+    double height = radius;
+    
     double thickness = 10.0;
     double t = thickness / Math.SQRT2 / 2.0;
-    double radius = thickness / 2;
+    double cornerRadius = thickness / 2;
     
     for(int i = 0; i < numArrows; i++) {
       double space = height - width/2; // width/2 == the height of an arrow 
@@ -238,18 +241,18 @@ class RenderHelper {
       //rightWing
       g.moveTo(tipOuterRight.x, tipOuterRight.y);
       g.lineTo(rightWingA.x, rightWingA.y);
-      g.arcTo(rightWingAB.x, rightWingAB.y, rightWingB.x, rightWingB.y, radius);
-      g.arcTo(rightWingBC.x, rightWingBC.y, rightWingC.x, rightWingC.y, radius);
+      g.arcTo(rightWingAB.x, rightWingAB.y, rightWingB.x, rightWingB.y, cornerRadius);
+      g.arcTo(rightWingBC.x, rightWingBC.y, rightWingC.x, rightWingC.y, cornerRadius);
       //inner corner
       g.lineTo(tipInnerRight.x, tipInnerRight.y);
-      g.arcTo(tipInnerControl.x, tipInnerControl.y, tipInnerLeft.x, tipInnerLeft.y, radius);
+      g.arcTo(tipInnerControl.x, tipInnerControl.y, tipInnerLeft.x, tipInnerLeft.y, cornerRadius);
       //leftWing
       g.lineTo(leftWingA.x, leftWingA.y);
-      g.arcTo(leftWingAB.x, leftWingAB.y, leftWingB.x, leftWingB.y, radius);
-      g.arcTo(leftWingBC.x, leftWingBC.y, leftWingC.x, leftWingC.y, radius);
+      g.arcTo(leftWingAB.x, leftWingAB.y, leftWingB.x, leftWingB.y, cornerRadius);
+      g.arcTo(leftWingBC.x, leftWingBC.y, leftWingC.x, leftWingC.y, cornerRadius);
       //outer corner
       g.lineTo(tipOuterLeft.x, tipOuterLeft.y);
-      g.arcTo(tipOuterControl.x, tipOuterControl.y, tipOuterRight.x, tipOuterRight.y, radius);
+      g.arcTo(tipOuterControl.x, tipOuterControl.y, tipOuterRight.x, tipOuterRight.y, cornerRadius);
 
       g.closePath();
       g.strokeColor(stagexl.Color.Blue);
