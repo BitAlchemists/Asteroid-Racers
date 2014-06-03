@@ -187,16 +187,51 @@ class GameController implements stagexl.Animatable {
 
     stagexl.Sprite finish;
     finish = new stagexl.Sprite();  
-    finish.x = -200;
+    finish.x = -1400;
     RenderHelper.applyFinishCircle(finish);
     _frontLayer.addChild(finish);
     
     stagexl.Sprite arrows;
     arrows = new stagexl.Sprite();
-    arrows.y = -200;
+    arrows.y = -500;
+    arrows.rotation = Math.PI;
     RenderHelper.applyArrows(arrows);
     _frontLayer.addChild(arrows);
     
+    arrows = new stagexl.Sprite();
+    arrows.y = -200;
+    arrows.rotation = Math.PI;
+    RenderHelper.applyArrows(arrows);
+    _frontLayer.addChild(arrows);
+    
+    arrows = new stagexl.Sprite();
+    arrows.y = -1200;
+    arrows.x = 100;
+    arrows.rotation = Math.PI * 1.25;
+    RenderHelper.applyArrows(arrows);
+    _frontLayer.addChild(arrows);
+    
+    arrows = new stagexl.Sprite();
+    arrows.y = -1200;
+    arrows.x = -100;
+    arrows.rotation = Math.PI * 0.75;
+    RenderHelper.applyArrows(arrows);
+    _frontLayer.addChild(arrows);
+
+    arrows = new stagexl.Sprite();
+    arrows.y = -1700;
+    arrows.x = 150;
+    arrows.rotation = Math.PI * 0.5;
+    RenderHelper.applyArrows(arrows);
+    _frontLayer.addChild(arrows);
+    
+    arrows = new stagexl.Sprite();
+    arrows.y = -1700;
+    arrows.x = -150;
+    arrows.rotation = Math.PI * 1.5;
+    RenderHelper.applyArrows(arrows);
+    _frontLayer.addChild(arrows);
+
     String username = _usernameField.text;   
     
     server.connect(_config.localServer, _config.debugJson, username).then(_onConnect).catchError((html.Event e){

@@ -195,60 +195,61 @@ class RenderHelper {
   static applyArrows(stagexl.Sprite arrows, [int numArrows = 3, double width = 100.0, double height = 100.0])
   {
     double thickness = 10.0;
+    double t = thickness / Math.SQRT2 / 2.0;
     double radius = thickness / 2;
-    double distance = 20.0;
-    double sideLength = 50.0;
     
     for(int i = 0; i < numArrows; i++) {
-      Vector2 offset = new Vector2(distance, distance) * i.toDouble();
+      double space = height - width/2; // width/2 == the height of an arrow 
+      double y = space / (numArrows - 1) * i - space/2;
+      Vector2 offset = new Vector2(0.0, y);
       
-      Vector2 up = new Vector2(0.0, -thickness/2);
-      Vector2 down = new Vector2(0.0, thickness/2);
-      Vector2 right = new Vector2(thickness/2, 0.0);
-      Vector2 left = new Vector2(-thickness/2, 0.0);
+      Vector2 upRight = new Vector2(t, t);
+      Vector2 downLeft = new Vector2(-t, -t);
+      Vector2 downRight = new Vector2(t, -t);
+      Vector2 upLeft = new Vector2(-t, t);
       
-      Vector2 corner = new Vector2(0.0, 0.0) + offset;
-      Vector2 cornerInnerControl = corner + right + down;
-      Vector2 cornerOuterControl = corner + left + up;
-      Vector2 cornerOuterSide = corner + up;
-      Vector2 cornerOuterBottom = corner + left;
-      Vector2 cornerInnerSide = cornerInnerControl + right;
-      Vector2 cornerInnerBottom = cornerInnerControl + down;
+      Vector2 tip = new Vector2(0.0, width/2/3*2) + offset;
+      Vector2 tipInnerControl = tip + downRight + downLeft;
+      Vector2 tipOuterControl = tip + upLeft + upRight;
+      Vector2 tipOuterRight = tip + upRight;
+      Vector2 tipOuterLeft = tip + upLeft;
+      Vector2 tipInnerRight = tipInnerControl + downRight;
+      Vector2 tipInnerLeft = tipInnerControl + downLeft;
       
       //outside in
-      Vector2 side = new Vector2(sideLength, 0.0) + offset;
-      Vector2 sideA = side + up;
-      Vector2 sideAB = side + up + right;
-      Vector2 sideB = side + right;
-      Vector2 sideBC = side + right + down;
-      Vector2 sideC = side + down;
+      Vector2 rightWing = new Vector2(width/2, -width/2/3) + offset;
+      Vector2 rightWingA = rightWing + upRight;
+      Vector2 rightWingAB = rightWing + upRight + downRight;
+      Vector2 rightWingB = rightWing + downRight;
+      Vector2 rightWingBC = rightWing + downRight + downLeft;
+      Vector2 rightWingC = rightWing + downLeft;
       
       //inside out
-      Vector2 bottom = new Vector2(0.0, sideLength) + offset;
-      Vector2 bottomA = bottom + right;
-      Vector2 bottomAB = bottom + right + down;
-      Vector2 bottomB = bottom + down;
-      Vector2 bottomBC = bottom + down + left;
-      Vector2 bottomC = bottom + left;
+      Vector2 leftWing = new Vector2(-width/2, -width/2/3) + offset;
+      Vector2 leftWingA = leftWing + downRight;
+      Vector2 leftWingAB = leftWing + downRight + downLeft;
+      Vector2 leftWingB = leftWing + downLeft;
+      Vector2 leftWingBC = leftWing + downLeft + upLeft;
+      Vector2 leftWingC = leftWing + upLeft;
       
       stagexl.Graphics g = arrows.graphics;
       g.beginPath();
       
-      //side
-      g.moveTo(cornerOuterSide.x, cornerOuterSide.y);
-      g.lineTo(sideA.x, sideA.y);
-      g.arcTo(sideAB.x, sideAB.y, sideB.x, sideB.y, radius);
-      g.arcTo(sideBC.x, sideBC.y, sideC.x, sideC.y, radius);
+      //rightWing
+      g.moveTo(tipOuterRight.x, tipOuterRight.y);
+      g.lineTo(rightWingA.x, rightWingA.y);
+      g.arcTo(rightWingAB.x, rightWingAB.y, rightWingB.x, rightWingB.y, radius);
+      g.arcTo(rightWingBC.x, rightWingBC.y, rightWingC.x, rightWingC.y, radius);
       //inner corner
-      g.lineTo(cornerInnerSide.x, cornerInnerSide.y);
-      g.arcTo(cornerInnerControl.x, cornerInnerControl.y, cornerInnerBottom.x, cornerInnerBottom.y, radius);
-      //bottom
-      g.lineTo(bottomA.x, bottomA.y);
-      g.arcTo(bottomAB.x, bottomAB.y, bottomB.x, bottomB.y, radius);
-      g.arcTo(bottomBC.x, bottomBC.y, bottomC.x, bottomC.y, radius);
+      g.lineTo(tipInnerRight.x, tipInnerRight.y);
+      g.arcTo(tipInnerControl.x, tipInnerControl.y, tipInnerLeft.x, tipInnerLeft.y, radius);
+      //leftWing
+      g.lineTo(leftWingA.x, leftWingA.y);
+      g.arcTo(leftWingAB.x, leftWingAB.y, leftWingB.x, leftWingB.y, radius);
+      g.arcTo(leftWingBC.x, leftWingBC.y, leftWingC.x, leftWingC.y, radius);
       //outer corner
-      g.lineTo(cornerOuterBottom.x, cornerOuterBottom.y);
-      g.arcTo(cornerOuterControl.x, cornerOuterControl.y, cornerOuterSide.x, cornerOuterSide.y, radius);
+      g.lineTo(tipOuterLeft.x, tipOuterLeft.y);
+      g.arcTo(tipOuterControl.x, tipOuterControl.y, tipOuterRight.x, tipOuterRight.y, radius);
 
       g.closePath();
       g.strokeColor(stagexl.Color.Blue);
