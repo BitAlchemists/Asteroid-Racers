@@ -204,6 +204,17 @@ class GameController implements stagexl.Animatable {
     
     _frontLayer.addChild(start);
 
+    stagexl.Sprite finish;
+    finish = new stagexl.Sprite();  
+    finish.x = -200;
+    RenderHelper.applyFinishCircle(finish);
+    _frontLayer.addChild(finish);
+    
+    stagexl.Sprite arrows;
+    arrows = new stagexl.Sprite();
+    arrows.y = -200;
+    RenderHelper.applyArrows(arrows);
+    _frontLayer.addChild(arrows);
     
     String username = _usernameField.text;   
     
