@@ -3,6 +3,7 @@ part of world_server;
 
 class RaceController {
   LaunchPlatform _start;
+  Entity _finish;
   List<Entity> _checkpoints = new List<Entity>();
   CollisionDetector _checkpointCollisionDetector = new CollisionDetector();
   final Map<int, int> _lastTouchedCheckpointIndex = new Map<int, int>(); //player.id, checkpoint index
@@ -10,11 +11,12 @@ class RaceController {
   
   List<Entity> get checkpoints => _checkpoints;
   LaunchPlatform get start => _start;
+  Entity get finish => _finish;
   
   addStart(double x, double y, double orientation){
     double circleRadius = 100.0;
     _start = new LaunchPlatform();
-    _start.position = new Vector2.zero();
+    _start.position = new Vector2(x, y);
     _start.radius = 100.0;
     _start.orientation = Math.PI;
     for(int i = 0; i < 4; i++){
@@ -50,6 +52,13 @@ class RaceController {
     return checkpoint;
   }
   
+  addFinish(double x, double y)
+  {
+    _finish = new Entity(EntityType.FINISH, position: new Vector2(x, y), radius: 100.0);
+    addCheckpoint(x, y, 100.0);
+  }
+  
+  /*
   Entity addRandomCheckpoint(double distanceToPrevious, double radius){
     double t = random.nextDouble() * Math.PI * 2;
     Vector2 direction = new Vector2(Math.sin(t), Math.cos(t));
@@ -57,6 +66,7 @@ class RaceController {
     
     return addCheckpoint(newPosition.x, newPosition.y, radius);
   }
+*/
   
   update(){
     Map<Entity, List<Entity>> collisions = _checkpointCollisionDetector.detectCollisions();
@@ -82,7 +92,7 @@ class RaceController {
 
           if(nextCheckpoint == _checkpoints.last){
             //completed the race
-            _checkpointCollisionDetector.activeEntities.remove(playerEntity);
+            this._playerReachedFinish(player);
           }
           else {
             nextCheckpoint = _checkpoints[lastTouchedCheckpointIndex+2];
@@ -108,6 +118,10 @@ class RaceController {
     _players.remove(client.playerEntity.id);
     _checkpointCollisionDetector.activeEntities.remove(client.playerEntity);
     client.race = null;
+  }
+  
+  _playerReachedFinish(ClientProxy client){
+    _checkpointCollisionDetector.activeEntities.remove(client.playerEntity);
   }
   
   Entity spawnEntityForPlayer(ClientProxy client){
