@@ -5,7 +5,7 @@ typedef void CollisionHandler(Entity collidingEntity, Entity otherEntity);
 class CollisionDetector {
   
   bool activeEntitiesCanCollide = false;
-  List<Entity> passiveEntitities = new List<Entity>();
+  List<Entity> passiveEntities = new List<Entity>();
   List<Entity> activeEntities = new List<Entity>();
 
   CollisionDetector();
@@ -30,8 +30,8 @@ class CollisionDetector {
     }
 
     //detect colissions between active and passive entities
-    for(int i = 0; i < passiveEntitities.length; i++){
-      Entity passive = passiveEntitities[i];
+    for(int i = 0; i < passiveEntities.length; i++){
+      Entity passive = passiveEntities[i];
       for(int j = 0; j < activeEntities.length; j++)
       {
         Entity active = activeEntities[j];

@@ -16,7 +16,8 @@ Math.Random random = new Math.Random();
 
 class WorldServer {
   final World _world = new World();
-  CollisionDetector _crashCollisionDetector; 
+  CollisionDetector _crashCollisionDetector;
+  CollisionDetector _joinRaceCollisionDetector;
   final Set<ClientProxy> _clients = new Set<ClientProxy>();
   RaceController _race;
   Entity _spawn;
@@ -44,7 +45,8 @@ class WorldServer {
 
     _crashCollisionDetector = new CollisionDetector();
     _crashCollisionDetector.activeEntitiesCanCollide = true;
-    _crashCollisionDetector.passiveEntitities = asteroids;
+    _crashCollisionDetector.passiveEntities = asteroids;
+    
     
     _race = new RaceController();
 /*
@@ -61,6 +63,9 @@ class WorldServer {
     _world.addEntities(_race.checkpoints);
     _world.addEntity(_race.start);
     _world.addEntity(_race.finish);
+    
+    _joinRaceCollisionDetector = new CollisionDetector();
+    _joinRaceCollisionDetector.passiveEntities = [_race.start];
 
     _addArrows({num x: 0.0, num y: 0.0, double orientation: 0.0}){
       Entity arrows = new Entity(EntityType.ARROWS);
@@ -78,7 +83,7 @@ class WorldServer {
     _addArrows(x: -150, y: -1700, orientation: Math.PI * 1.5);        
     */        
     _spawn = new Entity(null);
-    _spawn.position = new Vector2(-200.0, 0.0);
+    _spawn.position = new Vector2(0.0, 0.0);
     _spawn.radius = 100.0;
     _spawn.orientation = Math.PI;
     
@@ -109,6 +114,7 @@ class WorldServer {
   void _checkCollisions()
   {
     _crashCollisionDetector.detectCollisions(_onPlayerCollision);
+    _joinRaceCollisionDetector.detectCollisions(_onPlayerTouchRacePortal);
   }
   
   _onPlayerCollision(Movable playerEntity, Entity otherEntity){
@@ -125,6 +131,10 @@ class WorldServer {
         _sendToClients(message);          
       }
     });
+  }
+  
+  _onPlayerTouchRacePortal(Movable playerEntity, RacePortal portal){
+    (portal.raceController as RaceController).addPlayer(_clientForEntity(playerEntity));
   }
   
   //Client-Server communication
@@ -190,8 +200,8 @@ class WorldServer {
     
     client.playerEntity = player;
     
-    _race.addPlayer(client);
-
+    _joinRaceCollisionDetector.activeEntities.add(client.playerEntity);
+    
     _spawnPlayer(client);
     updatePlayerEntity(client, client.playerEntity);
     

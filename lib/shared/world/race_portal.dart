@@ -2,6 +2,8 @@ part of ar_shared;
 
 class RacePortal extends Entity {
   
+  var raceController; //will not replicate to clients
+  
   List<Entity> positions = new List<Entity>();
   
   RacePortal() : super(EntityType.LAUNCH_PLATFORM);

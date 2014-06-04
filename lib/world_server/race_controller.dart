@@ -30,6 +30,8 @@ class RaceController {
       _portal.positions.add(start);      
     }
     
+    _portal.raceController = this;
+    
 //    _checkpoints.add(lp);
 //    _checkpointCollisionDetector.passiveEntitities.add(lp);
   }
@@ -47,7 +49,7 @@ class RaceController {
     }
     
     _checkpoints.add(checkpoint);
-    _checkpointCollisionDetector.passiveEntitities.add(checkpoint);
+    _checkpointCollisionDetector.passiveEntities.add(checkpoint);
     
     return checkpoint;
   }
@@ -121,7 +123,7 @@ class RaceController {
   }
   
   _playerReachedFinish(ClientProxy client){
-    _checkpointCollisionDetector.activeEntities.remove(client.playerEntity);
+    this.removePlayer(client);
   }
   
   Entity spawnEntityForPlayer(ClientProxy client){
