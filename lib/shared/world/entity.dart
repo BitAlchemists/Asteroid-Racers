@@ -34,7 +34,7 @@ class Entity
         entity = new Movable.fromJson(list);
         break;
       case EntityType.LAUNCH_PLATFORM:
-        entity = new LaunchPlatform.fromJson(list);
+        entity = new RacePortal.fromJson(list);
         break;
       case EntityType.CHECKPOINT:
         entity = new Checkpoint.fromJson(list);

@@ -16,4 +16,4 @@ part "world/world.dart";
 part "world/entity.dart";
 part "world/movable.dart";
 part "world/checkpoint.dart";
-part "world/launch_platform.dart";
+part "world/race_portal.dart";

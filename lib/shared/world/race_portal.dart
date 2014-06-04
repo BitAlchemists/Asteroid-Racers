@@ -1,12 +1,12 @@
 part of ar_shared;
 
-class LaunchPlatform extends Entity {
+class RacePortal extends Entity {
   
   List<Entity> positions = new List<Entity>();
   
-  LaunchPlatform() : super(EntityType.LAUNCH_PLATFORM);
+  RacePortal() : super(EntityType.LAUNCH_PLATFORM);
   
-  LaunchPlatform.fromJson(List list) : super.fromJson(list){
+  RacePortal.fromJson(List list) : super.fromJson(list){
     for(List rawPosition in list[7]){
       Entity entity = new Entity.fromJson(rawPosition);
       positions.add(entity);
@@ -24,7 +24,7 @@ class LaunchPlatform extends Entity {
     return list;
   }
   
-  copyFrom(LaunchPlatform platform){
+  copyFrom(RacePortal platform){
     super.copyFrom(platform);
     positions = platform.positions;
   }

@@ -108,24 +108,23 @@ class WorldServer {
   
   void _checkCollisions()
   {
-    Map<Entity, List<Entity>> collidingEntities = _crashCollisionDetector.detectCollisions();
-    
-    for(Movable movable in collidingEntities.keys)
-    {
-      _crashCollisionDetector.activeEntities.remove(movable);
-     movable.canMove = false;
-      Message message = new Message(MessageType.COLLISION,movable.id);
-      _sendToClients(message);
-      new Future.delayed(new Duration(seconds:1), (){
-        //if the entity still exists
-        if(_world.entities.containsKey(movable.id)){
-          ClientProxy client = _clientForEntity(movable);
-          _spawnPlayer(client);
-          Message message = new Message(MessageType.ENTITY,movable);
-          _sendToClients(message);          
-        }
-      });
-    }
+    _crashCollisionDetector.detectCollisions(_onPlayerCollision);
+  }
+  
+  _onPlayerCollision(Movable playerEntity, Entity otherEntity){
+    _crashCollisionDetector.activeEntities.remove(playerEntity);
+    playerEntity.canMove = false;
+    Message message = new Message(MessageType.COLLISION, playerEntity.id);
+    _sendToClients(message);
+    new Future.delayed(new Duration(seconds:1), (){
+      //if the entity still exists
+      if(_world.entities.containsKey(playerEntity.id)){
+        ClientProxy client = _clientForEntity(playerEntity);
+        _spawnPlayer(client);
+        Message message = new Message(MessageType.ENTITY, playerEntity);
+        _sendToClients(message);          
+      }
+    });
   }
   
   //Client-Server communication

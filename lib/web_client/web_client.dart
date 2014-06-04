@@ -29,7 +29,7 @@ part "views/ui/button.dart";
 part "controllers/entity_controller.dart";
 part 'controllers/player_controller.dart';
 part "controllers/checkpoint_controller.dart";
-part "controllers/platform_controller.dart";
+part "controllers/race_portal_controller.dart";
 
 part 'physics/physics_simulator.dart';
 

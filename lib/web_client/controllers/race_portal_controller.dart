@@ -1,12 +1,10 @@
 part of web_client;
 
-class PlatformController extends EntityController {
+class RacePortalController extends EntityController {
  
-  PlatformController(entity) : super(entity){
-
-  }
+  RacePortalController(entity) : super(entity);
   
-  _createSprite(LaunchPlatform platform) {    
+  _createSprite(RacePortal platform) {    
     sprite.graphics.circle(0,0,platform.radius);
     sprite.graphics.fillColor(0x4000ff00);
     

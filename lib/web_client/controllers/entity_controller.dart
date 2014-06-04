@@ -18,7 +18,7 @@ class EntityController {
       case EntityType.CHECKPOINT:
         return new CheckpointController(entity);
       case EntityType.LAUNCH_PLATFORM:
-        return new PlatformController(entity);
+        return new RacePortalController(entity);
       default:
         return new EntityController(entity);
     }

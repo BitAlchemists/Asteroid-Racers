@@ -1,5 +1,7 @@
 part of world_server;
 
+typedef void CollisionHandler(Entity collidingEntity, Entity otherEntity);
+
 class CollisionDetector {
   
   bool activeEntitiesCanCollide = false;
@@ -8,10 +10,8 @@ class CollisionDetector {
 
   CollisionDetector();
   
-  Map<Entity, List<Entity>> detectCollisions(){
-    
-    Map<Entity, List<Entity>> collisions = new Map<Entity, List<Entity>>();
-    
+  void detectCollisions(CollisionHandler collisionHandler){
+        
     //detect colissions between activeEntities
     if(activeEntitiesCanCollide)
     {
@@ -20,10 +20,10 @@ class CollisionDetector {
         for(int j = i+1; j < activeEntities.length; j++)
         {
           Entity b = activeEntities[j];
-          if(_collision(a, b))
+          if(_entitiesCollide(a, b))
           {
-            _addCollision(collisions, a, b);
-            _addCollision(collisions, b, a);
+            collisionHandler(a, b);
+            collisionHandler(b, a);
           }
         }
       }
@@ -35,23 +35,22 @@ class CollisionDetector {
       for(int j = 0; j < activeEntities.length; j++)
       {
         Entity active = activeEntities[j];
-        if(_collision(passive, active))
+        if(_entitiesCollide(passive, active))
         {
-          _addCollision(collisions, active, passive);
+          collisionHandler(active, passive);
         }
       }
-    }      
-    
-    return collisions;
+    }          
   }
   
-  bool _collision(Entity a, Entity b)
+  bool _entitiesCollide(Entity a, Entity b)
   {
     double distance = (a.position - b.position).length;
     double colissionDistance = a.radius + b.radius; 
     return distance <= colissionDistance;
   }
   
+  /*
   void _addCollision(Map<Entity, List<Entity>> collisions, Entity active, Entity passive){
     List<Entity> passives = collisions[active];
     if(passives == null){
@@ -60,5 +59,6 @@ class CollisionDetector {
     }
     
     passives.add(passive);
-  }  
+  } 
+  * */
 }
