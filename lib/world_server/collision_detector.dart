@@ -20,7 +20,7 @@ class CollisionDetector {
         for(int j = i+1; j < activeEntities.length; j++)
         {
           Entity b = activeEntities[j];
-          if(_entitiesCollide(a, b))
+          if(doEntitiesCollide(a, b))
           {
             collisionHandler(a, b);
             collisionHandler(b, a);
@@ -35,7 +35,7 @@ class CollisionDetector {
       for(int j = 0; j < activeEntities.length; j++)
       {
         Entity active = activeEntities[j];
-        if(_entitiesCollide(passive, active))
+        if(doEntitiesCollide(passive, active))
         {
           collisionHandler(active, passive);
         }
@@ -43,7 +43,7 @@ class CollisionDetector {
     }          
   }
   
-  bool _entitiesCollide(Entity a, Entity b)
+  static bool doEntitiesCollide(Entity a, Entity b)
   {
     double distance = (a.position - b.position).length;
     double colissionDistance = a.radius + b.radius; 

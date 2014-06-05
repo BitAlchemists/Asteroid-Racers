@@ -5,9 +5,9 @@ class RaceController {
   RacePortal _portal;
   Entity _finish;
   List<Entity> _checkpoints = new List<Entity>();
-  CollisionDetector _checkpointCollisionDetector = new CollisionDetector();
-  final Map<int, int> _lastTouchedCheckpointIndex = new Map<int, int>(); //player.id, checkpoint index
-  final Map<int, ClientProxy> _players = new Map<int, ClientProxy>(); //player.id, clientproxy
+  final Map<ClientProxy, int> _lastTouchedCheckpointIndex = new Map<ClientProxy, int>(); //player.id, checkpoint index
+  Iterable<ClientProxy> get _players => _lastTouchedCheckpointIndex.keys;
+  
   
   List<Entity> get checkpoints => _checkpoints;
   RacePortal get start => _portal;
@@ -17,7 +17,7 @@ class RaceController {
     double circleRadius = 100.0;
     _portal = new RacePortal();
     _portal.position = new Vector2(x, y);
-    _portal.radius = 100.0;
+    _portal.radius = circleRadius;
     _portal.orientation = Math.PI;
     for(int i = 0; i < 4; i++){
       double angle = Math.PI/2 - Math.PI/3*i;
@@ -32,8 +32,7 @@ class RaceController {
     
     _portal.raceController = this;
     
-//    _checkpoints.add(lp);
-//    _checkpointCollisionDetector.passiveEntitities.add(lp);
+    addCheckpoint(x, y, circleRadius);    
   }
   
   Entity addCheckpoint(double x, double y, [double radius = 100.0]){
@@ -49,7 +48,6 @@ class RaceController {
     }
     
     _checkpoints.add(checkpoint);
-    _checkpointCollisionDetector.passiveEntities.add(checkpoint);
     
     return checkpoint;
   }
@@ -71,54 +69,50 @@ class RaceController {
 */
   
   update(){
-    _checkpointCollisionDetector.detectCollisions(_onPlayerHitsCheckpoint);
+    List<ClientProxy> finishedPlayers = new List<ClientProxy>();
+    
+    _lastTouchedCheckpointIndex.forEach((ClientProxy client, int lastTouchedCheckpointIndex){
+      Entity nextCheckpoint = _checkpoints[lastTouchedCheckpointIndex+1];
+      if(CollisionDetector.doEntitiesCollide(client.playerEntity, nextCheckpoint))
+      {
+        _lastTouchedCheckpointIndex[client] = lastTouchedCheckpointIndex + 1;              
+        
+        Checkpoint messageEntity = new Checkpoint.copy(nextCheckpoint);
+        messageEntity.state = CheckpointState.CLEARED;
+        Message message = new Message(MessageType.ENTITY, messageEntity); 
+        client.send(message);
+
+        if(nextCheckpoint == _checkpoints.last){
+          //completed the race
+          finishedPlayers.add(client);
+        }
+        else {
+          nextCheckpoint = _checkpoints[lastTouchedCheckpointIndex+2];
+          
+          messageEntity = new Checkpoint.copy(nextCheckpoint);
+          messageEntity.state = CheckpointState.CURRENT;
+          Message message = new Message(MessageType.ENTITY, messageEntity);   
+          client.send(message);
+        }      
+      }
+    });
+
+    for(var player in finishedPlayers){
+      this._playerReachedFinish(player);
+    }
     
   }
   
-  _onPlayerHitsCheckpoint(Movable playerEntity, Checkpoint checkpoint){
-    int lastTouchedCheckpointIndex = _lastTouchedCheckpointIndex[playerEntity.id];
-    if(lastTouchedCheckpointIndex == null){
-      lastTouchedCheckpointIndex = -1;
-    }
-    
-    Entity nextCheckpoint = _checkpoints[lastTouchedCheckpointIndex+1];
-    
-    if(checkpoint == nextCheckpoint){
-      _lastTouchedCheckpointIndex[playerEntity.id] = lastTouchedCheckpointIndex + 1;
-      
-      ClientProxy player = _players[playerEntity.id];
-      
-      Checkpoint messageEntity = new Checkpoint.copy(nextCheckpoint);
-      messageEntity.state = CheckpointState.CLEARED;
-      Message message = new Message(MessageType.ENTITY, messageEntity); 
-      player.send(message);
-
-      if(nextCheckpoint == _checkpoints.last){
-        //completed the race
-        this._playerReachedFinish(player);
-      }
-      else {
-        nextCheckpoint = _checkpoints[lastTouchedCheckpointIndex+2];
-        
-        messageEntity = new Checkpoint.copy(nextCheckpoint);
-        messageEntity.state = CheckpointState.CURRENT;
-        Message message = new Message(MessageType.ENTITY, messageEntity);   
-        player.send(message);
-      }
-    }
-          
-  }
   
   addPlayer(ClientProxy client){
-    _players[client.playerEntity.id] = client;
-    _checkpointCollisionDetector.activeEntities.add(client.playerEntity);
+    //_players[client.playerEntity.id] = client;
+    _lastTouchedCheckpointIndex[client] = 0;
     client.race = this;
   }
 
   removePlayer(ClientProxy client){
     _lastTouchedCheckpointIndex.remove(client);
-    _players.remove(client.playerEntity.id);
-    _checkpointCollisionDetector.activeEntities.remove(client.playerEntity);
+    //_players.remove(client.playerEntity.id);
     client.race = null;
   }
   
@@ -127,11 +121,14 @@ class RaceController {
   }
   
   Entity spawnEntityForPlayer(ClientProxy client){
-    int i = _lastTouchedCheckpointIndex[client.playerEntity.id];
-    if(i == null){
-      var playerIdList = _players.keys.toList();
-      playerIdList.sort();
-      int i = playerIdList.indexOf(client.playerEntity.id);
+    int i = _lastTouchedCheckpointIndex[client];
+    
+    if(i == 0){
+      //players get assigned starting positions according to their entity id
+      var playerIdList = _players.toList();
+      playerIdList.sort((ClientProxy a, ClientProxy b) => a.playerEntity.id.compareTo(b.playerEntity.id));
+      
+      int i = playerIdList.indexOf(client);
       Entity spawnEntity = new Entity.copy(_portal.positions[i]);
       spawnEntity.radius = client.playerEntity.radius;
       return spawnEntity;
