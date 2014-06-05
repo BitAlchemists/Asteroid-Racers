@@ -7,24 +7,17 @@
     + start positions
     + rendering
     + fix players in space
+  + finish circle
   + player list with coordinates/points
-- fix asteroid field generation (field size - radius)
-- fix spawn point (spawn-radius - player.radius)
 
-== v0.5 ==
-+ players spawn in spawn orientation
-+ fix offset errors in generateAsteroidBelt and spawnPlayer
-+ introduce subtypes of Entity, especially Movable
-+ add start zone
-+ add finish zone
-+ add arrows
+
 
 ToDo:
-+ teleport player to begin after completing the race. inform all players about teleport
 + make chat work again
 + racing mode
   + start zone
   + finish marker
++ replicate particle effect
 
 
 = Milestone 4 =
@@ -100,6 +93,31 @@ Racing Mode
 + create different scene controllers for different playing modes?
 + move control over position to server
 
+
+== v0.5 - 2014-06-06 ==
+Lots of improvements on the race controller. Start and finish. Arrows :)
+
+There are now technical triggers (called RacePortal) that will add you to a game.
+
++ iterate on RaceController
+	+ addStart & addFinish method
+	+ logic to allow players to finish a race
++ add teleport player logic
++ players spawn in spawn orientation
++ introduce subtypes of Entity, especially Movable
++ new render objects:
+	+ add start zone
+	+ add finish zone
+	+ add arrows
++ fix offset errors in generateAsteroidBelt and spawnPlayer
++ refactored collision detection
+
+Known Issues:
+- Particle effects do not replicate
+- first message on chat does not appear
+- z index of explosions not correct. they are children of the entity that is exploding and when an entity that was added later is above it, the explosion is behind the other entity
+- chat window needs to be readded to the game
+
 == v0.4 - 2014-05-31 ==
 This release adds a lot of depth to the game. 
 
@@ -121,6 +139,7 @@ There is also a richer background with two parallax layers, the sun, the earth a
 
 
 = Milestone 2 =
+
 = v0.3 - 2014-05-28 =
 Ships can now collide with asteroids and other ships and will explode. Some beauty is added with a background star field that has a parallax effect.
 
