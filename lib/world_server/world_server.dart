@@ -147,9 +147,9 @@ class WorldServer {
   
   void disconnectClient(ClientProxy client){
     
-    if(client.playerEntity != null && client.playerEntity.displayName != null)
+    if(client.movable != null && client.movable.displayName != null)
     {
-      print("player ${client.playerEntity.displayName} disconnected");      
+      print("player ${client.movable.displayName} disconnected");      
     }
     else
     {
@@ -159,16 +159,16 @@ class WorldServer {
     _clients.remove(client);
     print("connected clients: ${_clients.length}");
     
-    if(client.playerEntity != null){
-      _world.removeEntity(client.playerEntity);
-      _crashCollisionDetector.activeEntities.remove(client.playerEntity);
+    if(client.movable != null){
+      _world.removeEntity(client.movable);
+      _crashCollisionDetector.activeEntities.remove(client.movable);
       _race.removePlayer(client);
-      _entityToClientMap.remove(client.playerEntity);
+      _entityToClientMap.remove(client.movable);
     }
     
-    Message message = new Message(MessageType.ENTITY_REMOVE, client.playerEntity.id);
+    Message message = new Message(MessageType.ENTITY_REMOVE, client.movable.id);
     _sendToClientsExcept(message, client);
-  }  
+  }
   
   _sendToClientsExcept(Message message, ClientProxy client){
     _sendToClients(message, blacklist:new Set()..add(client));
@@ -193,42 +193,42 @@ class WorldServer {
     player.type = EntityType.SHIP;
     player.radius = 10.0;
     player.displayName = desiredUsername;
-    player.canMove = true;    
     _world.addEntity(player);
     
     _entityToClientMap[player] = client;
     
-    client.playerEntity = player;
+    client.movable = player;
     
-    _joinRaceCollisionDetector.activeEntities.add(client.playerEntity);
+    _joinRaceCollisionDetector.activeEntities.add(client.movable);
     
     _spawnPlayer(client);
-    updatePlayerEntity(client, client.playerEntity);
+    updatePlayerEntity(client, client.movable);
     
     return player;
   }
   
   _spawnPlayer(ClientProxy client){
     
-    Movable movable = client.playerEntity;
+    Movable movable = client.movable;
+    Vector2 position;
+    double orientation;
     
     if(client.race != null){
       Entity spawn = _race.spawnEntityForPlayer(client);
-      movable.position = spawn.position;
-      movable.orientation = spawn.orientation;
+      position = spawn.position;
+      orientation = spawn.orientation;
     }
     else {
       Vector2 randomPoint = randomPointInCircle();
-      movable.position = _spawn.position + randomPoint * (_spawn.radius - movable.radius);
-      movable.orientation = _spawn.orientation;      
+      position = _spawn.position + randomPoint * (_spawn.radius - movable.radius);
+      orientation = _spawn.orientation;      
     }
-        
+            
+    if(!_crashCollisionDetector.activeEntities.contains(movable)){
+      _crashCollisionDetector.activeEntities.add(movable);      
+    }
     
-    movable.canMove = true;
-    _crashCollisionDetector.activeEntities.add(movable);
-    movable.velocity = new Vector2.zero();
-    movable.acceleration = new Vector2.zero();
-    movable.rotationSpeed = 0.0;    
+    client.teleportTo(position, orientation);
   }
   
   Vector2 randomPointInCircle(){
@@ -249,11 +249,10 @@ class WorldServer {
     _sendToClientsExcept(message, sender);
   }
   
-  void updatePlayerEntity(ClientProxy client, Movable entity){
-    Movable playerEntity = _world.entities[client.playerEntity.id];
-    playerEntity.copyFrom(entity);
+  void updatePlayerEntity(ClientProxy client, Movable updatedEntity){
+    client.movable.copyFrom(updatedEntity);      
         
-    Message message = new Message(MessageType.ENTITY, entity);
+    Message message = new Message(MessageType.ENTITY, updatedEntity);
     _sendToClientsExcept(message, client);
   }
   

@@ -73,7 +73,7 @@ class RaceController {
     
     _lastTouchedCheckpointIndex.forEach((ClientProxy client, int lastTouchedCheckpointIndex){
       Entity nextCheckpoint = _checkpoints[lastTouchedCheckpointIndex+1];
-      if(CollisionDetector.doEntitiesCollide(client.playerEntity, nextCheckpoint))
+      if(CollisionDetector.doEntitiesCollide(client.movable, nextCheckpoint))
       {
         _lastTouchedCheckpointIndex[client] = lastTouchedCheckpointIndex + 1;              
         
@@ -106,8 +106,29 @@ class RaceController {
   
   addPlayer(ClientProxy client){
     //_players[client.playerEntity.id] = client;
-    _lastTouchedCheckpointIndex[client] = 0;
     client.race = this;
+    resetCheckpointsForPlayer(client);
+  }
+  
+  resetCheckpointsForPlayer(ClientProxy client){
+    _lastTouchedCheckpointIndex[client] = 0;
+    
+    Checkpoint messageEntity = new Checkpoint.copy(_checkpoints[0]);
+    messageEntity.state = CheckpointState.CLEARED;
+    Message message = new Message(MessageType.ENTITY, messageEntity); 
+    client.send(message);
+    
+    messageEntity = new Checkpoint.copy(_checkpoints[1]);
+    messageEntity.state = CheckpointState.CURRENT;
+    message = new Message(MessageType.ENTITY, messageEntity); 
+    client.send(message);
+    
+    for(int i = 2; i < _checkpoints.length; i++){
+      Checkpoint messageEntity = new Checkpoint.copy(_checkpoints[i]);
+      messageEntity.state = CheckpointState.FUTURE;
+      Message message = new Message(MessageType.ENTITY, messageEntity); 
+      client.send(message);
+    }
   }
 
   removePlayer(ClientProxy client){
@@ -117,7 +138,11 @@ class RaceController {
   }
   
   _playerReachedFinish(ClientProxy client){
-    this.removePlayer(client);
+    //this.removePlayer(client);
+    
+    resetCheckpointsForPlayer(client);
+    Entity spawn = spawnEntityForPlayer(client);
+    client.teleportTo(spawn.position, spawn.orientation);
   }
   
   Entity spawnEntityForPlayer(ClientProxy client){
@@ -126,11 +151,11 @@ class RaceController {
     if(i == 0){
       //players get assigned starting positions according to their entity id
       var playerIdList = _players.toList();
-      playerIdList.sort((ClientProxy a, ClientProxy b) => a.playerEntity.id.compareTo(b.playerEntity.id));
+      playerIdList.sort((ClientProxy a, ClientProxy b) => a.movable.id.compareTo(b.movable.id));
       
       int i = playerIdList.indexOf(client);
       Entity spawnEntity = new Entity.copy(_portal.positions[i]);
-      spawnEntity.radius = client.playerEntity.radius;
+      spawnEntity.radius = client.movable.radius;
       return spawnEntity;
     }
     

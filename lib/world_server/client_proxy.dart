@@ -14,7 +14,7 @@ class ClientProxy
       MessageType.PING_PONG: _onPingPong,
     };
   
-  Movable playerEntity;
+  Movable movable;
   RaceController race;
   
   ClientProxy(this._connection){
@@ -157,7 +157,7 @@ class ClientProxy
     
     //send all entities
     for(Entity entity in worldServer.world.entities.values){
-      if(entity == client.playerEntity) {
+      if(entity == client.movable) {
         client.send(new Message(MessageType.PLAYER, entity));
       }
       else {
@@ -174,13 +174,13 @@ class ClientProxy
   static _onPlayerUpdate(ClientProxy client, Message message){
     Movable movable = new Movable.fromJson(message.payload);
 
-    if(client.playerEntity.id != movable.id){
+    if(client.movable.id != movable.id){
       print("client attempting to update entity other than itself");
       worldServer.disconnectClient(client);
       return;
     }
     
-    if(!client.playerEntity.canMove){
+    if(!client.movable.canMove){
       print("client sent player update during !canMove");
       return;
     }
@@ -189,7 +189,16 @@ class ClientProxy
   }
     
   static _onPingPong(ClientProxy client, Message message){ 
-    print("ping ${message.payload} from ${client.playerEntity.displayName}");
+    print("ping ${message.payload} from ${client.movable.displayName}");
     client.send(message);
+  }
+  
+  teleportTo(Vector2 position, double orientation){
+    movable.position = position;
+    movable.orientation = orientation;
+    movable.canMove = true;
+    movable.velocity = new Vector2.zero();
+    movable.acceleration = new Vector2.zero();
+    movable.rotationSpeed = 0.0;    
   }
 }
