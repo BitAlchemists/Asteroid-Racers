@@ -11,7 +11,9 @@ class CollisionDetector {
   CollisionDetector();
   
   void detectCollisions(CollisionHandler collisionHandler){
-        
+    
+    var collisions = [];
+    
     //detect colissions between activeEntities
     if(activeEntitiesCanCollide)
     {
@@ -22,8 +24,8 @@ class CollisionDetector {
           Entity b = activeEntities[j];
           if(doEntitiesCollide(a, b))
           {
-            collisionHandler(a, b);
-            collisionHandler(b, a);
+            collisions.add([a,b]);
+            collisions.add([b,a]);
           }
         }
       }
@@ -37,10 +39,14 @@ class CollisionDetector {
         Entity active = activeEntities[j];
         if(doEntitiesCollide(passive, active))
         {
-          collisionHandler(active, passive);
+          collisions.add([active, passive]);
         }
       }
-    }          
+    }
+    
+    for(var tuple in collisions){
+      collisionHandler(tuple[0], tuple[1]);
+    }
   }
   
   static bool doEntitiesCollide(Entity a, Entity b)

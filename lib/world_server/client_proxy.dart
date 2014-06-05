@@ -188,13 +188,4 @@ class ClientProxy
     print("ping ${message.payload} from ${client.movable.displayName}");
     client.send(message);
   }
-  
-  teleportTo(Vector2 position, double orientation){
-    movable.position = position;
-    movable.orientation = orientation;
-    movable.canMove = true;
-    movable.velocity = new Vector2.zero();
-    movable.acceleration = new Vector2.zero();
-    movable.rotationSpeed = 0.0;    
-  }
 }

@@ -195,6 +195,7 @@ class GameController implements stagexl.Animatable {
     
     String username = _usernameField.text;   
     
+    print("connecting...");
     server.connect(_config.localServer, _config.debugJson, username).then(_onConnect).catchError((html.Event e){
       log("could not connect.");
       _onDisconnect();
@@ -204,6 +205,7 @@ class GameController implements stagexl.Animatable {
   }
   
   _onConnect(_){
+    print("connected");
     _updateConnectButton();
   }
   
@@ -301,7 +303,8 @@ class GameController implements stagexl.Animatable {
   
     
   void createPlayer(Entity entity){
-    _player = new PlayerController(entity, _stage);
+    _player = new PlayerController(entity);
+    _player.configureInputControls(_stage);
     _shipsLayer.addChild(_player.sprite);
     _shipsLayer.addChild(_player.particleEmitter);
     _entityControllers[entity.id] = _player;
@@ -353,7 +356,7 @@ class GameController implements stagexl.Animatable {
     if(_entityControllers.containsKey(entityId))
     {
       EntityController ec = _entityControllers[entityId];
-      _entitiesLayer.removeChild(ec.sprite);
+      ec.sprite.removeFromParent();
       _entityControllers.remove(entityId);
       
       Entity entity = ec.entity;

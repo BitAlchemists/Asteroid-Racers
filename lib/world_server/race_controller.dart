@@ -106,12 +106,14 @@ class RaceController {
   
   
   addPlayer(ClientProxy client){
-    //_players[client.playerEntity.id] = client;
     client.race = this;
-    resetCheckpointsForPlayer(client);
+    _resetCheckpointsForPlayer(client);
+    
+    Entity spawn = spawnEntityForPlayer(client);
+    worldServer.teleportPlayerTo(client, spawn.position, spawn.orientation, true);
   }
   
-  resetCheckpointsForPlayer(ClientProxy client){
+  _resetCheckpointsForPlayer(ClientProxy client){
     _lastTouchedCheckpointIndex[client] = 0;
     
     Checkpoint messageEntity = new Checkpoint.copy(_checkpoints[0]);
@@ -134,17 +136,12 @@ class RaceController {
 
   removePlayer(ClientProxy client){
     _lastTouchedCheckpointIndex.remove(client);
-    //_players.remove(client.playerEntity.id);
     client.race = null;
   }
   
   _playerReachedFinish(ClientProxy client){
-    //this.removePlayer(client);
-    
-    resetCheckpointsForPlayer(client);
-    Entity spawn = spawnEntityForPlayer(client);
-    client.teleportTo(spawn.position, spawn.orientation);
-    worldServer.updatePlayerEntity(client, true);
+    this.removePlayer(client);
+    this.addPlayer(client);
   }
   
   Entity spawnEntityForPlayer(ClientProxy client){

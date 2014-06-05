@@ -5,7 +5,7 @@ class PlayerController extends EntityController implements stagexl.Animatable  {
   final double _acceleration = 200.0;
   final double _rotationSpeed = 5.0;
   bool accelerate = false;
-    
+      
   Movable get _movable => entity;
   
   stagexl_particle.ParticleEmitter _particleEmitter;
@@ -65,13 +65,14 @@ class PlayerController extends EntityController implements stagexl.Animatable  {
                         }
                       };
   
-  PlayerController(entity, _stage) : super(entity){
+  PlayerController(entity) : super(entity){
     _particleEmitter = new stagexl_particle.ParticleEmitter(particleConfig);
     _particleEmitter.setEmitterLocation(0, -5);
     _particleEmitter.stop(false);
-    
-    
-    _stage.onKeyDown.listen((stagexl.KeyboardEvent ke){
+  }
+  
+  configureInputControls(stagexl.Stage stage){
+    stage.onKeyDown.listen((stagexl.KeyboardEvent ke){
       switch(ke.keyCode)
       {
         case html.KeyCode.LEFT:
@@ -88,7 +89,7 @@ class PlayerController extends EntityController implements stagexl.Animatable  {
       }
     });
     
-    _stage.onKeyUp.listen((stagexl.KeyboardEvent ke){
+    stage.onKeyUp.listen((stagexl.KeyboardEvent ke){
       switch(ke.keyCode)
       {
         case html.KeyCode.LEFT:

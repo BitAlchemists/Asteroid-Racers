@@ -15,6 +15,8 @@ class EntityController {
   
   factory EntityController.factory(Entity entity){
     switch(entity.type){
+      case EntityType.SHIP:
+        return new PlayerController(entity);
       case EntityType.CHECKPOINT:
         return new CheckpointController(entity);
       case EntityType.LAUNCH_PLATFORM:
@@ -49,6 +51,7 @@ class EntityController {
   
   updateFromServer(Entity entity){
     _entity.copyFrom(entity);
+    print("entity update: ${_entity.position.x} ${_entity.position.y}");
     updateSprite();
   }
 }

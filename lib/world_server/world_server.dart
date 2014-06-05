@@ -135,7 +135,9 @@ class WorldServer {
   }
   
   _onPlayerTouchRacePortal(Movable playerEntity, RacePortal portal){
-    (portal.raceController as RaceController).addPlayer(_clientForEntity(playerEntity));
+    var player = _clientForEntity(playerEntity);
+    _joinRaceCollisionDetector.activeEntities.remove(playerEntity);
+    portal.raceController.addPlayer(player);
   }
   
   //Client-Server communication
@@ -226,8 +228,18 @@ class WorldServer {
       _crashCollisionDetector.activeEntities.add(movable);      
     }
     
-    client.teleportTo(position, orientation);
-    updatePlayerEntity(client, false);
+    teleportPlayerTo(client, position, orientation, false);
+  }
+  
+  teleportPlayerTo(ClientProxy client, Vector2 position, double orientation, bool informClientToo){
+    client.movable.position = position;
+    client.movable.orientation = orientation;
+    client.movable.canMove = true;
+    client.movable.velocity = new Vector2.zero();
+    client.movable.acceleration = new Vector2.zero();
+    client.movable.rotationSpeed = 0.0;
+    
+    updatePlayerEntity(client, informClientToo);
   }
   
   Vector2 randomPointInCircle(){
