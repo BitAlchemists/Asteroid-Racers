@@ -49,6 +49,7 @@ class WorldServer {
     
     
     _race = new RaceController();
+    _race.worldServer = this;
 /*
  *     _race.addCheckpoint(200.0, 0.0);
     _race.addCheckpoint(200.0, 300.0, 70.0);
@@ -126,7 +127,7 @@ class WorldServer {
       //if the entity still exists
       if(_world.entities.containsKey(playerEntity.id)){
         ClientProxy client = _clientForEntity(playerEntity);
-        _spawnPlayer(client);
+        spawnPlayer(client, true);
         Message message = new Message(MessageType.ENTITY, playerEntity);
         _sendToClients(message);          
       }
@@ -187,7 +188,7 @@ class WorldServer {
     }
   }
   
-  Entity registerPlayer(ClientProxy client, String desiredUsername){
+  void registerPlayer(ClientProxy client, String desiredUsername){
     print("player identifies as $desiredUsername");    
     Movable player = new Movable();
     player.type = EntityType.SHIP;
@@ -200,14 +201,11 @@ class WorldServer {
     client.movable = player;
     
     _joinRaceCollisionDetector.activeEntities.add(client.movable);
-    
-    _spawnPlayer(client);
-    updatePlayerEntity(client, client.movable);
-    
-    return player;
+        
+    spawnPlayer(client, false);
   }
   
-  _spawnPlayer(ClientProxy client){
+  spawnPlayer(ClientProxy client, bool informClientToo){
     
     Movable movable = client.movable;
     Vector2 position;
@@ -229,6 +227,7 @@ class WorldServer {
     }
     
     client.teleportTo(position, orientation);
+    updatePlayerEntity(client, false);
   }
   
   Vector2 randomPointInCircle(){
@@ -249,11 +248,19 @@ class WorldServer {
     _sendToClientsExcept(message, sender);
   }
   
-  void updatePlayerEntity(ClientProxy client, Movable updatedEntity){
-    client.movable.copyFrom(updatedEntity);      
+  void updatePlayerEntity(ClientProxy client, bool informPlayerClientToo, {Movable updatedEntity}){
+    if(updatedEntity != null){
+      client.movable.copyFrom(updatedEntity);            
+    }
         
-    Message message = new Message(MessageType.ENTITY, updatedEntity);
-    _sendToClientsExcept(message, client);
+    Message message = new Message(MessageType.ENTITY, client.movable);
+    
+    if(informPlayerClientToo){
+      _sendToClients(message); 
+    }
+    else {
+      _sendToClientsExcept(message, client); 
+    }
   }
   
   ClientProxy _clientForEntity(Entity entity){

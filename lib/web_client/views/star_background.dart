@@ -17,7 +17,7 @@ class StarBackground extends ParallaxLayer {
   int _blinkState = _CHILLAXING;
   double _blinkScale; 
   
-  StarBackground(this._width, this._height, stagexl.Stage stage) : super(stage, 0.1) {
+  StarBackground(this._width, this._height, GameController gameController) : super(gameController, 0.1) {
         
     int numOfStars = (_numOfStarsPerArea * _width * _height).toInt();
     

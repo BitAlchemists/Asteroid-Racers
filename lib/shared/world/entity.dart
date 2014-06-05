@@ -81,7 +81,7 @@ class Entity
   void copyFrom(Entity entity) {
     type = entity.type;
     id = entity.id;
-    position = entity.position;
+    position = entity.position.clone();
     orientation = entity.orientation;
     displayName = entity.displayName;
     radius = entity.radius;

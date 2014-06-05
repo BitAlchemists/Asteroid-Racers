@@ -176,12 +176,5 @@ class PlayerController extends EntityController implements stagexl.Animatable  {
       getTranslation();
     
     _movable.acceleration = new Vector2(acceleration3.x, acceleration3.y);
-  }
-  
-  updateFromServer(Entity entity){
-    //we only accept updates that reactivate our player
-    if(_movable.canMove == false){
-      super.updateFromServer(entity);
-    }
-  }
+  }  
 }

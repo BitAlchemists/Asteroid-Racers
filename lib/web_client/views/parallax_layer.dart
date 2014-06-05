@@ -1,17 +1,16 @@
 part of web_client;
 
 class ParallaxLayer extends stagexl.Sprite implements stagexl.Animatable {
-  stagexl.Stage _stage;
+  GameController gameController;
   
-  PlayerController player;
   double parallaxFactor = 0.3;
     
-  ParallaxLayer(this._stage, this.parallaxFactor) : super();
+  ParallaxLayer(this.gameController, this.parallaxFactor) : super();
   
   bool advanceTime(num dt){ 
-    if(player != null){
-      this.x = _stage.stageWidth/2.0 - player.sprite.x * parallaxFactor;
-      this.y = _stage.stageHeight/2.0 - player.sprite.y * parallaxFactor;      
+    if(gameController.player != null){
+      this.x = gameController.stage.stageWidth/2.0 - gameController.player.sprite.x * parallaxFactor;
+      this.y = gameController.stage.stageHeight/2.0 - gameController.player.sprite.y * parallaxFactor;      
     }
     
     return true;

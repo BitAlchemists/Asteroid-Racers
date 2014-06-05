@@ -14,10 +14,11 @@ class GameController implements stagexl.Animatable {
   stagexl.Stage _stage;
   StarBackground _background;
   ParallaxLayer _earthLayer;
-  stagexl.Sprite _frontLayer;
+  ParallaxLayer _entitiesLayer;
+  ParallaxLayer _shipsLayer;
   stagexl.Sprite _uiLayer;
-  
   PlayerController _player;
+  
 
   //UI
   Button _connectButton;
@@ -28,6 +29,9 @@ class GameController implements stagexl.Animatable {
   ChatController _chat;
   
   ServerProxy server;
+  
+  PlayerController get player => _player;
+  stagexl.Stage get stage => _stage;
   
   GameController(this._config) {    
     _simulator = new PhysicsSimulator();  
@@ -153,12 +157,12 @@ class GameController implements stagexl.Animatable {
   
   start(){
     //Background
-    _background = new StarBackground(2000.0, 2000.0, _stage);
+    _background = new StarBackground(2000.0, 2000.0, this);
     _stage.addChildAt(_background, 0);  
     _stage.juggler.add(_background);
     
     //Earth layer
-    _earthLayer = new ParallaxLayer(_stage, 0.3);
+    _earthLayer = new ParallaxLayer(this, 0.3);
     _stage.addChildAt(_earthLayer, 1);
     _stage.juggler.add(_earthLayer);
     
@@ -179,10 +183,16 @@ class GameController implements stagexl.Animatable {
     _stage.juggler.add(satellite.juggler);
     
     //Front layer
-    _frontLayer = new stagexl.Sprite();
-    _stage.addChildAt(_frontLayer, 2);
-    _stage.juggler.add(this);    
+    _entitiesLayer = new ParallaxLayer(this, 1.0);
+    _stage.addChildAt(_entitiesLayer, 2);
+    _stage.juggler.add(_entitiesLayer);   
+    
+    _shipsLayer = new ParallaxLayer(this, 1.0);
+    _stage.addChildAt(_shipsLayer, 3);
+    _stage.juggler.add(_shipsLayer);
 
+    _stage.juggler.add(this);
+    
     String username = _usernameField.text;   
     
     server.connect(_config.localServer, _config.debugJson, username).then(_onConnect).catchError((html.Event e){
@@ -205,9 +215,9 @@ class GameController implements stagexl.Animatable {
     _updateConnectButton();
     _stage.juggler.remove(this);
     
-    if(_frontLayer != null){
-      _frontLayer.removeFromParent();
-      _frontLayer = null;      
+    if(_entitiesLayer != null){
+      _entitiesLayer.removeFromParent();
+      _entitiesLayer = null;      
     }
     
     if(_background != null){
@@ -221,6 +231,12 @@ class GameController implements stagexl.Animatable {
       _stage.juggler.remove(_earthLayer);
       _earthLayer = null;
     }
+    
+    if(_shipsLayer != null){
+      _shipsLayer.removeFromParent();
+      _shipsLayer = null;
+    }
+        
     
     if(_player != null){
       _stage.juggler.remove(_player);
@@ -256,10 +272,6 @@ class GameController implements stagexl.Animatable {
           server.send(new Message(MessageType.PLAYER, _player.entity));
         }   
       }
-      
-      //update the camera
-      _frontLayer.x = _stage.stageWidth/2.0 -_player.sprite.x;
-      _frontLayer.y = _stage.stageHeight/2.0 -_player.sprite.y;
 
       debugOutput += "x: ${_player.entity.position.x.toInt()}\ny: ${_player.entity.position.y.toInt()}";
     }
@@ -290,10 +302,8 @@ class GameController implements stagexl.Animatable {
     
   void createPlayer(Entity entity){
     _player = new PlayerController(entity, _stage);
-    _frontLayer.addChild(_player.sprite);
-    _frontLayer.addChild(_player.particleEmitter);
-    _background.player = _player;
-    _earthLayer.player = _player;
+    _shipsLayer.addChild(_player.sprite);
+    _shipsLayer.addChild(_player.particleEmitter);
     _entityControllers[entity.id] = _player;
     _stage.juggler.add(_player);
     
@@ -313,7 +323,14 @@ class GameController implements stagexl.Animatable {
     
     if(!_entityControllers.containsKey(entity.id)){
       ec = new EntityController.factory(entity);
-      _frontLayer.addChild(ec.sprite);
+      if(entity.type == EntityType.SHIP){
+        _shipsLayer.addChild(ec.sprite); 
+      }
+      else
+      {
+        _entitiesLayer.addChild(ec.sprite); 
+      }
+      
       _entityControllers[entity.id] = ec;
       
       if(entity.type == EntityType.SHIP &&
@@ -336,7 +353,7 @@ class GameController implements stagexl.Animatable {
     if(_entityControllers.containsKey(entityId))
     {
       EntityController ec = _entityControllers[entityId];
-      _frontLayer.removeChild(ec.sprite);
+      _entitiesLayer.removeChild(ec.sprite);
       _entityControllers.remove(entityId);
       
       Entity entity = ec.entity;

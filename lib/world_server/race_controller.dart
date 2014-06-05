@@ -7,6 +7,7 @@ class RaceController {
   List<Entity> _checkpoints = new List<Entity>();
   final Map<ClientProxy, int> _lastTouchedCheckpointIndex = new Map<ClientProxy, int>(); //player.id, checkpoint index
   Iterable<ClientProxy> get _players => _lastTouchedCheckpointIndex.keys;
+  WorldServer worldServer;
   
   
   List<Entity> get checkpoints => _checkpoints;
@@ -143,6 +144,7 @@ class RaceController {
     resetCheckpointsForPlayer(client);
     Entity spawn = spawnEntityForPlayer(client);
     client.teleportTo(spawn.position, spawn.orientation);
+    worldServer.updatePlayerEntity(client, true);
   }
   
   Entity spawnEntityForPlayer(ClientProxy client){
@@ -156,6 +158,7 @@ class RaceController {
       int i = playerIdList.indexOf(client);
       Entity spawnEntity = new Entity.copy(_portal.positions[i]);
       spawnEntity.radius = client.movable.radius;
+      spawnEntity.position += _portal.position;
       return spawnEntity;
     }
     

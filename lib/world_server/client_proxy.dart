@@ -154,15 +154,11 @@ class ClientProxy
     
     //create player entity in world
     worldServer.registerPlayer(client, username);
-    
+    client.send(new Message(MessageType.PLAYER, client.movable));
+
     //send all entities
     for(Entity entity in worldServer.world.entities.values){
-      if(entity == client.movable) {
-        client.send(new Message(MessageType.PLAYER, entity));
-      }
-      else {
-        client.send(new Message(MessageType.ENTITY, entity));        
-      }
+      client.send(new Message(MessageType.ENTITY, entity));        
     }
   }
   
@@ -185,7 +181,7 @@ class ClientProxy
       return;
     }
     
-    worldServer.updatePlayerEntity(client, movable);
+    worldServer.updatePlayerEntity(client, false, updatedEntity: movable);
   }
     
   static _onPingPong(ClientProxy client, Message message){ 
