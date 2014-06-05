@@ -17,7 +17,12 @@ ToDo:
 + racing mode
   + start zone
   + finish marker
-+ replicate particle effect
+  
+Known Issues:
+* Particle effects do not replicate
+* first message on chat does not appear
+* z index of explosions not correct. they are children of the entity that is exploding and when an entity that was added later is above it, the explosion is behind the other entity
+* chat window needs to be readded to the game
 
 
 = Milestone 4 =
