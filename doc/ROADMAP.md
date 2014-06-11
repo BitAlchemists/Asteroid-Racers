@@ -28,26 +28,45 @@ Future
 
 Epics
 -----
-+ RaceController
+# v0.6
++ RaceController & UI
+
+# v0.7
++ Public Viewing Mode
+
+# v0.8
++ User Account System
+
+# v0.9
++ Tutorial
+
+# v1.1
 + Level Loading
 + Level Editor
-+ Public Viewing Mode
-+ User Account System
+
+# v1.2
++ Ladders/Contests
+
+# v1.3
++ Ship Upgrades
+
+# v2.0
++ Fighting
+
+# v3.0
 + Autopilot
 + NPCs
 + Stations
-+ Ship Upgrades
-+ Fighting
 + Mining
-+ Economy & Crafting & Trading
-+ Tutorial
++ Trading
++ Crafting
 + NPC Scripting
 + Merchang Mode
 
-+ Level Editor
+
+Improvements
+------------
 + more than one player on one computer
-
-
 + rename player without disconnecting
 + Health Bar
   + Health Bar loss on colissions
