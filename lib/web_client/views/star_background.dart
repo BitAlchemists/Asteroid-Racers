@@ -52,7 +52,7 @@ class StarBackground extends ParallaxLayer {
     _blink.graphics.closePath();
     
     Sun sun = new Sun();
-    sun.x = 200;
+    sun.x = 400;
     sun.y = -230;
     sun.applyCache(-100, -100, 200, 200);
     this.addChild(sun);

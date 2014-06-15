@@ -72,7 +72,7 @@ class ClientProxy
                     "X-71 Military Space Shuttle Freedom",
                     "X-71 Military Space Shuttle Independence",
                     "Aries Ib", 
-                    "Eage",
+                    "Eagle",
                     "Friede", 
                     "Hawk", 
                     "Mayflower One", 
@@ -147,7 +147,8 @@ class ClientProxy
                     "Narcissus",
                     "TARDIS",
                     "ISEE-3/ICE", //http://blog.xkcd.com/2014/05/30/isee-3/
-                    "XKCD-303"];
+                    "XKCD-303",
+                    "Drei-Zimmer-Rakete"];
       int index = new Math.Random().nextInt(names.length);
       username = names[index];
     }

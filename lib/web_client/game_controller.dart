@@ -66,7 +66,22 @@ class GameController implements stagexl.Animatable {
     _stage.focus = _stage;
       
     _buildUILayer();
-  }
+    
+    bool tabHandled = false;
+    
+    _stage.onKeyDown.listen((stagexl.KeyboardEvent ke){
+      if(!tabHandled && ke.keyCode == html.KeyCode.ONE){
+        _uiLayer.visible = !_uiLayer.visible;
+        tabHandled = true;
+      }
+    });
+
+    _stage.onKeyUp.listen((stagexl.KeyboardEvent ke){
+      if(ke.keyCode == html.KeyCode.ONE){
+        tabHandled = false;
+      }
+    });
+}
   
   _buildUILayer(){
     
@@ -80,7 +95,7 @@ class GameController implements stagexl.Animatable {
     _uiLayer = new stagexl.Sprite();
     _uiLayer.x = 10;
     _uiLayer.y = 10;
-    _stage.addChild(_uiLayer);
+    _uiLayer.addTo(_stage);
     
     num y = yOffset;
     
@@ -167,11 +182,11 @@ class GameController implements stagexl.Animatable {
     _stage.juggler.add(_earthLayer);
     
     Planet earth = new Planet(400, stagexl.Color.DarkBlue, stagexl.Color.Green);
-    earth.x = -500;
+    earth.x = -700;
     _earthLayer.addChild(earth);
     
     Planet moon = new Planet(50, stagexl.Color.LightGray, stagexl.Color.DarkGray);
-    moon.x = -100;
+    moon.x = -300;
     moon.y = -300;
     _earthLayer.addChild(moon);      
     
