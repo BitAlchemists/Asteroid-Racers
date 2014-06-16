@@ -5,6 +5,7 @@ class GameConfig {
   bool debugJson = false;
   bool debugCollisions = false; 
   bool fullscreen = false;
+  bool renderBackground = true;
 }
 
 class GameController implements stagexl.Animatable {
@@ -171,14 +172,49 @@ class GameController implements stagexl.Animatable {
   }
   
   start(){
+    if(_config.renderBackground){
+      _renderBackground();
+    }
+    
+    //Front layer
+    _entitiesLayer = new ParallaxLayer(this, 1.0);
+    _stage.addChildAt(_entitiesLayer, _stage.numChildren);
+    _stage.juggler.add(_entitiesLayer);   
+    
+    
+    _shipsLayer = new ParallaxLayer(this, 1.0);
+    _stage.addChildAt(_shipsLayer, _stage.numChildren);
+    _stage.juggler.add(_shipsLayer);
+
+    _stage.juggler.add(this);
+    
+    String username = _usernameField.text;   
+    
+    print("connecting...");
+    server.connect(_config.localServer, _config.debugJson, username).then(_onConnect).catchError((html.Event e){
+      log("could not connect.");
+      _onDisconnect();
+    });
+    
+    _updateConnectButton(); 
+    
+    stagexl.Sprite station = StationBuilder.sampleStation();
+    station.y = -50;
+    station.x = -1200;
+    _entitiesLayer.addChild(station);  
+    
+  }
+  
+  
+  _renderBackground(){
     //Background
     _background = new StarBackground(2000.0, 2000.0, this);
-    _stage.addChildAt(_background, 0);  
+    _stage.addChildAt(_background, _stage.numChildren);  
     _stage.juggler.add(_background);
     
     //Earth layer
     _earthLayer = new ParallaxLayer(this, 0.3);
-    _stage.addChildAt(_earthLayer, 1);
+    _stage.addChildAt(_earthLayer, _stage.numChildren);
     _stage.juggler.add(_earthLayer);
     
     Planet earth = new Planet(400, stagexl.Color.DarkBlue, stagexl.Color.Green);
@@ -195,28 +231,7 @@ class GameController implements stagexl.Animatable {
     satellite.y = 150;
     satellite.rotation = 0.5;
     _earthLayer.addChild(satellite);
-    _stage.juggler.add(satellite.juggler);
-    
-    //Front layer
-    _entitiesLayer = new ParallaxLayer(this, 1.0);
-    _stage.addChildAt(_entitiesLayer, 2);
-    _stage.juggler.add(_entitiesLayer);   
-    
-    _shipsLayer = new ParallaxLayer(this, 1.0);
-    _stage.addChildAt(_shipsLayer, 3);
-    _stage.juggler.add(_shipsLayer);
-
-    _stage.juggler.add(this);
-    
-    String username = _usernameField.text;   
-    
-    print("connecting...");
-    server.connect(_config.localServer, _config.debugJson, username).then(_onConnect).catchError((html.Event e){
-      log("could not connect.");
-      _onDisconnect();
-    });
-    
-    _updateConnectButton();      
+    _stage.juggler.add(satellite.juggler);      
   }
   
   _onConnect(_){

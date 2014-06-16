@@ -51,7 +51,7 @@ class EntityController {
   
   updateFromServer(Entity entity){
     _entity.copyFrom(entity);
-    print("entity update: ${_entity.position.x} ${_entity.position.y}");
+    //print("entity update: ${_entity.position.x} ${_entity.position.y}");
     updateSprite();
   }
 }

@@ -15,21 +15,78 @@ class RenderHelper {
   
   static applySpaceship(stagexl.Graphics graphics, double radius) {
     
-    //To keep the triangle centered around the centroid, pos2 y must be double that of -y on po1 & pos3
-    Vector2 pos1 = new Vector2(-radius/2,-radius/2);
-    Vector2 pos2 = new Vector2(0.0,radius);
-    Vector2 pos3 = new Vector2(radius/2,-radius/2);
+    double height = radius * 1.5;
+    double width = radius;
+    double platformWidth = width/4;
+    double boosterWidth = width/4;
+    double pitWidth = (width - 2*platformWidth - boosterWidth) / 2;
+    double pitHeight = height/8;   
+    
+    Vector2 leftCorner = new Vector2(-width/2,-height/3);
+    Vector2 tip = new Vector2(0.0,height/3*2);
+    Vector2 rightCorner = new Vector2(width/2,-height/3);
+    Vector2 leftCornerToTip = (tip - leftCorner).normalize();
+    
+    Vector2 leftP1 = leftCorner + new Vector2(platformWidth, 0.0);
+    Vector2 leftP2 = leftP1 + new Vector2(pitWidth, 0.0);
+    Vector2 leftPitP1 = leftP1 + leftCornerToTip * pitHeight;
+    Vector2 leftPitP2 = leftP2 + leftCornerToTip * pitHeight;
+    
+    Vector2 rightP1 = new Vector2(-leftP1.x, leftP1.y);
+    Vector2 rightP2 = new Vector2(-leftP2.x, leftP2.y);
+    Vector2 rightPitP1 = new Vector2(-leftPitP1.x, leftPitP1.y);
+    Vector2 rightPitP2 = new Vector2(-leftPitP2.x, leftPitP2.y);
+    
+    graphics.beginPath();
+    graphics.moveTo(tip.x, tip.y);
+    graphics.lineTo(leftCorner.x, leftCorner.y);
+
+    graphics.lineTo(leftP1.x, leftP1.y);
+    graphics.lineTo(leftPitP1.x, leftPitP1.y);
+    graphics.lineTo(leftPitP2.x, leftPitP2.y);
+    graphics.lineTo(leftP2.x, leftP2.y);
+
+    graphics.lineTo(rightP2.x, rightP2.y);
+    graphics.lineTo(rightPitP2.x, rightPitP2.y);
+    graphics.lineTo(rightPitP1.x, rightPitP1.y);
+    graphics.lineTo(rightP1.x, rightP1.y);
+
+    graphics.lineTo(rightCorner.x, rightCorner.y);
+    graphics.lineTo(tip.x, tip.y);
+    graphics.strokeColor(stagexl.Color.LightGreen);
+    graphics.fillColor(stagexl.Color.DarkGreen);
+    graphics.closePath(); 
+    
+    double innerLength = radius / 3.0;
+    Vector2 innerTip = new Vector2(0.0, innerLength);
+    Vector2 innerLeftCorner = innerTip + (leftCornerToTip * -1.0) * innerLength;
+    Vector2 innerRightCorner = new Vector2(-innerLeftCorner.x, innerLeftCorner.y);
+
+    graphics.beginPath();
+    graphics.moveTo(innerTip.x, innerTip.y);
+    graphics.lineTo(innerLeftCorner.x, innerLeftCorner.y);
+    graphics.lineTo(innerRightCorner.x, innerRightCorner.y);
+    graphics.lineTo(innerTip.x, innerTip.y);
+    graphics.strokeColor(stagexl.Color.LightGreen);
+    graphics.fillColor(stagexl.Color.Black);
+    graphics.closePath(); 
+
+    return;
+    /*
+    // The Triangle
+    Vector2 pos1 = new Vector2(-5.0,-5.0);
+    Vector2 pos2 = new Vector2(0.0,10.0);
+    Vector2 pos3 = new Vector2(5.0,-5.0);
     
     graphics.beginPath();
     graphics.moveTo(pos1.x, pos1.y);
     graphics.lineTo(pos2.x, pos2.y);
     graphics.lineTo(pos3.x, pos3.y);
     graphics.lineTo(pos1.x, pos1.y);
-    graphics.fillColor(stagexl.Color.DarkBlue);
-    graphics.strokeColor(stagexl.Color.LightBlue);
+    graphics.strokeColor(stagexl.Color.LightGreen);
     graphics.closePath(); 
     
-    return;
+    return;*/
     /*
     double coneHeight = 5.0;
     double centerWidth = 15.0;

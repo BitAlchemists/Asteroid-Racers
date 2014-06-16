@@ -57,9 +57,9 @@ class WorldServer {
     _race.addCheckpoint(100.0, 600.0, 50.0);
     _race.addCheckpoint(200.0, 900.0, 100.0);*/
     _race.addStart(0.0, -200.0, Math.PI);
-    _race.addCheckpoint(0.0, -400.0);
+    _race.addCheckpoint(0.0, -600.0);
     //_race.addCheckpoint(0.0, -1700.0);
-    _race.addFinish(0.0, -600.0);
+    _race.addFinish(0.0, -800.0);
 
     _world.addEntities(_race.checkpoints);
     _world.addEntity(_race.start);
@@ -75,16 +75,16 @@ class WorldServer {
       arrows.radius = 100.0;
       _world.addEntity(arrows);
     }
-    /*    
-    _addArrows(y: -500, orientation: Math.PI);
-    _addArrows(y: -200, orientation: Math.PI);    
+        
+    _addArrows(y: -400, orientation: Math.PI);
+    /*_addArrows(y: -200, orientation: Math.PI);    
     _addArrows(x: 100, y: -1200, orientation: Math.PI * 1.25);    
     _addArrows(x: -100, y: -1200, orientation: Math.PI * 0.75);    
     _addArrows(x: 150, y: -1700, orientation: Math.PI * 0.5);    
     _addArrows(x: -150, y: -1700, orientation: Math.PI * 1.5);        
     */        
     _spawn = new Entity(null);
-    _spawn.position = new Vector2(0.0, 0.0);
+    _spawn.position = new Vector2(0.0, 100.0);
     _spawn.radius = 100.0;
     _spawn.orientation = Math.PI;
     
@@ -194,7 +194,7 @@ class WorldServer {
     print("player identifies as $desiredUsername");    
     Movable player = new Movable();
     player.type = EntityType.SHIP;
-    player.radius = 10.0;
+    player.radius = 20.0;
     player.displayName = desiredUsername;
     _world.addEntity(player);
     

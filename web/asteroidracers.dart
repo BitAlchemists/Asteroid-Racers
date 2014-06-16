@@ -16,6 +16,7 @@ void main() {
   config.debugJson = true;
   config.debugCollisions = false;
   config.fullscreen = true;
+  config.renderBackground = false;
   
   GameController gameController = new GameController(config);
   gameController.setup(canvas);
