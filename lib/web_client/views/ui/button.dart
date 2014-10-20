@@ -30,14 +30,9 @@ class Button extends stagexl.Sprite {
     button.overState = redRect;
     button.hitTestState = redRect;
         
-    print(this.height);
-
     this.addChild(button);
-    print(this.height);
-
     this.addChild(_textField);
     
-    print(this.height);
   }
   
   _rect(num width, num height, int color){

@@ -1,34 +1,9 @@
-Milestone 3
-===========
-+ Racing mode
-  + state machine
-    + join game
-    + leave game
-  + start circle
-    + start positions
-    + rendering
-    + fix players in space
-  + finish circle
-  + player list with coordinates/points
-
-
-
-# ToDo:
-+ make chat work again
-
-# Known Issues:
-- Particle effects do not replicate
-- first message on chat does not appear
-- z index of explosions not correct. they are children of the entity that is exploding and when an entity that was added later is above it, the explosion is behind the other entity
-- chat window needs to be readded to the game
-- JS-Dart source maps do not work
-
 Release Checklist
 =================
 
 + Tested in JS
 + Production settings on (server and client)
-+ All Features work as intended
++ All features work as described in the backlog
 + User manual updated
 + Update branches in Git
 + Create screen shots
@@ -76,22 +51,12 @@ Epics
 + Merchang Mode
 
 
-Improvements
+Ideas for Improvements
 ------------
-+ Move tickets over to GitHub
-+ File Logging
-+ Performance Profiling
-+ Document Architecture
-+ Write user manual
-
-
 + more than one player on one computer
-+ rename player without disconnecting
 + Health Bar
   + Health Bar loss on colissions
 + mouse control over ship
-+ add stars to the background & paralax effect
-+ paging of the background
 + hide ship during explosion
 + rockets
 + Player colors
