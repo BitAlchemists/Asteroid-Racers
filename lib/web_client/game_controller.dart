@@ -85,63 +85,36 @@ class GameController implements stagexl.Animatable {
 }
   
   _buildUILayer(){
+        num boxWidth = 150;
     
-    num yOffset = 10;
-    num xOffset = 10;
-    num buttonHeight = 40;
-    num boxWidth = 150;
-    num contentWidth = boxWidth - 2*xOffset;
-    num textFieldHeight = 20;
-        
     _uiLayer = new stagexl.Sprite();
-    _uiLayer.x = 10;
-    _uiLayer.y = 10;
     _uiLayer.addTo(_stage);
+        
+    // DevBox
+    Window devBox = new Window(boxWidth);
+    devBox.x = 10;
+    devBox.y = 10;
+    devBox.addTo(_uiLayer);
     
-    num y = yOffset;
     
-    stagexl.TextField usernameCaptionField = new stagexl.TextField()
-    ..textColor = stagexl.Color.White
-    ..x = xOffset
-    ..y = y
-    ..width = contentWidth
-    ..height = textFieldHeight
-    ..text = "Username:"
-    ..addTo(_uiLayer);
-    y = usernameCaptionField.y + usernameCaptionField.height;
+    stagexl.TextField usernameCaptionField = UIHelper.createTextField(text: "Username:");
+    devBox.stackView(usernameCaptionField);
+
     
-    _usernameField = new stagexl.TextField()
-    ..type = stagexl.TextFieldType.INPUT
-    ..backgroundColor = stagexl.Color.White
-    ..textColor = stagexl.Color.Black
-    ..x = xOffset
-    ..y = y
-    ..width = contentWidth
-    ..height = textFieldHeight
-    ..background = true
-    ..addTo(_uiLayer);
+    _usernameField = UIHelper.createInputField();
     _usernameField.onMouseClick.listen((_) => _stage.focus = _usernameField);
-    y = _usernameField.y + _usernameField.height + yOffset;
+    devBox.stackView(_usernameField);
     
-    _connectButton = new Button(contentWidth, buttonHeight)
-    ..x = xOffset
-    ..y = y
+    _connectButton = new Button(devBox.contentWidth, Window.buttonHeight)
     ..text = "Hello World";
-    _uiLayer.addChild(_connectButton);
+    devBox.stackView(_connectButton);
     _connectButton.onMouseClick.listen(_onTapConnect);
-    y = _connectButton.y + buttonHeight + yOffset;
     
-    _debugOutput = new stagexl.TextField()
-    ..textColor = stagexl.Color.White
-    ..x = xOffset
-    ..y = y
-    ..width = contentWidth
-    ..height = textFieldHeight * 3
-    ..addTo(_uiLayer);
-    y = _debugOutput.y + _debugOutput.height + yOffset;
+    _debugOutput = UIHelper.createTextField(numLines: 3);
+    devBox.stackView(_debugOutput);
     
-    _uiLayer.graphics.rectRound(0, 0, boxWidth, y, 10, 10);
-    _uiLayer.graphics.fillColor(0x88888888);
+    devBox.graphics.rectRound(0, 0, boxWidth, y, 10, 10);
+    devBox.graphics.fillColor(0x88888888);
   }
     
   _onTapConnect(_){

@@ -24,6 +24,8 @@ part "views/satellite.dart";
 part "views/sun.dart";
 part "views/planet.dart";
 part "views/ui/button.dart";
+part "views/ui/window.dart";
+part "views/ui/ui_helper.dart";
 part "views/station_builder.dart";
 
 //Controllers
