@@ -17,11 +17,23 @@ Milestone 3
 + make chat work again
 
 # Known Issues:
-* Particle effects do not replicate
-* first message on chat does not appear
-* z index of explosions not correct. they are children of the entity that is exploding and when an entity that was added later is above it, the explosion is behind the other entity
-* chat window needs to be readded to the game
+- Particle effects do not replicate
+- first message on chat does not appear
+- z index of explosions not correct. they are children of the entity that is exploding and when an entity that was added later is above it, the explosion is behind the other entity
+- chat window needs to be readded to the game
+- JS-Dart source maps do not work
 
+Release Checklist
+=================
+
++ Tested in JS
++ Production settings on (server and client)
++ All Features work as intended
++ User manual updated
++ Update branches in Git
++ Create screen shots
++ Write release notes
++ Announce release
 
 Future
 ======
@@ -66,6 +78,13 @@ Epics
 
 Improvements
 ------------
++ Move tickets over to GitHub
++ File Logging
++ Performance Profiling
++ Document Architecture
++ Write user manual
+
+
 + more than one player on one computer
 + rename player without disconnecting
 + Health Bar
@@ -85,6 +104,7 @@ Improvements
 + console interpreter
   + respawn
   + warp
++ Server: etags, last-modified-since support
 
 World:
   + npc village

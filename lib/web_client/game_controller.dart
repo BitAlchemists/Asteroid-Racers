@@ -85,36 +85,37 @@ class GameController implements stagexl.Animatable {
 }
   
   _buildUILayer(){
-        num boxWidth = 150;
+    num boxWidth = 150;
     
     _uiLayer = new stagexl.Sprite();
     _uiLayer.addTo(_stage);
         
-    // DevBox
-    Window devBox = new Window(boxWidth);
-    devBox.x = 10;
-    devBox.y = 10;
-    devBox.addTo(_uiLayer);
+    // DevWindow
+    Window devWindow = new Window(boxWidth);
+    devWindow.x = 10;
+    devWindow.y = 10;
+    devWindow.addTo(_uiLayer);
     
-    
-    stagexl.TextField usernameCaptionField = UIHelper.createTextField(text: "Username:");
-    devBox.stackView(usernameCaptionField);
-
+    var usernameCaptionField = UIHelper.createTextField(text: "Username:");
+    devWindow.pushView(usernameCaptionField);
     
     _usernameField = UIHelper.createInputField();
     _usernameField.onMouseClick.listen((_) => _stage.focus = _usernameField);
-    devBox.stackView(_usernameField);
+    devWindow.pushView(_usernameField);
     
-    _connectButton = new Button(devBox.contentWidth, Window.buttonHeight)
+    devWindow.pushSpace(5);
+    
+    _connectButton = new Button(devWindow.contentWidth, Window.buttonHeight)
     ..text = "Hello World";
-    devBox.stackView(_connectButton);
+    devWindow.pushView(_connectButton);
     _connectButton.onMouseClick.listen(_onTapConnect);
     
-    _debugOutput = UIHelper.createTextField(numLines: 3);
-    devBox.stackView(_debugOutput);
+    devWindow.pushSpace(10);
     
-    devBox.graphics.rectRound(0, 0, boxWidth, y, 10, 10);
-    devBox.graphics.fillColor(0x88888888);
+    _debugOutput = UIHelper.createTextField(numLines: 3);
+    devWindow.pushView(_debugOutput);
+    
+    devWindow.pushSpace(10);
   }
     
   _onTapConnect(_){

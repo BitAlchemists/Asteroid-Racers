@@ -12,18 +12,22 @@ import "../world_server/world_server.dart";
 //import '../_needs_refactoring/file-logger.dart' as log;
 //import 'utils/server-utils.dart';
 
+import 'package:mime_type/mime_type.dart';
+
+
 part 'utils/static_file_handler.dart';
 part "utils/server-utils.dart";
 
 part 'net/web_socket_client_connection.dart';
 part "net/web_socket_client_connection_manager.dart";
 
-Future runServer(String webPath, String logPath, int port) {
+
+Future runServer(List filePaths, String logPath, int port) {
   WorldServer worldServer = new WorldServer();
   ClientProxy.worldServer = worldServer;
   worldServer.start();
   WebSocketClientConnectionManager connectionManager = new WebSocketClientConnectionManager(worldServer);
-  StaticFileHandler fileHandler = new StaticFileHandler(webPath);
+  StaticFileHandler fileHandler = new StaticFileHandler(filePaths);
   
   return HttpServer.bind('0.0.0.0', port).then((HttpServer server) {
     print('listening for connections on $port');

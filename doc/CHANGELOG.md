@@ -1,3 +1,10 @@
+v0.6 - 
+------
+
++ Add Favicon
++ Add Window class, add UIHelper static class
++ Add UI visibility toggle
+
 v0.5 - 2014-06-06
 -----------------
 

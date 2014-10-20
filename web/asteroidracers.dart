@@ -2,8 +2,7 @@ library asteroidracers;
 
 import 'dart:html';
 
-import '../lib/web_client/web_client.dart';
-
+import "package:asteroidracers/web_client/web_client.dart";
 
 /**
  * The entry point to the application.

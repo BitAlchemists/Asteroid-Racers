@@ -10,23 +10,34 @@ class Window extends stagexl.Sprite {
   num get contentWidth => _contentWidth;
 
   //instance variables  
-  num yStack = yOffset;
+  num _yStack = yOffset;
   num _contentWidth;
     
   Window(num width){
     this.width = width;
-    num _contentWidth = width - 2*xOffset;
+    _contentWidth = width - 2*xOffset;
+
   }
   
-  void stackView(stagexl.DisplayObject view){
-    
-    
+  void pushView(stagexl.DisplayObject view){
     view.x = xOffset; 
-    view.y = yStack;
+    view.y = _yStack;
     view.width = _contentWidth;
-
     view.addTo(this);
-    yStack = view.y + view.height;
-}
+    
+    _yStack = view.y + view.height;
+    _updateWindowBackground();
+  }
+  
+  void pushSpace(num pixels){
+    _yStack += pixels;
+    _updateWindowBackground();
+  }
+  
+  void _updateWindowBackground(){
+    this.graphics.clear();
+    this.graphics.rectRound(0, 0, this.width, _yStack, 10, 10);
+    this.graphics.fillColor(0x88888888);
+  }
   
 }
