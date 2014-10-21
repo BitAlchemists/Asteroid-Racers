@@ -4,7 +4,6 @@ class GameConfig {
   bool localServer = true;
   bool debugJson = false;
   bool debugCollisions = false; 
-  bool fullscreen = false;
   bool renderBackground = true;
 }
 
@@ -33,6 +32,7 @@ class GameController implements stagexl.Animatable {
   
   PlayerController get player => _player;
   stagexl.Stage get stage => _stage;
+  Window _debugWindow;
   
   GameController(this._config) {    
     _simulator = new PhysicsSimulator();  
@@ -40,26 +40,17 @@ class GameController implements stagexl.Animatable {
     server = new ServerProxy(this);
     server.onDisconnectDelegate = _onDisconnect;
     
-    _configureChat();
      
   }
   
-  _configureChat(){
-    html.TextAreaElement chatElem = html.querySelector('#chat-display');
-    html.InputElement messageElem = html.querySelector('#chat-message');
-
-    _chat = new ChatController(chatElem, messageElem);
-    _chat.onSendChatMesage.listen(server.send);
-    server.registerMessageHandler(MessageType.CHAT, _chat.onReceiveMessage);
-    ClientLogger.instance.stdout.listen(_chat.onReceiveLogMessage);
-  }
   
   setup(html.CanvasElement canvas){
     _stage = new stagexl.Stage(canvas);
-    if(_config.fullscreen){
-      _stage.scaleMode = stagexl.StageScaleMode.NO_SCALE;
-      _stage.align = stagexl.StageAlign.TOP_LEFT;      
-    }
+    
+    // Fullscreen
+    _stage.scaleMode = stagexl.StageScaleMode.NO_SCALE;
+    _stage.align = stagexl.StageAlign.TOP_LEFT;      
+
     _stage.backgroundColor = stagexl.Color.Black;
     _stage.doubleClickEnabled = true;
     var renderLoop = new stagexl.RenderLoop();
@@ -67,6 +58,7 @@ class GameController implements stagexl.Animatable {
     _stage.focus = _stage;
       
     _buildUILayer();
+    _configureChat();
     
     bool tabHandled = false;
     
@@ -82,7 +74,26 @@ class GameController implements stagexl.Animatable {
         tabHandled = false;
       }
     });
-}
+  }
+  
+  _configureChat(){
+    Window chatWindow = new Window(250);
+    chatWindow.x = 10;
+    chatWindow.y = _debugWindow.y + _debugWindow.height + 10;
+    chatWindow.addTo(_uiLayer);
+    
+    var chatInput = UIHelper.createInputField();
+    chatInput.onMouseClick.listen((_) => _stage.focus = chatInput);
+    chatWindow.pushView(chatInput);
+    var chatOutput = UIHelper.createTextField(numLines:5);
+    chatWindow.pushView(chatOutput);
+    
+    _chat = new ChatController(chatInput, chatOutput);
+    _chat.onSendChatMesage.listen(server.send);
+    server.registerMessageHandler(MessageType.CHAT, _chat.onReceiveMessage);
+    ClientLogger.instance.stdout.listen(_chat.onReceiveLogMessage);
+  }
+
   
   _buildUILayer(){
     num boxWidth = 150;
@@ -91,31 +102,32 @@ class GameController implements stagexl.Animatable {
     _uiLayer.addTo(_stage);
         
     // DevWindow
-    Window devWindow = new Window(boxWidth);
-    devWindow.x = 10;
-    devWindow.y = 10;
-    devWindow.addTo(_uiLayer);
+    _debugWindow = new Window(boxWidth);
+    _debugWindow.x = 10;
+    _debugWindow.y = 10;
+    _debugWindow.addTo(_uiLayer);
     
     var usernameCaptionField = UIHelper.createTextField(text: "Username:");
-    devWindow.pushView(usernameCaptionField);
+    _debugWindow.pushView(usernameCaptionField);
     
     _usernameField = UIHelper.createInputField();
     _usernameField.onMouseClick.listen((_) => _stage.focus = _usernameField);
-    devWindow.pushView(_usernameField);
+    _debugWindow.pushView(_usernameField);
     
-    devWindow.pushSpace(5);
+    _debugWindow.pushSpace(5);
     
-    _connectButton = new Button(devWindow.contentWidth, Window.buttonHeight)
+    _connectButton = new Button(_debugWindow.contentWidth, Window.buttonHeight)
     ..text = "Hello World";
-    devWindow.pushView(_connectButton);
+    _debugWindow.pushView(_connectButton);
     _connectButton.onMouseClick.listen(_onTapConnect);
     
-    devWindow.pushSpace(10);
+    _debugWindow.pushSpace(10);
     
     _debugOutput = UIHelper.createTextField(numLines: 3);
-    devWindow.pushView(_debugOutput);
+    _debugWindow.pushView(_debugOutput);
     
-    devWindow.pushSpace(10);
+    _debugWindow.pushSpace(10);
+   
   }
     
   _onTapConnect(_){

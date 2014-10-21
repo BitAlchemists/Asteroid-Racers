@@ -3,7 +3,7 @@ import "dart:io";
 import "package:path/path.dart" as path;
 
 main() {
-    ar_server.runServer(path.join(Directory.current.path, "../web"), null, 1337).then((value){
+    ar_server.runServer([path.join(Directory.current.path, "../web")], null, 1337).then((value){
       Process.start('explorer', ["http://localhost:1337/asteroidracers.html"]).then((Process process) {
         //process.stdout
         //  .transform(UTF8.decoder)
