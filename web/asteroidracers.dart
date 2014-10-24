@@ -2,7 +2,7 @@ library asteroidracers;
 
 import 'dart:html';
 
-import "package:asteroidracers/web_client/web_client.dart";
+import "package:asteroidracers/game_client/game_client.dart";
 
 /**
  * The entry point to the application.
@@ -16,9 +16,9 @@ void main() {
   config.debugCollisions = false;
   config.renderBackground = false;
   
-  GameController gameController = new GameController(config);
-  gameController.setup(canvas);
-  gameController.start();
+  GameClient gameClient = new GameClient(config);
+  gameClient.setup(canvas);
+  gameClient.start();
   
   canvas.focus();
 }

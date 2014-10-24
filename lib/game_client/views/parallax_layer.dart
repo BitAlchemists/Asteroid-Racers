@@ -1,7 +1,7 @@
-part of web_client;
+part of game_client;
 
 class ParallaxLayer extends stagexl.Sprite implements stagexl.Animatable {
-  GameController gameController;
+  GameClient gameController;
   
   double parallaxFactor = 0.3;
     

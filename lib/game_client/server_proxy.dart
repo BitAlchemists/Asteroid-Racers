@@ -1,4 +1,4 @@
-part of web_client;
+part of game_client;
 
 typedef void MessageHandler(Message message);
 
@@ -10,7 +10,7 @@ class ServerConnectionState {
 
 class ServerProxy {
   ServerConnection _serverConnection;
-  GameController _gameController;
+  GameClient _gameController;
   Map<String, MessageHandler> _messageHandlers;
   Function onDisconnectDelegate;
   int _state = ServerConnectionState.DISCONNECTED;

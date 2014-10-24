@@ -1,4 +1,4 @@
-part of web_client;
+part of game_client;
 
 
 class PlayerController extends EntityController implements stagexl.Animatable  {

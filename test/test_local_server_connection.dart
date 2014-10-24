@@ -1,6 +1,6 @@
 import "package:unittest/unittest.dart";
 //import "package:unittest/html_config.dart";
-import "../lib/web_client/web_client.dart";
+import "package:asteroidracers/game_client/game_client.dart";
 import "package:asteroidracers/game_server/game_server.dart";
 
 void main(){

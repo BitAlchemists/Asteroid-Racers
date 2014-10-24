@@ -1,4 +1,4 @@
-part of web_client;
+part of game_client;
 
 class PhysicsSimulator {
   List<Movable> _movables = new List<Movable>();
