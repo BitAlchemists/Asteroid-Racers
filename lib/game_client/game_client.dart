@@ -16,6 +16,7 @@ import 'package:asteroidracers/services/chat/chat_client.dart';
 import "package:asteroidracers/game_server/game_server.dart";
 
 //Views
+part "game_renderer.dart";
 part 'views/render_helper.dart';
 part "views/explosion.dart";
 part "views/star_background.dart";
@@ -52,40 +53,30 @@ class GameConfig {
   bool renderBackground = true;
 }
 
-class GameClient implements stagexl.Animatable {
+class GameClient {
   GameConfig _config;
+  
+  // The stage is our host system. We use it for the heart beat.
+  stagexl.Stage _stage;
+  stagexl.Stage get stage => _stage;
+  
   PhysicsSimulator _simulator;
 
-  stagexl.Stage _stage;
-  StarBackground _background;
-  ParallaxLayer _earthLayer;
-  ParallaxLayer _entitiesLayer;
-  ParallaxLayer _shipsLayer;
-  stagexl.Sprite _uiLayer;
   PlayerController _player;
-  
-
-  //UI
-  Button _connectButton;
-  stagexl.TextField _usernameField;
-  stagexl.TextField _debugOutput;
+  PlayerController get player => _player;
   
   final Map<int, EntityController> _entityControllers = new Map<int, EntityController>(); //int is the entityId
   ChatController _chat;
-  
+
   ServerProxy server;
   
-  PlayerController get player => _player;
-  stagexl.Stage get stage => _stage;
-  Window _debugWindow;
+  GameRenderer _renderer = new GameRenderer();
   
   GameClient(this._config) {    
     _simulator = new PhysicsSimulator();  
         
     server = new ServerProxy(this);
     server.onDisconnectDelegate = _onDisconnect;
-    
-     
   }
   
   
@@ -109,7 +100,7 @@ class GameClient implements stagexl.Animatable {
     
     _stage.onKeyDown.listen((stagexl.KeyboardEvent ke){
       if(!tabHandled && ke.keyCode == html.KeyCode.ONE){
-        _uiLayer.visible = !_uiLayer.visible;
+        _renderer.toggleGUI();
         tabHandled = true;
       }
     });
