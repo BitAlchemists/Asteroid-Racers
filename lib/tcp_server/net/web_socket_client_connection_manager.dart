@@ -3,9 +3,9 @@ part of tcp_server;
 class WebSocketClientConnectionManager {
   //final Set<WebSocketClientConnection> _connections = new Set<WebSocketClientConnection>();
   final StreamController _sc = new StreamController();
-  final WorldServer _worldServer;
+  final GameServer _gameServer;
   
-  WebSocketClientConnectionManager(this._worldServer) {
+  WebSocketClientConnectionManager(this._gameServer) {
     //String basePath
     //String loggingPath = basePath.append('logs/connection-log.txt');
     //log.initLogging(loggingPath);
@@ -21,6 +21,6 @@ class WebSocketClientConnectionManager {
     
     Connection connection = new WebSocketClientConnection(webSocket);
     ClientProxy clientProxy = new ClientProxy(connection);
-    _worldServer.connectClient(clientProxy);    
+    _gameServer.connectClient(clientProxy);    
   }
 }

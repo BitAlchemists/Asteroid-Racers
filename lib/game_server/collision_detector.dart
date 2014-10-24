@@ -1,4 +1,4 @@
-part of world_server;
+part of game_server;
 
 typedef void CollisionHandler(Entity collidingEntity, Entity otherEntity);
 

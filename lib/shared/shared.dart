@@ -7,7 +7,6 @@ import "package:vector_math/vector_math.dart";
 
 //net
 part 'net/message.dart';
-part 'net/message_dispatcher.dart';
 part "net/message_type.dart";
 part "net/connection.dart";
 

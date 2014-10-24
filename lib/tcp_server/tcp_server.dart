@@ -4,8 +4,8 @@ import 'dart:io';
 //import 'dart:isolate';
 import 'dart:async';
 import 'package:path/path.dart' as path;
-import "../shared/ar_shared.dart";
-import "../world_server/world_server.dart";
+import "package:asteroidracers/shared/shared.dart";
+import "package:asteroidracers/game_server/game_server.dart";
 
 //import '../core/shared/ar_shared.dart';
 
@@ -23,10 +23,10 @@ part "net/web_socket_client_connection_manager.dart";
 
 
 Future runServer(List filePaths, String logPath, int port) {
-  WorldServer worldServer = new WorldServer();
-  ClientProxy.worldServer = worldServer;
-  worldServer.start();
-  WebSocketClientConnectionManager connectionManager = new WebSocketClientConnectionManager(worldServer);
+  GameServer gameServer = new GameServer();
+  ClientProxy.gameServer = gameServer;
+  gameServer.start();
+  WebSocketClientConnectionManager connectionManager = new WebSocketClientConnectionManager(gameServer);
   StaticFileHandler fileHandler = new StaticFileHandler(filePaths);
   
   return HttpServer.bind('0.0.0.0', port).then((HttpServer server) {

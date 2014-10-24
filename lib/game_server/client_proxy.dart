@@ -1,14 +1,11 @@
-part of world_server;
+part of game_server;
 
-typedef void MessageHandler(ClientProxy client, Message message);
-
-class ClientProxy
+class ClientProxy implements IClientProxy
 {
   final Connection _connection;
-  static WorldServer worldServer;
+  static GameServer gameServer;
   static final Map<String, MessageHandler> _messageHandlers = 
     {
-      MessageType.CHAT: _onChatMessage,
       MessageType.HANDSHAKE: _onHandshake,
       MessageType.PLAYER: _onPlayerUpdate,
       MessageType.PING_PONG: _onPingPong,
@@ -17,13 +14,20 @@ class ClientProxy
   Movable movable;
   RaceController race;
   
+  // IClientProxy
+  String get playerName => movable.displayName;
+  
   ClientProxy(this._connection){
     _connection.onReceiveMessage.listen(onMessage);
     _connection.onDisconnectDelegate = _onDisconnect;
   }
   
+  static void registerMessageHandler(String messageType, MessageHandler messageHandler){
+    _messageHandlers[messageType] = messageHandler;
+  }
+  
   _onDisconnect([e]){
-    worldServer.disconnectClient(this);
+    gameServer.disconnectClient(this);
   }
   
   void send(Message message) {
@@ -154,18 +158,13 @@ class ClientProxy
     }
     
     //create player entity in world
-    worldServer.registerPlayer(client, username);
+    gameServer.registerPlayer(client, username);
     client.send(new Message(MessageType.PLAYER, client.movable));
 
     //send all entities
-    for(Entity entity in worldServer.world.entities.values){
+    for(Entity entity in gameServer.world.entities.values){
       client.send(new Message(MessageType.ENTITY, entity));        
     }
-  }
-  
-  static _onChatMessage(ClientProxy client, Message message)
-  {
-    worldServer.broadcastFromPlayer(client, message);
   }
   
   static _onPlayerUpdate(ClientProxy client, Message message){
@@ -173,7 +172,7 @@ class ClientProxy
 
     if(client.movable.id != movable.id){
       print("client attempting to update entity other than itself");
-      worldServer.disconnectClient(client);
+      gameServer.disconnectClient(client);
       return;
     }
     
@@ -182,7 +181,7 @@ class ClientProxy
       return;
     }
     
-    worldServer.updatePlayerEntity(client, false, updatedEntity: movable);
+    gameServer.updatePlayerEntity(client, false, updatedEntity: movable);
   }
     
   static _onPingPong(ClientProxy client, Message message){ 

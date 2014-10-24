@@ -24,11 +24,11 @@ class LocalServerConnection implements ServerConnection {
   }
   
   Future connect(){
-    ClientProxy.worldServer = new WorldServer();
-    ClientProxy.worldServer.start();
+    ClientProxy.gameServer = new GameServer();
+    ClientProxy.gameServer.start();
     _inverseConnection = new LocalServerConnection._inverse(this, _debug);
     _clientProxy = new ClientProxy(_inverseConnection);
-    ClientProxy.worldServer.connectClient(_clientProxy);
+    ClientProxy.gameServer.connectClient(_clientProxy);
     return new Future.value();
   }
   
@@ -36,7 +36,7 @@ class LocalServerConnection implements ServerConnection {
     if(_isMaster){
       _inverseConnection.disconnect();
       _clientProxy = null;
-      ClientProxy.worldServer = null;
+      ClientProxy.gameServer = null;
     }
     
     

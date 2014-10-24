@@ -1,4 +1,4 @@
-library world_server;
+library game_server;
 
 import "dart:math" as Math;
 import "dart:async";
@@ -6,7 +6,9 @@ import "dart:async";
 import 'package:game_loop/game_loop_isolate.dart';
 import "package:vector_math/vector_math.dart";
 
-import "../shared/ar_shared.dart";
+import "package:asteroidracers/shared/shared.dart";
+import "package:asteroidracers/shared/shared_server.dart";
+import "package:asteroidracers/services/chat/chat_server.dart";
 
 part "client_proxy.dart";
 part "collision_detector.dart";
@@ -14,18 +16,27 @@ part "race_controller.dart";
 
 Math.Random random = new Math.Random();
 
-class WorldServer {
+class GameServer implements IGameServer {
+  final Set<IClientProxy> _clients = new Set<IClientProxy>();
   final World _world = new World();
   CollisionDetector _crashCollisionDetector;
   CollisionDetector _joinRaceCollisionDetector;
-  final Set<ClientProxy> _clients = new Set<ClientProxy>();
   RaceController _race;
   Entity _spawn;
   Map<Entity, ClientProxy> _entityToClientMap = new Map<Entity, ClientProxy>();
+  ChatServer _chat;
 
   World get world => _world;
   
-  WorldServer(){
+  // IGameServer
+  Set<IClientProxy> get clients => _clients;
+  
+  GameServer(){
+    _createWorld();
+    _registerServices();
+  }
+  
+  _createWorld(){
     List<Entity> asteroids = new List<Entity>();
     asteroids.addAll(_world.generateAsteroidBelt(1000, -4000, 250, 8000, 4000));
     _world.addEntities(asteroids);
@@ -49,7 +60,7 @@ class WorldServer {
     
     
     _race = new RaceController();
-    _race.worldServer = this;
+    _race.gameServer = this;
 /*
  *     _race.addCheckpoint(200.0, 0.0);
     _race.addCheckpoint(200.0, 300.0, 70.0);
@@ -94,7 +105,12 @@ class WorldServer {
     _world.addEntity(dummyPlayer);
     _collisionDetector.asteroids.add(dummyPlayer);
     */
-
+  }
+  
+  _registerServices(){
+    
+    _chat = new ChatServer(this);
+    ClientProxy.registerMessageHandler(MessageType.CHAT, _chat.onChatMessage);
   }
   
   start(){
@@ -122,14 +138,14 @@ class WorldServer {
     _crashCollisionDetector.activeEntities.remove(playerEntity);
     playerEntity.canMove = false;
     Message message = new Message(MessageType.COLLISION, playerEntity.id);
-    _sendToClients(message);
+    broadcastMessage(message);
     new Future.delayed(new Duration(seconds:1), (){
       //if the entity still exists
       if(_world.entities.containsKey(playerEntity.id)){
         ClientProxy client = _clientForEntity(playerEntity);
         spawnPlayer(client, true);
         Message message = new Message(MessageType.ENTITY, playerEntity);
-        _sendToClients(message);          
+        broadcastMessage(message);          
       }
     });
   }
@@ -145,6 +161,12 @@ class WorldServer {
   void connectClient(ClientProxy client){
     print("player connected");
     _clients.add(client);
+    
+    Message welcomeMessage = new Message();
+    welcomeMessage.messageType = MessageType.CHAT;
+    welcomeMessage.payload = {"from": "Server", "message": "Welcome to the 'Apollo 13' development server."};
+    client.send(welcomeMessage);
+    
     print("connected clients: ${_clients.length}");
   }
   
@@ -170,15 +192,15 @@ class WorldServer {
     }
     
     Message message = new Message(MessageType.ENTITY_REMOVE, client.movable.id);
-    _sendToClientsExcept(message, client);
+    sendMessageToClientsExcept(message, client);
   }
   
-  _sendToClientsExcept(Message message, ClientProxy client){
-    _sendToClients(message, blacklist:new Set()..add(client));
+  sendMessageToClientsExcept(Message message, ClientProxy client){
+    broadcastMessage(message, blacklist:new Set()..add(client));
   }
   
-  _sendToClients(Message message, {Set<ClientProxy> blacklist}) {
-    Set<ClientProxy> recipients = _clients;    
+  broadcastMessage(Message message, {Set<IClientProxy> blacklist}) {
+    Set<IClientProxy> recipients = _clients;    
     
     if(blacklist != null){
       recipients = recipients.difference(blacklist);      
@@ -256,9 +278,6 @@ class WorldServer {
     }
   }   
   
-  void broadcastFromPlayer(ClientProxy sender, Message message) {
-    _sendToClientsExcept(message, sender);
-  }
   
   void updatePlayerEntity(ClientProxy client, bool informPlayerClientToo, {Movable updatedEntity}){
     if(updatedEntity != null){
@@ -268,10 +287,10 @@ class WorldServer {
     Message message = new Message(MessageType.ENTITY, client.movable);
     
     if(informPlayerClientToo){
-      _sendToClients(message); 
+      broadcastMessage(message); 
     }
     else {
-      _sendToClientsExcept(message, client); 
+      sendMessageToClientsExcept(message, client); 
     }
   }
   

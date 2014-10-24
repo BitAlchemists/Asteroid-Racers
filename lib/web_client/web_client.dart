@@ -11,9 +11,9 @@ import 'package:stagexl/stagexl.dart' as stagexl;
 import "package:stagexl_particle/stagexl_particle.dart" as stagexl_particle;
 
 //Ours
-import '../shared/ar_shared.dart';
-import '../services/chat/chat_client.dart';
-import "../world_server/world_server.dart";
+import 'package:asteroidracers/shared/shared.dart';
+import 'package:asteroidracers/services/chat/chat_client.dart';
+import "package:asteroidracers/game_server/game_server.dart";
 
 //Views
 part 'views/render_helper.dart';

@@ -6,3 +6,6 @@ v0.6 -
 + Add UI visibility toggle
 + Fixed Dart-JS source maps import
 + chat added to fullscreen ui
++ rename world_server to game_server
++ introduce service architecture to allow modularization of game services
++ introduce ChatServer service
