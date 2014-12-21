@@ -18,7 +18,7 @@ void main() {
   
   GameClient gameClient = new GameClient(config);
   gameClient.setup(canvas);
-  gameClient.start();
+  gameClient.connect();
   
   canvas.focus();
 }
