@@ -1,6 +1,6 @@
 part of game_client;
 
-class GameRenderer implements stagexl.Animatable  {
+class GameRenderer implements stagexl.Animatable {
 
   stagexl.Stage get stage => _stage;
   String get username => _usernameField.text;
@@ -8,11 +8,14 @@ class GameRenderer implements stagexl.Animatable  {
     _debugOutputField.text = debugOutput;
   }
 
+  List _parallaxLayers = [];
   StarBackground _background;
   ParallaxLayer _earthLayer;
   ParallaxLayer _entitiesLayer;
-  ParallaxLayer _shipsLayer;
+  ParallaxLayer _playerLayer;
   
+  stagexl.Sprite playerSprite;
+    
   // The stage is our host system. We use it for the heart beat.
   stagexl.Stage _stage;
 
@@ -25,6 +28,7 @@ class GameRenderer implements stagexl.Animatable  {
   
   GameRenderer(html.CanvasElement canvas){
     _stage = new stagexl.Stage(canvas);
+    _stage.juggler.add(this);
     
     // Fullscreen
     _stage.scaleMode = stagexl.StageScaleMode.NO_SCALE;
@@ -36,34 +40,28 @@ class GameRenderer implements stagexl.Animatable  {
     
   }
   
+  bool advanceTime(num dt){
+    if(playerSprite != null){
+      Vector2 position = new Vector2(playerSprite.x, playerSprite.y);
+      this._updateParallaxOffsets(position);
+    }
+    return true;
+  }
 
   toggleGUI(){
     _uiLayer.visible = !_uiLayer.visible;
   }
   
   clearScene(){
-    
-    if(_entitiesLayer != null){
-      _entitiesLayer.removeFromParent();
-      _entitiesLayer = null;      
+    for(ParallaxLayer layer in _parallaxLayers){
+      layer.removeFromParent();
+      _stage.juggler.remove(layer);
     }
     
-    if(_background != null){
-      _background.removeFromParent();
-      _stage.juggler.remove(_background);
-      _background = null;
-    }
-    
-    if(_earthLayer != null){
-      _earthLayer.removeFromParent();
-      _stage.juggler.remove(_earthLayer);
-      _earthLayer = null;
-    }
-    
-    if(_shipsLayer != null){
-      _shipsLayer.removeFromParent();
-      _shipsLayer = null;
-    }
+    _entitiesLayer = null;      
+    _background = null;
+    _earthLayer = null;
+    _playerLayer = null;
   }
   
   buildUILayer(Function onTapConnect){
@@ -106,14 +104,16 @@ class GameRenderer implements stagexl.Animatable  {
   
   buildBackgroundLayer(){
     //Background
-    _background = new StarBackground(2000.0, 2000.0, this);
+    _background = new StarBackground(2000.0, 2000.0, _stage);
     _stage.addChildAt(_background, _stage.numChildren);  
     _stage.juggler.add(_background);
+    _parallaxLayers.add(_background);
     
     //Earth layer
-    _earthLayer = new ParallaxLayer(this, 0.3);
+    _earthLayer = new ParallaxLayer(_stage, 0.3);
     _stage.addChildAt(_earthLayer, _stage.numChildren);
     _stage.juggler.add(_earthLayer);
+    _parallaxLayers.add(_earthLayer);
     
     Planet earth = new Planet(400, stagexl.Color.DarkBlue, stagexl.Color.Green);
     earth.x = -700;
@@ -134,9 +134,10 @@ class GameRenderer implements stagexl.Animatable  {
   
   buildEntitiesLayer(){
     //entities layer
-    _entitiesLayer = new ParallaxLayer(this, 1.0);
+    _entitiesLayer = new ParallaxLayer(_stage, 1.0);
     _stage.addChildAt(_entitiesLayer, _stage.numChildren);
     _stage.juggler.add(_entitiesLayer);   
+    _parallaxLayers.add(_entitiesLayer);
     
     // sample space station
     stagexl.Sprite station = StationBuilder.sampleStation();
@@ -144,10 +145,12 @@ class GameRenderer implements stagexl.Animatable  {
     station.x = -1200;
     _entitiesLayer.addChild(station);  
     
-    // ships layer
-    _shipsLayer = new ParallaxLayer(this, 1.0);
-    _stage.addChildAt(_shipsLayer, _stage.numChildren);
-    _stage.juggler.add(_shipsLayer);
+    //entities layer
+    _playerLayer = new ParallaxLayer(_stage, 1.0);
+    _stage.addChildAt(_playerLayer, _stage.numChildren);
+    _stage.juggler.add(_playerLayer);   
+    _parallaxLayers.add(_playerLayer);
+  
   }
   
   addWindowToGUI(Window window){
@@ -170,11 +173,31 @@ class GameRenderer implements stagexl.Animatable  {
     }
   }
   
-  addEntityDisplayObject(var displayObject){
-    _shipsLayer.addChild(displayObject);
+  addEntityFromController(EntityController ec){
+    
+    if(ec is PlayerController){
+      _playerLayer.addChild(ec.sprite);
+      _playerLayer.addChild(ec.particleEmitter);
+    }
+    else
+    {
+      _entitiesLayer.addChild(ec.sprite);
+    }
   }
   
-  removeEntityDisplayObject(var displayObject){
-    _shipsLayer.removeChild(displayObject);
+  removeEntityFromController(EntityController ec){
+    ec.sprite.removeFromParent();
+    
+    if(ec is PlayerController){
+      //TE: as of 2014-12-21, this should never happen, since the player entity is only
+      // repositioned by the server but not removed. It is only removed when a player disconnects
+      ec.particleEmitter.removeFromParent();
+    }
+  }
+  
+  _updateParallaxOffsets(Vector2 parallaxOffset){
+    for(ParallaxLayer layer in _parallaxLayers){
+      layer.parallaxOffset = parallaxOffset;
+    }
   }
 }

@@ -1,17 +1,16 @@
 part of game_client;
 
 class ParallaxLayer extends stagexl.Sprite implements stagexl.Animatable {
-  GameClient gameController;
-  
+
+  final stagexl.Stage stage;
+  Vector2 parallaxOffset = new Vector2.zero();
   double parallaxFactor = 0.3;
     
-  ParallaxLayer(this.gameController, this.parallaxFactor) : super();
+  ParallaxLayer(this.stage, this.parallaxFactor) : super();
   
   bool advanceTime(num dt){ 
-    if(gameController.player != null){
-      this.x = gameController.stage.stageWidth/2.0 - gameController.player.sprite.x * parallaxFactor;
-      this.y = gameController.stage.stageHeight/2.0 - gameController.player.sprite.y * parallaxFactor;      
-    }
+    this.x = stage.stageWidth/2.0 - parallaxOffset.x * parallaxFactor;
+    this.y = stage.stageHeight/2.0 - parallaxOffset.y * parallaxFactor;      
     
     return true;
   }

@@ -8,10 +8,10 @@ class ChatWindow extends Window {
   stagexl.TextField get chatOutput => _chatOutput;
   
   ChatWindow() : super(250){
-    var chatInput = UIHelper.createInputField();
-    chatInput.onMouseClick.listen((_) => this.stage.focus = chatInput);
-    this.pushView(chatInput);
-    var chatOutput = UIHelper.createTextField(numLines:5);
-    this.pushView(chatOutput);
+    _chatInput = UIHelper.createInputField();
+    _chatInput.onMouseClick.listen((_) => this.stage.focus = _chatInput);
+    this.pushView(_chatInput);
+    _chatOutput = UIHelper.createTextField(numLines:5);
+    this.pushView(_chatOutput);
   }
 }

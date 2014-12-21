@@ -182,15 +182,15 @@ class GameClient implements stagexl.Animatable {
       
       _simulator.simulate(dt);
       
+      // we always update the sprite because it reduces code paths that need
+      // to notify the renderer of position updates (e.g. teleporting)
+      _player.updateSprite();
+      
       //if the player position changed...
       if( _player.entity.position.x != previousPosition.x ||
           _player.entity.position.y != previousPosition.y ||
           _player.entity.orientation != previousOrientation)
       {
-        _player.updateSprite();
-        
-        
-        
         //notify the server
         if(server != null){
           server.send(new Message(MessageType.PLAYER, _player.entity));
@@ -222,15 +222,14 @@ class GameClient implements stagexl.Animatable {
     
     return fpsAverage;
   }
-  
     
   void createPlayer(Entity entity){
     _player = new PlayerController(entity);
     _player.configureInputControls(_renderer.stage);
     _entityControllers[entity.id] = _player;
-    _renderer.addEntityDisplayObject(_player.sprite);
-    _renderer.addEntityDisplayObject(_player.particleEmitter);
-    
+    _renderer.addEntityFromController(_player);
+    _renderer.playerSprite = _player.sprite;
+        
     renderLoop.juggler.add(_player);
     
     if(_config.debugCollisions){
@@ -249,15 +248,8 @@ class GameClient implements stagexl.Animatable {
     
     if(!_entityControllers.containsKey(entity.id)){
       ec = new EntityController.factory(entity);
-      if(entity.type == EntityType.SHIP){
-        _shipsLayer.addChild(ec.sprite); 
-      }
-      else
-      {
-        _entitiesLayer.addChild(ec.sprite); 
-      }
-      
       _entityControllers[entity.id] = ec;
+      _renderer.addEntityFromController(ec);
       
       if(entity.type == EntityType.SHIP &&
           entity.displayName != null &&
@@ -279,7 +271,7 @@ class GameClient implements stagexl.Animatable {
     if(_entityControllers.containsKey(entityId))
     {
       EntityController ec = _entityControllers[entityId];
-      ec.sprite.removeFromParent();
+      _renderer.removeEntityFromController(ec);
       _entityControllers.remove(entityId);
       
       Entity entity = ec.entity;
@@ -298,7 +290,7 @@ class GameClient implements stagexl.Animatable {
     if(ec.entity is Movable){
       (ec.entity as Movable).canMove = false;      
     }
-    Explosion.renderExplosion(_stage, ec.sprite, ec.entity.radius);
+    Explosion.renderExplosion(_renderer.stage, ec.sprite, ec.entity.radius);
   }
 }
 
