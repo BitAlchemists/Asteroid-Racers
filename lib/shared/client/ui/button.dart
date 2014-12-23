@@ -1,4 +1,4 @@
-part of game_client;
+part of shared_client;
 
 class Button extends stagexl.Sprite {
   String _text;
