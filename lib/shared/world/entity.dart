@@ -26,18 +26,27 @@ class Entity
   
   Entity(this.type, {this.position, this.radius: 1.0});
   
+  Map<int, Function> deserializers = 
+    {
+      EntityType.SHIP.index: (list) => new Movable.fromJson(list),
+      EntityType.LAUNCH_PLATFORM.index: (list) => new RacePortal.fromJson(list),
+      EntityType.CHECKPOINT.index: (list) => new Checkpoint.fromJson(list),
+    };
+  
   factory Entity.deserialize(List list){
     Entity entity;
     
-    //filed a bug: https://code.google.com/p/dart/issues/detail?id=21955
-    switch(list[0]){
-      case EntityType.SHIP.index:
+    int entityTypeIndex = list[0];
+    EntityType entityType = entityTypeIndex == null ? null : EntityType.values[entityTypeIndex];
+    
+    switch(entityType){
+      case EntityType.SHIP:
         entity = new Movable.fromJson(list);
         break;
-      case EntityType.LAUNCH_PLATFORM.index:
+      case EntityType.LAUNCH_PLATFORM:
         entity = new RacePortal.fromJson(list);
         break;
-      case EntityType.CHECKPOINT.index:
+      case EntityType.CHECKPOINT:
         entity = new Checkpoint.fromJson(list);
         break;
       default:

@@ -20,11 +20,11 @@ part "world/race_portal.dart";
 String exceptionDetails(e){
   assert(e != null);
   
-  String result = "exceptionDetails for error of type: ${e.runtimeType.toString()}";
+  String result = "exceptionDetails for error of type: ${e.runtimeType.toString()}\n";
 
   if(e is String)
   {
-    return e; 
+    result += e;
   }
 
   if(e is Error){
@@ -35,7 +35,7 @@ String exceptionDetails(e){
     }
     
     result += e.stackTrace.toString();
-
-    return result;    
   }
+  
+  return result;    
 }
