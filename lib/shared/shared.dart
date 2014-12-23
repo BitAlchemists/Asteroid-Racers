@@ -28,7 +28,7 @@ String exceptionDetails(e){
   }
 
   if(e is Error){
-    String result = "error message: ${e.toString()}\n";
+    result += "error message: ${e.toString()}\n";
     
     if(e is JsonUnsupportedObjectError){
       result += "${e.cause}\nUnsupportedObject:${e.unsupportedObject.runtimeType.toString()}\n";
@@ -36,6 +36,8 @@ String exceptionDetails(e){
     
     result += e.stackTrace.toString();
   }
+  
+  result += "----";
   
   return result;    
 }

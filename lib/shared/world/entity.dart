@@ -9,10 +9,10 @@ enum EntityType {
   FINISH,
 }
 
-class CheckpointState {
-  static const int CLEARED = 0;
-  static const int CURRENT = 1;
-  static const int FUTURE = 2;
+enum CheckpointState {
+  CLEARED,
+  CURRENT,
+  FUTURE
 }
 
 class Entity
@@ -25,13 +25,6 @@ class Entity
   double radius;
   
   Entity(this.type, {this.position, this.radius: 1.0});
-  
-  Map<int, Function> deserializers = 
-    {
-      EntityType.SHIP.index: (list) => new Movable.fromJson(list),
-      EntityType.LAUNCH_PLATFORM.index: (list) => new RacePortal.fromJson(list),
-      EntityType.CHECKPOINT.index: (list) => new Checkpoint.fromJson(list),
-    };
   
   factory Entity.deserialize(List list){
     Entity entity;

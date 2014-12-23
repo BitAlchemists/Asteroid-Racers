@@ -54,6 +54,8 @@ class LocalServerConnection implements ServerConnection {
   
   void _receiveMessage(var message)
   {
+    assert(message != null);
+    
     if(_debug) {
       message = new Message.fromJson(message);      
     }
