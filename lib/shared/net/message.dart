@@ -8,6 +8,8 @@ class Message {
   
   factory Message.fromJson(String json)
   {
+    assert(json != null);
+    
     try {
       Message message = new Message._internal();
       var map = JSON.decode(json);
@@ -35,6 +37,7 @@ class Message {
     }
     catch (e) {
       print("error during Message.toJson() with payload object of type '${payload.runtimeType}': $e");
+      print(exceptionDetails(e));
     }
     
     return json;

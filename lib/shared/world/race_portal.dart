@@ -16,14 +16,21 @@ class RacePortal extends Entity {
   }
   
   toJson(){
-    List list = super.toJson();
-    List rawPositions = [];
-    for(Entity position in positions){
-      List rawPosition = position.toJson();
-      rawPositions.add(rawPosition);
+    try{
+      List list = super.toJson();
+      List rawPositions = [];
+      for(Entity position in positions){
+        List rawPosition = position.toJson();
+        rawPositions.add(rawPosition);
+      }
+      list.add(rawPositions);
+      return list;      
     }
-    list.add(rawPositions);
-    return list;
+    catch(e){
+      print("exception in RacePortal.toJson()");
+      print(exceptionDetails(e));
+      return null;
+    }
   }
   
   copyFrom(RacePortal platform){
