@@ -1,7 +1,7 @@
 part of ar_shared;
 
 class Message {
-  String messageType;
+  MessageType messageType;
   var payload;
   
   Message([this.messageType = null, this.payload = null]);
@@ -12,7 +12,7 @@ class Message {
       Message message = new Message._internal();
       var map = JSON.decode(json);
       if(map is Map) {
-        message.messageType = map['messageType'];
+        message.messageType = MessageType.values[ map['messageType'] ];
         message.payload = map['payload'];
       }
       
@@ -30,7 +30,7 @@ class Message {
   String toJson() {
     String json = null;
     try {   
-      Map map = {'messageType': this.messageType, 'payload': payload};
+      Map map = {'messageType': this.messageType.index, 'payload': payload};
       json = JSON.encode(map);
     }
     catch (e) {

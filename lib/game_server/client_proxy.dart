@@ -22,7 +22,7 @@ class ClientProxy implements IClientProxy
     _connection.onDisconnectDelegate = _onDisconnect;
   }
   
-  static void registerMessageHandler(String messageType, MessageHandler messageHandler){
+  static void registerMessageHandler(MessageType messageType, MessageHandler messageHandler){
     _messageHandlers[messageType] = messageHandler;
   }
   

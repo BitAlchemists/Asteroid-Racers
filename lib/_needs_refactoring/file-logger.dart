@@ -1,7 +1,7 @@
 library filelogger;
 import 'dart:isolate';
 import 'dart:io';
-import '../server/utils/server-utils.dart';
+import 'package:asteroidracers/server/utils/server-utils.dart';
 
 
 startLogging(ReceivePort _receivePort) {

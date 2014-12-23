@@ -30,7 +30,7 @@ class ServerProxy {
       };
   }
   
-  registerMessageHandler(String messageType, MessageHandler messageHandler)
+  registerMessageHandler(MessageType messageType, MessageHandler messageHandler)
   {
     _messageHandlers[messageType] = messageHandler;
   }

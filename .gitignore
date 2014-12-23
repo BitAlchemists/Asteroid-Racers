@@ -4,3 +4,4 @@ pubspec.lock
 lib/server/logs
 build/
 .pub
+.DS_Store
