@@ -1,12 +1,12 @@
 part of ar_shared;
 
-class EntityType {
-  static const String ASTEROID = "ASTEROID";
-  static const String SHIP = "SHIP";
-  static const String CHECKPOINT = "CHECKPOINT";
-  static const String LAUNCH_PLATFORM = "LAUNCH_PLATFORM";
-  static const String ARROWS = "ARROWS";
-  static const String FINISH = "FINISH";
+enum EntityType {
+  ASTEROID,
+  SHIP,
+  CHECKPOINT,
+  LAUNCH_PLATFORM,
+  ARROWS,
+  FINISH,
 }
 
 class CheckpointState {
@@ -17,7 +17,7 @@ class CheckpointState {
 
 class Entity
 {
-  String type;
+  EntityType type;
   int id;
   String displayName;
   Vector2 position;
@@ -29,14 +29,15 @@ class Entity
   factory Entity.deserialize(List list){
     Entity entity;
     
+    //filed a bug: https://code.google.com/p/dart/issues/detail?id=21955
     switch(list[0]){
-      case EntityType.SHIP:
+      case EntityType.SHIP.index:
         entity = new Movable.fromJson(list);
         break;
-      case EntityType.LAUNCH_PLATFORM:
+      case EntityType.LAUNCH_PLATFORM.index:
         entity = new RacePortal.fromJson(list);
         break;
-      case EntityType.CHECKPOINT:
+      case EntityType.CHECKPOINT.index:
         entity = new Checkpoint.fromJson(list);
         break;
       default:
@@ -50,12 +51,18 @@ class Entity
   Entity.fromJson(List list){
     assert(list != null);
     
-    type = list[0];
-    id = list[1];
-    position = new Vector2((list[2] as num).toDouble(), (list[3] as num).toDouble());
-    orientation = (list[4] as num).toDouble();
-    radius = (list[5] as num).toDouble();
-    displayName = list[6];
+    try{
+      int entityTypeIndex = list[0];
+      type = entityTypeIndex == null ? null : EntityType.values[entityTypeIndex];
+      id = list[1];
+      position = new Vector2((list[2] as num).toDouble(), (list[3] as num).toDouble());
+      orientation = (list[4] as num).toDouble();
+      radius = (list[5] as num).toDouble();
+      displayName = list[6];      
+    }
+    catch(e){
+      print("exception while Entity.fromJson() with: $list");
+    }
   }
   
   Entity.copy(Entity entity){
@@ -63,18 +70,25 @@ class Entity
   }
   
   toJson(){
-    assert(position != null);
+    try {
+      assert(position != null);
+      List list = [
+                       type != null ? type.index : null, // 0
+                       id,                    // 1
+                       position.x,            // 2
+                       position.y,            // 3
+                       orientation,           // 4
+                       radius,                // 5
+                       displayName            // 6
+                  ];
+      return list;// JSON.encode(list);
     
-    List list = [
-                     type,                  // 0
-                     id,                    // 1
-                     position.x,            // 2
-                     position.y,            // 3
-                     orientation,           // 4
-                     radius,                 // 5
-                     displayName           // 6
-                ];
-    return list;// JSON.encode(list);
+    }
+    catch(e){
+      print("exception in Entity.toJson()");
+      print(exceptionDetails(e));
+      return null;
+    }
   }
 
   
