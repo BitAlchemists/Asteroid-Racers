@@ -36,10 +36,11 @@ class RaceController {
     addCheckpoint(x, y, circleRadius);    
   }
   
-  Entity addCheckpoint(double x, double y, [double radius = 100.0]){
+  Entity addCheckpoint(double x, double y, double orientation, [double radius = 100.0]){
     Checkpoint checkpoint = new Checkpoint();
     checkpoint.position = new Vector2(x, y);
     checkpoint.radius = radius;
+    checkpoint.orientation = orientation;
     
     if(_checkpoints.length == 0){
       checkpoint.state = CheckpointState.CURRENT;
@@ -53,9 +54,10 @@ class RaceController {
     return checkpoint;
   }
   
-  addFinish(double x, double y)
+  addFinish(double x, double y, double orientation)
   {
     _finish = new Entity(EntityType.FINISH, position: new Vector2(x, y), radius: 100.0);
+    _finish.orientation = orientation;
     addCheckpoint(x, y, 100.0);
   }
   

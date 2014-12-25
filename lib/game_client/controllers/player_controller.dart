@@ -1,10 +1,14 @@
 part of game_client;
 
-
+/**
+ * A controller for player entities. Also handles to local player.
+ */
 class PlayerController extends EntityController implements stagexl.Animatable  {
   final double _acceleration = 200.0;
   final double _rotationSpeed = 5.0;
   bool accelerate = false;
+  
+  bool isLocalPlayer = false;
       
   Movable get _movable => entity;
   
@@ -179,4 +183,15 @@ class PlayerController extends EntityController implements stagexl.Animatable  {
     
     _movable.acceleration = new Vector2(acceleration3.x, acceleration3.y);
   }  
+  
+  updateFromServer(Entity entity){
+    // we exclude orientation and rotationSpeed from the update, so that we
+    // can maintain smooth rotations on the client
+    if(this.isLocalPlayer && this.entity.canMove){
+      Movable movable = entity as Movable;
+      entity.orientation = null;
+      entity.rotationSpeed = null;      
+    }
+    super.updateFromServer(entity);
+  }
 }

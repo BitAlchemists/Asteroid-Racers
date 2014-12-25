@@ -11,3 +11,5 @@ v0.6 -
 + introduce ChatServer service
 + Split GameClient into GameClient and GameRenderer #18
 + change enumerations from class type to enum. #22
++ players spawn anywhere in a checkpoint (no longer in the middle)
++ control over physics is held by the server #16

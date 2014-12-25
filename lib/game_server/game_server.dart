@@ -69,9 +69,9 @@ class GameServer implements IGameServer {
     _race.addCheckpoint(100.0, 600.0, 50.0);
     _race.addCheckpoint(200.0, 900.0, 100.0);*/
     _race.addStart(0.0, -200.0, Math.PI);
-    _race.addCheckpoint(0.0, -600.0);
+    _race.addCheckpoint(0.0, -600.0, Math.PI);
     //_race.addCheckpoint(0.0, -1700.0);
-    _race.addFinish(0.0, -800.0);
+    _race.addFinish(0.0, -800.0, Math.PI);
 
     _world.addEntities(_race.checkpoints);
     _world.addEntity(_race.start);
@@ -97,7 +97,7 @@ class GameServer implements IGameServer {
     */        
     _spawn = new Entity(null);
     _spawn.position = new Vector2(0.0, 100.0);
-    _spawn.radius = 100.0;
+    _spawn.radius = 200.0;
     _spawn.orientation = Math.PI;
     
     /* Dummy player
@@ -243,16 +243,21 @@ class GameServer implements IGameServer {
     Vector2 position;
     double orientation;
     
+    Entity spawn = null;
+    
     if(client.race != null){
-      Entity spawn = _race.spawnEntityForPlayer(client);
-      position = spawn.position;
-      orientation = spawn.orientation;
+      spawn = _race.spawnEntityForPlayer(client);
     }
     else {
-      Vector2 randomPoint = randomPointInCircle();
-      position = _spawn.position + randomPoint * (_spawn.radius - movable.radius);
-      orientation = _spawn.orientation;      
+      spawn = _spawn;
     }
+
+    Vector2 randomPoint = randomPointInCircle();
+    position = spawn.position + randomPoint * (spawn.radius - movable.radius);      
+
+    
+    orientation = spawn.orientation;
+
             
     if(!_crashCollisionDetector.activeEntities.contains(movable)){
       _crashCollisionDetector.activeEntities.add(movable);      

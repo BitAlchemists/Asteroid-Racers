@@ -252,6 +252,7 @@ class GameClient implements stagexl.Animatable {
   void createPlayer(Entity entity){
     _player = new PlayerController(entity);
     _player.configureInputControls(_renderer.stage);
+    _player.isLocalPlayer = true;
     _entityControllers[entity.id] = _player;
     _renderer.addEntityFromController(_player);
     _renderer.playerSprite = _player.sprite;
