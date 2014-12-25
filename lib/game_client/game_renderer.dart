@@ -1,5 +1,10 @@
 part of game_client;
 
+/**
+ * This class takes care of presenting the visual game content to the player.
+ * 
+ * It is used by GameClient.
+ */
 class GameRenderer implements stagexl.Animatable {
 
   stagexl.Stage get stage => _stage;
@@ -8,15 +13,24 @@ class GameRenderer implements stagexl.Animatable {
     _debugOutputField.text = debugOutput;
   }
 
+  /// A list of all our layers, used for iterating over them
   List _parallaxLayers = [];
+  
+  /// The background layer containing the star field.
   StarBackground _background;
+  
+  /// The layer containing earth and the moon
   ParallaxLayer _earthLayer;
+  
+  /// This layer has all of the entities
   ParallaxLayer _entitiesLayer;
+  
+  /// This layer only holds the player, so that the player is always in front of other things in the scene
   ParallaxLayer _playerLayer;
   
-  stagexl.Sprite playerSprite;
+  stagexl.Sprite playerSprite; /// This variable is used to update the offset of the parallax layers each frame
     
-  // The stage is our host system. We use it for the heart beat.
+  /// The stage is our host system. We use it for the heart beat.
   stagexl.Stage _stage;
 
   //UI
