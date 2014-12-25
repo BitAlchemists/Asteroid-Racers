@@ -130,8 +130,22 @@ class ServerProxy {
     _gameController.createPlayer(entity);
   }
   
+  ping(){
+    send(new Message(MessageType.PING_PONG, new DateTime.now().millisecondsSinceEpoch));
+  }
+  
+  double pingAverage = 0.0;
+  
   _onPingPong(Message message){
-    log("pong ${message.payload}");
+    int ms = message.payload;
+    int now = new DateTime.now().millisecondsSinceEpoch;
+    int ping = now - ms;
+    
+    if (pingAverage == null) {
+      pingAverage = ping;
+    }
+
+    pingAverage = ping * 0.05 + pingAverage * 0.95;
   }
   
   _onCollision(Message message){

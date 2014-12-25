@@ -185,7 +185,7 @@ class ClientProxy implements IClientProxy
   }
     
   static _onPingPong(ClientProxy client, Message message){ 
-    print("ping ${message.payload} from ${client.movable.displayName}");
+    //print("ping ${message.payload} from ${client.movable.displayName}");
     client.send(message);
   }
 }

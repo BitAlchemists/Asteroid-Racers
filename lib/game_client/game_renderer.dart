@@ -109,7 +109,7 @@ class GameRenderer implements stagexl.Animatable {
     _debugWindow.pushSpace(10);
     
     // debug output
-    _debugOutputField = UIHelper.createTextField(numLines: 3);
+    _debugOutputField = UIHelper.createTextField(numLines: 4);
     _debugWindow.pushView(_debugOutputField);
     
     _debugWindow.pushSpace(10);

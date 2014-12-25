@@ -14,7 +14,7 @@ void main() {
   config.localServer = true;
   config.debugJson = true;
   config.debugCollisions = false;
-  config.renderBackground = false;
+  config.renderBackground = true;
   
   GameClient gameClient = new GameClient(config);
   gameClient.setup(canvas);

@@ -50,6 +50,9 @@ class GameConfig {
   bool renderBackground = true;
 }
 
+/**
+ * The Game client sets up the game and handles the interaction between player and server
+ */
 class GameClient implements stagexl.Animatable {
   GameConfig _config;
   
@@ -60,11 +63,16 @@ class GameClient implements stagexl.Animatable {
   PlayerController _player;
   PlayerController get player => _player;
   
-  final Map<int, EntityController> _entityControllers = new Map<int, EntityController>(); //int is the entityId
+  /// a map of entity controllers
+  /// 
+  /// the int key is the entityId
+  final Map<int, EntityController> _entityControllers = new Map<int, EntityController>();
+  
   ChatController _chat;
 
   ServerProxy server;
   
+  /// The renderer for displaying the games visual content
   GameRenderer _renderer;
   
   GameClient(this._config) {    
@@ -172,6 +180,9 @@ class GameClient implements stagexl.Animatable {
     _entityControllers.clear();
   }
   
+  /// a timer to measure time since last ping
+  num time_since_last_ping = 0;
+  
   bool advanceTime(num dt){
     
     String debugOutput = ""; 
@@ -197,18 +208,26 @@ class GameClient implements stagexl.Animatable {
         }   
       }
 
-      debugOutput += "x: ${_player.entity.position.x.toInt()}\ny: ${_player.entity.position.y.toInt()}";
+      debugOutput += "x: ${_player.entity.position.x.toInt()}\ny: ${_player.entity.position.y.toInt()}\n";
     }
     
+    time_since_last_ping += dt;
+    if(time_since_last_ping > 0.05){
+      time_since_last_ping = 0.0;
+      server.ping();
+    }
+    
+    debugOutput += "ping: ${server.pingAverage.toInt()}\n";
+    
     double newFps = updateFps(1/dt);
-    debugOutput = "FPS: ${newFps.toInt()}\n$debugOutput";
+    debugOutput += "FPS: ${newFps.toInt()}\n";
 
     _renderer.debugOutput = debugOutput;      
     
     return true;
   }
   
-  double fpsAverage;
+  double fpsAverage = null;
   /**
    * Display the animation's FPS in a div.
    */
@@ -284,6 +303,9 @@ class GameClient implements stagexl.Animatable {
     }
   }
   
+  /// handles a collision event for an entity.
+  /// 
+  /// the entity will be stopped form moving and an explosion sprite will be rendered
   handleCollision(int entityId)
   {
     EntityController ec = _entityControllers[entityId];
