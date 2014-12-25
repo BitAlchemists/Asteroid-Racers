@@ -39,7 +39,7 @@ class Window extends stagexl.Sprite {
   void _updateWindowBackground(){
     this.graphics.clear();
     this.graphics.rectRound(0, 0, this.width, _height, 10, 10);
-    this.graphics.fillColor(0x88888888);
+    this.graphics.fillColor(0xee444444);
   }
   
 }

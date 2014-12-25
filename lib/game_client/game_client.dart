@@ -32,9 +32,6 @@ part 'controllers/player_controller.dart';
 part "controllers/checkpoint_controller.dart";
 part "controllers/race_portal_controller.dart";
 
-part 'physics/physics_simulator.dart';
-
-
 part 'utils/client_logger.dart';
 
 //server connection
@@ -55,8 +52,6 @@ class GameConfig {
  */
 class GameClient implements stagexl.Animatable {
   GameConfig _config;
-  
-  stagexl.RenderLoop renderLoop;
   
   PhysicsSimulator _simulator;
 
@@ -87,7 +82,7 @@ class GameClient implements stagexl.Animatable {
     _renderer = new GameRenderer(canvas);
     _renderer.buildUILayer(_onTapConnect);
 
-    renderLoop = new stagexl.RenderLoop();
+    var renderLoop = new stagexl.RenderLoop();
     renderLoop.addStage(_renderer.stage);
       
     _configureChat();
@@ -135,13 +130,6 @@ class GameClient implements stagexl.Animatable {
   }
   
   connect(){
-    if(_config.renderBackground){
-      _renderer.buildBackgroundLayer();
-    }
-    
-    _renderer.buildEntitiesLayer();    
-    renderLoop.juggler.add(this);
-
     String username = _renderer.username;   
     
     print("connecting...");
@@ -158,6 +146,13 @@ class GameClient implements stagexl.Animatable {
   _onConnect(_){
     print("connected");
     _renderer.updateConnectButton(server.state);
+    
+    if(_config.renderBackground){
+      _renderer.buildBackgroundLayer();
+    }
+    
+    _renderer.buildEntitiesLayer();    
+    _renderer.stage.juggler.add(this);
   }
   
   disconnect(){
@@ -171,7 +166,7 @@ class GameClient implements stagexl.Animatable {
         
     
     if(_player != null){
-      renderLoop.juggler.remove(_player);
+      _renderer.stage.juggler.remove(_player);
       _player = null;
     }
     
@@ -183,30 +178,42 @@ class GameClient implements stagexl.Animatable {
   /// a timer to measure time since last ping
   num time_since_last_ping = 0;
   
+  /// bool used to store the acceleration state of the previous frame against
+  /// the current frame.
+  bool previousAcceleration = false;
+  
   bool advanceTime(num dt){
     
     String debugOutput = ""; 
         
-    if(_player != null) {
-      Vector2 previousPosition = new Vector2.copy(_player.entity.position);
+    if(_player != null) {      
       double previousOrientation = _player.entity.orientation;
       
-      _simulator.simulate(dt);
+      // We allow the rotation to happen locally to give players precise
+      // control over their vessels. acceleration is calculated on the server
+      // for congruent results over all clients.
+      _simulator.simulateRotation(dt);
+      
+      // if the player position changed...
+      if( _player.accelerate != previousAcceleration ||
+          _player.entity.orientation != previousOrientation)
+      {
+        // notify the server
+        if(server != null){
+          server.send(new Message(MessageType.INPUT, new MovementInput(_player.entity.orientation, _player.accelerate)));
+        }   
+      }
+      
+      // store the acceleration state for the next frame
+      previousAcceleration = _player.accelerate;
+      
+      // now simulate the local position
+      _simulator.simulateTranslation(dt);
       
       // we always update the sprite because it reduces code paths that need
       // to notify the renderer of position updates (e.g. teleporting)
       _player.updateSprite();
       
-      //if the player position changed...
-      if( _player.entity.position.x != previousPosition.x ||
-          _player.entity.position.y != previousPosition.y ||
-          _player.entity.orientation != previousOrientation)
-      {
-        //notify the server
-        if(server != null){
-          server.send(new Message(MessageType.PLAYER, _player.entity));
-        }   
-      }
 
       debugOutput += "x: ${_player.entity.position.x.toInt()}\ny: ${_player.entity.position.y.toInt()}\n";
     }
@@ -249,7 +256,7 @@ class GameClient implements stagexl.Animatable {
     _renderer.addEntityFromController(_player);
     _renderer.playerSprite = _player.sprite;
         
-    renderLoop.juggler.add(_player);
+    _renderer.stage.juggler.add(_player);
     
     if(_config.debugCollisions){
       RenderHelper.applyCircle(_player.sprite, entity.radius);

@@ -7,7 +7,7 @@ class ClientProxy implements IClientProxy
   static final Map<String, MessageHandler> _messageHandlers = 
     {
       MessageType.HANDSHAKE: _onHandshake,
-      MessageType.PLAYER: _onPlayerUpdate,
+      MessageType.INPUT: _onPlayerInput,
       MessageType.PING_PONG: _onPingPong,
     };
   
@@ -150,7 +150,7 @@ class ClientProxy implements IClientProxy
                     "EVA Pod",
                     "Narcissus",
                     "TARDIS",
-                    "ISEE-3/ICE", //http://blog.xkcd.com/2014/05/30/isee-3/
+                    "ISEE-3/ICE", // http://blog.xkcd.com/2014/05/30/isee-3/
                     "XKCD-303",
                     "Drei-Zimmer-Rakete"];
       int index = new Math.Random().nextInt(names.length);
@@ -167,21 +167,15 @@ class ClientProxy implements IClientProxy
     }
   }
   
-  static _onPlayerUpdate(ClientProxy client, Message message){
-    Movable movable = new Movable.fromJson(message.payload);
-
-    if(client.movable.id != movable.id){
-      print("client attempting to update entity other than itself");
-      gameServer.disconnectClient(client);
-      return;
-    }
+  static _onPlayerInput(ClientProxy client, Message message){
+    MovementInput input = new MovementInput.fromJson(message.payload);
     
     if(!client.movable.canMove){
       print("client sent player update during !canMove");
       return;
     }
     
-    gameServer.updatePlayerEntity(client, false, updatedEntity: movable);
+    gameServer.computePlayerInput(client, input);
   }
     
   static _onPingPong(ClientProxy client, Message message){ 

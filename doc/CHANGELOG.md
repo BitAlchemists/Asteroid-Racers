@@ -9,3 +9,5 @@ v0.6 -
 + rename world_server to game_server
 + introduce service architecture to allow modularization of game services
 + introduce ChatServer service
++ Split GameClient into GameClient and GameRenderer #18
++ change enumerations from class type to enum. #22

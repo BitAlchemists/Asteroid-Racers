@@ -23,6 +23,12 @@ class Entity
   Vector2 position;
   double orientation = 0.0;
   double radius;
+
+  //static const double ENTITY_UPDATE_PRIORITY_NO_UPDATE = 0.0;
+  //static const double ENTITY_UPDATE_PRIORITY_LOW = 1.0;
+  //double updatePriority = ENTITY_UPDATE_PRIORITY_LOW;
+  
+  num updateRank = 0.0;
   
   Entity(this.type, {this.position, this.radius: 1.0});
   

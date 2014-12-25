@@ -21,6 +21,7 @@ class GameServer implements IGameServer {
   final World _world = new World();
   CollisionDetector _crashCollisionDetector;
   CollisionDetector _joinRaceCollisionDetector;
+  PhysicsSimulator _physics;
   RaceController _race;
   Entity _spawn;
   Map<Entity, ClientProxy> _entityToClientMap = new Map<Entity, ClientProxy>();
@@ -105,6 +106,8 @@ class GameServer implements IGameServer {
     _world.addEntity(dummyPlayer);
     _collisionDetector.asteroids.add(dummyPlayer);
     */
+    
+    _physics = new PhysicsSimulator();
   }
   
   _registerServices(){
@@ -124,8 +127,10 @@ class GameServer implements IGameServer {
   
   _onHeartBeat(GameLoop gameLoop){
     //print('${gameLoop.frame}: ${gameLoop.gameTime} [dt = ${gameLoop.dt}].');
+    _physics.simulateTranslation(gameLoop.dt);
     _checkCollisions();
     _race.update();
+    _broadcastUpdates();
   }
   
   void _checkCollisions()
@@ -139,13 +144,13 @@ class GameServer implements IGameServer {
     playerEntity.canMove = false;
     Message message = new Message(MessageType.COLLISION, playerEntity.id);
     broadcastMessage(message);
+    
+    //respawn
     new Future.delayed(new Duration(seconds:1), (){
       //if the entity still exists
       if(_world.entities.containsKey(playerEntity.id)){
         ClientProxy client = _clientForEntity(playerEntity);
-        spawnPlayer(client, true);
-        Message message = new Message(MessageType.ENTITY, playerEntity);
-        broadcastMessage(message);          
+        spawnPlayer(client, true);         
       }
     });
   }
@@ -185,6 +190,7 @@ class GameServer implements IGameServer {
     print("connected clients: ${_clients.length}");
     
     if(client.movable != null){
+      _physics.removeMovable(client.movable);
       _world.removeEntity(client.movable);
       _crashCollisionDetector.activeEntities.remove(client.movable);
       _race.removePlayer(client);
@@ -225,6 +231,8 @@ class GameServer implements IGameServer {
     client.movable = player;
     
     _joinRaceCollisionDetector.activeEntities.add(client.movable);
+    
+    _physics.addMovable(client.movable);
         
     spawnPlayer(client, false);
   }
@@ -261,7 +269,7 @@ class GameServer implements IGameServer {
     client.movable.acceleration = new Vector2.zero();
     client.movable.rotationSpeed = 0.0;
     
-    updatePlayerEntity(client, informClientToo);
+    client.movable.updateRank += 1;
   }
   
   Vector2 randomPointInCircle(){
@@ -278,20 +286,50 @@ class GameServer implements IGameServer {
     }
   }   
   
-  
-  void updatePlayerEntity(ClientProxy client, bool informPlayerClientToo, {Movable updatedEntity}){
-    if(updatedEntity != null){
-      client.movable.copyFrom(updatedEntity);            
-    }
-        
-    Message message = new Message(MessageType.ENTITY, client.movable);
+  void computePlayerInput(ClientProxy client, MovementInput input){
+    client.movable.updateRank += 1;
     
-    if(informPlayerClientToo){
-      broadcastMessage(message); 
+    // 1. apply the new orientation
+    if(client.movable.orientation != input.newOrientation){
+      client.movable.orientation = input.newOrientation;
     }
-    else {
-      sendMessageToClientsExcept(message, client); 
+    
+    // 2. calculate the acceleration
+    if(input.accelerate){
+      double accelerationSpeed = 200.0;
+      Vector2 direction = new Vector2(0.0, accelerationSpeed);
+    
+      // duplicate code in [PlayerController]
+      // TODO: this can most propably be calculated in a simpler way. do it!
+      Vector3 acceleration3 = 
+        new Matrix4.identity().
+        rotateZ(client.movable.orientation).
+        translate(direction.x, direction.y).
+        getTranslation();
+    
+      client.movable.acceleration = new Vector2(acceleration3.x, acceleration3.y);      
     }
+    else
+    {
+      client.movable.acceleration = new Vector2.zero();
+    }
+  }
+  
+  _broadcastUpdates(){
+    var entities = _clients.
+        where((IClientProxy client) => client.movable != null).
+        map((client) => client.movable).
+        where((Movable movable) => movable.updateRank > 0).
+        toList(growable: false);
+    entities.sort((Movable a, Movable b) => (b.updateRank.compareTo(a.updateRank)));
+    var broadcastables = entities.take(2);
+    
+    for(Movable movable in broadcastables){
+      movable.updateRank = 0;
+      Message updateMessage = new Message(MessageType.ENTITY, movable);
+      broadcastMessage(updateMessage);
+    }
+    
   }
   
   ClientProxy _clientForEntity(Entity entity){

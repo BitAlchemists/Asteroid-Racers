@@ -142,7 +142,7 @@ class ServerProxy {
     int ping = now - ms;
     
     if (pingAverage == null) {
-      pingAverage = ping;
+      pingAverage = ping.toDouble();
     }
 
     pingAverage = ping * 0.05 + pingAverage * 0.95;

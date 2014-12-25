@@ -168,7 +168,8 @@ class PlayerController extends EntityController implements stagexl.Animatable  {
   }
     
   void _accelerate(Vector2 direction){
-
+    //duplicate code in [GameServer]
+    
     //TODO: this can most propably be calculated in a simpler way. do it!
     Vector3 acceleration3 = 
       new Matrix4.identity().

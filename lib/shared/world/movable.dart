@@ -1,5 +1,21 @@
 part of ar_shared;
 
+class MovementInput {
+  double newOrientation;
+  bool accelerate;
+  
+  MovementInput(this.newOrientation, this.accelerate);
+  
+  toJson(){
+    return [newOrientation, accelerate];
+  }
+  
+  MovementInput.fromJson(List list){
+    newOrientation = list[0];
+    accelerate = list[1];
+  }
+}
+
 class Movable extends Entity {
   double rotationSpeed = 0.0;
   Vector2 acceleration = new Vector2.zero();

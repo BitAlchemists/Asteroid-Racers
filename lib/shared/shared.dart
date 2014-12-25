@@ -16,6 +16,7 @@ part "world/entity.dart";
 part "world/movable.dart";
 part "world/checkpoint.dart";
 part "world/race_portal.dart";
+part 'world/physics_simulator.dart';
 
 String exceptionDetails(e){
   assert(e != null);

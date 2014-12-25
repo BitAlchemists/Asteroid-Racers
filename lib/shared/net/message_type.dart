@@ -7,5 +7,6 @@ enum MessageType {
   HANDSHAKE,
   PLAYER,
   PING_PONG,
-  COLLISION
+  COLLISION,
+  INPUT
 }

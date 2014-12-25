@@ -6,6 +6,7 @@ typedef void MessageHandler(IClientProxy client, Message message);
 
 abstract class IClientProxy {
   String get playerName;
+  Movable movable;
 }
 
 abstract class IGameServer {

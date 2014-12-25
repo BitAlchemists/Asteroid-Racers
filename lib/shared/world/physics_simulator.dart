@@ -1,4 +1,4 @@
-part of game_client;
+part of ar_shared;
 
 class PhysicsSimulator {
   List<Movable> _movables = new List<Movable>();
@@ -10,11 +10,27 @@ class PhysicsSimulator {
     _movables.add(entity);
   }
   
+  removeMovable(Movable movable){
+    _movables.remove(movable);
+  }
+  
   void reset(){
     _movables.clear();
   }
   
-  void simulate(num dt) {
+  void simulateRotation(num dt) {
+    
+    for(Movable entity in _movables) {  
+      if(!entity.canMove){
+        continue;
+      }
+      
+      //orientation
+      entity.orientation += entity.rotationSpeed * dt;
+    }
+  }
+  
+  void simulateTranslation(num dt) {
     
     for(Movable entity in _movables) {  
       //position
@@ -24,9 +40,7 @@ class PhysicsSimulator {
       
       entity.velocity += entity.acceleration * dt;
       entity.position += entity.velocity * dt;
-      
-      //orientation
-      entity.orientation += entity.rotationSpeed * dt;
+      entity.updateRank += 1;
     }
   }
   

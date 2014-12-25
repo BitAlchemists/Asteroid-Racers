@@ -119,13 +119,13 @@ class GameRenderer implements stagexl.Animatable {
   buildBackgroundLayer(){
     //Background
     _background = new StarBackground(2000.0, 2000.0, _stage);
-    _stage.addChildAt(_background, _stage.numChildren);  
+    _stage.addChildAt(_background, 0);  
     _stage.juggler.add(_background);
     _parallaxLayers.add(_background);
     
     //Earth layer
     _earthLayer = new ParallaxLayer(_stage, 0.3);
-    _stage.addChildAt(_earthLayer, _stage.numChildren);
+    _stage.addChildAt(_earthLayer, 0);
     _stage.juggler.add(_earthLayer);
     _parallaxLayers.add(_earthLayer);
     
