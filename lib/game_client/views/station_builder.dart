@@ -77,28 +77,36 @@ class StationBuilder {
     double x = instance.xPos * blockLength;
     double y = instance.yPos * blockLength;
 
+    int strokeColor = stagexl.Color.Red;
+    int fillColor = stagexl.Color.DarkRed;
+    
     //body
     _applyRect(x + blockInset, y + blockInset, x + blockInset + innerWidth, y + blockInset + innerHeight, station.graphics);
-    station.graphics.strokeColor(stagexl.Color.Green, 1, "round");  
+    station.graphics.strokeColor(strokeColor, 1, "round");
+    station.graphics.fillColor(fillColor);
 
     for(int i in instance.config.topConnectors){
       _horizontalConnector(x + blockLength * (i + 0.5), y + blockInset/2, station.graphics);
-      station.graphics.strokeColor(stagexl.Color.Green, 1, "round");              
+      station.graphics.strokeColor(strokeColor, 1, "round");
+      station.graphics.fillColor(fillColor);
     }
 
     for(int i in instance.config.topConnectors){
       _horizontalConnector(x + blockLength * (i + 0.5), y + outerHeight - blockInset/2, station.graphics);
-      station.graphics.strokeColor(stagexl.Color.Green, 1, "round");              
+      station.graphics.strokeColor(strokeColor, 1, "round");
+      station.graphics.fillColor(fillColor);
     }
 
     for(int i in instance.config.leftConnectors){
       _verticalConnector(x + blockInset/2, y + blockLength * (i + 0.5) , station.graphics);
-      station.graphics.strokeColor(stagexl.Color.Green, 1, "round");        
+      station.graphics.strokeColor(strokeColor, 1, "round");
+      station.graphics.fillColor(fillColor);
     }
     
     for(int i in instance.config.rightConnectors){
       _verticalConnector(x + outerWidth - blockInset/2, y + blockLength * (i + 0.5), station.graphics);
-      station.graphics.strokeColor(stagexl.Color.Green, 1, "round");        
+      station.graphics.strokeColor(strokeColor, 1, "round");
+      station.graphics.fillColor(fillColor);
     }
     
     return station;

@@ -164,6 +164,9 @@ class GameRenderer implements stagexl.Animatable {
     _stage.addChildAt(_playerLayer, _stage.numChildren);
     _stage.juggler.add(_playerLayer);   
     _parallaxLayers.add(_playerLayer);
+    
+    _uiLayer.removeFromParent();
+    _stage.addChild(_uiLayer);
   
   }
   
