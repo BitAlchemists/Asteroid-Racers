@@ -40,6 +40,7 @@ class PhysicsSimulator {
       
       entity.velocity += entity.acceleration * dt;
       entity.position += entity.velocity * dt;
+      
       entity.updateRank += 1;
     }
   }

@@ -101,11 +101,29 @@ class Entity
 
   
   void copyFrom(Entity entity) {
-    type = entity.type;
-    id = entity.id;
-    position = entity.position.clone();
-    orientation = entity.orientation;
-    displayName = entity.displayName;
-    radius = entity.radius;
+    
+    if(entity.type != null) {
+      type = entity.type; 
+    }
+    
+    if(entity.id != null) {
+      id = entity.id;      
+    }
+
+    if(entity.position != null){
+      position = entity.position.clone();  
+    }
+    
+    if(entity.orientation != null){
+      orientation = entity.orientation;  
+    }
+    
+    if(entity.displayName != null){
+      displayName = entity.displayName;
+    }
+    
+    if(entity.radius != null){
+      radius = entity.radius; 
+    }
   }
 }

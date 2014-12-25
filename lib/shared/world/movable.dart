@@ -47,9 +47,21 @@ class Movable extends Entity {
   
   copyFrom(Movable entity){
     super.copyFrom(entity);
-    rotationSpeed = entity.rotationSpeed;
-    acceleration = entity.acceleration.clone();
-    velocity = entity.velocity.clone();
-    canMove = entity.canMove;
+    
+    if(entity.rotationSpeed != null){
+      rotationSpeed = entity.rotationSpeed;  
+    }
+    
+    if(entity.acceleration != null){
+      acceleration = entity.acceleration.clone();  
+    }
+    
+    if(entity.velocity != null){
+      velocity = entity.velocity.clone();  
+    }
+    
+    if(entity.canMove != null){
+      canMove = entity.canMove;  
+    }
   }
 }
