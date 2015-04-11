@@ -1,0 +1,82 @@
+
+body {
+  background-color: #F8F8F8;
+  font-family: 'Open Sans', sans-serif;
+  font-size: 14px;
+  font-weight: normal;
+  line-height: 1.2em;
+  margin: 15px;
+}
+
+#container {
+   padding: 0;
+  }
+
+h1, p {
+  color: #333;
+}
+
+#gamecanvascontainer{
+  margin-left: 220px;  
+}
+
+
+#gamecanvas {
+  height: 100%;
+  width: 95%;
+  border: 1px solid #ccc;
+  background-color: #fff;
+  
+  padding: 1%;
+}
+
+#infobox {
+  float: left;
+  width: 200px;
+  margin: 15px 15px 15px 0;
+}
+
+
+#summary {
+  float: left;
+}
+
+#notes {
+  float: right;
+  width: 120px;
+  text-align: right;
+}
+
+.error {
+  font-style: italic;
+  color: red;
+}
+
+textarea {
+  margin: 0;
+}
+
+label {
+  display: block;
+  width: 20em;
+  margin-top: 5px;
+}
+
+h1 img {
+  margin-right: 0.5em;
+}
+
+#chat-display, #chat-message {
+  width: 100%;
+}
+
+
+
+.clear {
+   height: 0;
+   font-size: 1px;
+   margin: 0;
+   padding: 0;
+   line-height: 0;
+   clear: both;
+}
