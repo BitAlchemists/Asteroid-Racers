@@ -5,7 +5,7 @@ Asteroid Racers is a multiplayer browser game that lets you race against other p
 
 Set up the development environment
 ----------------------------------
-- Download DartEditor from www.dartlang.org.
+- Download the Dart SDK: https://www.dartlang.org/downloads/
 - Clone the Asteroid-Racers repo
 - pub get
 
@@ -21,3 +21,6 @@ There are two ways to test the client locally.
 - run web/asteroidracers.html to run the client
 
 For details visit the wiki: https://github.com/BitAlchemists/Asteroid-Racers/wiki
+
+Install protobuf
+https://www.dartlang.org/articles/serialization/#protobuf-review
