@@ -6,9 +6,9 @@ class ClientProxy implements IClientProxy
   static GameServer gameServer;
   static final Map<String, MessageHandler> _messageHandlers = 
     {
-      MessageType.HANDSHAKE: _onHandshake,
-      MessageType.INPUT: _onPlayerInput,
-      MessageType.PING_PONG: _onPingPong,
+      Envelope_MessageType.HANDSHAKE: _onHandshake,
+      Envelope_MessageType.INPUT: _onPlayerInput,
+      Envelope_MessageType.PING_PONG: _onPingPong,
     };
   
   Movable movable;
@@ -22,7 +22,7 @@ class ClientProxy implements IClientProxy
     _connection.onDisconnectDelegate = _onDisconnect;
   }
   
-  static void registerMessageHandler(MessageType messageType, MessageHandler messageHandler){
+  static void registerMessageHandler(Envelope_MessageType messageType, MessageHandler messageHandler){
     _messageHandlers[messageType] = messageHandler;
   }
   
@@ -159,11 +159,19 @@ class ClientProxy implements IClientProxy
     
     //create player entity in world
     gameServer.registerPlayer(client, username);
-    client.send(new Message(MessageType.PLAYER, client.movable));
+
+    Message message = Message.create();
+    message.messageType = MessageType.PLAYER;
+    message.payload = client.movable;
+    client.send(message);
 
     //send all entities
     for(Entity entity in gameServer.world.entities.values){
-      client.send(new Message(MessageType.ENTITY, entity));        
+      //TODO: add queueing here to make sure we don't overload the client after handshake
+      Message message = Message.create();
+      message.messageType = MessageType.ENTITY;
+      message.payload = entity;
+      client.send(message);
     }
   }
   

@@ -1,0 +1,17 @@
+package net_message;
+
+enum MessageType {
+    CHAT = 1;
+    ENTITY = 2;
+    ENTITY_REMOVE = 3;
+    HANDSHAKE = 4;
+    PLAYER = 5;
+    PING_PONG = 6;
+    COLLISION = 7;
+    INPUT = 8;
+}
+
+message Message {
+    required MessageType messageType = 1;
+    optional bytes payload = 2;
+}

@@ -111,7 +111,7 @@ class GameClient implements stagexl.Animatable {
     // send chat messages entered by the player to the server proxy
     _chat.onSendChatMesage.listen(server.send);
     // register the chat controller for chat messages. The server proxy will send them to the chat controller
-    server.registerMessageHandler(Envelope_MessageType.CHAT, _chat.onReceiveMessage);
+    server.registerMessageHandler(Message_MessageType.CHAT, _chat.onReceiveMessage);
     // send log messages to onReceiveLogMessage()
     ClientLogger.instance.stdout.listen(_chat.onReceiveLogMessage);
   }
@@ -200,11 +200,17 @@ class GameClient implements stagexl.Animatable {
       {
         // notify the server
         if(server != null){
-          Envelope envelope = new Envelope();
-          MovementInput movementInput = new MovementInput(_player.entity.orientation, _player.accelerate);
-          envelope.messageType = Envelope_MessageType.INPUT;
-          envelope.encodedMessage = movementInput;
-          server.send(envelope);
+
+          //TODO: move this code to ServerProxy
+          MovementInput movementInput = new MovementInput();
+          movementInput.newOrientation = _player.entity.orientation;
+          movementInput.accelerate = _player.accelerate;
+
+          Message message = new Message();
+          message.messageType = MessageType.INPUT;
+          message.payload = movementInput.writeToBuffer();
+
+          server.send(message);
         }   
       }
       
