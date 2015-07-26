@@ -1,3 +1,5 @@
+package net_message;
+
 message Envelope {
     enum MessageType {
         CHAT = 1;
@@ -7,6 +9,7 @@ message Envelope {
         PLAYER = 5;
         PING_PONG = 6;
         COLLISION = 7;
+        INPUT = 8;
     }
 
     required MessageType messageType = 1;

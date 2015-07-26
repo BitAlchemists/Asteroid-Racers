@@ -5,9 +5,10 @@ import 'dart:math' as Math;
 import "dart:async";
 import "package:vector_math/vector_math.dart";
 
+import "net/envelope.pb.dart";
+export "net/envelope.pb.dart";
+
 //net
-part 'net/message.dart';
-part "net/message_type.dart";
 part "net/connection.dart";
 
 //world
