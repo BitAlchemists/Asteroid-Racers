@@ -1,0 +1,6 @@
+package net_handshake;
+
+message Handshake
+{
+    optional string username = 1;
+}

@@ -187,7 +187,7 @@ class PlayerController extends EntityController implements stagexl.Animatable  {
   updateFromServer(Entity entity){
     // we exclude orientation and rotationSpeed from the update, so that we
     // can maintain smooth rotations on the client
-    if(this.isLocalPlayer && this.entity.canMove){
+    if(this.isLocalPlayer && _movable.canMove){
       Movable movable = entity as Movable;
       entity.orientation = null;
       entity.rotationSpeed = null;      

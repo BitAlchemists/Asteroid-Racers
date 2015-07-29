@@ -94,7 +94,9 @@ class RaceController {
           
           messageEntity = new Checkpoint.copy(nextCheckpoint);
           messageEntity.state = CheckpointState.CURRENT;
-          Message message = new Message(MessageType.ENTITY, messageEntity);   
+          Message message = new Message();
+          message.messageType = MessageType.ENTITY;
+          message.payload = messageEntity;
           client.send(message);
         }      
       }

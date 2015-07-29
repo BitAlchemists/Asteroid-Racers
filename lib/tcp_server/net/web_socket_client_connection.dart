@@ -30,7 +30,7 @@ class WebSocketClientConnection implements Connection {
   {
     queue((){
       try {
-        String encodedMessage = message.toJson();
+        List<int> encodedMessage = message.writeToBuffer();
         _webSocket.add(encodedMessage); 
       }
       catch (e)
@@ -40,9 +40,9 @@ class WebSocketClientConnection implements Connection {
     });        
   }
   
-  void _onReceiveMessage(String encodedMessage){
+  void _onReceiveMessage(List<int> encodedMessage){
     try {
-      Message message = new Message.fromJson(encodedMessage);
+      Message message = new Message.fromBuffer(encodedMessage);
       _receiveMessageStreamController.add(message);      
     }
     catch(e){

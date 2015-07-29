@@ -6,9 +6,9 @@ class ClientProxy implements IClientProxy
   static GameServer gameServer;
   static final Map<String, MessageHandler> _messageHandlers = 
     {
-      Envelope_MessageType.HANDSHAKE: _onHandshake,
-      Envelope_MessageType.INPUT: _onPlayerInput,
-      Envelope_MessageType.PING_PONG: _onPingPong,
+      MessageType.HANDSHAKE: _onHandshake,
+      MessageType.INPUT: _onPlayerInput,
+      MessageType.PING_PONG: _onPingPong,
     };
   
   Movable movable;
@@ -22,7 +22,7 @@ class ClientProxy implements IClientProxy
     _connection.onDisconnectDelegate = _onDisconnect;
   }
   
-  static void registerMessageHandler(Envelope_MessageType messageType, MessageHandler messageHandler){
+  static void registerMessageHandler(MessageType messageType, MessageHandler messageHandler){
     _messageHandlers[messageType] = messageHandler;
   }
   
@@ -63,7 +63,8 @@ class ClientProxy implements IClientProxy
   
   static _onHandshake(ClientProxy client, Message message)
   {
-    String username = message.payload;
+    Handshake handshake = new Handshake.fromBuffer(message.payload);
+    String username = handshake.username;
     if(username == null || username == ""){
       List names = ["Churchill", 
                     "Deadalus", 
