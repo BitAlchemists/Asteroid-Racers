@@ -12,8 +12,7 @@ class ClientProxy implements IClientProxy
     };
   
   Movable movable;
-  RaceController race;
-  
+
   // IClientProxy
   String get playerName => movable.displayName;
   
