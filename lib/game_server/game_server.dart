@@ -8,6 +8,7 @@ import "package:vector_math/vector_math.dart";
 
 import "package:asteroidracers/shared/shared.dart";
 import "package:asteroidracers/shared/shared_server.dart";
+import "package:asteroidracers/services/chat/chat_shared.dart";
 import "package:asteroidracers/services/chat/chat_server.dart";
 
 part "client_proxy.dart";
@@ -142,8 +143,10 @@ class GameServer implements IGameServer {
   _onPlayerCollision(Movable playerEntity, Entity otherEntity){
     _crashCollisionDetector.activeEntities.remove(playerEntity);
     playerEntity.canMove = false;
-    Message message = new Message(MessageType.COLLISION, playerEntity.id);
-    broadcastMessage(message);
+    Envelope envelope = new Envelope();
+    envelope.messageType = MessageType.COLLISION;
+    envelope.payload = playerEntity.id;
+    broadcastMessage(envelope);
     
     //respawn
     new Future.delayed(new Duration(seconds:1), (){
@@ -166,12 +169,16 @@ class GameServer implements IGameServer {
   void connectClient(ClientProxy client){
     print("player connected");
     _clients.add(client);
-    
-    Message welcomeMessage = new Message();
-    welcomeMessage.messageType = MessageType.CHAT;
-    welcomeMessage.payload = {"from": "Server", "message": "Welcome to the 'Apollo 13' development server."};
-    client.send(welcomeMessage);
-    
+
+    ChatMessage chatMessage = new ChatMessage();
+    chatMessage.from = "Server";
+    chatMessage.text = "Welcome to the 'Apollo 13' development server.";
+
+    Envelope envelope = new Envelope();
+    envelope.messageType = MessageType.CHAT;
+    envelope.payload = chatMessage.writeToBuffer();
+    client.send(envelope);
+
     print("connected clients: ${_clients.length}");
   }
   
@@ -196,16 +203,22 @@ class GameServer implements IGameServer {
       _race.removePlayer(client);
       _entityToClientMap.remove(client.movable);
     }
-    
-    Message message = new Message(MessageType.ENTITY_REMOVE, client.movable.id);
-    sendMessageToClientsExcept(message, client);
+
+    //TODO: remove this message from game server and move it to the world. Probably via a world update message?
+    RemoveEntityCommand command = new RemoveEntityCommand();
+    command.entityId = client.movable.id;
+
+    Envelope envelope = new Envelope();
+    envelope.messageType = MessageType.ENTITY_REMOVE;
+    envelope.payload = command.writeToBuffer();
+    sendMessageToClientsExcept(envelope, client);
   }
   
-  sendMessageToClientsExcept(Message message, ClientProxy client){
-    broadcastMessage(message, blacklist:new Set()..add(client));
+  sendMessageToClientsExcept(Envelope envelope, ClientProxy client){
+    broadcastMessage(envelope, blacklist:new Set()..add(client));
   }
   
-  broadcastMessage(Message message, {Set<IClientProxy> blacklist}) {
+  broadcastMessage(Envelope envelope, {Set<IClientProxy> blacklist}) {
     Set<IClientProxy> recipients = _clients;    
     
     if(blacklist != null){
@@ -214,7 +227,7 @@ class GameServer implements IGameServer {
     
     
     for(ClientProxy client in recipients) {
-      client.send(message);
+      client.send(envelope);
     }
   }
   
@@ -331,8 +344,10 @@ class GameServer implements IGameServer {
     
     for(Movable movable in broadcastables){
       movable.updateRank = 0;
-      Message updateMessage = new Message(MessageType.ENTITY, movable);
-      broadcastMessage(updateMessage);
+      Envelope envelope = new Envelope();
+      envelope.messageType = MessageType.ENTITY;
+      envelope.payload = movable;
+      broadcastMessage(envelope);
     }
     
   }

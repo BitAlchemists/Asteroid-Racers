@@ -57,8 +57,8 @@ class WebSocketServerConnection implements ServerConnection {
   }
 
   // Message handling
-  void send(Message message) {
-    String encodedMessage = message.toJson();
+  void send(Envelope envelope) {
+    String encodedMessage = envelope.toJson();
     
     if (_webSocket != null && _webSocket.readyState == html.WebSocket.OPEN) {
       _webSocket.send(encodedMessage);
@@ -69,8 +69,8 @@ class WebSocketServerConnection implements ServerConnection {
   
   _onReceiveMessage(html.MessageEvent e) {
     //print("onReceiveMessage");
-    Message message = new Message.fromJson(e.data);
-    _receiveMessageStreamController.add(message);
+    Envelope envelope = new Envelope.fromJson(e.data);
+    _receiveMessageStreamController.add(envelope);
   }
 }
 

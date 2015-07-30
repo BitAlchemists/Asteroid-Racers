@@ -1,7 +1,7 @@
 ///
 //  Generated code. Do not modify.
 ///
-library net_message;
+library net_envelope;
 
 import 'package:fixnum/fixnum.dart';
 import 'package:protobuf/protobuf.dart';
@@ -33,24 +33,24 @@ class MessageType extends ProtobufEnum {
   const MessageType._(int v, String n) : super(v, n);
 }
 
-class Message extends GeneratedMessage {
-  static final BuilderInfo _i = new BuilderInfo('Message')
+class Envelope extends GeneratedMessage {
+  static final BuilderInfo _i = new BuilderInfo('Envelope')
     ..e(1, 'messageType', GeneratedMessage.QE, MessageType.CHAT, (var v) => MessageType.valueOf(v))
     ..a(2, 'payload', GeneratedMessage.OY)
   ;
 
-  Message() : super();
-  Message.fromBuffer(List<int> i, [ExtensionRegistry r = ExtensionRegistry.EMPTY]) : super.fromBuffer(i, r);
-  Message.fromJson(String i, [ExtensionRegistry r = ExtensionRegistry.EMPTY]) : super.fromJson(i, r);
-  Message clone() => new Message()..mergeFromMessage(this);
+  Envelope() : super();
+  Envelope.fromBuffer(List<int> i, [ExtensionRegistry r = ExtensionRegistry.EMPTY]) : super.fromBuffer(i, r);
+  Envelope.fromJson(String i, [ExtensionRegistry r = ExtensionRegistry.EMPTY]) : super.fromJson(i, r);
+  Envelope clone() => new Envelope()..mergeFromMessage(this);
   BuilderInfo get info_ => _i;
-  static Message create() => new Message();
-  static PbList<Message> createRepeated() => new PbList<Message>();
-  static Message getDefault() {
-    if (_defaultInstance == null) _defaultInstance = new _ReadonlyMessage();
+  static Envelope create() => new Envelope();
+  static PbList<Envelope> createRepeated() => new PbList<Envelope>();
+  static Envelope getDefault() {
+    if (_defaultInstance == null) _defaultInstance = new _ReadonlyEnvelope();
     return _defaultInstance;
   }
-  static Message _defaultInstance;
+  static Envelope _defaultInstance;
 
   MessageType get messageType => getField(1);
   void set messageType(MessageType v) { setField(1, v); }
@@ -63,5 +63,5 @@ class Message extends GeneratedMessage {
   void clearPayload() => clearField(2);
 }
 
-class _ReadonlyMessage extends Message with ReadonlyMessageMixin {}
+class _ReadonlyEnvelope extends Envelope with ReadonlyMessageMixin {}
 

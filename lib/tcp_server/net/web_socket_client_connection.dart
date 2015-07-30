@@ -4,16 +4,16 @@ class WebSocketClientConnection implements Connection {
   
   // Private Fields
   final WebSocket _webSocket;
-  final StreamController<Message> _receiveMessageStreamController = new StreamController<Message>.broadcast();
+  final StreamController<Envelope> _receiveEnvelopeStreamController = new StreamController<Envelope>.broadcast();
 
   // Public Properties
-  Stream<Message> get onReceiveMessage => _receiveMessageStreamController.stream;
+  Stream<Envelope> get onReceiveMessage => _receiveEnvelopeStreamController.stream;
   Function onDisconnectDelegate;
   
   // ctor
   WebSocketClientConnection(this._webSocket)
   {
-    _webSocket.listen(_onReceiveMessage, onDone: _onDisconnect, onError: _onDisconnect);
+    _webSocket.listen(_onReceiveEnvelope, onDone: _onDisconnect, onError: _onDisconnect);
   }
   
   disconnect(){
@@ -26,11 +26,11 @@ class WebSocketClientConnection implements Connection {
   }
   
   // Message Handling
-  void send(Message message)
+  void send(Envelope envelope)
   {
     queue((){
       try {
-        List<int> encodedMessage = message.writeToBuffer();
+        List<int> encodedMessage = envelope.writeToBuffer();
         _webSocket.add(encodedMessage); 
       }
       catch (e)
@@ -40,10 +40,10 @@ class WebSocketClientConnection implements Connection {
     });        
   }
   
-  void _onReceiveMessage(List<int> encodedMessage){
+  void _onReceiveEnvelope(List<int> encodedEnvelope){
     try {
-      Message message = new Message.fromBuffer(encodedMessage);
-      _receiveMessageStreamController.add(message);      
+      Envelope envelope = new Envelope.fromBuffer(encodedEnvelope);
+      _receiveEnvelopeStreamController.add(envelope);
     }
     catch(e){
       print("error during _onReceiveMessage: ${e.toString()}");

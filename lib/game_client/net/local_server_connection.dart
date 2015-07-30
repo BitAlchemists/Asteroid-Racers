@@ -1,6 +1,6 @@
 part of game_client;
 
-typedef void OnReceiveMessageFunction(Message message);
+typedef void OnReceiveMessageFunction(Envelope envelope);
 
 class LocalServerConnection implements ServerConnection {
   
@@ -8,9 +8,9 @@ class LocalServerConnection implements ServerConnection {
   bool _isMaster; //is this one the master or the slave?
   LocalServerConnection _inverseConnection;
   ClientProxy _clientProxy; 
-  final StreamController<Message> _receiveMessageStreamController = new StreamController<Message>.broadcast();
+  final StreamController<Envelope> _receiveMessageStreamController = new StreamController<Envelope>.broadcast();
   
-  Stream<Message> get onReceiveMessage => _receiveMessageStreamController.stream;
+  Stream<Envelope> get onReceiveMessage => _receiveMessageStreamController.stream;
   Function onDisconnectDelegate;
   
   LocalServerConnection([bool this._debug = false])
@@ -45,20 +45,24 @@ class LocalServerConnection implements ServerConnection {
   }
   
   
-  void send(var message){
+  void send(Envelope envelope){
+
+    var object = envelope;
+
     if(_debug) {
-      message = message.toJson();      
+      object = envelope.writeToBuffer();
     }
-    _inverseConnection._receiveMessage(message);
+
+    _inverseConnection._receiveMessage(object);
   }
   
-  void _receiveMessage(var message)
+  void _receiveMessage(var object)
   {
-    assert(message != null);
+    assert(object != null);
     
     if(_debug) {
-      message = new Message.fromJson(message);      
+      object = new Envelope.fromBuffer(object);
     }
-    _receiveMessageStreamController.add(message);
+    _receiveMessageStreamController.add(object);
   }
 }

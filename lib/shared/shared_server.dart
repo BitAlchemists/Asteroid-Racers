@@ -2,7 +2,7 @@ library shared_server;
 
 import "package:asteroidracers/shared/shared.dart";
 
-typedef void MessageHandler(IClientProxy client, Message message);
+typedef void MessageHandler(IClientProxy client, Envelope envelope);
 
 abstract class IClientProxy {
   String get playerName;
@@ -12,6 +12,6 @@ abstract class IClientProxy {
 abstract class IGameServer {
   Set<IClientProxy> get clients;
   
-  broadcastMessage(Message message, {Set<IClientProxy> blacklist});
-  sendMessageToClientsExcept(Message message, IClientProxy client);
+  broadcastMessage(Envelope envelope, {Set<IClientProxy> blacklist});
+  sendMessageToClientsExcept(Envelope envelope, IClientProxy client);
 }

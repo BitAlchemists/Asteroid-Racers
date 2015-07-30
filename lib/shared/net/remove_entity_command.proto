@@ -1,0 +1,5 @@
+package net_remove_entity_command;
+
+message RemoveEntityCommand {
+    required int32 entityId = 1;
+}

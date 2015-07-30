@@ -122,19 +122,19 @@ class RaceController {
     
     Checkpoint messageEntity = new Checkpoint.copy(_checkpoints[0]);
     messageEntity.state = CheckpointState.CLEARED;
-    Message message = new Message(MessageType.ENTITY, messageEntity); 
-    client.send(message);
+    Envelope envelope = new Envelope(MessageType.ENTITY, messageEntity);
+    client.send(envelope);
     
     messageEntity = new Checkpoint.copy(_checkpoints[1]);
     messageEntity.state = CheckpointState.CURRENT;
-    message = new Message(MessageType.ENTITY, messageEntity); 
-    client.send(message);
+    envelope = new Envelope(MessageType.ENTITY, messageEntity);
+    client.send(envelope);
     
     for(int i = 2; i < _checkpoints.length; i++){
       Checkpoint messageEntity = new Checkpoint.copy(_checkpoints[i]);
       messageEntity.state = CheckpointState.FUTURE;
-      Message message = new Message(MessageType.ENTITY, messageEntity); 
-      client.send(message);
+      Envelope envelope = new Envelope(MessageType.ENTITY, messageEntity);
+      client.send(envelope);
     }
   }
 

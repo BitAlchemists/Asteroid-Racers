@@ -11,13 +11,13 @@ class ChatServer {
   ChatServer(this._gameServer);
 
   /// We get a message from a client and broadcast it to all clients
-  void onChatMessage(IClientProxy client, Message message)
+  void onChatMessage(IClientProxy client, Envelope envelope)
   {
     //unpack the message, write the sender name in it and pack again
-    ChatMessage chatMessage = new ChatMessage.fromBuffer(message.payload);
+    ChatMessage chatMessage = new ChatMessage.fromBuffer(envelope.payload);
     chatMessage.from = client.playerName;
-    message.payload = chatMessage.writeToBuffer();
+    envelope.payload = chatMessage.writeToBuffer();
 
-    _gameServer.broadcastMessage(message);
+    _gameServer.broadcastMessage(envelope);
   }
 }

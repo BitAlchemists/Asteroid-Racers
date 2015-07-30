@@ -5,10 +5,11 @@ import 'dart:math' as Math;
 import "dart:async";
 import "package:vector_math/vector_math.dart";
 
-import "net/message.pb.dart";
-export "net/message.pb.dart";
+import "net/envelope.pb.dart";
+export "net/envelope.pb.dart";
 export "net/movement_input.pb.dart";
 export "net/handshake.pb.dart";
+export "net/remove_entity_command.pb.dart";
 
 //net
 part "net/connection.dart";

@@ -35,19 +35,19 @@ class ChatController {
         ChatMessage chatMessage = new ChatMessage();
         chatMessage.text = chatInput.text;
 
-        Message message = new Message();
-        message.messageType = MessageType.CHAT;
-        message.payload = chatMessage.writeToBuffer();
+        Envelope envelope = new Envelope();
+        envelope.messageType = MessageType.CHAT;
+        envelope.payload = chatMessage.writeToBuffer();
    
-        _sendChatMessageStreamController.add(message);
+        _sendChatMessageStreamController.add(envelope);
                 
         chatInput.text = '';        
       }
     });
   }
   
-  onReceiveMessage(Message message) {
-    ChatMessage chatMessage = new ChatMessage.fromBuffer(message.payload);
+  onReceiveMessage(Envelope envelope) {
+    ChatMessage chatMessage = new ChatMessage.fromBuffer(envelope.payload);
     displayMessage(chatMessage.text, chatMessage.from);
   }
   
