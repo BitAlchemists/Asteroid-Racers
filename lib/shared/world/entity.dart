@@ -94,6 +94,8 @@ class Entity
     }
     catch(e){
       print("exception in Entity.toJson()");
+      if(id != null) print("entity id: $id");
+      if(displayName != null) print("entity name: $displayName");
       print(exceptionDetails(e));
       return null;
     }

@@ -24,8 +24,9 @@ class LocalServerConnection implements ServerConnection {
   }
   
   Future connect(){
-    ClientProxy.gameServer = new GameServer();
-    ClientProxy.gameServer.start();
+    GameServer gameServer = new GameServer();
+    ClientProxy.gameServer = gameServer;
+    gameServer.start();
     _inverseConnection = new LocalServerConnection._inverse(this, _debug);
     _clientProxy = new ClientProxy(_inverseConnection);
     ClientProxy.gameServer.connectClient(_clientProxy);

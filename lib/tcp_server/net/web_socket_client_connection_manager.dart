@@ -3,7 +3,7 @@ part of tcp_server;
 class WebSocketClientConnectionManager {
   //final Set<WebSocketClientConnection> _connections = new Set<WebSocketClientConnection>();
   final StreamController _sc = new StreamController();
-  final GameServer _gameServer;
+  final IGameServer _gameServer;
   
   WebSocketClientConnectionManager(this._gameServer) {
     //String basePath
@@ -20,7 +20,7 @@ class WebSocketClientConnectionManager {
   void onConnection(WebSocket webSocket) {
     
     Connection connection = new WebSocketClientConnection(webSocket);
-    ClientProxy clientProxy = new ClientProxy(connection);
+    IClientProxy clientProxy = new ClientProxy(connection);
     _gameServer.connectClient(clientProxy);    
   }
 }

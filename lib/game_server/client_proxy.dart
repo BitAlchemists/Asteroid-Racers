@@ -3,7 +3,7 @@ part of game_server;
 class ClientProxy implements IClientProxy
 {
   final Connection _connection;
-  static GameServer gameServer;
+  static IGameServer gameServer;
   static final Map<String, MessageHandler> _messageHandlers = 
     {
       MessageType.HANDSHAKE: _onHandshake,
