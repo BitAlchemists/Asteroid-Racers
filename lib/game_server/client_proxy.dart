@@ -30,40 +30,40 @@ class ClientProxy implements IClientProxy
     gameServer.disconnectClient(this);
   }
   
-  void send(Message message) {
-    _connection.send(message);
+  void send(Envelope envelope) {
+    _connection.send(envelope);
   }
   
-  void onMessage(Message message){
+  void onMessage(Envelope envelope){
     try {      
-      if(message.messageType == null) {
+      if(envelope.messageType == null) {
         print("message type == null");
         //TODO: disconnect this client
         return;
       }
       
-      MessageHandler messageHandler = _messageHandlers[message.messageType];
+      MessageHandler messageHandler = _messageHandlers[envelope.messageType];
       
       if(messageHandler != null){
-        messageHandler(this, message);
+        messageHandler(this, envelope);
       }
       else {
-        print("no appropriate message handler for messageType ${message.messageType} found.");
+        print("no appropriate message handler for messageType ${envelope.messageType} found.");
       }            
     }
     catch (e, stack)
     {
       print("exception during ClientProxy.onMessage: ${e.toString()}");
-      if(message.messageType != null){
-        print("affected message type: ${message.messageType}");
+      if(envelope.messageType != null){
+        print("affected message type: ${envelope.messageType}");
         print("stack:\n$stack");
       }
     }
   }
   
-  static _onHandshake(ClientProxy client, Message message)
+  static _onHandshake(ClientProxy client, Envelope envelope)
   {
-    Handshake handshake = new Handshake.fromBuffer(message.payload);
+    Handshake handshake = new Handshake.fromBuffer(envelope.payload);
     String username = handshake.username;
     if(username == null || username == ""){
       List names = ["Churchill", 
@@ -161,23 +161,23 @@ class ClientProxy implements IClientProxy
     //create player entity in world
     gameServer.registerPlayer(client, username);
 
-    Message message = Message.create();
-    message.messageType = MessageType.PLAYER;
-    message.payload = client.movable;
-    client.send(message);
+    Envelope envelope = Envelope.create();
+    envelope.messageType = MessageType.PLAYER;
+    envelope.payload = client.movable;
+    client.send(envelope);
 
     //send all entities
     for(Entity entity in gameServer.world.entities.values){
       //TODO: add queueing here to make sure we don't overload the client after handshake
-      Message message = Message.create();
-      message.messageType = MessageType.ENTITY;
-      message.payload = entity;
-      client.send(message);
+      Envelope envelope = Envelope.create();
+      envelope.messageType = MessageType.ENTITY;
+      envelope.payload = entity;
+      client.send(envelope);
     }
   }
   
-  static _onPlayerInput(ClientProxy client, Message message){
-    MovementInput input = new MovementInput.fromJson(message.payload);
+  static _onPlayerInput(ClientProxy client, Envelope envelope){
+    MovementInput input = new MovementInput.fromJson(envelope.payload);
     
     if(!client.movable.canMove){
       print("client sent player update during !canMove");
@@ -187,8 +187,8 @@ class ClientProxy implements IClientProxy
     gameServer.computePlayerInput(client, input);
   }
     
-  static _onPingPong(ClientProxy client, Message message){ 
+  static _onPingPong(ClientProxy client, Envelope envelope){
     //print("ping ${message.payload} from ${client.movable.displayName}");
-    client.send(message);
+    client.send(envelope);
   }
 }

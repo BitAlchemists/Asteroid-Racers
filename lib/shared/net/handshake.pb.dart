@@ -3,7 +3,6 @@
 ///
 library net_handshake;
 
-import 'package:fixnum/fixnum.dart';
 import 'package:protobuf/protobuf.dart';
 
 class Handshake extends GeneratedMessage {

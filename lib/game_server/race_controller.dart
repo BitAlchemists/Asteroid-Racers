@@ -1,6 +1,6 @@
 part of game_server;
 
-
+//TODO: can we remove all message code from this class?
 class RaceController {
   RacePortal _portal;
   Entity _finish;
@@ -82,8 +82,10 @@ class RaceController {
         
         Checkpoint messageEntity = new Checkpoint.copy(nextCheckpoint);
         messageEntity.state = CheckpointState.CLEARED;
-        Message message = new Message(MessageType.ENTITY, messageEntity); 
-        client.send(message);
+        Envelope envelope = new Envelope();
+        envelope.messageType = MessageType.ENTITY;
+        envelope.payload = messageEntity;
+        client.send(envelope);
 
         if(nextCheckpoint == _checkpoints.last){
           //completed the race
@@ -94,10 +96,10 @@ class RaceController {
           
           messageEntity = new Checkpoint.copy(nextCheckpoint);
           messageEntity.state = CheckpointState.CURRENT;
-          Message message = new Message();
-          message.messageType = MessageType.ENTITY;
-          message.payload = messageEntity;
-          client.send(message);
+          Envelope envelope = new Envelope();
+          envelope.messageType = MessageType.ENTITY;
+          envelope.payload = messageEntity;
+          client.send(envelope);
         }      
       }
     });

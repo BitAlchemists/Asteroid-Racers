@@ -10,6 +10,7 @@ export "net/envelope.pb.dart";
 export "net/movement_input.pb.dart";
 export "net/handshake.pb.dart";
 export "net/remove_entity_command.pb.dart";
+export "net/collision_message.pb.dart";
 
 //net
 part "net/connection.dart";

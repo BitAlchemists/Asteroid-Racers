@@ -3,7 +3,6 @@
 ///
 library net_remove_entity_command;
 
-import 'package:fixnum/fixnum.dart';
 import 'package:protobuf/protobuf.dart';
 
 class RemoveEntityCommand extends GeneratedMessage {

@@ -143,9 +143,13 @@ class GameServer implements IGameServer {
   _onPlayerCollision(Movable playerEntity, Entity otherEntity){
     _crashCollisionDetector.activeEntities.remove(playerEntity);
     playerEntity.canMove = false;
+
+    //todo: can we remove this message from GameServer?
+    CollisionMessage message = new CollisionMessage();
+    message.entityId = playerEntity.id;
     Envelope envelope = new Envelope();
     envelope.messageType = MessageType.COLLISION;
-    envelope.payload = playerEntity.id;
+    envelope.payload = message.writeToBuffer();
     broadcastMessage(envelope);
     
     //respawn

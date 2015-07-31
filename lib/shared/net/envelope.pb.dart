@@ -3,7 +3,6 @@
 ///
 library net_envelope;
 
-import 'package:fixnum/fixnum.dart';
 import 'package:protobuf/protobuf.dart';
 
 class MessageType extends ProtobufEnum {

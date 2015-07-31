@@ -7,10 +7,10 @@ class WebSocketServerConnection implements ServerConnection {
   bool _isConnecting = false;
   
   Completer _onConnectCompleter = new Completer();
-  final StreamController<Message> _receiveMessageStreamController = new StreamController<Message>.broadcast();
+  final StreamController<Envelope> _receiveMessageStreamController = new StreamController<Envelope>.broadcast();
   
   //Public properties
-  Stream<Message> get onReceiveMessage => _receiveMessageStreamController.stream;
+  Stream<Envelope> get onReceiveMessage => _receiveMessageStreamController.stream;
   Function onDisconnectDelegate;
   
   //ctor
@@ -58,7 +58,7 @@ class WebSocketServerConnection implements ServerConnection {
 
   // Message handling
   void send(Envelope envelope) {
-    String encodedMessage = envelope.toJson();
+    List<int> encodedMessage = envelope.writeToBuffer();
     
     if (_webSocket != null && _webSocket.readyState == html.WebSocket.OPEN) {
       _webSocket.send(encodedMessage);
@@ -69,7 +69,7 @@ class WebSocketServerConnection implements ServerConnection {
   
   _onReceiveMessage(html.MessageEvent e) {
     //print("onReceiveMessage");
-    Envelope envelope = new Envelope.fromJson(e.data);
+    Envelope envelope = new Envelope.fromBuffer(e.data);
     _receiveMessageStreamController.add(envelope);
   }
 }
