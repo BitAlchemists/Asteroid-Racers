@@ -1,10 +1,10 @@
-part of ar_shared;
+part of world;
 
 class Checkpoint extends Entity {
   
   CheckpointState state;
   
-  Checkpoint() : super(EntityType.CHECKPOINT);
+  Checkpoint() : super(type: EntityType.CHECKPOINT);
   Checkpoint.copy(Checkpoint checkpoint) : super.copy(checkpoint);
   
   Checkpoint.fromJson(List list) : super.fromJson(list){

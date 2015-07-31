@@ -3,7 +3,7 @@
 ///
 library net_collision_message;
 
-import 'package:fixnum/fixnum.dart';
+
 import 'package:protobuf/protobuf.dart';
 
 class CollisionMessage extends GeneratedMessage {

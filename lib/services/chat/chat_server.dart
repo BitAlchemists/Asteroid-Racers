@@ -1,6 +1,5 @@
 library chat_server;
 
-import "package:asteroidracers/shared/shared.dart";
 import "package:asteroidracers/shared/shared_server.dart";
 import "chat_shared.dart";
 

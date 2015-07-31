@@ -1,4 +1,4 @@
-part of ar_shared;
+part of world;
 
 class PhysicsSimulator {
   List<Movable> _movables = new List<Movable>();

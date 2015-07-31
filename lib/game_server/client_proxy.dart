@@ -1,9 +1,12 @@
-part of game_server;
+library game_server_client_proxy;
+
+import "package:asteroidracers/shared/net.dart";
+import "package:asteroidracers/shared/shared_server.dart";
 
 class ClientProxy implements IClientProxy
 {
   final Connection _connection;
-  static GameServer gameServer;
+  static IGameServer gameServer;
   static final Map<String, MessageHandler> _messageHandlers = 
     {
       MessageType.HANDSHAKE: _onHandshake,
@@ -171,7 +174,7 @@ class ClientProxy implements IClientProxy
       //TODO: add queueing here to make sure we don't overload the client after handshake
       Envelope envelope = Envelope.create();
       envelope.messageType = MessageType.ENTITY;
-      envelope.payload = entity;
+      envelope.payload = EntityMarshal.worldEntityToNetEntity(entity).writeToBuffer();
       client.send(envelope);
     }
   }

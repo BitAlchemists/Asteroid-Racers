@@ -1,4 +1,4 @@
-part of ar_shared;
+part of world;
 
 class World
 {
@@ -83,7 +83,7 @@ class World
       */
       
       
-      Entity entity = new Entity(EntityType.ASTEROID, position: point, radius: radius);
+      Entity entity = new Entity(type: EntityType.ASTEROID, position: point, radius: radius);
       asteroids.add(entity);
     }
     

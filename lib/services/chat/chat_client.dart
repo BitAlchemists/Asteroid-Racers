@@ -5,7 +5,7 @@ import "dart:async";
 import 'dart:html' as html;
 import 'package:stagexl/stagexl.dart' as stagexl;
 
-import "package:asteroidracers/shared/shared_client.dart";
+import "package:asteroidracers/shared/ui.dart";
 import "chat_shared.dart";
 
 

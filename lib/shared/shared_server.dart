@@ -1,6 +1,7 @@
 library shared_server;
 
-import "package:asteroidracers/shared/shared.dart";
+import "package:asteroidracers/shared/net/envelope.pb.dart";
+import "package:asteroidracers/shared/world.dart";
 
 typedef void MessageHandler(IClientProxy client, Envelope envelope);
 

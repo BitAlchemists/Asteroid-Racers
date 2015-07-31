@@ -6,12 +6,12 @@ import "dart:async";
 import 'package:game_loop/game_loop_isolate.dart';
 import "package:vector_math/vector_math.dart";
 
-import "package:asteroidracers/shared/shared.dart";
+import "package:asteroidracers/shared/world.dart";
+import "package:asteroidracers/shared/net.dart" as net; //todo: layer the code so that we can remove this.
 import "package:asteroidracers/shared/shared_server.dart";
 import "package:asteroidracers/services/chat/chat_shared.dart";
 import "package:asteroidracers/services/chat/chat_server.dart";
 
-part "client_proxy.dart";
 part "collision_detector.dart";
 part "race_controller.dart";
 
@@ -82,7 +82,7 @@ class GameServer implements IGameServer {
     _joinRaceCollisionDetector.passiveEntities = [_race.start];
 
     _addArrows({num x: 0.0, num y: 0.0, double orientation: 0.0}){
-      Entity arrows = new Entity(EntityType.ARROWS);
+      Entity arrows = new Entity(type: EntityType.ARROWS);
       arrows.position = new Vector2(x.toDouble(), y.toDouble());
       arrows.orientation = orientation;
       arrows.radius = 100.0;
@@ -209,16 +209,16 @@ class GameServer implements IGameServer {
     }
 
     //TODO: remove this message from game server and move it to the world. Probably via a world update message?
-    RemoveEntityCommand command = new RemoveEntityCommand();
+    net.RemoveEntityCommand command = new net.RemoveEntityCommand();
     command.entityId = client.movable.id;
 
-    Envelope envelope = new Envelope();
-    envelope.messageType = MessageType.ENTITY_REMOVE;
+    net.Envelope envelope = new net.Envelope();
+    envelope.messageType = net.MessageType.ENTITY_REMOVE;
     envelope.payload = command.writeToBuffer();
     sendMessageToClientsExcept(envelope, client);
   }
   
-  sendMessageToClientsExcept(Envelope envelope, ClientProxy client){
+  sendMessageToClientsExcept(Envelope envelope, IClientProxy client){
     broadcastMessage(envelope, blacklist:new Set()..add(client));
   }
   
@@ -308,7 +308,7 @@ class GameServer implements IGameServer {
     }
   }   
   
-  void computePlayerInput(ClientProxy client, MovementInput input){
+  void computePlayerInput(IClientProxy client, net.MovementInput input){
     client.movable.updateRank += 1;
     
     // 1. apply the new orientation

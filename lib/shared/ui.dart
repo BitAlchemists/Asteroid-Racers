@@ -2,7 +2,7 @@ library shared_client;
 
 import 'package:stagexl/stagexl.dart' as stagexl;
 
-export "package:asteroidracers/shared/shared.dart";
+export "package:asteroidracers/shared/world.dart";
 
 part "client/ui/button.dart";
 part "client/ui/window.dart";

@@ -1,12 +1,12 @@
-part of ar_shared;
+part of world;
 
 class Movable extends Entity {
+  bool canMove = false;
   double rotationSpeed = 0.0;
   Vector2 acceleration = new Vector2.zero();
   Vector2 velocity = new Vector2.zero();
-  bool canMove = false;
 
-  Movable() : super(EntityType.SHIP);
+  Movable() : super(type: EntityType.SHIP);
   
   Movable.fromJson(List list) : super.fromJson(list){
     canMove = list[7];
