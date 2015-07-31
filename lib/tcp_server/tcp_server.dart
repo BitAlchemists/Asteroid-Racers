@@ -5,6 +5,8 @@ import 'dart:io';
 import 'dart:async';
 import 'package:path/path.dart' as path;
 import "package:asteroidracers/shared/world.dart";
+import "package:asteroidracers/shared/shared.dart";
+import "package:asteroidracers/shared/shared_server.dart";
 import "package:asteroidracers/game_server/game_server.dart";
 
 //import '../core/shared/ar_shared.dart';

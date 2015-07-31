@@ -5,8 +5,8 @@ class RaceController {
   RacePortal _portal;
   Entity _finish;
   List<Entity> _checkpoints = new List<Entity>();
-  final Map<ClientProxy, int> _lastTouchedCheckpointIndex = new Map<ClientProxy, int>(); //player.id, checkpoint index
-  Iterable<ClientProxy> get _players => _lastTouchedCheckpointIndex.keys;
+  final Map<IClientProxy, int> _lastTouchedCheckpointIndex = new Map<IClientProxy, int>(); //player.id, checkpoint index
+  Iterable<IClientProxy> get _players => _lastTouchedCheckpointIndex.keys;
   GameServer gameServer;
   
   
@@ -109,10 +109,14 @@ class RaceController {
     }
     
   }
+
+  //player management
+
+  bool isClientInRace(IClientProxy client){
+    return _lastTouchedCheckpointIndex.containsKey(client);
+  }
   
-  
-  addPlayer(ClientProxy client){
-    client.race = this;
+  addPlayer(IClientProxy client){
     _resetCheckpointsForPlayer(client);
     
     Entity spawn = spawnEntityForPlayer(client);
@@ -140,23 +144,22 @@ class RaceController {
     }
   }
 
-  removePlayer(ClientProxy client){
+  removePlayer(IClientProxy client){
     _lastTouchedCheckpointIndex.remove(client);
-    client.race = null;
   }
   
-  _playerReachedFinish(ClientProxy client){
+  _playerReachedFinish(IClientProxy client){
     this.removePlayer(client);
     this.addPlayer(client);
   }
   
-  Entity spawnEntityForPlayer(ClientProxy client){
+  Entity spawnEntityForPlayer(IClientProxy client){
     int i = _lastTouchedCheckpointIndex[client];
     
     if(i == 0){
       //players get assigned starting positions according to their entity id
       var playerIdList = _players.toList();
-      playerIdList.sort((ClientProxy a, ClientProxy b) => a.movable.id.compareTo(b.movable.id));
+      playerIdList.sort((IClientProxy a, IClientProxy b) => a.movable.id.compareTo(b.movable.id));
       
       int i = playerIdList.indexOf(client);
       Entity spawnEntity = new Entity.copy(_portal.positions[i]);

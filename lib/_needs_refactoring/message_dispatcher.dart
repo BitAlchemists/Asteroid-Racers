@@ -1,6 +1,7 @@
 /*
 
-typedef MessageHandler(Envelope envelope);
+
+typedef MessageHandler(Message message);
 
 class MessageDispatcher {
   static final MessageDispatcher _instance = new MessageDispatcher();

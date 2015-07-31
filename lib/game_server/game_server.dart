@@ -11,6 +11,7 @@ import "package:asteroidracers/shared/net.dart" as net; //todo: layer the code s
 import "package:asteroidracers/shared/shared_server.dart";
 import "package:asteroidracers/services/chat/chat_shared.dart";
 import "package:asteroidracers/services/chat/chat_server.dart";
+import "ai/ai.dart";
 
 part "collision_detector.dart";
 part "race_controller.dart";
@@ -27,6 +28,7 @@ class GameServer implements IGameServer {
   Entity _spawn;
   Map<Entity, ClientProxy> _entityToClientMap = new Map<Entity, ClientProxy>();
   ChatServer _chat;
+  AIDirector _AIDirector;
 
   World get world => _world;
   
@@ -109,6 +111,8 @@ class GameServer implements IGameServer {
     */
     
     _physics = new PhysicsSimulator();
+    _AIDirector = new AIDirector(_world);
+    _AIDirector.populateWorld();
   }
   
   _registerServices(){
@@ -128,6 +132,7 @@ class GameServer implements IGameServer {
   
   _onHeartBeat(GameLoop gameLoop){
     //print('${gameLoop.frame}: ${gameLoop.gameTime} [dt = ${gameLoop.dt}].');
+    _AIDirector.step(gameLoop.dt);
     _physics.simulateTranslation(gameLoop.dt);
     _checkCollisions();
     _race.update();
@@ -170,7 +175,7 @@ class GameServer implements IGameServer {
   
   //Client-Server communication
   
-  void connectClient(ClientProxy client){
+  void connectClient(IClientProxy client){
     print("player connected");
     _clients.add(client);
 
@@ -186,7 +191,7 @@ class GameServer implements IGameServer {
     print("connected clients: ${_clients.length}");
   }
   
-  void disconnectClient(ClientProxy client){
+  void disconnectClient(IClientProxy client){
     
     if(client.movable != null && client.movable.displayName != null)
     {
@@ -235,7 +240,7 @@ class GameServer implements IGameServer {
     }
   }
   
-  void registerPlayer(ClientProxy client, String desiredUsername){
+  void registerPlayer(IClientProxy client, String desiredUsername){
     print("player identifies as $desiredUsername");    
     Movable player = new Movable();
     player.type = EntityType.SHIP;
@@ -254,15 +259,16 @@ class GameServer implements IGameServer {
     spawnPlayer(client, false);
   }
   
-  spawnPlayer(ClientProxy client, bool informClientToo){
+  spawnPlayer(IClientProxy client, bool informClientToo){
     
     Movable movable = client.movable;
     Vector2 position;
     double orientation;
     
     Entity spawn = null;
-    
-    if(client.race != null){
+
+
+    if(_race.isClientInRace(client)){
       spawn = _race.spawnEntityForPlayer(client);
     }
     else {
@@ -283,7 +289,7 @@ class GameServer implements IGameServer {
     teleportPlayerTo(client, position, orientation, false);
   }
   
-  teleportPlayerTo(ClientProxy client, Vector2 position, double orientation, bool informClientToo){
+  teleportPlayerTo(IClientProxy client, Vector2 position, double orientation, bool informClientToo){
     client.movable.position = position;
     client.movable.orientation = orientation;
     client.movable.canMove = true;
@@ -356,7 +362,7 @@ class GameServer implements IGameServer {
     
   }
   
-  ClientProxy _clientForEntity(Entity entity){
+  IClientProxy _clientForEntity(Entity entity){
     return _entityToClientMap[entity];
   }
 }
