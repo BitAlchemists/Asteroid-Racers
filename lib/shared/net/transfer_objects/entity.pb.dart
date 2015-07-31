@@ -3,7 +3,6 @@
 ///
 library net_entity;
 
-
 import 'package:protobuf/protobuf.dart';
 
 class Vector2 extends GeneratedMessage {
@@ -82,26 +81,9 @@ class Entity_Movable extends GeneratedMessage {
 
 class _ReadonlyEntity_Movable extends Entity_Movable with ReadonlyMessageMixin {}
 
-class Entity_Checkpoint_CheckpointState extends ProtobufEnum {
-  static const Entity_Checkpoint_CheckpointState CLEARED = const Entity_Checkpoint_CheckpointState._(1, 'CLEARED');
-  static const Entity_Checkpoint_CheckpointState CURRENT = const Entity_Checkpoint_CheckpointState._(2, 'CURRENT');
-  static const Entity_Checkpoint_CheckpointState FUTURE = const Entity_Checkpoint_CheckpointState._(3, 'FUTURE');
-
-  static const List<Entity_Checkpoint_CheckpointState> values = const <Entity_Checkpoint_CheckpointState> [
-    CLEARED,
-    CURRENT,
-    FUTURE,
-  ];
-
-  static final Map<int, Entity_Checkpoint_CheckpointState> _byValue = ProtobufEnum.initByValue(values);
-  static Entity_Checkpoint_CheckpointState valueOf(int value) => _byValue[value];
-
-  const Entity_Checkpoint_CheckpointState._(int v, String n) : super(v, n);
-}
-
 class Entity_Checkpoint extends GeneratedMessage {
   static final BuilderInfo _i = new BuilderInfo('Entity_Checkpoint')
-    ..e(1, 'state', GeneratedMessage.QE, Entity_Checkpoint_CheckpointState.CLEARED, (var v) => Entity_Checkpoint_CheckpointState.valueOf(v))
+    ..a(1, 'state', GeneratedMessage.Q3)
   ;
 
   Entity_Checkpoint() : super();
@@ -117,8 +99,8 @@ class Entity_Checkpoint extends GeneratedMessage {
   }
   static Entity_Checkpoint _defaultInstance;
 
-  Entity_Checkpoint_CheckpointState get state => getField(1);
-  void set state(Entity_Checkpoint_CheckpointState v) { setField(1, v); }
+  int get state => getField(1);
+  void set state(int v) { setField(1, v); }
   bool hasState() => hasField(1);
   void clearState() => clearField(1);
 }

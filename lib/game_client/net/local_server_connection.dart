@@ -1,4 +1,4 @@
-part of game_client;
+part of game_client_net;
 
 typedef void OnReceiveMessageFunction(Envelope envelope);
 
@@ -7,7 +7,7 @@ class LocalServerConnection implements ServerConnection {
   final bool _debug;
   bool _isMaster; //is this one the master or the slave?
   LocalServerConnection _inverseConnection;
-  ClientProxy _clientProxy; 
+  IClientProxy _clientProxy;
   final StreamController<Envelope> _receiveMessageStreamController = new StreamController<Envelope>.broadcast();
   
   Stream<Envelope> get onReceiveMessage => _receiveMessageStreamController.stream;

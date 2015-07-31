@@ -21,13 +21,7 @@ message Entity {
     }
 
     message Checkpoint {
-        enum CheckpointState {
-            CLEARED = 1;
-            CURRENT = 2;
-            FUTURE = 3;
-        }
-
-        required CheckpointState state = 1;
+        required int32 state = 1;
     }
 
     message RacePortal {

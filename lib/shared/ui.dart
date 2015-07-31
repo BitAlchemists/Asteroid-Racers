@@ -1,4 +1,4 @@
-library shared_client;
+library ui;
 
 import 'package:stagexl/stagexl.dart' as stagexl;
 

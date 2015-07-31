@@ -1,4 +1,6 @@
-part of game_client;
+library game_client_logger;
+
+import "dart:async";
 
 final ClientLogger _instance = new ClientLogger._internal();
 

@@ -10,7 +10,7 @@ import "package:asteroidracers/shared/world.dart";
 import "package:asteroidracers/shared/net.dart" as net; //todo: layer the code so that we can remove this.
 import "package:asteroidracers/shared/shared_server.dart";
 import "package:asteroidracers/services/chat/chat_shared.dart";
-import "package:asteroidracers/services/chat/chat_server.dart";
+
 import "ai/ai.dart";
 
 part "collision_detector.dart";
@@ -26,8 +26,7 @@ class GameServer implements IGameServer {
   PhysicsSimulator _physics;
   RaceController _race;
   Entity _spawn;
-  Map<Entity, ClientProxy> _entityToClientMap = new Map<Entity, ClientProxy>();
-  ChatServer _chat;
+  Map<Entity, IClientProxy> _entityToClientMap = new Map<Entity, IClientProxy>();
   AIDirector _AIDirector;
 
   World get world => _world;
@@ -37,7 +36,6 @@ class GameServer implements IGameServer {
   
   GameServer(){
     _createWorld();
-    _registerServices();
   }
   
   _createWorld(){
@@ -98,7 +96,7 @@ class GameServer implements IGameServer {
     _addArrows(x: 150, y: -1700, orientation: Math.PI * 0.5);    
     _addArrows(x: -150, y: -1700, orientation: Math.PI * 1.5);        
     */        
-    _spawn = new Entity(null);
+    _spawn = new Entity(type: EntityType.UNKNOWN);
     _spawn.position = new Vector2(0.0, 100.0);
     _spawn.radius = 200.0;
     _spawn.orientation = Math.PI;
@@ -114,13 +112,7 @@ class GameServer implements IGameServer {
     _AIDirector = new AIDirector(_world);
     _AIDirector.populateWorld();
   }
-  
-  _registerServices(){
-    
-    _chat = new ChatServer(this);
-    ClientProxy.registerMessageHandler(MessageType.CHAT, _chat.onChatMessage);
-  }
-  
+
   start(){
       // Construct a game loop.
       GameLoop gameLoop = new GameLoopIsolate();
@@ -150,10 +142,10 @@ class GameServer implements IGameServer {
     playerEntity.canMove = false;
 
     //todo: can we remove this message from GameServer?
-    CollisionMessage message = new CollisionMessage();
+    net.CollisionMessage message = new net.CollisionMessage();
     message.entityId = playerEntity.id;
-    Envelope envelope = new Envelope();
-    envelope.messageType = MessageType.COLLISION;
+    net.Envelope envelope = new net.Envelope();
+    envelope.messageType = net.MessageType.COLLISION;
     envelope.payload = message.writeToBuffer();
     broadcastMessage(envelope);
     
@@ -161,7 +153,7 @@ class GameServer implements IGameServer {
     new Future.delayed(new Duration(seconds:1), (){
       //if the entity still exists
       if(_world.entities.containsKey(playerEntity.id)){
-        ClientProxy client = _clientForEntity(playerEntity);
+        IClientProxy client = _clientForEntity(playerEntity);
         spawnPlayer(client, true);         
       }
     });
@@ -183,8 +175,8 @@ class GameServer implements IGameServer {
     chatMessage.from = "Server";
     chatMessage.text = "Welcome to the 'Apollo 13' development server.";
 
-    Envelope envelope = new Envelope();
-    envelope.messageType = MessageType.CHAT;
+    net.Envelope envelope = new net.Envelope();
+    envelope.messageType = net.MessageType.CHAT;
     envelope.payload = chatMessage.writeToBuffer();
     client.send(envelope);
 
@@ -214,20 +206,17 @@ class GameServer implements IGameServer {
     }
 
     //TODO: remove this message from game server and move it to the world. Probably via a world update message?
-    net.RemoveEntityCommand command = new net.RemoveEntityCommand();
-    command.entityId = client.movable.id;
-
     net.Envelope envelope = new net.Envelope();
     envelope.messageType = net.MessageType.ENTITY_REMOVE;
-    envelope.payload = command.writeToBuffer();
+    envelope.payload = <int>[client.movable.id];
     sendMessageToClientsExcept(envelope, client);
   }
   
-  sendMessageToClientsExcept(Envelope envelope, IClientProxy client){
+  sendMessageToClientsExcept(net.Envelope envelope, IClientProxy client){
     broadcastMessage(envelope, blacklist:new Set()..add(client));
   }
   
-  broadcastMessage(Envelope envelope, {Set<IClientProxy> blacklist}) {
+  broadcastMessage(net.Envelope envelope, {Set<IClientProxy> blacklist}) {
     Set<IClientProxy> recipients = _clients;    
     
     if(blacklist != null){
@@ -235,7 +224,7 @@ class GameServer implements IGameServer {
     }
     
     
-    for(ClientProxy client in recipients) {
+    for(IClientProxy client in recipients) {
       client.send(envelope);
     }
   }
@@ -354,9 +343,9 @@ class GameServer implements IGameServer {
     
     for(Movable movable in broadcastables){
       movable.updateRank = 0;
-      Envelope envelope = new Envelope();
-      envelope.messageType = MessageType.ENTITY;
-      envelope.payload = movable;
+      net.Envelope envelope = new net.Envelope();
+      envelope.messageType = net.MessageType.ENTITY;
+      envelope.payload = net.EntityMarshal.worldEntityToNetEntity(movable).writeToBuffer();
       broadcastMessage(envelope);
     }
     

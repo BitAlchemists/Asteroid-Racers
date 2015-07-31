@@ -1,6 +1,9 @@
 library game_server_client_proxy;
 
+import "dart:math" as Math;
+
 import "package:asteroidracers/shared/net.dart";
+import "package:asteroidracers/shared/world.dart" as world;
 import "package:asteroidracers/shared/shared_server.dart";
 
 class ClientProxy implements IClientProxy
@@ -14,7 +17,7 @@ class ClientProxy implements IClientProxy
       MessageType.PING_PONG: _onPingPong,
     };
   
-  Movable movable;
+  world.Movable movable;
 
   // IClientProxy
   String get playerName => movable.displayName;
@@ -25,7 +28,7 @@ class ClientProxy implements IClientProxy
   }
   
   static void registerMessageHandler(MessageType messageType, MessageHandler messageHandler){
-    _messageHandlers[messageType] = messageHandler;
+    _messageHandlers[messageType.name] = messageHandler;
   }
   
   _onDisconnect([e]){
@@ -63,9 +66,9 @@ class ClientProxy implements IClientProxy
     }
   }
   
-  static _onHandshake(ClientProxy client, Envelope envelope)
+  static _onHandshake(IClientProxy client, Envelope handshakeEnvelope)
   {
-    Handshake handshake = new Handshake.fromBuffer(envelope.payload);
+    Handshake handshake = new Handshake.fromBuffer(handshakeEnvelope.payload);
     String username = handshake.username;
     if(username == null || username == ""){
       List names = ["Churchill", 
@@ -155,7 +158,8 @@ class ClientProxy implements IClientProxy
                     "TARDIS",
                     "ISEE-3/ICE", // http://blog.xkcd.com/2014/05/30/isee-3/
                     "XKCD-303",
-                    "Drei-Zimmer-Rakete"];
+                    "Drei-Zimmer-Rakete",
+                    "Major Tom"];
       int index = new Math.Random().nextInt(names.length);
       username = names[index];
     }
@@ -165,11 +169,11 @@ class ClientProxy implements IClientProxy
 
     Envelope envelope = Envelope.create();
     envelope.messageType = MessageType.PLAYER;
-    envelope.payload = client.movable;
+    envelope.payload = EntityMarshal.worldEntityToNetEntity(client.movable).writeToBuffer();
     client.send(envelope);
 
     //send all entities
-    for(Entity entity in gameServer.world.entities.values){
+    for(world.Entity entity in gameServer.world.entities.values){
       //TODO: add queueing here to make sure we don't overload the client after handshake
       Envelope envelope = Envelope.create();
       envelope.messageType = MessageType.ENTITY;
@@ -178,8 +182,8 @@ class ClientProxy implements IClientProxy
     }
   }
   
-  static _onPlayerInput(ClientProxy client, Envelope envelope){
-    MovementInput input = new MovementInput.fromJson(envelope.payload);
+  static _onPlayerInput(IClientProxy client, Envelope envelope){
+    MovementInput input = new MovementInput.fromBuffer(envelope.payload);
     
     if(!client.movable.canMove){
       print("client sent player update during !canMove");

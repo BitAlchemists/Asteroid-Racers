@@ -186,8 +186,6 @@ class RenderHelper {
       int numVertices,{
       int strokeColor, num x: 0, num y: 0}){
     
-    Math.Random random = new Math.Random();
-    
     graphics.beginPath();
     Vector2 firstVertex = null;
     

@@ -1,6 +1,7 @@
 part of world;
 
 enum EntityType {
+  UNKNOWN,
   ASTEROID,
   SHIP,
   CHECKPOINT,

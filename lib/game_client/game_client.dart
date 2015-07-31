@@ -3,18 +3,19 @@ library game_client;
 //Dart
 import 'dart:html' as html;
 import 'dart:math' as Math;
-import "dart:async";
 
 //Packages
 import 'package:vector_math/vector_math.dart';
 import 'package:stagexl/stagexl.dart' as stagexl;
 import "package:stagexl_particle/stagexl_particle.dart" as stagexl_particle;
+import 'utils/client_logger.dart';
 
 //Ours
 import 'package:asteroidracers/shared/ui.dart';
 import 'package:asteroidracers/services/chat/chat_client.dart';
-import "package:asteroidracers/game_server/game_server.dart";
-import "package:asteroidracers/shared/net.dart";
+import "package:asteroidracers/shared/net.dart" as net; //todo: remove this and layer all its code out to serverproxy
+import "package:asteroidracers/game_client/server_proxy.dart";
+import "package:asteroidracers/shared/shared_client.dart";
 
 //Views
 part "game_renderer.dart";
@@ -33,13 +34,7 @@ part 'controllers/player_controller.dart';
 part "controllers/checkpoint_controller.dart";
 part "controllers/race_portal_controller.dart";
 
-part 'utils/client_logger.dart';
-
-//server connection
-part "net/server_connection.dart";
-part "net/local_server_connection.dart";
-part 'net/web_socket_server_connection.dart';
-part "server_proxy.dart";
+Math.Random random = new Math.Random();
 
 class GameConfig {
   bool localServer = true;
@@ -51,7 +46,7 @@ class GameConfig {
 /**
  * The Game client sets up the game and handles the interaction between player and server
  */
-class GameClient implements stagexl.Animatable {
+class GameClient implements stagexl.Animatable, IGameClient {
   GameConfig _config;
   
   PhysicsSimulator _simulator;
@@ -112,7 +107,7 @@ class GameClient implements stagexl.Animatable {
     // send chat messages entered by the player to the server proxy
     _chat.onSendChatMesage.listen(server.send);
     // register the chat controller for chat messages. The server proxy will send them to the chat controller
-    server.registerMessageHandler(MessageType.CHAT, _chat.onReceiveMessage);
+    server.registerMessageHandler(net.MessageType.CHAT, _chat.onReceiveMessage);
     // send log messages to onReceiveLogMessage()
     ClientLogger.instance.stdout.listen(_chat.onReceiveLogMessage);
   }
@@ -203,12 +198,12 @@ class GameClient implements stagexl.Animatable {
         if(server != null){
 
           //TODO: move this code to ServerProxy
-          MovementInput movementInput = new MovementInput();
+          net.MovementInput movementInput = new net.MovementInput();
           movementInput.newOrientation = _player.entity.orientation;
           movementInput.accelerate = _player.accelerate;
 
-          Envelope envelope = new Envelope();
-          envelope.messageType = MessageType.INPUT;
+          net.Envelope envelope = new net.Envelope();
+          envelope.messageType = net.MessageType.INPUT;
           envelope.payload = movementInput.writeToBuffer();
 
           server.send(envelope);

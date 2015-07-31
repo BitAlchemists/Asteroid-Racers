@@ -4,7 +4,48 @@ class EntityMarshal {
 
   //TODO: add movable, raceportal, checkpoint
   static world.Entity netEntityToWorldEntity(Entity netEntity) {
-    world.Entity worldEntity = new world.Entity();
+
+    world.EntityType entityType = world.EntityType.values[netEntity.type];
+
+    world.Entity worldEntity;
+
+    switch(entityType){
+      case world.EntityType.SHIP:
+        world.Movable movable = new world.Movable();
+
+        Entity_Movable netMovable = netEntity.movable;
+
+        movable.canMove = netMovable.canMove;
+        movable.acceleration = EntityMarshal.netVector2ToWorldVector2(netMovable.acceleration);
+        movable.velocity = EntityMarshal.netVector2ToWorldVector2(netMovable.velocity);
+        movable.rotationSpeed = netMovable.rotationSpeed;
+
+        worldEntity = movable;
+
+        break;
+      case world.EntityType.LAUNCH_PLATFORM:
+        world.RacePortal racePortal = new world.RacePortal();
+
+        Entity_RacePortal netRacePortal = netEntity.racePortal;
+
+        racePortal.positions = netRacePortal.positions.map((Entity netEntity) => EntityMarshal.netEntityToWorldEntity(netEntity)).toList();
+
+        worldEntity = racePortal;
+        break;
+      case world.EntityType.CHECKPOINT:
+        world.Checkpoint checkpoint = new world.Checkpoint();
+
+        Entity_Checkpoint netCheckpoint = netEntity.checkpoint;
+
+        checkpoint.state = world.CheckpointState.values[netCheckpoint.state];
+
+        worldEntity = checkpoint;
+
+        break;
+      default:
+        worldEntity = new world.Entity();
+        break;
+    }
 
     if(netEntity.type != null) {
       worldEntity.type = world.EntityType.values[netEntity.type];
@@ -58,6 +99,38 @@ class EntityMarshal {
 
     if(worldEntity.radius != null){
       netEntity.radius = worldEntity.radius;
+    }
+
+    switch(worldEntity.type) {
+      case world.EntityType.SHIP:
+        world.Movable movable = worldEntity as world.Movable;
+
+        Entity_Movable netMovable = new Entity_Movable();
+        netMovable.canMove = movable.canMove;
+        netMovable.acceleration = EntityMarshal.worldVector2ToNetVector2(movable.acceleration);
+        netMovable.velocity = EntityMarshal.worldVector2ToNetVector2(movable.velocity);
+        netMovable.rotationSpeed = movable.rotationSpeed;
+
+        netEntity.movable = netMovable;
+        break;
+      case world.EntityType.LAUNCH_PLATFORM:
+        world.RacePortal racePortal = worldEntity as world.RacePortal;
+
+        Entity_RacePortal netRacePortal = new Entity_RacePortal();
+        netRacePortal.positions.addAll(racePortal.positions.map((world.Entity entity) => EntityMarshal.worldEntityToNetEntity(entity)));
+
+        netEntity.racePortal = netRacePortal;
+        break;
+      case world.EntityType.CHECKPOINT:
+        world.Checkpoint checkpoint = worldEntity as world.Checkpoint;
+
+        Entity_Checkpoint netCheckpoint = new Entity_Checkpoint();
+        netCheckpoint.state = checkpoint.state.index;
+
+        netEntity.checkpoint = netCheckpoint;
+        break;
+      default:
+        break;
     }
 
     return netEntity;

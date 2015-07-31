@@ -1,0 +1,10 @@
+library shared_client;
+
+import "package:asteroidracers/shared/world.dart";
+
+abstract class IGameClient {
+  void updateEntity(Entity entity);
+  void createPlayer(Entity entity);
+  void handleCollision(int entityId);
+  void removeEntity(int entityId);
+}

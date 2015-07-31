@@ -1,4 +1,4 @@
-part of game_client;
+part of game_client_net;
 
 class WebSocketServerConnection implements ServerConnection {
   //Private Fields

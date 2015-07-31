@@ -7,7 +7,7 @@ class AIController implements IClientProxy {
 
   AIController(this.movable, [this.playerName = "AI Dummy"]);
 
-  void send(Message message){
+  void send(net.Envelope envelope){
 
   }
 }

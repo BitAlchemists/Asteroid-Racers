@@ -1,4 +1,19 @@
-part of game_client;
+library game_client_net;
+
+import "dart:async";
+import 'dart:html' as html;
+
+import "package:asteroidracers/shared/net.dart";
+import "package:asteroidracers/shared/world.dart" as world;
+import "package:asteroidracers/game_client/utils/client_logger.dart";
+import "package:asteroidracers/game_server/game_server.dart"; //this is used for the simulated local server
+import "package:asteroidracers/game_server/client_proxy.dart"; //this is used for the simulated local server
+import 'package:asteroidracers/shared/shared_server.dart';
+import 'package:asteroidracers/shared/shared_client.dart';
+
+part "net/local_server_connection.dart";
+part "net/server_connection.dart";
+part "net/web_socket_server_connection.dart";
 
 typedef void MessageHandler(Envelope envelope);
 
@@ -10,7 +25,7 @@ class ServerConnectionState {
 
 class ServerProxy {
   ServerConnection _serverConnection;
-  GameClient _gameController;
+  IGameClient _gameController;
   Map<String, MessageHandler> _messageHandlers;
   Function onDisconnectDelegate;
   int _state = ServerConnectionState.DISCONNECTED;
@@ -32,7 +47,7 @@ class ServerProxy {
   
   registerMessageHandler(MessageType messageType, MessageHandler messageHandler)
   {
-    _messageHandlers[messageType] = messageHandler;
+    _messageHandlers[messageType.name] = messageHandler;
   }
   
   Future connect(bool local, bool debugJson, String desiredUsername)
@@ -51,17 +66,21 @@ class ServerProxy {
     _state = ServerConnectionState.IS_CONNECTING;
     return _serverConnection.connect().then((_){
       _state = ServerConnectionState.CONNECTED;
+
+      Handshake handshake = new Handshake();
+      handshake.username = desiredUsername;
+
       Envelope envelope = new Envelope();
       envelope.messageType = MessageType.HANDSHAKE;
-      envelope.payload = desiredUsername;
+      envelope.payload = handshake.writeToBuffer();
       _serverConnection.send(envelope);
     });
   }
   
   Connection webConnection()
   {
-    ServerConnection server;
-    var domain = html.document.domain;
+    //ServerConnection server;
+    //var domain = html.document.domain;
     html.Location location = html.window.location;
     var port = 1337;
     var wsPath = "ws://" + location.hostname + ":" + port.toString() + "/ws";
@@ -117,29 +136,34 @@ class ServerProxy {
   
   _onEntityRemove(Envelope envelope)
   {
-    _gameController.removeEntity(envelope.payload);
+    _gameController.removeEntity(envelope.payload[0]);
   }
 
   _onEntityUpdate(Envelope envelope)
   {
-    Entity entity = new Entity.deserialize(envelope.payload);
-    _gameController.updateEntity(entity);
+    Entity netEntity = new Entity.fromBuffer(envelope.payload);
+    world.Entity worldEntity = EntityMarshal.netEntityToWorldEntity(netEntity);
+    _gameController.updateEntity(worldEntity);
   }
   
   _onPlayer(Envelope envelope)
   {
-    Entity entity = new Movable.fromJson(envelope.payload);
-    _gameController.createPlayer(entity);
+    Entity entity = new Entity.fromBuffer(envelope.payload);
+    world.Movable movable = EntityMarshal.netEntityToWorldEntity(entity);
+    _gameController.createPlayer(movable);
   }
   
   ping(){
-    send(new Envelope(MessageType.PING_PONG, new DateTime.now().millisecondsSinceEpoch));
+    Envelope envelope = new Envelope();
+    envelope.messageType = MessageType.PING_PONG;
+    envelope.payload = <int>[new DateTime.now().millisecondsSinceEpoch];
+    send(envelope);
   }
   
   double pingAverage = 0.0;
   
   _onPingPong(Envelope envelope){
-    int ms = envelope.payload;
+    int ms = envelope.payload[0];
     int now = new DateTime.now().millisecondsSinceEpoch;
     int ping = now - ms;
     
@@ -151,7 +175,7 @@ class ServerProxy {
   }
   
   _onCollision(Envelope envelope){
-    _gameController.handleCollision(envelope.payload);
+    _gameController.handleCollision(envelope.payload[0]);
   }
 }
 

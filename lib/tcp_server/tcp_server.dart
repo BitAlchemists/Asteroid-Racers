@@ -4,10 +4,10 @@ import 'dart:io';
 //import 'dart:isolate';
 import 'dart:async';
 import 'package:path/path.dart' as path;
-import "package:asteroidracers/shared/world.dart";
-import "package:asteroidracers/shared/shared.dart";
+import "package:asteroidracers/shared/net.dart";
 import "package:asteroidracers/shared/shared_server.dart";
 import "package:asteroidracers/game_server/game_server.dart";
+import "package:asteroidracers/game_server/client_proxy.dart";
 
 //import '../core/shared/ar_shared.dart';
 
@@ -15,6 +15,9 @@ import "package:asteroidracers/game_server/game_server.dart";
 //import 'utils/server-utils.dart';
 
 import 'package:mime_type/mime_type.dart';
+
+import "package:asteroidracers/services/chat/chat_shared.dart";
+import "package:asteroidracers/services/chat/chat_server.dart";
 
 
 part 'utils/static_file_handler.dart';
@@ -24,13 +27,23 @@ part 'net/web_socket_client_connection.dart';
 part "net/web_socket_client_connection_manager.dart";
 
 
+
+
+
+
 Future runServer(List filePaths, String logPath, int port) {
   GameServer gameServer = new GameServer();
   ClientProxy.gameServer = gameServer;
   gameServer.start();
   WebSocketClientConnectionManager connectionManager = new WebSocketClientConnectionManager(gameServer);
   StaticFileHandler fileHandler = new StaticFileHandler(filePaths);
-  
+
+  //todo: refactor this to be generic for all types of clients (low prio until we make an admin client)
+  ChatServer _chat;
+  _chat = new ChatServer(gameServer);
+  ClientProxy.registerMessageHandler(MessageType.CHAT, _chat.onChatMessage);
+
+
   return HttpServer.bind('0.0.0.0', port).then((HttpServer server) {
     print('listening for connections on $port');
         
