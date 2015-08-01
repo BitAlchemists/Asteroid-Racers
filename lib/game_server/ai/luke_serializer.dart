@@ -37,19 +37,25 @@ class LukeSerializer {
     return network;
   }
 
-  static Future readFromFile() {
-    String filePath = Platform.script.toFilePath();
-    String json = new File(filePath).readAsStringSync();
-    Iterable lukes = JSON.decode(json);
-    lukes = lukes.map(jsonToNetwork);
-    return lukes;
+  static List<Luke> readFromFile() {
+    String filePath = Directory.current.path + "/luke";
+    File file = new File(filePath);
+    if(file.existsSync()){
+      String json = file.readAsStringSync();
+      Iterable lukes = JSON.decode(json);
+      lukes = lukes.map(jsonToNetwork).toList();
+      print("loaded brains");
+      return lukes;
+    }
+    return null;
   }
 
   static void writeToFile(Iterable<Luke> lukes) {
     lukes = lukes.map(networkToJson).toList();
     String json = JSON.encode(lukes);
-    String filePath = Platform.script.toFilePath();
+    String filePath = Directory.current.path + "/luke";
     new File(filePath).writeAsStringSync(json);
+    print("saved brains");
   }
 
 }

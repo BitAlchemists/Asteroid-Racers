@@ -50,6 +50,16 @@ class Luke extends Network {
     }
   }
 
+  void mutate(double mutationRate)
+  {
+    for(Neuron neuron in this.outputNeurons)
+    {
+      for(Connection connection in neuron.inputConnections){
+        connection.weight.value += mutationRate * (random.nextDouble() * 2 - 1);
+      }
+    }
+  }
+
 /*
   BasicLearningRule adalineLearning = new BasicLearningRule(maxIterations);
     adalineLearning.network = this;

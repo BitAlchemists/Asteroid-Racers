@@ -4,7 +4,7 @@ class AIDirector {
   IGameServer _server;
 
   int LIFETIME_MILLISECONDS = 300;
-  int SAMPLE_SIZE = 3;
+  int SAMPLE_SIZE = 100;
   int NUM_TARGETS = 3;
   double TARGET_DISTANCE = 200.0;
 
@@ -40,7 +40,29 @@ class AIDirector {
   }
 
   _generateTrainingSets(){
-    var brains = new List<Luke>.generate(SAMPLE_SIZE, (int index) => new Luke(4,2,"Luke #$index"));
+    List<Luke> brains = LukeSerializer.readFromFile();
+    if(brains != null){
+      print("found brains. mutating them");
+      List newBrains = [];
+      int nameIndex = 0;
+      for(Luke brain in brains){
+        brain.name = "Luke #$nameIndex"; nameIndex++;
+        var jsonBrain = LukeSerializer.networkToJson(brain);
+        for(int i = 0; i < 9; i++)
+        {
+          Luke brain = LukeSerializer.jsonToNetwork(jsonBrain);
+          brain.name = "Luke #$nameIndex"; nameIndex++;
+          brain.mutate(0.01);
+          newBrains.add(brain);
+        }
+      }
+      brains.addAll(newBrains);
+    }
+    else{
+      print("did not find existing brains. creating new ones");
+      brains = new List<Luke>.generate(SAMPLE_SIZE, (int index) => new Luke(4,2,"Luke #$index"));
+    }
+
     _trainingSets = new List<TrainingSet>.generate(brains.length, (int tsIndex){
 
       List<TrainingUnit> units = new List<TrainingUnit>.generate(_targets.length, (int tuIndex) => new TrainingUnit(_targets[tuIndex], brains[tsIndex]));
@@ -129,9 +151,9 @@ class AIDirector {
       print("yNeuron: bias ${yNeuron.inputConnections[0].weightValue} | xOwn ${yNeuron.inputConnections[1].weightValue} | yOwn ${yNeuron.inputConnections[2].weightValue} | xTarget ${yNeuron.inputConnections[3].weightValue} | yTarget ${yNeuron.inputConnections[4].weightValue}");
     }
 
-    Iterable<Luke> brains = _trainingSets.map((var ts)=>ts.brain);
+
+    List<Luke> brains = _trainingSets.take((SAMPLE_SIZE/10).toInt()).map((var ts)=>ts.brain).toList();
     LukeSerializer.writeToFile(brains);
-    brains = LukeSerializer.readFromFile();
 
     print(brains);
   }
