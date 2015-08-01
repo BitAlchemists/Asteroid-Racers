@@ -12,9 +12,9 @@ class ClientProxy implements IClientProxy
   static IGameServer gameServer;
   static final Map<String, MessageHandler> _messageHandlers = 
     {
-      MessageType.HANDSHAKE: _onHandshake,
-      MessageType.INPUT: _onPlayerInput,
-      MessageType.PING_PONG: _onPingPong,
+      MessageType.HANDSHAKE.name: _onHandshake,
+      MessageType.INPUT.name: _onPlayerInput,
+      MessageType.PING_PONG.name: _onPingPong,
     };
   
   world.Movable movable;
@@ -47,7 +47,7 @@ class ClientProxy implements IClientProxy
         return;
       }
       
-      MessageHandler messageHandler = _messageHandlers[envelope.messageType];
+      MessageHandler messageHandler = _messageHandlers[envelope.messageType.name];
       
       if(messageHandler != null){
         messageHandler(this, envelope);

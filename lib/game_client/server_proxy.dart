@@ -137,7 +137,8 @@ class ServerProxy {
   
   _onEntityRemove(Envelope envelope)
   {
-    _gameController.removeEntity(envelope.payload[0]);
+    IntMessage message = new IntMessage.fromBuffer(envelope.payload);
+    _gameController.removeEntity(message.integer);
   }
 
   _onEntityUpdate(Envelope envelope)
@@ -153,19 +154,25 @@ class ServerProxy {
     world.Movable movable = EntityMarshal.netEntityToWorldEntity(entity);
     _gameController.createPlayer(movable);
   }
-  
+
+  //we calculate our time in relation to the server start time
+  int serverStartTime = new DateTime.now().millisecondsSinceEpoch;
+  double pingAverage = 0.0;
+
   ping(){
+    IntMessage message = new IntMessage();
+    message.integer = new DateTime.now().millisecondsSinceEpoch - serverStartTime;
+
     Envelope envelope = new Envelope();
     envelope.messageType = MessageType.PING_PONG;
-    envelope.payload = <int>[new DateTime.now().millisecondsSinceEpoch];
+    envelope.payload = message.writeToBuffer();
     send(envelope);
   }
-  
-  double pingAverage = 0.0;
-  
+
   _onPingPong(Envelope envelope){
-    int ms = envelope.payload[0];
-    int now = new DateTime.now().millisecondsSinceEpoch;
+    IntMessage message = new IntMessage.fromBuffer(envelope.payload);
+    int ms = message.integer;
+    int now = new DateTime.now().millisecondsSinceEpoch - serverStartTime;
     int ping = now - ms;
     
     if (pingAverage == null) {
@@ -176,7 +183,8 @@ class ServerProxy {
   }
   
   _onCollision(Envelope envelope){
-    _gameController.handleCollision(envelope.payload[0]);
+    IntMessage message = new IntMessage.fromBuffer(envelope.payload);
+    _gameController.handleCollision(message.integer);
   }
 }
 

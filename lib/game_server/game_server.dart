@@ -142,9 +142,11 @@ class GameServer implements IGameServer {
     playerEntity.canMove = false;
 
     //todo: can we remove this message from GameServer?
+    net.IntMessage message = new net.IntMessage();
+    message.integer = playerEntity.id;
     net.Envelope envelope = new net.Envelope();
     envelope.messageType = net.MessageType.COLLISION;
-    envelope.payload = [playerEntity.id];
+    envelope.payload = message.writeToBuffer();
     broadcastMessage(envelope);
     
     //respawn
@@ -203,9 +205,12 @@ class GameServer implements IGameServer {
       _entityToClientMap.remove(client.movable);
 
       //TODO: remove this message from game server and move it to the world. Probably via a world update message?
+      net.IntMessage message = new net.IntMessage();
+      message.integer = client.movable.id;
+
       net.Envelope envelope = new net.Envelope();
       envelope.messageType = net.MessageType.ENTITY_REMOVE;
-      envelope.payload = <int>[client.movable.id];
+      envelope.payload = message.writeToBuffer();
       sendMessageToClientsExcept(envelope, client);
     }
   }

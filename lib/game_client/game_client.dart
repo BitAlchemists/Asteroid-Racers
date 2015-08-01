@@ -323,6 +323,12 @@ class GameClient implements stagexl.Animatable, IGameClient {
   handleCollision(int entityId)
   {
     EntityController ec = _entityControllers[entityId];
+
+    if(ec == null) {
+      print("cannot handle collision: entity controller for entity with id $entityId not found");
+      return;
+    }
+
     if(ec.entity is Movable){
       (ec.entity as Movable).canMove = false;      
     }

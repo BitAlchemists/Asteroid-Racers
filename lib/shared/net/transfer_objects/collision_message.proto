@@ -1,5 +1,0 @@
-package net_collision_message;
-
-message CollisionMessage {
-    required int32 entityId = 1;
-}
