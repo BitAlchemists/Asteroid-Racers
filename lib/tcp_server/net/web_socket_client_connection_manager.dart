@@ -18,7 +18,6 @@ class WebSocketClientConnectionManager {
   }
   
   void onConnection(WebSocket webSocket) {
-    
     Connection connection = new WebSocketClientConnection(webSocket);
     IClientProxy clientProxy = new ClientProxy(connection);
     _gameServer.connectClient(clientProxy);    

@@ -1,6 +1,7 @@
-part of ar_shared;
+part of world;
 
 enum EntityType {
+  UNKNOWN,
   ASTEROID,
   SHIP,
   CHECKPOINT,
@@ -30,8 +31,9 @@ class Entity
   
   num updateRank = 0.0;
   
-  Entity(this.type, {this.position, this.radius: 1.0});
-  
+  Entity({this.type, this.position, this.radius:1.0});
+
+  //todo: refactor this into EntityMarshal
   factory Entity.deserialize(List list){
     Entity entity;
     
@@ -55,7 +57,8 @@ class Entity
     
     return entity;
   }
-  
+
+  //todo: remove this
   Entity.fromJson(List list){
     assert(list != null);
     
@@ -76,7 +79,8 @@ class Entity
   Entity.copy(Entity entity){
     copyFrom(entity);
   }
-  
+
+  //todo: remove this
   toJson(){
     try {
       assert(position != null);

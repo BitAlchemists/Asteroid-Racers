@@ -6,12 +6,13 @@ import "dart:async";
 import 'package:game_loop/game_loop_isolate.dart';
 import "package:vector_math/vector_math.dart";
 
-import "package:asteroidracers/shared/shared.dart";
+import "package:asteroidracers/shared/world.dart";
+import "package:asteroidracers/shared/net.dart" as net; //todo: layer the code so that we can remove this.
 import "package:asteroidracers/shared/shared_server.dart";
-import "package:asteroidracers/services/chat/chat_server.dart";
+import "package:asteroidracers/services/chat/chat_shared.dart";
+
 import "ai/ai.dart";
 
-part "client_proxy.dart";
 part "collision_detector.dart";
 part "race_controller.dart";
 
@@ -25,8 +26,7 @@ class GameServer implements IGameServer {
   PhysicsSimulator _physics;
   RaceController _race;
   Entity _spawn;
-  Map<Entity, ClientProxy> _entityToClientMap = new Map<Entity, ClientProxy>();
-  ChatServer _chat;
+  Map<Entity, IClientProxy> _entityToClientMap = new Map<Entity, IClientProxy>();
   AIDirector _AIDirector;
 
   World get world => _world;
@@ -36,7 +36,6 @@ class GameServer implements IGameServer {
   
   GameServer(){
     _createWorld();
-    _registerServices();
   }
   
   _createWorld(){
@@ -83,7 +82,7 @@ class GameServer implements IGameServer {
     _joinRaceCollisionDetector.passiveEntities = [_race.start];
 
     _addArrows({num x: 0.0, num y: 0.0, double orientation: 0.0}){
-      Entity arrows = new Entity(EntityType.ARROWS);
+      Entity arrows = new Entity(type: EntityType.ARROWS);
       arrows.position = new Vector2(x.toDouble(), y.toDouble());
       arrows.orientation = orientation;
       arrows.radius = 100.0;
@@ -97,7 +96,7 @@ class GameServer implements IGameServer {
     _addArrows(x: 150, y: -1700, orientation: Math.PI * 0.5);    
     _addArrows(x: -150, y: -1700, orientation: Math.PI * 1.5);        
     */        
-    _spawn = new Entity(null);
+    _spawn = new Entity(type: EntityType.UNKNOWN);
     _spawn.position = new Vector2(0.0, 100.0);
     _spawn.radius = 200.0;
     _spawn.orientation = Math.PI;
@@ -113,13 +112,7 @@ class GameServer implements IGameServer {
     _AIDirector = new AIDirector(_world);
     _AIDirector.populateWorld();
   }
-  
-  _registerServices(){
-    
-    _chat = new ChatServer(this);
-    ClientProxy.registerMessageHandler(MessageType.CHAT, _chat.onChatMessage);
-  }
-  
+
   start(){
       // Construct a game loop.
       GameLoop gameLoop = new GameLoopIsolate();
@@ -147,14 +140,20 @@ class GameServer implements IGameServer {
   _onPlayerCollision(Movable playerEntity, Entity otherEntity){
     _crashCollisionDetector.activeEntities.remove(playerEntity);
     playerEntity.canMove = false;
-    Message message = new Message(MessageType.COLLISION, playerEntity.id);
-    broadcastMessage(message);
+
+    //todo: can we remove this message from GameServer?
+    net.IntMessage message = new net.IntMessage();
+    message.integer = playerEntity.id;
+    net.Envelope envelope = new net.Envelope();
+    envelope.messageType = net.MessageType.COLLISION;
+    envelope.payload = message.writeToBuffer();
+    broadcastMessage(envelope);
     
     //respawn
     new Future.delayed(new Duration(seconds:1), (){
       //if the entity still exists
       if(_world.entities.containsKey(playerEntity.id)){
-        ClientProxy client = _clientForEntity(playerEntity);
+        IClientProxy client = _clientForEntity(playerEntity);
         spawnPlayer(client, true);         
       }
     });
@@ -171,12 +170,16 @@ class GameServer implements IGameServer {
   void connectClient(IClientProxy client){
     print("player connected");
     _clients.add(client);
-    
-    Message welcomeMessage = new Message();
-    welcomeMessage.messageType = MessageType.CHAT;
-    welcomeMessage.payload = {"from": "Server", "message": "Welcome to the 'Apollo 13' development server."};
-    client.send(welcomeMessage);
-    
+
+    ChatMessage chatMessage = new ChatMessage();
+    chatMessage.from = "Server";
+    chatMessage.text = "Welcome to the 'Apollo 13' development server.";
+
+    net.Envelope envelope = new net.Envelope();
+    envelope.messageType = net.MessageType.CHAT;
+    envelope.payload = chatMessage.writeToBuffer();
+    client.send(envelope);
+
     print("connected clients: ${_clients.length}");
   }
   
@@ -200,17 +203,23 @@ class GameServer implements IGameServer {
       _crashCollisionDetector.activeEntities.remove(client.movable);
       _race.removePlayer(client);
       _entityToClientMap.remove(client.movable);
+
+      //TODO: remove this message from game server and move it to the world. Probably via a world update message?
+      net.IntMessage message = new net.IntMessage();
+      message.integer = client.movable.id;
+
+      net.Envelope envelope = new net.Envelope();
+      envelope.messageType = net.MessageType.ENTITY_REMOVE;
+      envelope.payload = message.writeToBuffer();
+      sendMessageToClientsExcept(envelope, client);
     }
-    
-    Message message = new Message(MessageType.ENTITY_REMOVE, client.movable.id);
-    sendMessageToClientsExcept(message, client);
   }
   
-  sendMessageToClientsExcept(Message message, IClientProxy client){
-    broadcastMessage(message, blacklist:new Set()..add(client));
+  sendMessageToClientsExcept(net.Envelope envelope, IClientProxy client){
+    broadcastMessage(envelope, blacklist:new Set()..add(client));
   }
   
-  broadcastMessage(Message message, {Set<IClientProxy> blacklist}) {
+  broadcastMessage(net.Envelope envelope, {Set<IClientProxy> blacklist}) {
     Set<IClientProxy> recipients = _clients;    
     
     if(blacklist != null){
@@ -218,8 +227,8 @@ class GameServer implements IGameServer {
     }
     
     
-    for(ClientProxy client in recipients) {
-      client.send(message);
+    for(IClientProxy client in recipients) {
+      client.send(envelope);
     }
   }
   
@@ -297,7 +306,7 @@ class GameServer implements IGameServer {
     }
   }   
   
-  void computePlayerInput(IClientProxy client, MovementInput input){
+  void computePlayerInput(IClientProxy client, net.MovementInput input){
     client.movable.updateRank += 1;
     
     // 1. apply the new orientation
@@ -337,8 +346,10 @@ class GameServer implements IGameServer {
     
     for(Movable movable in broadcastables){
       movable.updateRank = 0;
-      Message updateMessage = new Message(MessageType.ENTITY, movable);
-      broadcastMessage(updateMessage);
+      net.Envelope envelope = new net.Envelope();
+      envelope.messageType = net.MessageType.ENTITY;
+      envelope.payload = net.EntityMarshal.worldEntityToNetEntity(movable).writeToBuffer();
+      broadcastMessage(envelope);
     }
     
   }

@@ -1,4 +1,5 @@
 /*
+
 library filelogger;
 import 'dart:isolate';
 import 'dart:io';
@@ -34,4 +35,5 @@ void initLogging(String logFileName) {
   //_loggingPort = Isolate.spawn(startLogging);
   //_loggingPort.send(logFileName.toNativePath());
 }
+
 */

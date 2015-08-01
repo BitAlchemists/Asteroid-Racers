@@ -1,0 +1,6 @@
+package chat_message;
+
+message ChatMessage{
+    optional string from = 1;
+    required string text = 2;
+}

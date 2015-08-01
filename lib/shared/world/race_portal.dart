@@ -1,4 +1,4 @@
-part of ar_shared;
+part of world;
 
 class RacePortal extends Entity {
   
@@ -6,7 +6,7 @@ class RacePortal extends Entity {
   
   List<Entity> positions = new List<Entity>();
   
-  RacePortal() : super(EntityType.LAUNCH_PLATFORM);
+  RacePortal() : super(type: EntityType.LAUNCH_PLATFORM);
   
   RacePortal.fromJson(List list) : super.fromJson(list){
     for(List rawPosition in list[7]){

@@ -1,0 +1,5 @@
+package net_int_message;
+
+message IntMessage {
+    required uint32 integer = 1;
+}
