@@ -3,6 +3,7 @@ packages
 pubspec.lock
 lib/server/logs
 build/
+log/
 .pub
 .DS_Store
 .idea

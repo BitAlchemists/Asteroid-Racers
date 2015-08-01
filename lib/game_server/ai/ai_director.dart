@@ -3,10 +3,10 @@ part of ai;
 class AIDirector {
   IGameServer _server;
 
-  int LIFETIME_MILLISECONDS = 300;
+  int LIFETIME_MILLISECONDS = 250;
   int SAMPLE_SIZE = 100;
-  int NUM_TARGETS = 3;
-  double TARGET_DISTANCE = 200.0;
+  int NUM_TARGETS = 24;
+  double TARGET_DISTANCE = 100.0;
 
   AIDirector(this._server);
 
@@ -14,7 +14,7 @@ class AIDirector {
   List<TrainingUnit> _trainingPlan;
   List<Checkpoint> _targets = <Checkpoint>[];
   TrainingUnit _currentTrainingUnit;
-  int _nextTrainingUnit = 0;
+  int _nextTrainingUnit;
 
   start(){
     //populate world
@@ -52,6 +52,7 @@ class AIDirector {
         {
           Luke brain = LukeSerializer.jsonToNetwork(jsonBrain);
           brain.name = "Luke #$nameIndex"; nameIndex++;
+          brain.generation++;
           brain.mutate(0.01);
           newBrains.add(brain);
         }
@@ -74,6 +75,8 @@ class AIDirector {
     for(var set in _trainingSets){
       _trainingPlan.addAll(set.units);
     }
+
+    _nextTrainingUnit = 0;
   }
 
   _launchNextTrainingUnit() {
@@ -138,24 +141,37 @@ class AIDirector {
 
   _printResults(){
     _trainingSets.sort((TrainingSet ts1, TrainingSet ts2) => ts1.totalReward.compareTo(ts2.totalReward));
-    print("$SAMPLE_SIZE done");
+    String report = "${_trainingSets.length} done\n";
+
+
     for(int i = 0; i < _trainingSets.length; i++){
       TrainingSet ts = _trainingSets[i];
-      print("${i+1}: ${ts.totalReward}");
+      report += "${i+1}: ${ts.totalReward} | Generation ${ts.brain.generation}\n";
 
       Layer outputLayer = ts.brain.layers.last;
       Neuron xNeuron = outputLayer.neurons[0];
       Neuron yNeuron = outputLayer.neurons[1];
 
-      print("xNeuron: bias ${xNeuron.inputConnections[0].weightValue} | xOwn ${xNeuron.inputConnections[1].weightValue} | yOwn ${xNeuron.inputConnections[2].weightValue} | xTarget ${xNeuron.inputConnections[3].weightValue} | yTarget ${xNeuron.inputConnections[4].weightValue}");
-      print("yNeuron: bias ${yNeuron.inputConnections[0].weightValue} | xOwn ${yNeuron.inputConnections[1].weightValue} | yOwn ${yNeuron.inputConnections[2].weightValue} | xTarget ${yNeuron.inputConnections[3].weightValue} | yTarget ${yNeuron.inputConnections[4].weightValue}");
+      report += "xNeuron: bias ${xNeuron.inputConnections[0].weightValue} | xOwn ${xNeuron.inputConnections[1].weightValue} | yOwn ${xNeuron.inputConnections[2].weightValue} | xTarget ${xNeuron.inputConnections[3].weightValue} | yTarget ${xNeuron.inputConnections[4].weightValue}\n";
+      report += "yNeuron: bias ${yNeuron.inputConnections[0].weightValue} | xOwn ${yNeuron.inputConnections[1].weightValue} | yOwn ${yNeuron.inputConnections[2].weightValue} | xTarget ${yNeuron.inputConnections[3].weightValue} | yTarget ${yNeuron.inputConnections[4].weightValue}\n";
     }
 
+    print(report);
+
+    //save report to file
+    Directory logDirectory = new Directory.fromUri(new Uri.file(Directory.current.path + "/log"));
+    logDirectory.createSync(recursive:true);
+    String logFileName = logDirectory.path + "/${new DateTime.now().millisecondsSinceEpoch}.log";
+    new File(logFileName).writeAsStringSync(report);
 
     List<Luke> brains = _trainingSets.take((SAMPLE_SIZE/10).toInt()).map((var ts)=>ts.brain).toList();
     LukeSerializer.writeToFile(brains);
 
-    print(brains);
+    // Generate list of lukes
+    _generateTrainingSets();
+
+    // launch first luke
+    _launchNextTrainingUnit();
   }
 
   double distanceToTarget(TrainingUnit tu){

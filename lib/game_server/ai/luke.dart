@@ -4,6 +4,7 @@ class Luke extends Network {
 
   String name;
   Neuron umbral;
+  int generation = 0;
 
   Luke(int numInputNeurons, int numOutputNeurons, [this.name]):super() {
     this.createNetwork(numInputNeurons, numOutputNeurons);

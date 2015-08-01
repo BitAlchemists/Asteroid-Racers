@@ -2,6 +2,7 @@ part of ai;
 
 class LukeSerializer {
   static Object networkToJson(Luke network){
+    Map raw = {"generation":network.generation};
     List outputLayer = [];
 
     for(Neuron neuron in network.outputNeurons){
@@ -13,14 +14,17 @@ class LukeSerializer {
       }
     }
 
-    return outputLayer;
+    raw["outputLayer"] = outputLayer;
+    return raw;
   }
 
   static Luke jsonToNetwork(Object json){
     int inputNeurons = 4;
-    List outputLayer = json as List;
+    Map raw = json as Map;
+    List outputLayer = raw["outputLayer"];
 
     Luke network = new Luke(inputNeurons,outputLayer.length);
+    network.generation = raw["generation"];
 
 
     for(int neuronIndex = 0; neuronIndex < outputLayer.length; neuronIndex++){
