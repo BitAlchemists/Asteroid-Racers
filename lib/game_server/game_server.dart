@@ -203,13 +203,13 @@ class GameServer implements IGameServer {
       _crashCollisionDetector.activeEntities.remove(client.movable);
       _race.removePlayer(client);
       _entityToClientMap.remove(client.movable);
-    }
 
-    //TODO: remove this message from game server and move it to the world. Probably via a world update message?
-    net.Envelope envelope = new net.Envelope();
-    envelope.messageType = net.MessageType.ENTITY_REMOVE;
-    envelope.payload = <int>[client.movable.id];
-    sendMessageToClientsExcept(envelope, client);
+      //TODO: remove this message from game server and move it to the world. Probably via a world update message?
+      net.Envelope envelope = new net.Envelope();
+      envelope.messageType = net.MessageType.ENTITY_REMOVE;
+      envelope.payload = <int>[client.movable.id];
+      sendMessageToClientsExcept(envelope, client);
+    }
   }
   
   sendMessageToClientsExcept(net.Envelope envelope, IClientProxy client){

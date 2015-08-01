@@ -3,6 +3,8 @@ library tcp_server;
 import 'dart:io';
 //import 'dart:isolate';
 import 'dart:async';
+import "dart:typed_data";
+
 import 'package:path/path.dart' as path;
 import "package:asteroidracers/shared/net.dart";
 import "package:asteroidracers/shared/shared_server.dart";

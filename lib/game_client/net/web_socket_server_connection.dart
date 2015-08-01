@@ -20,6 +20,7 @@ class WebSocketServerConnection implements ServerConnection {
   Future connect(){
     //log("Connecting to Web socket");
     _webSocket = new html.WebSocket(_url);
+    _webSocket.binaryType = "arraybuffer";
     
     _webSocket.onOpen.listen(_onConnected);
     _webSocket.onClose.listen(_onDisconnected);
@@ -69,7 +70,8 @@ class WebSocketServerConnection implements ServerConnection {
   
   _onReceiveMessage(html.MessageEvent e) {
     //print("onReceiveMessage");
-    Envelope envelope = new Envelope.fromBuffer(e.data);
+    Uint8List encodedEnvelope = (e.data as ByteBuffer).asUint8List();
+    Envelope envelope = new Envelope.fromBuffer(encodedEnvelope);
     _receiveMessageStreamController.add(envelope);
   }
 }

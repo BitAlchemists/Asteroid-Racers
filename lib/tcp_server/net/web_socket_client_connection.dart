@@ -28,20 +28,21 @@ class WebSocketClientConnection implements Connection {
   // Message Handling
   void send(Envelope envelope)
   {
-    queue((){
+    //queue((){
       try {
-        List<int> encodedMessage = envelope.writeToBuffer();
-        _webSocket.add(encodedMessage); 
+        Uint8List encodedEnvelope = envelope.writeToBuffer();
+        _webSocket.add(encodedEnvelope);
       }
       catch (e)
       {
         print("error during send()ing message: ${e.toString()}");
       }   
-    });        
+    //});
   }
   
-  void _onReceiveEnvelope(List<int> encodedEnvelope){
+  void _onReceiveEnvelope(var encodedEnvelope){
     try {
+
       Envelope envelope = new Envelope.fromBuffer(encodedEnvelope);
       _receiveEnvelopeStreamController.add(envelope);
     }

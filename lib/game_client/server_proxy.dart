@@ -2,6 +2,7 @@ library game_client_net;
 
 import "dart:async";
 import 'dart:html' as html;
+import "dart:typed_data";
 
 import "package:asteroidracers/shared/net.dart";
 import "package:asteroidracers/shared/world.dart" as world;
