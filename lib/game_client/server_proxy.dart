@@ -38,11 +38,11 @@ class ServerProxy {
   {    
     _messageHandlers = 
       {
-        MessageType.ENTITY: this._onEntityUpdate,
-        MessageType.ENTITY_REMOVE: this._onEntityRemove,
-        MessageType.PLAYER: this._onPlayer,
-        MessageType.PING_PONG: this._onPingPong,
-        MessageType.COLLISION: this._onCollision
+        MessageType.ENTITY.name: this._onEntityUpdate,
+        MessageType.ENTITY_REMOVE.name: this._onEntityRemove,
+        MessageType.PLAYER.name: this._onPlayer,
+        MessageType.PING_PONG.name: this._onPingPong,
+        MessageType.COLLISION.name: this._onCollision
       };
   }
   
@@ -120,13 +120,13 @@ class ServerProxy {
         return;
       }
       
-      MessageHandler messageHandler = _messageHandlers[envelope.messageType];
+      MessageHandler messageHandler = _messageHandlers[envelope.messageType.name];
       
       if(messageHandler != null){
         messageHandler(envelope);
       }
       else {
-        print("no appropriate message handler for messageType ${envelope.messageType} found.");
+        print("no appropriate message handler for messageType ${envelope.messageType.name} found.");
       }            
     }
     catch (e, stack)

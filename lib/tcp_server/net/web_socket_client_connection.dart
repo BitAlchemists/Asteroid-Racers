@@ -28,7 +28,7 @@ class WebSocketClientConnection implements Connection {
   // Message Handling
   void send(Envelope envelope)
   {
-    //queue((){
+    queue((){
       try {
         Uint8List encodedEnvelope = envelope.writeToBuffer();
         _webSocket.add(encodedEnvelope);
@@ -37,7 +37,7 @@ class WebSocketClientConnection implements Connection {
       {
         print("error during send()ing message: ${e.toString()}");
       }   
-    //});
+    });
   }
   
   void _onReceiveEnvelope(var encodedEnvelope){

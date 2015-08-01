@@ -38,7 +38,7 @@ Math.Random random = new Math.Random();
 
 class GameConfig {
   bool localServer = true;
-  bool debugJson = false;
+  bool debugLocalServerNetEncoding = false;
   bool debugCollisions = false; 
   bool renderBackground = true;
 }
@@ -129,7 +129,7 @@ class GameClient implements stagexl.Animatable, IGameClient {
     String username = _renderer.username;   
     
     print("connecting...");
-    server.connect(_config.localServer, _config.debugJson, username).then(_onConnect).catchError((html.Event e){
+    server.connect(_config.localServer, _config.debugLocalServerNetEncoding, username).then(_onConnect).catchError((html.Event e){
       log("could not connect.");
       _onDisconnect();
     });

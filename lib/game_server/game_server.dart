@@ -142,11 +142,9 @@ class GameServer implements IGameServer {
     playerEntity.canMove = false;
 
     //todo: can we remove this message from GameServer?
-    net.CollisionMessage message = new net.CollisionMessage();
-    message.entityId = playerEntity.id;
     net.Envelope envelope = new net.Envelope();
     envelope.messageType = net.MessageType.COLLISION;
-    envelope.payload = message.writeToBuffer();
+    envelope.payload = [playerEntity.id];
     broadcastMessage(envelope);
     
     //respawn

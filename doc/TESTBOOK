@@ -5,6 +5,9 @@ Run server and two clients. Validate results on both clients
 3) Startup Client 2
 
 4) On Connection
+- connect without a username - you should be given one
+- disconnect
+- connect with a username
 
 - see asteroids
 - see space ship with name
@@ -21,6 +24,8 @@ Run server and two clients. Validate results on both clients
 - move around
 - crash into asteroid
 -- collision effect should be visible
+- crash into a player
 - race
+
 
 6) Chat

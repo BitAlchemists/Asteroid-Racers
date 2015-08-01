@@ -12,7 +12,7 @@ void main() {
   
   GameConfig config = new GameConfig();
   config.localServer = false;
-  config.debugJson = true;
+  config.debugLocalServerNetEncoding = true;
   config.debugCollisions = false;
   config.renderBackground = true;
   
