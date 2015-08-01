@@ -100,7 +100,7 @@ class GameServer implements IGameServer {
     _physics = new PhysicsSimulator();
     _AIDirector = new AIDirector(this);
     _AIDirector.target = aiGoal;
-    _AIDirector.populateWorld();
+    _AIDirector.start();
   }
 
   start(){
@@ -114,11 +114,19 @@ class GameServer implements IGameServer {
   
   _onHeartBeat(GameLoop gameLoop){
     //print('${gameLoop.frame}: ${gameLoop.gameTime} [dt = ${gameLoop.dt}].');
-    _AIDirector.step(gameLoop.dt);
-    _physics.simulateTranslation(gameLoop.dt);
-    _checkCollisions();
-    _race.update();
-    _broadcastUpdates();
+    try{
+      _AIDirector.step(gameLoop.dt);
+      _physics.simulateTranslation(gameLoop.dt);
+      _checkCollisions();
+      _AIDirector.reapRewards();
+      _race.update();
+      _broadcastUpdates();
+    }
+    catch(e, stack)
+    {
+      print(e);
+      print(stack);
+    }
   }
   
   void _checkCollisions()
@@ -210,7 +218,7 @@ class GameServer implements IGameServer {
   }
   
   broadcastMessage(net.Envelope envelope, {Set<IClientProxy> blacklist}) {
-    Set<IClientProxy> recipients = _clients;    
+    Set<IClientProxy> recipients = _clients.toSet(); //make a copy to prevent concurrent modification exceptions
     
     if(blacklist != null){
       recipients = recipients.difference(blacklist);      
@@ -271,7 +279,7 @@ class GameServer implements IGameServer {
     teleportPlayerTo(client, position, orientation, false);
   }
   
-  teleportPlayerTo(IClientProxy client, Vector2 position, double orientation, bool informClientToo){
+  void teleportPlayerTo(IClientProxy client, Vector2 position, double orientation, bool informClientToo){
     client.movable.position = position;
     client.movable.orientation = orientation;
     client.movable.canMove = true;

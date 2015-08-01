@@ -1,5 +1,7 @@
 library ai;
 
+import "dart:async";
+
 import "package:neural_network/neural_network.dart";
 
 import "package:asteroidracers/shared/world.dart";

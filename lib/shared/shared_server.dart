@@ -20,6 +20,7 @@ abstract class IGameServer {
   void disconnectClient(IClientProxy client);
   void registerPlayer(IClientProxy client, String desiredUsername);
   void computePlayerInput(IClientProxy client, world.MovementInput input);
+  void teleportPlayerTo(IClientProxy client, world.Vector2 position, double orientation, bool informClientToo);
   
   broadcastMessage(Envelope envelope, {Set<IClientProxy> blacklist});
   sendMessageToClientsExcept(Envelope envelope, IClientProxy client);

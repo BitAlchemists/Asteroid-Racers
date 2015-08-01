@@ -5,8 +5,10 @@ class AIController implements IClientProxy {
   String playerName;
   Movable movable;
   T1Brain _brain;
+  AIDirector director;
+  double reward;
 
-  AIController(){
+  AIController(this.director){
     _brain = new T1Brain(4,2);
   }
 
@@ -20,7 +22,7 @@ class AIController implements IClientProxy {
   }
 
   void send(net.Envelope envelope){
-
+    director.send(this, envelope);
   }
 }
 
