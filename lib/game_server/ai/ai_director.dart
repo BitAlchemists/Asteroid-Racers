@@ -3,9 +3,9 @@ part of ai;
 class AIDirector {
   IGameServer _server;
 
-  int LIFETIME_MILLISECONDS = 250;
-  int SAMPLE_SIZE = 100;
-  int NUM_TARGETS = 24;
+  int LIFETIME_MILLISECONDS = 300;
+  int SAMPLE_SIZE = 10;
+  int NUM_TARGETS = 3;
   double TARGET_DISTANCE = 100.0;
 
   AIDirector(this._server);
@@ -13,7 +13,7 @@ class AIDirector {
   List<TrainingSet> _trainingSets;
   List<TrainingUnit> _trainingPlan;
   List<Checkpoint> _targets = <Checkpoint>[];
-  TrainingUnit _currentTrainingUnit;
+  List<TrainingUnit> _currentTrainingUnits;
   int _nextTrainingUnit;
 
   start(){
@@ -31,6 +31,8 @@ class AIDirector {
       _server.world.addEntity(checkpoint);
       _targets.add(checkpoint);
     }
+
+    _currentTrainingUnits = <TrainingUnit>[];
 
     // Generate list of lukes
     _generateTrainingSets();
@@ -80,62 +82,66 @@ class AIDirector {
   }
 
   _launchNextTrainingUnit() {
-    // if there is still another luke around, kill him first
-    if(_currentTrainingUnit != null){
-
-      print("Luke died. Reward: ${_currentTrainingUnit.reward}");
-
-      _currentTrainingUnit.target.state = CheckpointState.CLEARED;
-      _currentTrainingUnit.target.updateRank += 1;
-
-      _server.disconnectClient(_currentTrainingUnit.client);
-      _currentTrainingUnit.client = null;
-      _currentTrainingUnit = null;
-
-
-
-      if(_nextTrainingUnit >= _trainingPlan.length) {
-        _printResults();
-        return;
-      }
-    }
 
     // fetch the next luke and launch him
-
-    TrainingUnit nextUnit = _trainingPlan[_nextTrainingUnit++];
-    AIClientProxy client = new AIClientProxy(this, nextUnit);
-    nextUnit.client = client;
+    TrainingUnit trainingUnit = _trainingPlan[_nextTrainingUnit++];
+    _currentTrainingUnits.add(trainingUnit);
+    AIClientProxy client = new AIClientProxy(this, trainingUnit);
+    trainingUnit.client = client;
 
     _server.connectClient(client);
-    client.playerName = nextUnit.brain.name;
+    client.playerName = trainingUnit.brain.name;
     _server.registerPlayer(client, client.playerName);
     _server.teleportPlayerTo(client,new Vector2.zero(),0.0,false);
-    nextUnit.reward = distanceToTarget(nextUnit);
+    trainingUnit.reward = distanceToTarget(trainingUnit);
 
-    _currentTrainingUnit = nextUnit;
 
-    _currentTrainingUnit.target.state = CheckpointState.CURRENT;
-    _currentTrainingUnit.target.updateRank += 1;
+    trainingUnit.target.state = CheckpointState.CURRENT;
+    trainingUnit.target.updateRank += 1;
+    trainingUnit.state = TrainingUnitState.RUNNING;
 
     new Future.delayed(new Duration(milliseconds: LIFETIME_MILLISECONDS), (){
-      if(_currentTrainingUnit == nextUnit){
+      if(trainingUnit.state != TrainingUnitState.ENDED){
+        _endTrainingUnit(trainingUnit);
         _launchNextTrainingUnit();
       }
     });
   }
 
+  _endTrainingUnit(TrainingUnit unit){
+    print("${unit.brain.name} died. Reward: ${unit.reward}");
+
+    unit.state = TrainingUnitState.ENDED;
+
+    unit.target.state = CheckpointState.CLEARED;
+    unit.target.updateRank += 1;
+
+    _server.disconnectClient(unit.client);
+    unit.client.trainingUnit = null;
+    unit.client = null;
+    _currentTrainingUnits.remove(unit);
+
+    if(_nextTrainingUnit >= _trainingPlan.length) {
+      _printResults();
+      return;
+    }
+  }
+
   step(double dt){
-    if(_currentTrainingUnit != null) {
-      _currentTrainingUnit.client.makeYourMove();
+    for(TrainingUnit unit in _currentTrainingUnits)
+    {
+      unit.client.makeYourMove();
     }
   }
 
   reapRewards() {
-    if(_currentTrainingUnit != null){
-      double distance = distanceToTarget(_currentTrainingUnit);
-      if(distance < _currentTrainingUnit.reward) {
-        _currentTrainingUnit.reward = distance;
+    for(TrainingUnit unit in _currentTrainingUnits)
+    {
+      double distance = distanceToTarget(unit);
+      if(distance < unit.reward) {
+        unit.reward = distance;
       }
+
     }
   }
 
@@ -174,15 +180,19 @@ class AIDirector {
     _launchNextTrainingUnit();
   }
 
-  double distanceToTarget(TrainingUnit tu){
-    return tu.client.movable.position.distanceTo(tu.target.position);
+  double distanceToTarget(TrainingUnit unit){
+    return unit.client.movable.position.distanceTo(unit.target.position);
   }
 
-  void send(IClientProxy ai, net.Envelope envelope) {
+  void send(AIClientProxy client, net.Envelope envelope) {
     if(envelope.messageType == net.MessageType.COLLISION){
       net.IntMessage message = new net.IntMessage.fromBuffer(envelope.payload);
-      if(message.integer == ai.movable.id){
-        _launchNextTrainingUnit();
+      if(message.integer == client.movable.id){
+
+        if(client.trainingUnit.state != TrainingUnitState.ENDED){
+          _endTrainingUnit(client.trainingUnit);
+          _launchNextTrainingUnit();
+        }
       }
     }
   }

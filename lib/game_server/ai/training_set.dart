@@ -17,7 +17,15 @@ class TrainingSet {
   }
 }
 
+enum TrainingUnitState
+{
+  READY,
+  RUNNING,
+  ENDED
+}
+
 class TrainingUnit {
+  TrainingUnitState state = TrainingUnitState.READY;
   Luke brain;
   Checkpoint target;
   AIClientProxy client;
