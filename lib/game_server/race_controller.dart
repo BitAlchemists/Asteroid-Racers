@@ -14,7 +14,7 @@ class RaceController {
   RacePortal get start => _portal;
   Entity get finish => _finish;
   
-  addStart(double x, double y, double orientation){
+  RacePortal addStart(double x, double y, double orientation){
     double circleRadius = 100.0;
     _portal = new RacePortal();
     _portal.position = new Vector2(x, y);
@@ -33,7 +33,9 @@ class RaceController {
     
     _portal.raceController = this;
     
-    addCheckpoint(x, y, circleRadius);    
+    addCheckpoint(x, y, circleRadius);
+
+    return _portal;
   }
   
   Entity addCheckpoint(double x, double y, double orientation, [double radius = 100.0]){

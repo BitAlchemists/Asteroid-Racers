@@ -40,27 +40,16 @@ class GameServer implements IGameServer {
   
   _createWorld(){
     List<Entity> asteroids = new List<Entity>();
-    asteroids.addAll(_world.generateAsteroidBelt(1000, -4000, 250, 8000, 4000));
-    _world.addEntities(asteroids);
-
+    asteroids.addAll(_world.generateAsteroidBelt(500, -2000, 250, 4000, 4000));
     asteroids.addAll(_world.generateAsteroidBelt(20, -300, -100, 200, -1000));
-    _world.addEntities(asteroids);
-
     asteroids.addAll(_world.generateAsteroidBelt(20, 100, -100, 200, -1000));
-    _world.addEntities(asteroids);
-    
-
     asteroids.addAll(_world.generateAsteroidBelt(20, -150, -1300, 300, -300));
     _world.addEntities(asteroids);
-        
-    //asteroids = _world.generateAsteroidBelt(1000, -4000, 250, 8000, 4000);
-    //_world.addEntities(asteroids);
 
     _crashCollisionDetector = new CollisionDetector();
     _crashCollisionDetector.activeEntitiesCanCollide = true;
     _crashCollisionDetector.passiveEntities = asteroids;
-    
-    
+
     _race = new RaceController();
     _race.gameServer = this;
 /*
@@ -69,7 +58,7 @@ class GameServer implements IGameServer {
     _race.addCheckpoint(400.0, 500.0, 50.0);
     _race.addCheckpoint(100.0, 600.0, 50.0);
     _race.addCheckpoint(200.0, 900.0, 100.0);*/
-    _race.addStart(0.0, -200.0, Math.PI);
+    Entity aiGoal = _race.addStart(0.0, -200.0, Math.PI);
     _race.addCheckpoint(0.0, -600.0, Math.PI);
     //_race.addCheckpoint(0.0, -1700.0);
     _race.addFinish(0.0, -800.0, Math.PI);
@@ -109,7 +98,8 @@ class GameServer implements IGameServer {
     */
     
     _physics = new PhysicsSimulator();
-    _AIDirector = new AIDirector(_world);
+    _AIDirector = new AIDirector(this);
+    _AIDirector.target = aiGoal;
     _AIDirector.populateWorld();
   }
 
@@ -306,7 +296,7 @@ class GameServer implements IGameServer {
     }
   }   
   
-  void computePlayerInput(IClientProxy client, net.MovementInput input){
+  void computePlayerInput(IClientProxy client, MovementInput input){
     client.movable.updateRank += 1;
     
     // 1. apply the new orientation

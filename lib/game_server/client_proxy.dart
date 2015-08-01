@@ -18,8 +18,6 @@ class ClientProxy implements IClientProxy
     };
   
   world.Movable movable;
-
-  // IClientProxy
   String get playerName => movable.displayName;
   
   ClientProxy(this._connection){
@@ -190,7 +188,7 @@ class ClientProxy implements IClientProxy
       return;
     }
     
-    gameServer.computePlayerInput(client, input);
+    gameServer.computePlayerInput(client, EntityMarshal.netMovementInputToWorldMovementInput(input));
   }
     
   static _onPingPong(ClientProxy client, Envelope envelope){

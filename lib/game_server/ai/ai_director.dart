@@ -1,19 +1,21 @@
 part of ai;
 
 class AIDirector {
-  World _world;
+  IGameServer _server;
+  Entity target;
 
-  AIDirector(this._world);
+  AIDirector(this._server);
 
   AIController _luke;
 
   populateWorld(){
-    Movable movable = new Movable();
-    _luke = new AIController(movable);
-    _world.addEntity(_luke.movable);
+    _luke = new AIController();
+    _server.connectClient(_luke);
+    _server.registerPlayer(_luke, "Luke Lametta");
   }
 
   step(double dt){
-
+    _luke.makeYourMove(target);
   }
 }
+
