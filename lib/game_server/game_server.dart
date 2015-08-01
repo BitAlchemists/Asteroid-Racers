@@ -39,36 +39,21 @@ class GameServer implements IGameServer {
   }
   
   _createWorld(){
+
     List<Entity> asteroids = new List<Entity>();
+    /*
     asteroids.addAll(_world.generateAsteroidBelt(500, -2000, 250, 4000, 4000));
     asteroids.addAll(_world.generateAsteroidBelt(20, -300, -100, 200, -1000));
     asteroids.addAll(_world.generateAsteroidBelt(20, 100, -100, 200, -1000));
     asteroids.addAll(_world.generateAsteroidBelt(20, -150, -1300, 300, -300));
     _world.addEntities(asteroids);
-
+*/
     _crashCollisionDetector = new CollisionDetector();
     _crashCollisionDetector.activeEntitiesCanCollide = true;
     _crashCollisionDetector.passiveEntities = asteroids;
 
-    _race = new RaceController();
-    _race.gameServer = this;
-/*
- *     _race.addCheckpoint(200.0, 0.0);
-    _race.addCheckpoint(200.0, 300.0, 70.0);
-    _race.addCheckpoint(400.0, 500.0, 50.0);
-    _race.addCheckpoint(100.0, 600.0, 50.0);
-    _race.addCheckpoint(200.0, 900.0, 100.0);*/
-    Entity aiGoal = _race.addStart(0.0, -200.0, Math.PI);
-    _race.addCheckpoint(0.0, -600.0, Math.PI);
-    //_race.addCheckpoint(0.0, -1700.0);
-    _race.addFinish(0.0, -800.0, Math.PI);
+    _configureRace();
 
-    _world.addEntities(_race.checkpoints);
-    _world.addEntity(_race.start);
-    _world.addEntity(_race.finish);
-    
-    _joinRaceCollisionDetector = new CollisionDetector();
-    _joinRaceCollisionDetector.passiveEntities = [_race.start];
 
     _addArrows({num x: 0.0, num y: 0.0, double orientation: 0.0}){
       Entity arrows = new Entity(type: EntityType.ARROWS);
@@ -77,19 +62,19 @@ class GameServer implements IGameServer {
       arrows.radius = 100.0;
       _world.addEntity(arrows);
     }
-        
+
     _addArrows(y: -400, orientation: Math.PI);
     /*_addArrows(y: -200, orientation: Math.PI);    
     _addArrows(x: 100, y: -1200, orientation: Math.PI * 1.25);    
     _addArrows(x: -100, y: -1200, orientation: Math.PI * 0.75);    
     _addArrows(x: 150, y: -1700, orientation: Math.PI * 0.5);    
     _addArrows(x: -150, y: -1700, orientation: Math.PI * 1.5);        
-    */        
+    */
     _spawn = new Entity(type: EntityType.UNKNOWN);
     _spawn.position = new Vector2(0.0, 100.0);
     _spawn.radius = 200.0;
     _spawn.orientation = Math.PI;
-    
+
     /* Dummy player
     Entity dummyPlayer = new Entity(EntityType.SHIP, new Vector2(50.0, 50.0), 10.0);
     dummyPlayer.displayName = "Dummy";
@@ -98,9 +83,27 @@ class GameServer implements IGameServer {
     */
     
     _physics = new PhysicsSimulator();
+
     _AIDirector = new AIDirector(this);
-    _AIDirector.target = aiGoal;
     _AIDirector.start();
+  }
+
+  _configureRace(){
+    _race = new RaceController();
+    _race.gameServer = this;
+    _joinRaceCollisionDetector = new CollisionDetector();
+
+    /*
+    _race.addStart(0.0, -200.0, Math.PI);
+    _race.addCheckpoint(0.0, -600.0, Math.PI);
+    _race.addFinish(0.0, -800.0, Math.PI);
+
+    _joinRaceCollisionDetector.passiveEntities = [_race.start];
+
+    _world.addEntities(_race.checkpoints);
+    _world.addEntity(_race.start);
+    _world.addEntity(_race.finish);
+    */
   }
 
   start(){
@@ -273,7 +276,7 @@ class GameServer implements IGameServer {
 
             
     if(!_crashCollisionDetector.activeEntities.contains(movable)){
-      _crashCollisionDetector.activeEntities.add(movable);      
+      //_crashCollisionDetector.activeEntities.add(movable);
     }
     
     teleportPlayerTo(client, position, orientation, false);
@@ -334,19 +337,17 @@ class GameServer implements IGameServer {
   }
   
   _broadcastUpdates(){
-    var entities = _clients.
-        where((IClientProxy client) => client.movable != null).
-        map((client) => client.movable).
-        where((Movable movable) => movable.updateRank > 0).
+    var entities = _world.entities.values.
+        where((Entity entity) => entity.updateRank > 0).
         toList(growable: false);
-    entities.sort((Movable a, Movable b) => (b.updateRank.compareTo(a.updateRank)));
+    entities.sort((Entity a, Entity b) => (b.updateRank.compareTo(a.updateRank)));
     var broadcastables = entities.take(2);
     
-    for(Movable movable in broadcastables){
-      movable.updateRank = 0;
+    for(Entity entity in broadcastables){
+      entity.updateRank = 0;
       net.Envelope envelope = new net.Envelope();
       envelope.messageType = net.MessageType.ENTITY;
-      envelope.payload = net.EntityMarshal.worldEntityToNetEntity(movable).writeToBuffer();
+      envelope.payload = net.EntityMarshal.worldEntityToNetEntity(entity).writeToBuffer();
       broadcastMessage(envelope);
     }
     

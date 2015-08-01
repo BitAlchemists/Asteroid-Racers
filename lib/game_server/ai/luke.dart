@@ -1,34 +1,11 @@
 part of ai;
 
-class AIController implements IClientProxy {
+class Luke extends Network {
 
-  String playerName;
-  Movable movable;
-  T1Brain _brain;
-  AIDirector director;
-  double reward;
+  String name;
+  Neuron umbral;
 
-  AIController(this.director){
-    _brain = new T1Brain(4,2);
-  }
-
-  makeYourMove(Entity target){
-    _brain.inputNetwork = [movable.position.x, movable.position.y, target.position.x, target.position.y];
-    _brain.calculateOutput();
-    List<double> output = _brain.outputNetwork;
-    Vector2 acceleration = new Vector2(output[0], output[1]);
-    movable.acceleration = acceleration.normalize().scale(200.0);
-    movable.updateRank += 1;
-  }
-
-  void send(net.Envelope envelope){
-    director.send(this, envelope);
-  }
-}
-
-class T1Brain extends Network {
-
-  T1Brain(int numInputNeurons, int numOutputNeurons):super() {
+  Luke(int numInputNeurons, int numOutputNeurons, [this.name]):super() {
     this.createNetwork(numInputNeurons, numOutputNeurons);
   }
 
@@ -44,7 +21,7 @@ class T1Brain extends Network {
     outputLayer.createNeurons(numOutputNeurons, inputFunction: new WeightCombination(), activationFunction: new Lineal());
 
     //Bias
-    Neuron umbral = new Neuron("Umbral");
+    umbral = new Neuron("Umbral");
     umbral.input = 1.0;
     umbral.output = 1.0;
     for(Neuron outputNeuron in outputLayer.neurons)
@@ -55,7 +32,22 @@ class T1Brain extends Network {
     //Connect everything
     this.addLayer(inputLayer);
     this.addLayer(outputLayer);
+
+    //connect layers
     this.connectLayers();
+  }
+
+  //similar to base classes connectLayers, but with weights ranging [-1,+1]
+  void connectLayers() {
+
+    for (int k = this.layers.length - 1; k > 0; k--) {
+      for (int i = 0; i < this.layers[k].neurons.length; i++) {
+        for (int j = 0; j < this.layers[k - 1].neurons.length; j++) {
+          Neuron neuron = this.layers[k].neurons[i];
+          neuron.addInputConnection(new Connection(this.layers[k - 1].neurons[j], neuron, 2*random.nextDouble()-1));
+        }
+      }
+    }
   }
 
 /*
