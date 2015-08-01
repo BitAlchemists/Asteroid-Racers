@@ -1,4 +1,4 @@
-part of shared_client;
+part of ui;
 
 class UIHelper {
   

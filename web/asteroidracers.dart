@@ -11,8 +11,8 @@ void main() {
   var canvas = querySelector('#stage');
   
   GameConfig config = new GameConfig();
-  config.localServer = true;
-  config.debugJson = true;
+  config.localServer = false;
+  config.debugLocalServerNetEncoding = true;
   config.debugCollisions = false;
   config.renderBackground = true;
   

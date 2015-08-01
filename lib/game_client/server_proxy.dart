@@ -1,6 +1,22 @@
-part of game_client;
+library game_client_net;
 
-typedef void MessageHandler(Message message);
+import "dart:async";
+import 'dart:html' as html;
+import "dart:typed_data";
+
+import "package:asteroidracers/shared/net.dart";
+import "package:asteroidracers/shared/world.dart" as world;
+import "package:asteroidracers/game_client/utils/client_logger.dart";
+import "package:asteroidracers/game_server/game_server.dart"; //this is used for the simulated local server
+import "package:asteroidracers/game_server/client_proxy.dart"; //this is used for the simulated local server
+import 'package:asteroidracers/shared/shared_server.dart';
+import 'package:asteroidracers/shared/shared_client.dart';
+
+part "net/local_server_connection.dart";
+part "net/server_connection.dart";
+part "net/web_socket_server_connection.dart";
+
+typedef void MessageHandler(Envelope envelope);
 
 class ServerConnectionState {
   static const int DISCONNECTED = 0;
@@ -10,7 +26,7 @@ class ServerConnectionState {
 
 class ServerProxy {
   ServerConnection _serverConnection;
-  GameClient _gameController;
+  IGameClient _gameController;
   Map<String, MessageHandler> _messageHandlers;
   Function onDisconnectDelegate;
   int _state = ServerConnectionState.DISCONNECTED;
@@ -22,17 +38,17 @@ class ServerProxy {
   {    
     _messageHandlers = 
       {
-        MessageType.ENTITY: this._onEntityUpdate,
-        MessageType.ENTITY_REMOVE: this._onEntityRemove,
-        MessageType.PLAYER: this._onPlayer,
-        MessageType.PING_PONG: this._onPingPong,
-        MessageType.COLLISION: this._onCollision
+        MessageType.ENTITY.name: this._onEntityUpdate,
+        MessageType.ENTITY_REMOVE.name: this._onEntityRemove,
+        MessageType.PLAYER.name: this._onPlayer,
+        MessageType.PING_PONG.name: this._onPingPong,
+        MessageType.COLLISION.name: this._onCollision
       };
   }
   
   registerMessageHandler(MessageType messageType, MessageHandler messageHandler)
   {
-    _messageHandlers[messageType] = messageHandler;
+    _messageHandlers[messageType.name] = messageHandler;
   }
   
   Future connect(bool local, bool debugJson, String desiredUsername)
@@ -51,15 +67,21 @@ class ServerProxy {
     _state = ServerConnectionState.IS_CONNECTING;
     return _serverConnection.connect().then((_){
       _state = ServerConnectionState.CONNECTED;
-      Message message = new Message(MessageType.HANDSHAKE, desiredUsername);
-      _serverConnection.send(message);        
+
+      Handshake handshake = new Handshake();
+      handshake.username = desiredUsername;
+
+      Envelope envelope = new Envelope();
+      envelope.messageType = MessageType.HANDSHAKE;
+      envelope.payload = handshake.writeToBuffer();
+      _serverConnection.send(envelope);
     });
   }
   
   Connection webConnection()
   {
-    ServerConnection server;
-    var domain = html.document.domain;
+    //ServerConnection server;
+    //var domain = html.document.domain;
     html.Location location = html.window.location;
     var port = 1337;
     var wsPath = "ws://" + location.hostname + ":" + port.toString() + "/ws";
@@ -83,28 +105,28 @@ class ServerProxy {
     this.onDisconnectDelegate();
   }
   
-  send(Message message)
+  send(Envelope envelope)
   {
-    _serverConnection.send(message);
+    _serverConnection.send(envelope);
   }
   
-  _onReceiveMessage(Message message) 
+  _onReceiveMessage(Envelope envelope) 
   {
     try {      
-      if(message.messageType == null) 
+      if(envelope.messageType == null)
       {
         print("message type == null");
         //TODO: disconnect this client
         return;
       }
       
-      MessageHandler messageHandler = _messageHandlers[message.messageType];
+      MessageHandler messageHandler = _messageHandlers[envelope.messageType.name];
       
       if(messageHandler != null){
-        messageHandler(message);
+        messageHandler(envelope);
       }
       else {
-        print("no appropriate message handler for messageType ${message.messageType} found.");
+        print("no appropriate message handler for messageType ${envelope.messageType.name} found.");
       }            
     }
     catch (e, stack)
@@ -113,32 +135,44 @@ class ServerProxy {
     }
   }
   
-  _onEntityRemove(Message message)
+  _onEntityRemove(Envelope envelope)
   {
-    _gameController.removeEntity(message.payload);
+    IntMessage message = new IntMessage.fromBuffer(envelope.payload);
+    _gameController.removeEntity(message.integer);
   }
 
-  _onEntityUpdate(Message message)
+  _onEntityUpdate(Envelope envelope)
   {
-    Entity entity = new Entity.deserialize(message.payload);
-    _gameController.updateEntity(entity);
+    Entity netEntity = new Entity.fromBuffer(envelope.payload);
+    world.Entity worldEntity = EntityMarshal.netEntityToWorldEntity(netEntity);
+    _gameController.updateEntity(worldEntity);
   }
   
-  _onPlayer(Message message)
+  _onPlayer(Envelope envelope)
   {
-    Entity entity = new Movable.fromJson(message.payload);
-    _gameController.createPlayer(entity);
+    Entity entity = new Entity.fromBuffer(envelope.payload);
+    world.Movable movable = EntityMarshal.netEntityToWorldEntity(entity);
+    _gameController.createPlayer(movable);
   }
-  
-  ping(){
-    send(new Message(MessageType.PING_PONG, new DateTime.now().millisecondsSinceEpoch));
-  }
-  
+
+  //we calculate our time in relation to the server start time
+  int serverStartTime = new DateTime.now().millisecondsSinceEpoch;
   double pingAverage = 0.0;
-  
-  _onPingPong(Message message){
-    int ms = message.payload;
-    int now = new DateTime.now().millisecondsSinceEpoch;
+
+  ping(){
+    IntMessage message = new IntMessage();
+    message.integer = new DateTime.now().millisecondsSinceEpoch - serverStartTime;
+
+    Envelope envelope = new Envelope();
+    envelope.messageType = MessageType.PING_PONG;
+    envelope.payload = message.writeToBuffer();
+    send(envelope);
+  }
+
+  _onPingPong(Envelope envelope){
+    IntMessage message = new IntMessage.fromBuffer(envelope.payload);
+    int ms = message.integer;
+    int now = new DateTime.now().millisecondsSinceEpoch - serverStartTime;
     int ping = now - ms;
     
     if (pingAverage == null) {
@@ -148,8 +182,9 @@ class ServerProxy {
     pingAverage = ping * 0.05 + pingAverage * 0.95;
   }
   
-  _onCollision(Message message){
-    _gameController.handleCollision(message.payload);
+  _onCollision(Envelope envelope){
+    IntMessage message = new IntMessage.fromBuffer(envelope.payload);
+    _gameController.handleCollision(message.integer);
   }
 }
 
@@ -172,6 +207,6 @@ _encounteredError = true;
     if(time > 5.0){
       time = 0.0;
       log("ping $ping");
-      server.send(new Message(MessageType.PING_PONG, ping++));
+      server.send(new Envelope(MessageType.PING_PONG, ping++));
     }
 */

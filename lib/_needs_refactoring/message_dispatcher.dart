@@ -1,3 +1,4 @@
+/*
 
 
 typedef MessageHandler(Message message);
@@ -26,3 +27,5 @@ class MessageDispatcher {
     }
   }
 }
+
+*/

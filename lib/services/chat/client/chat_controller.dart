@@ -21,7 +21,7 @@ class ChatController {
   final StreamController _sendChatMessageStreamController = new StreamController();
   
   Stream get onSendChatMesage => _sendChatMessageStreamController.stream;
-  String get messageType => MessageType.CHAT; 
+  MessageType get messageType => MessageType.CHAT;
   
   String username;
   stagexl.TextField _chatOutput;
@@ -32,19 +32,23 @@ class ChatController {
     
     chatInput.onKeyDown.listen((stagexl.KeyboardEvent e) {
       if(e.keyCode == html.KeyCode.ENTER){
-        Message chatMessage = new Message(MessageType.CHAT);
-        chatMessage.payload = {'text': chatInput.text};
+        ChatMessage chatMessage = new ChatMessage();
+        chatMessage.text = chatInput.text;
+
+        Envelope envelope = new Envelope();
+        envelope.messageType = MessageType.CHAT;
+        envelope.payload = chatMessage.writeToBuffer();
    
-        _sendChatMessageStreamController.add(chatMessage);
+        _sendChatMessageStreamController.add(envelope);
                 
         chatInput.text = '';        
       }
     });
   }
   
-  onReceiveMessage(Message message) {
-    Map chatMessage = message.payload;
-    displayMessage(chatMessage['text'], chatMessage['from']);
+  onReceiveMessage(Envelope envelope) {
+    ChatMessage chatMessage = new ChatMessage.fromBuffer(envelope.payload);
+    displayMessage(chatMessage.text, chatMessage.from);
   }
   
   onReceiveLogMessage(String message) {

@@ -1,9 +1,9 @@
-part of ar_shared;
+part of net;
 
 abstract class Connection {
-  Stream<Message> get onReceiveMessage;
+  Stream<Envelope> get onReceiveMessage;
   Function onDisconnectDelegate;
   
-  void send(Message message);
+  void send(Envelope envelope);
   void disconnect();
 }

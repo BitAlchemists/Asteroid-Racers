@@ -1,4 +1,4 @@
-part of shared_client;
+part of ui;
 
 class Button extends stagexl.Sprite {
   String _text;
