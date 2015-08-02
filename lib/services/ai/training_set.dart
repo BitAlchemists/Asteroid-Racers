@@ -13,7 +13,7 @@ class TrainingSet {
       result += unit.reward;
     }
 
-    return result;
+    return result/this.units.length;
   }
 }
 
@@ -30,6 +30,7 @@ class TrainingUnit {
   Checkpoint target;
   AIClientProxy client;
   double reward = 0.0;
+  Completer completer;
 
   TrainingUnit(this.target, this.brain);
 }

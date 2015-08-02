@@ -5,6 +5,7 @@ class Luke extends Network {
   String name;
   Neuron umbral;
   int generation = 0;
+  double best_reward = double.MAX_FINITE;
 
   Luke(int numInputNeurons, int numOutputNeurons, [this.name]):super() {
     this.createNetwork(numInputNeurons, numOutputNeurons);
@@ -19,7 +20,7 @@ class Luke extends Network {
     //OutPut Layer
     Layer outputLayer = new Layer("OutputLayer");
 
-    outputLayer.createNeurons(numOutputNeurons, inputFunction: new WeightCombination(), activationFunction: new Lineal());
+    outputLayer.createNeurons(numOutputNeurons, inputFunction: new WeightCombination(), activationFunction: new Sigmoid());
 
     //Bias
     umbral = new Neuron("Umbral");

@@ -11,23 +11,24 @@ import "package:asteroidracers/shared/net.dart" as net; //todo: layer the code s
 import "package:asteroidracers/shared/shared_server.dart";
 import "package:asteroidracers/services/chat/chat_shared.dart";
 
-import "ai/ai.dart";
-
 part "collision_detector.dart";
 part "race_controller.dart";
 
 Math.Random random = new Math.Random();
 
 class GameServer implements IGameServer {
+
   final Set<IClientProxy> _clients = new Set<IClientProxy>();
   final World _world = new World();
+  List<IServerService> _services = <IServerService>[];
+
   CollisionDetector _crashCollisionDetector;
   CollisionDetector _joinRaceCollisionDetector;
   PhysicsSimulator _physics;
   RaceController _race;
   Entity _spawn;
   Map<Entity, IClientProxy> _entityToClientMap = new Map<Entity, IClientProxy>();
-  AIDirector _AIDirector;
+
 
   World get world => _world;
   
@@ -37,7 +38,12 @@ class GameServer implements IGameServer {
   GameServer(){
     _createWorld();
   }
-  
+
+  void registerService(IServerService service){
+    service.server = this;
+    _services.add(service);
+  }
+
   _createWorld(){
 
     List<Entity> asteroids = new List<Entity>();
@@ -83,9 +89,6 @@ class GameServer implements IGameServer {
     */
     
     _physics = new PhysicsSimulator();
-
-    _AIDirector = new AIDirector(this);
-    _AIDirector.start();
   }
 
   _configureRace(){
@@ -111,6 +114,11 @@ class GameServer implements IGameServer {
       GameLoop gameLoop = new GameLoopIsolate();
       gameLoop.onUpdate = (_onHeartBeat);
       gameLoop.start();
+
+      for(IServerService service in _services){
+        service.start();
+      }
+
   }
   
   //Heart Beat
@@ -118,11 +126,24 @@ class GameServer implements IGameServer {
   _onHeartBeat(GameLoop gameLoop){
     //print('${gameLoop.frame}: ${gameLoop.gameTime} [dt = ${gameLoop.dt}].');
     try{
-      _AIDirector.step(gameLoop.dt);
+
+      // pre update
+      for(IServerService service in _services){
+        service.preUpdate(gameLoop.dt);
+      }
       _physics.simulateTranslation(gameLoop.dt);
+
+      // update
+      for(IServerService service in _services){
+        service.update(gameLoop.dt);
+      }
       _checkCollisions();
-      _AIDirector.reapRewards();
       _race.update();
+
+      // post update
+      for(IServerService service in _services){
+        service.postUpdate(gameLoop.dt);
+      }
       _broadcastUpdates();
     }
     catch(e, stack)

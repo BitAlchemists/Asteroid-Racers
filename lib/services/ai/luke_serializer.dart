@@ -1,8 +1,21 @@
 part of ai;
 
+
+/*
+
+  [ [ generation: 1,
+      outputLayer:
+      [
+
+      ]
+  ]
+
+
+ */
+
 class LukeSerializer {
   static Object networkToJson(Luke network){
-    Map raw = {"generation":network.generation};
+    Map raw = {"generation":network.generation, "best_reward":network.best_reward, "name": network.name};
     List outputLayer = [];
 
     for(Neuron neuron in network.outputNeurons){
@@ -25,7 +38,8 @@ class LukeSerializer {
 
     Luke network = new Luke(inputNeurons,outputLayer.length);
     network.generation = raw["generation"];
-
+    network.best_reward = raw["best_reward"];
+    network.name = raw["name"];
 
     for(int neuronIndex = 0; neuronIndex < outputLayer.length; neuronIndex++){
       List neuronJson = outputLayer[neuronIndex];
@@ -41,8 +55,9 @@ class LukeSerializer {
     return network;
   }
 
+  static String filePath = Directory.current.path + "/luke.txt";
+
   static List<Luke> readFromFile() {
-    String filePath = Directory.current.path + "/luke";
     File file = new File(filePath);
     if(file.existsSync()){
       String json = file.readAsStringSync();
@@ -57,7 +72,6 @@ class LukeSerializer {
   static void writeToFile(Iterable<Luke> lukes) {
     lukes = lukes.map(networkToJson).toList();
     String json = JSON.encode(lukes);
-    String filePath = Directory.current.path + "/luke";
     new File(filePath).writeAsStringSync(json);
     print("saved brains");
   }
