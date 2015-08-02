@@ -9,6 +9,7 @@ class AIDirector implements IServerService {
   int NUM_TARGETS = 6;
   double TARGET_DISTANCE = 200.0;
   int NUM_SIMULTANEOUS_SIMULATIONS = 20;
+  static Vector2 trainingCenter = new Vector2(300.0,300.0);
 
   AIDirector();
 
@@ -26,7 +27,7 @@ class AIDirector implements IServerService {
       Vector2 position = new Vector2(Math.cos(angle * Math.PI * 2) * TARGET_DISTANCE, Math.sin(angle * Math.PI * 2) * TARGET_DISTANCE);
 
       Checkpoint checkpoint = new Checkpoint();
-      checkpoint.position = position;
+      checkpoint.position = position + trainingCenter;
       checkpoint.radius = 30.0;
       checkpoint.orientation = 0.0;
       checkpoint.state = CheckpointState.CLEARED;
@@ -164,7 +165,7 @@ class AIDirector implements IServerService {
     server.connectClient(client);
     client.playerName = trainingUnit.brain.name;
     server.registerPlayer(client, client.playerName);
-    server.teleportPlayerTo(client,new Vector2.zero(),0.0,false);
+    server.teleportPlayerTo(client,trainingCenter,0.0,false);
     trainingUnit.reward = distanceToTarget(trainingUnit);
 
 

@@ -20,7 +20,7 @@ class Luke extends Network {
     //OutPut Layer
     Layer outputLayer = new Layer("OutputLayer");
 
-    outputLayer.createNeurons(numOutputNeurons, inputFunction: new WeightCombination(), activationFunction: new Sigmoid());
+    outputLayer.createNeurons(numOutputNeurons, inputFunction: new WeightCombination(), activationFunction: new Lineal());
 
     //Bias
     umbral = new Neuron("Umbral");
