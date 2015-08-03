@@ -13,7 +13,7 @@ class AIClientProxy implements IClientProxy {
     if(envelope.messageType == net.MessageType.COLLISION){
       net.IntMessage message = new net.IntMessage.fromBuffer(envelope.payload);
       if(message.integer == movable.id){
-        currentCommandInstance.command.end(currentCommandInstance);
+        // :P
       }
     }
   }

@@ -150,6 +150,7 @@ class GameServer implements IGameServer {
     }
     catch(e, stack)
     {
+      print("exceltion in _onHeartBeat()");
       print(e);
       print(stack);
     }

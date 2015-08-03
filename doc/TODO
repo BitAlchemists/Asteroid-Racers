@@ -1,4 +1,4 @@
-- store challenge rewards in network file
+- reimplement high score
 - implement FlyAwayFromTargetChallenge
 - implement FlyWithinTargetZoneChallenge
 - implement StayBehindTargetChallenge

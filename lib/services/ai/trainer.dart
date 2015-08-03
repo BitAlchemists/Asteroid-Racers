@@ -9,16 +9,17 @@ class Trainer {
 
 
   TrainingProgram _trainingProgram;
-  List<TrainingProgramInstance> _trainingInstances;
-  List<TrainingProgramInstance> _runningTrainingInstances;
+  List<TrainingProgramInstance> _trainingInstances = <TrainingProgramInstance>[];
+  List<TrainingProgramInstance> _runningTrainingInstances = <TrainingProgramInstance>[];
   int _nextTrainingInstance;
 
-  int SAMPLE_SIZE = 100;
-  int NUM_SIMULTANEOUS_SIMULATIONS = 1;
+  int SAMPLE_SIZE = 20;
+  int NUM_SIMULTANEOUS_SIMULATIONS = 10;
 
   start(){
-    TrainingProgram program = new FlyTowardsTargetsTrainingProgram();
-    program.setUp();
+    _trainingProgram = new FlyTowardsTargetsTrainingProgram();
+    _trainingProgram.server = server;
+    _trainingProgram.setUp();
 
     _startTraining();
   }
@@ -35,7 +36,7 @@ class Trainer {
   }
 
   _prepareNetworks(){
-    List<MajorTom> networks = LukeSerializer.readFromFile();
+    List<MajorTom> networks = LukeSerializer.readNetworksFromFile();
     if(networks != null){
       print("found brains. mutating them");
       List newNetworks = [];
@@ -104,7 +105,6 @@ class Trainer {
     }
   }
 
-
   postUpdate(double dt) {
     for(TrainingProgramInstance tpi in _runningTrainingInstances)
     {
@@ -116,6 +116,10 @@ class Trainer {
 
     _runningTrainingInstances.remove(trainingInstance);
     server.disconnectClient(trainingInstance.client);
+    trainingInstance.client.server.disconnectClient(trainingInstance.client);
+    trainingInstance.client.server = null;
+    trainingInstance.client = null;
+
     trainingInstance.client = null;
 
     if(_nextTrainingInstance < _trainingInstances.length) {
@@ -126,7 +130,7 @@ class Trainer {
   _finishTrainingProgram(){
 
     for(TrainingProgramInstance tpi in _trainingInstances){
-      tpi.updateHighscores();
+      tpi.updateHighscore();
 
     }
 
@@ -154,24 +158,22 @@ class Trainer {
     String logFileName = logDirectory.path + "/${new DateTime.now().millisecondsSinceEpoch}.log";
     new File(logFileName).writeAsStringSync(report);
 
+
+    List<MajorTom> survivingBrains = <MajorTom>[];
+
     _trainingInstances.sort((TrainingProgramInstance a, TrainingProgramInstance b) => rewardCompare(a.score, b.score));
     MajorTom bestTrainingSet = _trainingInstances.first.network;
     bestTrainingSet.name = "Best Training Set";
-
+    survivingBrains.add(bestTrainingSet);
+    /*
     _trainingInstances.sort((TrainingProgramInstance a, TrainingProgramInstance b) => rewardCompare(a.highscore, b.highscore));
     MajorTom bestOverall = _trainingInstances.first.network;
     bestOverall.name = "Best Overall";
-
-    List<MajorTom> survivingBrains = <Network>[];
     survivingBrains.add(bestOverall);
-    survivingBrains.add(bestTrainingSet);
-    LukeSerializer.writeToFile(survivingBrains);
+    */
+    LukeSerializer.writeNetworksToFile(survivingBrains);
 
     _trainingInstances.clear();
   }
 
 }
-
-/*
-          _startNextTrainingUnit();
- */

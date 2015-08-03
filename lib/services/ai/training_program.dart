@@ -4,16 +4,14 @@ class TrainingProgramInstance {
   MajorTom network;
   TrainingProgram program;
   AIClientProxy client;
+  double score;
+  double get highscore => score;
 
   TrainingProgramInstance(this.program, this.network);
 
-  double highscore = double.MAX_FINITE;
-  double score;
+  updateHighscore(){
 
-  updateHighscores(){
-    assert(score != 0.0);
-    assert(highscore != 0.0);
-    highscore = betterReward(score, highscore);
+    //highscore = betterReward(score, highscore);
   }
 
 /*
@@ -32,13 +30,13 @@ abstract class TrainingUnit {
   Future run(TrainingProgramInstance instance);
 }
 
-class TrainingProgram implements TrainingUnit {
+class TrainingProgram {
   List<TrainingUnit> trainingUnits;
   IGameServer server;
 
   TrainingProgram();
-  void setUp(){}
-  void tearDown(){}
+  setUp(){}
+  tearDown(){}
 
   Future<TrainingProgramInstance> run(TrainingProgramInstance instance){
     int _nextTrainingUnit = 0;
@@ -46,7 +44,10 @@ class TrainingProgram implements TrainingUnit {
     Future _runNextTrainingUnit(_){
       if(_nextTrainingUnit < trainingUnits.length) {
         TrainingUnit unit = trainingUnits[_nextTrainingUnit++];
-        return unit.run(instance).then(_runNextTrainingUnit);
+        return unit.run(instance).then((double score){
+          instance.score = score;
+          return _runNextTrainingUnit(null);
+        });
       }
 
       return new Future.value(instance);
@@ -63,13 +64,13 @@ class FlyTowardsTargetsTrainingProgram extends TrainingProgram {
   static final Vector2 trainingCenter = new Vector2(-2700.0,1800.0);
   int LIFETIME_MILLISECONDS = 1000;
 
-  List<Checkpoint> _targets = <Checkpoint>[];
 
 
   FlyTowardsTargetsTrainingProgram();
 
   setUp(){
-    for(int i = 0; i < NUM_TARGETS; i++) {
+
+    trainingUnits = new List<TrainingUnit>.generate(NUM_TARGETS, (int i){
       num angle = (i.toDouble() / NUM_TARGETS.toDouble());
       Vector2 position = new Vector2(Math.cos(angle * Math.PI * 2) * TARGET_DISTANCE, Math.sin(angle * Math.PI * 2) * TARGET_DISTANCE);
 
@@ -80,36 +81,32 @@ class FlyTowardsTargetsTrainingProgram extends TrainingProgram {
       checkpoint.state = CheckpointState.CLEARED;
 
       server.world.addEntity(checkpoint);
-      _targets.add(checkpoint);
-    }
 
-    trainingUnits = new List<TrainingUnit>.generate(_targets.length, (int tuIndex){
-      return new FlyTowardsTargetTrainingUnit(trainingCenter,_targets[tuIndex], LIFETIME_MILLISECONDS);
+      return new FlyTowardsTargetTrainingUnit(trainingCenter,checkpoint, LIFETIME_MILLISECONDS);
     });
 
   }
 
   tearDown(){
-    for(Entity entity in _targets){
-      server.world.removeEntity(entity);
+    for(FlyTowardsTargetTrainingUnit tu in trainingUnits){
+      server.world.removeEntity(tu.target);
     }
 
-    _targets.clear();
     trainingUnits.clear();
   }
 }
 
-class FlyTowardsTargetTrainingUnit implements TrainingUnit {
+class FlyTowardsTargetTrainingUnit extends TrainingUnit {
   Vector2 spawn;
   Checkpoint target;
   int lifetimeMilliseconds;
   Command _command;
 
   FlyTowardsTargetTrainingUnit(this.spawn, this.target, this.lifetimeMilliseconds) {
-    _command = new FlyTowardsTargetCommand(target);
+    _command = new FlyTowardsTargetCommand(target.position);
   }
 
-  Future run(TrainingProgramInstance tpi){
+  Future<double> run(TrainingProgramInstance tpi){
 
     tpi.client.server.teleportPlayerTo(tpi.client,spawn,0.0,false);
 
@@ -118,9 +115,19 @@ class FlyTowardsTargetTrainingUnit implements TrainingUnit {
     ci.network = tpi.network;
     ci.command = _command;
     tpi.client.currentCommandInstance = ci;
+    tpi.client.currentCommandInstance.command.start(tpi.client.currentCommandInstance);
+    target.state = CheckpointState.CURRENT;
+    target.updateRank += 1;
 
     return new Future.delayed(new Duration(milliseconds: lifetimeMilliseconds)).then((_){
+
+      ci.command.end(ci);
+      target.state = CheckpointState.CLEARED;
+      target.updateRank += 1;
+
       tpi.client.currentCommandInstance = null;
+
+      return ci.score;
     });
   }
 

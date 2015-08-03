@@ -13,10 +13,9 @@ class CommandInstance {
   CommandInstanceState state = CommandInstanceState.READY;
   MajorTom network;
   AIClientProxy client;
-  //Completer completer;
   Command command;
 
-  double reward;
+  double score;
 
 }
 
@@ -32,22 +31,20 @@ abstract class Command {
 class FlyTowardsTargetCommand implements Command {
 
 
-  Checkpoint target;
+  Vector2 target;
 
   FlyTowardsTargetCommand(this.target);
 
 
   start(CommandInstance instance){
-    target.state = CheckpointState.CURRENT;
-    target.updateRank += 1;
     instance.state = CommandInstanceState.RUNNING;
-    //instance.completer = new Completer();
+    instance.score = _distanceToTarget(instance);
   }
 
   step(CommandInstance instance, double dt){
     if(instance.state == CommandInstanceState.ENDED) return;
 
-    instance.network.inputNetwork = [instance.client.movable.position.x, instance.client.movable.position.y, target.position.x, target.position.y];
+    instance.network.inputNetwork = [instance.client.movable.position.x, instance.client.movable.position.y, target.x, target.y];
     instance.network.calculateOutput();
     List<double> output = instance.network.outputNetwork;
     Vector2 acceleration = new Vector2(output[0], output[1]);
@@ -57,27 +54,20 @@ class FlyTowardsTargetCommand implements Command {
   end(CommandInstance instance){
     if(instance.state == CommandInstanceState.ENDED) return;
 
-    print("${instance.network.name} died. Reward: ${instance.reward}");
+    print("${instance.network.name} died. Reward: ${instance.score}");
 
     instance.state = CommandInstanceState.ENDED;
-    target.state = CheckpointState.CLEARED;
-    target.updateRank += 1;
-    instance.client.server.disconnectClient(instance.client);
-    instance.client.currentCommandInstance = null;
-    instance.client.server = null;
-    instance.client = null;
-    //instance.completer.complete();
 
   }
 
   void updateReward(CommandInstance instance){
     double distance = _distanceToTarget(instance);
-    if(distance < instance.reward) {
-      instance.reward = distance;
+    if(distance < instance.score) {
+      instance.score = distance;
     }
   }
 
   double _distanceToTarget(CommandInstance instance){
-    return instance.client.movable.position.distanceTo(this.target.position);
+    return instance.client.movable.position.distanceTo(this.target);
   }
 }

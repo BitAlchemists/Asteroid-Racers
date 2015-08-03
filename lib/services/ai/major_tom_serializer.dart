@@ -56,25 +56,27 @@ class LukeSerializer {
     return network;
   }
 
-  static String filePath = Directory.current.path + "/luke.txt";
+  static String networksFilePath = Directory.current.path + "/luke.txt";
 
-  static List<MajorTom> readFromFile() {
-    File file = new File(filePath);
+  static List<MajorTom> readNetworksFromFile() {
+    File file = new File(networksFilePath);
     if(file.existsSync()){
       String json = file.readAsStringSync();
       Iterable lukes = JSON.decode(json);
       lukes = lukes.map(jsonToNetwork).toList();
-      print("loaded brains");
+      print("loaded networks");
       return lukes;
     }
     return null;
   }
 
-  static void writeToFile(Iterable<MajorTom> lukes) {
+  static void writeNetworksToFile(Iterable<MajorTom> lukes) {
     lukes = lukes.map(networkToJson).toList();
     String json = JSON.encode(lukes);
-    new File(filePath).writeAsStringSync(json);
-    print("saved brains");
+    new File(networksFilePath).writeAsStringSync(json);
+    print("saved networks");
   }
+
+  static String historiesFilePath = Directory.current.path + "/luke.txt";
 
 }
