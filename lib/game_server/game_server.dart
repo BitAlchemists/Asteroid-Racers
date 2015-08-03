@@ -77,7 +77,9 @@ class GameServer implements IGameServer {
     _addArrows(x: -150, y: -1700, orientation: Math.PI * 1.5);        
     */
     _spawn = new Entity(type: EntityType.UNKNOWN);
-    _spawn.position = new Vector2(0.0, 100.0);
+    //_spawn.position = new Vector2(0.0, 100.0);
+    _spawn.position = new Vector2(-2700.0, 1800.0);
+
     _spawn.radius = 200.0;
     _spawn.orientation = Math.PI;
 

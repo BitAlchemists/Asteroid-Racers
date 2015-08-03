@@ -14,8 +14,9 @@ part of ai;
  */
 
 class LukeSerializer {
-  static Object networkToJson(Luke network){
-    Map raw = {"generation":network.generation, "best_reward":network.best_reward, "name": network.name};
+  static Object networkToJson(MajorTom network){
+    Map raw = {"generation":network.generation, "name": network.name};
+    // "best_reward":network.best_reward
     List outputLayer = [];
 
     for(Neuron neuron in network.outputNeurons){
@@ -31,14 +32,14 @@ class LukeSerializer {
     return raw;
   }
 
-  static Luke jsonToNetwork(Object json){
+  static MajorTom jsonToNetwork(Object json){
     int inputNeurons = 4;
     Map raw = json as Map;
     List outputLayer = raw["outputLayer"];
 
-    Luke network = new Luke(inputNeurons,outputLayer.length);
+    MajorTom network = new MajorTom(inputNeurons,outputLayer.length);
     network.generation = raw["generation"];
-    network.best_reward = raw["best_reward"];
+    //network.best_reward = raw["best_reward"];
     network.name = raw["name"];
 
     for(int neuronIndex = 0; neuronIndex < outputLayer.length; neuronIndex++){
@@ -57,7 +58,7 @@ class LukeSerializer {
 
   static String filePath = Directory.current.path + "/luke.txt";
 
-  static List<Luke> readFromFile() {
+  static List<MajorTom> readFromFile() {
     File file = new File(filePath);
     if(file.existsSync()){
       String json = file.readAsStringSync();
@@ -69,7 +70,7 @@ class LukeSerializer {
     return null;
   }
 
-  static void writeToFile(Iterable<Luke> lukes) {
+  static void writeToFile(Iterable<MajorTom> lukes) {
     lukes = lukes.map(networkToJson).toList();
     String json = JSON.encode(lukes);
     new File(filePath).writeAsStringSync(json);

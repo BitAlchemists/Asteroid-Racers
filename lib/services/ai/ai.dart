@@ -13,8 +13,10 @@ import "package:asteroidracers/shared/shared_server.dart";
 
 part "ai_client_proxy.dart";
 part "ai_director.dart";
-part "luke.dart";
-part "training_set.dart";
-part "luke_serializer.dart";
+part "major_tom.dart";
+part "training_program.dart";
+part "major_tom_serializer.dart";
+part "command.dart";
+part "trainer.dart";
 
 Math.Random random = new Math.Random();

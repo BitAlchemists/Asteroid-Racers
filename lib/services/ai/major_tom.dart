@@ -1,13 +1,13 @@
 part of ai;
 
-class Luke extends Network {
+class MajorTom extends Network {
 
   String name;
   Neuron umbral;
   int generation = 0;
-  double best_reward = double.MAX_FINITE;
+  Network network;
 
-  Luke(int numInputNeurons, int numOutputNeurons, [this.name]):super() {
+  MajorTom(int numInputNeurons, int numOutputNeurons, [this.name]):super() {
     this.createNetwork(numInputNeurons, numOutputNeurons);
   }
 
@@ -58,6 +58,9 @@ class Luke extends Network {
     {
       for(Connection connection in neuron.inputConnections){
         connection.weight.value += mutationRate * (random.nextDouble() * 2 - 1);
+
+        if(connection.weight.value > 1.0) connection.weight.value = 1.0;
+        if(connection.weight.value < -1.0) connection.weight.value = -1.0;
       }
     }
   }
