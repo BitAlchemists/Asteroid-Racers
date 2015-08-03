@@ -17,4 +17,8 @@ class AIClientProxy implements IClientProxy {
       }
     }
   }
+
+  void step(double dt){
+    currentCommandInstance.command.step(currentCommandInstance, dt);
+  }
 }

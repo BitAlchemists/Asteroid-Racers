@@ -1,2 +1,4 @@
 - store challenge rewards in network file
 - implement FlyAwayFromTargetChallenge
+- implement FlyWithinTargetZoneChallenge
+- implement StayBehindTargetChallenge

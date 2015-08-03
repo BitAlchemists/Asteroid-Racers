@@ -7,8 +7,14 @@ class TrainingProgramInstance {
 
   TrainingProgramInstance(this.program, this.network);
 
-  double best_reward = double.MAX_FINITE;
+  double highscore = double.MAX_FINITE;
   double score;
+
+  updateHighscores(){
+    assert(score != 0.0);
+    assert(highscore != 0.0);
+    highscore = betterReward(score, highscore);
+  }
 
 /*
   double get score {
@@ -31,8 +37,10 @@ class TrainingProgram implements TrainingUnit {
   IGameServer server;
 
   TrainingProgram();
+  void setUp(){}
+  void tearDown(){}
 
-  Future run(TrainingProgramInstance instance){
+  Future<TrainingProgramInstance> run(TrainingProgramInstance instance){
     int _nextTrainingUnit = 0;
 
     Future _runNextTrainingUnit(_){
@@ -41,11 +49,12 @@ class TrainingProgram implements TrainingUnit {
         return unit.run(instance).then(_runNextTrainingUnit);
       }
 
-      return null;
+      return new Future.value(instance);
     }
 
     return _runNextTrainingUnit(null);
   }
+
 }
 
 class FlyTowardsTargetsTrainingProgram extends TrainingProgram {
@@ -101,6 +110,7 @@ class FlyTowardsTargetTrainingUnit implements TrainingUnit {
   }
 
   Future run(TrainingProgramInstance tpi){
+
     tpi.client.server.teleportPlayerTo(tpi.client,spawn,0.0,false);
 
     CommandInstance ci = new CommandInstance();
@@ -109,6 +119,9 @@ class FlyTowardsTargetTrainingUnit implements TrainingUnit {
     ci.command = _command;
     tpi.client.currentCommandInstance = ci;
 
-    return new Future.delayed(new Duration(milliseconds: lifetimeMilliseconds));
+    return new Future.delayed(new Duration(milliseconds: lifetimeMilliseconds)).then((_){
+      tpi.client.currentCommandInstance = null;
+    });
   }
+
 }

@@ -1,5 +1,9 @@
 part of ai;
 
+double betterReward(double reward1, double reward2) => (rewardCompare(reward1, reward2) < 1) ? reward1 : reward2;
+int rewardCompare(double reward1, double reward2) => reward1.compareTo(reward2);
+
+
 class Trainer {
   IGameServer server;
 
@@ -14,6 +18,7 @@ class Trainer {
 
   start(){
     TrainingProgram program = new FlyTowardsTargetsTrainingProgram();
+    program.setUp();
 
     _startTraining();
   }
@@ -93,47 +98,47 @@ class Trainer {
 
 
   preUpdate(double dt){
-    for(Command unit in _runningTrainingInstances)
+    for(TrainingProgramInstance tpi in _runningTrainingInstances)
     {
-      unit.update();
+      tpi.client.step(dt);
     }
   }
 
 
   postUpdate(double dt) {
-    for(Command unit in _runningTrainingInstances)
+    for(TrainingProgramInstance tpi in _runningTrainingInstances)
     {
-      unit.updateReward();
+      tpi.client.currentCommandInstance.command.updateReward(tpi.client.currentCommandInstance);
     }
   }
 
-  _endTrainingInstance(Command unit){
-    unit.end();
-    _currentTrainingUnits.remove(unit);
+  _endTrainingInstance(TrainingProgramInstance trainingInstance){
 
-    if(_nextTrainingInstance < _trainingPlan.length) {
+    _runningTrainingInstances.remove(trainingInstance);
+    server.disconnectClient(trainingInstance.client);
+    trainingInstance.client = null;
+
+    if(_nextTrainingInstance < _trainingInstances.length) {
       return _startNextTrainingInstance();
     }
-
   }
 
   _finishTrainingProgram(){
 
-    for(TrainingProgram ts in _trainingProgram){
-      assert(ts.score != 0.0);
-      assert(ts.best_reward != 0.0);
-      ts.best_reward = betterReward(ts.score, ts.best_reward);
+    for(TrainingProgramInstance tpi in _trainingInstances){
+      tpi.updateHighscores();
+
     }
 
-    _trainingProgram.sort((TrainingProgram ts1, TrainingProgram ts2) => rewardCompare(ts1.best_reward, ts2.best_reward));
-    String report = "${_trainingProgram.length} done\n";
+    _trainingInstances.sort((TrainingProgramInstance tpi1, TrainingProgramInstance tpi2) => rewardCompare(tpi1.highscore, tpi2.highscore));
+    String report = "${_trainingInstances.length} done\n";
 
 
-    for(int i = 0; i < _trainingProgram.length; i++){
-      TrainingProgram ts = _trainingProgram[i];
-      report += "${ts.network.name} | reward: ${ts.score} | best reward: ${ts.best_reward} | Generation ${ts.network.generation}\n";
+    for(int i = 0; i < _trainingInstances.length; i++){
+      TrainingProgramInstance tpi = _trainingInstances[i];
+      report += "${tpi.network.name} | reward: ${tpi.score} | best reward: ${tpi.highscore} | Generation ${tpi.network.generation}\n";
 
-      Layer outputLayer = ts.network.layers.last;
+      Layer outputLayer = tpi.network.layers.last;
       Neuron xNeuron = outputLayer.neurons[0];
       Neuron yNeuron = outputLayer.neurons[1];
 
@@ -149,28 +154,21 @@ class Trainer {
     String logFileName = logDirectory.path + "/${new DateTime.now().millisecondsSinceEpoch}.log";
     new File(logFileName).writeAsStringSync(report);
 
-    _trainingPlan.sort((Command a, Command b) => rewardCompare(a.reward, b.reward));
-    MajorTom bestTrainingUnit = _trainingPlan.first.network;
-    bestTrainingUnit.name = "Best Training Unit";
-
-    _trainingProgram.sort((TrainingProgram a, TrainingProgram b) => rewardCompare(a.score, b.score));
-    MajorTom bestTrainingSet = _trainingProgram.first.network;
+    _trainingInstances.sort((TrainingProgramInstance a, TrainingProgramInstance b) => rewardCompare(a.score, b.score));
+    MajorTom bestTrainingSet = _trainingInstances.first.network;
     bestTrainingSet.name = "Best Training Set";
 
-    _trainingProgram.sort((TrainingProgram a, TrainingProgram b) => rewardCompare(a.best_reward, b.best_reward));
-    MajorTom bestOverall = _trainingProgram.first.network;
+    _trainingInstances.sort((TrainingProgramInstance a, TrainingProgramInstance b) => rewardCompare(a.highscore, b.highscore));
+    MajorTom bestOverall = _trainingInstances.first.network;
     bestOverall.name = "Best Overall";
 
     List<MajorTom> survivingBrains = <Network>[];
     survivingBrains.add(bestOverall);
     survivingBrains.add(bestTrainingSet);
-    survivingBrains.add(bestTrainingUnit);
     LukeSerializer.writeToFile(survivingBrains);
+
+    _trainingInstances.clear();
   }
-
-
-  double betterReward(double reward1, double reward2) => (rewardCompare(reward1, reward2) < 1) ? reward1 : reward2;
-  int rewardCompare(double reward1, double reward2) => reward1.compareTo(reward2);
 
 }
 

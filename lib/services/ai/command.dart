@@ -23,7 +23,7 @@ class CommandInstance {
 abstract class Command {
 
   start(CommandInstance instance);
-  update(CommandInstance instance);
+  step(CommandInstance instance, double dt);
   end(CommandInstance instance);
 
   void updateReward(CommandInstance instance);
@@ -41,10 +41,10 @@ class FlyTowardsTargetCommand implements Command {
     target.state = CheckpointState.CURRENT;
     target.updateRank += 1;
     instance.state = CommandInstanceState.RUNNING;
-    instance.completer = new Completer();
+    //instance.completer = new Completer();
   }
 
-  update(CommandInstance instance){
+  step(CommandInstance instance, double dt){
     if(instance.state == CommandInstanceState.ENDED) return;
 
     instance.network.inputNetwork = [instance.client.movable.position.x, instance.client.movable.position.y, target.position.x, target.position.y];
@@ -52,7 +52,6 @@ class FlyTowardsTargetCommand implements Command {
     List<double> output = instance.network.outputNetwork;
     Vector2 acceleration = new Vector2(output[0], output[1]);
     instance.client.movable.acceleration = acceleration.normalize().scale(200.0);
-    instance.client.movable.updateRank += 1;
   }
 
   end(CommandInstance instance){
@@ -67,12 +66,12 @@ class FlyTowardsTargetCommand implements Command {
     instance.client.currentCommandInstance = null;
     instance.client.server = null;
     instance.client = null;
-    instance.completer.complete();
+    //instance.completer.complete();
 
   }
 
   void updateReward(CommandInstance instance){
-    double distance = _distanceToTarget();
+    double distance = _distanceToTarget(instance);
     if(distance < instance.reward) {
       instance.reward = distance;
     }
