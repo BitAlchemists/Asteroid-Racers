@@ -78,7 +78,7 @@ class GameServer implements IGameServer {
     */
     _spawn = new Entity(type: EntityType.UNKNOWN);
     //_spawn.position = new Vector2(0.0, 100.0);
-    _spawn.position = new Vector2(-2700.0, 1800.0);
+    _spawn.position = new Vector2(0.0, 0.0);
 
     _spawn.radius = 200.0;
     _spawn.orientation = Math.PI;
@@ -133,7 +133,7 @@ class GameServer implements IGameServer {
       for(IServerService service in _services){
         service.preUpdate(gameLoop.dt);
       }
-      _physics.simulateTranslation(gameLoop.dt);
+      _physics.simulateTranslation(0.015);
 
       // update
       for(IServerService service in _services){
@@ -193,7 +193,6 @@ class GameServer implements IGameServer {
   //Client-Server communication
   
   void connectClient(IClientProxy client){
-    print("player connected");
     _clients.add(client);
 
     ChatMessage chatMessage = new ChatMessage();
@@ -205,22 +204,18 @@ class GameServer implements IGameServer {
     envelope.payload = chatMessage.writeToBuffer();
     client.send(envelope);
 
-    print("connected clients: ${_clients.length}");
+    print("player connected. connected clients: ${_clients.length}");
   }
   
   void disconnectClient(IClientProxy client){
     
-    if(client.movable != null && client.movable.displayName != null)
-    {
-      print("player ${client.movable.displayName} disconnected");      
-    }
-    else
+    if(client.movable == null || client.movable.displayName == null)
     {
       print("client disconnected before handshake");
     }
-    
+
     _clients.remove(client);
-    print("connected clients: ${_clients.length}");
+    print("player ${client.movable.displayName} disconnected. connected clients: ${_clients.length}");
     
     if(client.movable != null){
       _physics.removeMovable(client.movable);
@@ -333,15 +328,25 @@ class GameServer implements IGameServer {
   
   void computePlayerInput(IClientProxy client, MovementInput input){
     client.movable.updateRank += 1;
-    
+
+    if(input.accelerationFactor < 0.0) {
+      print("getting unsanitized input from ${client.playerName}");
+      input.accelerationFactor = 0.0;
+    }
+
+    if(input.accelerationFactor > 1.0) {
+      print("getting unsanitized input from ${client.playerName}");
+      input.accelerationFactor = 1.0;
+    }
+
     // 1. apply the new orientation
     if(client.movable.orientation != input.newOrientation){
       client.movable.orientation = input.newOrientation;
     }
     
     // 2. calculate the acceleration
-    if(input.accelerate){
-      double accelerationSpeed = 200.0;
+    if(input.accelerationFactor != 0.0){
+      double accelerationSpeed = 200.0 * input.accelerationFactor;
       Vector2 direction = new Vector2(0.0, accelerationSpeed);
     
       // duplicate code in [PlayerController]
@@ -365,6 +370,11 @@ class GameServer implements IGameServer {
         where((Entity entity) => entity.updateRank > 0).
         toList(growable: false);
     entities.sort((Entity a, Entity b) => (b.updateRank.compareTo(a.updateRank)));
+
+    for(Entity entity in entities){
+      entity.updateRank += 1;
+    }
+
     var broadcastables = entities.take(2);
     
     for(Entity entity in broadcastables){

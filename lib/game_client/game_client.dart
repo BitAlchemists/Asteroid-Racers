@@ -176,7 +176,7 @@ class GameClient implements stagexl.Animatable, IGameClient {
   
   /// bool used to store the acceleration state of the previous frame against
   /// the current frame.
-  bool previousAcceleration = false;
+  double previousAcceleration = 0.0;
   
   bool advanceTime(num dt){
     
@@ -191,7 +191,7 @@ class GameClient implements stagexl.Animatable, IGameClient {
       _simulator.simulateRotation(dt);
       
       // if the player position changed...
-      if( _player.accelerate != previousAcceleration ||
+      if( _player.accelerationFactor != previousAcceleration ||
           _player.entity.orientation != previousOrientation)
       {
         // notify the server
@@ -200,7 +200,7 @@ class GameClient implements stagexl.Animatable, IGameClient {
           //TODO: move this code to ServerProxy
           net.MovementInput movementInput = new net.MovementInput();
           movementInput.newOrientation = _player.entity.orientation;
-          movementInput.accelerate = _player.accelerate;
+          movementInput.accelerationFactor = _player.accelerationFactor;
 
           net.Envelope envelope = new net.Envelope();
           envelope.messageType = net.MessageType.INPUT;
@@ -211,7 +211,7 @@ class GameClient implements stagexl.Animatable, IGameClient {
       }
       
       // store the acceleration state for the next frame
-      previousAcceleration = _player.accelerate;
+      previousAcceleration = _player.accelerationFactor;
       
       // now simulate the local position
       _simulator.simulateTranslation(dt);

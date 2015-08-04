@@ -3,13 +3,13 @@
 ///
 library net_movement_input;
 
-
+import 'package:fixnum/fixnum.dart';
 import 'package:protobuf/protobuf.dart';
 
 class MovementInput extends GeneratedMessage {
   static final BuilderInfo _i = new BuilderInfo('MovementInput')
     ..a(1, 'newOrientation', GeneratedMessage.OD)
-    ..a(2, 'accelerate', GeneratedMessage.OB)
+    ..a(2, 'accelerationFactor', GeneratedMessage.OD)
     ..hasRequiredFields = false
   ;
 
@@ -31,10 +31,10 @@ class MovementInput extends GeneratedMessage {
   bool hasNewOrientation() => hasField(1);
   void clearNewOrientation() => clearField(1);
 
-  bool get accelerate => getField(2);
-  void set accelerate(bool v) { setField(2, v); }
-  bool hasAccelerate() => hasField(2);
-  void clearAccelerate() => clearField(2);
+  double get accelerationFactor => getField(2);
+  void set accelerationFactor(double v) { setField(2, v); }
+  bool hasAccelerationFactor() => hasField(2);
+  void clearAccelerationFactor() => clearField(2);
 }
 
 class _ReadonlyMovementInput extends MovementInput with ReadonlyMessageMixin {}

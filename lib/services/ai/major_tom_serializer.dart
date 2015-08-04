@@ -17,41 +17,63 @@ class LukeSerializer {
   static Object networkToJson(MajorTom network){
     Map raw = {"generation":network.generation, "name": network.name};
     // "best_reward":network.best_reward
-    List outputLayer = [];
+    List rawLayers = [];
+    for(int layerIndex = 1; layerIndex < network.layers.length; layerIndex++){
+      Layer layer = network.layers[layerIndex];
 
-    for(Neuron neuron in network.outputNeurons){
-      List jsonNeuron = [];
-      outputLayer.add(jsonNeuron);
+      List rawLayer = [];
+      rawLayers.add(rawLayer);
 
-      for(Connection connection in neuron.inputConnections){
-        jsonNeuron.add(connection.weightValue);
+      for(Neuron neuron in layer.neurons){
+        List rawNeuron = [];
+        rawLayer.add(rawNeuron);
+
+        for(Connection connection in neuron.inputConnections){
+          rawNeuron.add(connection.weightValue);
+        }
       }
     }
 
-    raw["outputLayer"] = outputLayer;
+    raw["input_neurons_count"] = network.inputNeurons.length;
+    raw["layers"] = rawLayers;
     return raw;
   }
 
   static MajorTom jsonToNetwork(Object json){
-    int inputNeurons = 4;
     Map raw = json as Map;
-    List outputLayer = raw["outputLayer"];
+    List rawLayers = raw["layers"];
 
-    MajorTom network = new MajorTom(inputNeurons,outputLayer.length);
+    List layerSizes = [raw["input_neurons_count"]];
+    for(List rawLayer in rawLayers){
+      layerSizes.add(rawLayer.length);
+    }
+
+    MajorTom network = new MajorTom(layerSizes);
     network.generation = raw["generation"];
     //network.best_reward = raw["best_reward"];
     network.name = raw["name"];
 
-    for(int neuronIndex = 0; neuronIndex < outputLayer.length; neuronIndex++){
-      List neuronJson = outputLayer[neuronIndex];
-      Neuron neuron = network.outputNeurons[neuronIndex];
 
-      for(int inputConnectionIndex = 0; inputConnectionIndex < inputNeurons + 1; inputConnectionIndex++)
-      {
-        Connection connection = neuron.inputConnections[inputConnectionIndex];
-        connection.weight.value = neuronJson[inputConnectionIndex];
+    for(int layerIndex = 0; layerIndex < rawLayers.length; layerIndex++){
+
+      List rawLayer = rawLayers[layerIndex];
+      Layer layer = network.layers[layerIndex+1];
+      Layer previousLayer = network.layers[layerIndex];
+
+
+      for(int neuronIndex = 0; neuronIndex < rawLayer.length; neuronIndex++){
+        List rawNeuron = rawLayer[neuronIndex];
+        Neuron neuron = layer.neurons[neuronIndex];
+
+        for(int inputConnectionIndex = 0; inputConnectionIndex < previousLayer.neurons.length + 1; inputConnectionIndex++)
+        {
+          Connection connection = neuron.inputConnections[inputConnectionIndex];
+          connection.weight.value = rawNeuron[inputConnectionIndex];
+        }
       }
+
     }
+
 
     return network;
   }

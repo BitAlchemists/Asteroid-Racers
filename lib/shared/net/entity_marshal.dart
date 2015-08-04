@@ -188,14 +188,14 @@ class EntityMarshal {
   static MovementInput worldMovementInputToNetMovementInput(world.MovementInput worldMovementInput){
     MovementInput netMovementInput = new MovementInput();
     netMovementInput.newOrientation = worldMovementInput.newOrientation;
-    netMovementInput.accelerate = worldMovementInput.accelerate;
+    netMovementInput.accelerationFactor = worldMovementInput.accelerationFactor;
     return netMovementInput;
   }
 
   static world.MovementInput netMovementInputToWorldMovementInput(MovementInput netMovementInput){
     world.MovementInput worldMovementInput = new world.MovementInput();
     worldMovementInput.newOrientation = netMovementInput.newOrientation;
-    worldMovementInput.accelerate = netMovementInput.accelerate;
+    worldMovementInput.accelerationFactor = netMovementInput.accelerationFactor;
     return worldMovementInput;
   }
 }

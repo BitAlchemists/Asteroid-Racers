@@ -4,7 +4,7 @@ class MovementInput {
   MovementInput();
 
   double newOrientation;
-  bool accelerate;
+  double accelerationFactor;
 }
 
 class Movable extends Entity {

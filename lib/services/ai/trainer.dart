@@ -13,8 +13,9 @@ class Trainer {
   List<TrainingProgramInstance> _runningTrainingInstances = <TrainingProgramInstance>[];
   int _nextTrainingInstance;
 
-  int SAMPLE_SIZE = 20;
-  int NUM_SIMULTANEOUS_SIMULATIONS = 10;
+  int SAMPLE_SIZE = 1000;
+  int NUM_SIMULTANEOUS_SIMULATIONS = 100;
+  double LEARNING_RATE = 0.3;
 
   start(){
     _trainingProgram = new FlyTowardsTargetsTrainingProgram();
@@ -49,7 +50,7 @@ class Trainer {
           network.name = "Major Tom #$nameIndex"; nameIndex++;
           network.generation++;
           //brain.best_reward = double.MAX_FINITE;
-          network.mutate(0.1);
+          network.mutate(LEARNING_RATE);
           newNetworks.add(network);
         }
       }
@@ -57,7 +58,7 @@ class Trainer {
     }
     else{
       print("did not find existing brains. creating new ones");
-      networks = new List<MajorTom>.generate(SAMPLE_SIZE, (int index) => new MajorTom(4,2,"Luke #$index"));
+      networks = new List<MajorTom>.generate(SAMPLE_SIZE*10, (int index) => new MajorTom([4,4,4,2],"Luke #$index"));
     }
 
     return networks;
@@ -116,11 +117,11 @@ class Trainer {
 
     _runningTrainingInstances.remove(trainingInstance);
     server.disconnectClient(trainingInstance.client);
-    trainingInstance.client.server.disconnectClient(trainingInstance.client);
     trainingInstance.client.server = null;
     trainingInstance.client = null;
 
     trainingInstance.client = null;
+    print("${trainingInstance.network.name} finished training. score: ${trainingInstance.score}");
 
     if(_nextTrainingInstance < _trainingInstances.length) {
       return _startNextTrainingInstance();
@@ -142,12 +143,12 @@ class Trainer {
       TrainingProgramInstance tpi = _trainingInstances[i];
       report += "${tpi.network.name} | reward: ${tpi.score} | best reward: ${tpi.highscore} | Generation ${tpi.network.generation}\n";
 
-      Layer outputLayer = tpi.network.layers.last;
-      Neuron xNeuron = outputLayer.neurons[0];
-      Neuron yNeuron = outputLayer.neurons[1];
+      //Layer outputLayer = tpi.network.layers.last;
+      //Neuron xNeuron = outputLayer.neurons[0];
+      //Neuron yNeuron = outputLayer.neurons[1];
 
-      report += "xNeuron: bias ${xNeuron.inputConnections[0].weightValue} | xOwn ${xNeuron.inputConnections[1].weightValue} | yOwn ${xNeuron.inputConnections[2].weightValue} | xTarget ${xNeuron.inputConnections[3].weightValue} | yTarget ${xNeuron.inputConnections[4].weightValue}\n";
-      report += "yNeuron: bias ${yNeuron.inputConnections[0].weightValue} | xOwn ${yNeuron.inputConnections[1].weightValue} | yOwn ${yNeuron.inputConnections[2].weightValue} | xTarget ${yNeuron.inputConnections[3].weightValue} | yTarget ${yNeuron.inputConnections[4].weightValue}\n\n";
+      //report += "xNeuron: bias ${xNeuron.inputConnections[0].weightValue} | xOwn ${xNeuron.inputConnections[1].weightValue} | yOwn ${xNeuron.inputConnections[2].weightValue} | xTarget ${xNeuron.inputConnections[3].weightValue} | yTarget ${xNeuron.inputConnections[4].weightValue}\n";
+      //report += "yNeuron: bias ${yNeuron.inputConnections[0].weightValue} | xOwn ${yNeuron.inputConnections[1].weightValue} | yOwn ${yNeuron.inputConnections[2].weightValue} | xTarget ${yNeuron.inputConnections[3].weightValue} | yTarget ${yNeuron.inputConnections[4].weightValue}\n\n";
     }
 
     print(report);

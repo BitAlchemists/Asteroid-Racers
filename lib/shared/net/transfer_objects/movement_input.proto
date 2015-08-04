@@ -2,6 +2,6 @@ package net_movement_input;
 
 message MovementInput {
     optional double newOrientation = 1;
-    optional bool accelerate = 2;
+    optional double accelerationFactor = 2;
 }
 

@@ -44,20 +44,34 @@ class FlyTowardsTargetCommand implements Command {
   step(CommandInstance instance, double dt){
     if(instance.state == CommandInstanceState.ENDED) return;
 
-    instance.network.inputNetwork = [instance.client.movable.position.x, instance.client.movable.position.y, target.x, target.y];
+    final double CORR = 1.0 / 1000.0;
+
+    instance.network.inputNetwork =
+    [
+      CORR * instance.client.movable.position.x,
+      CORR * instance.client.movable.position.y,
+      CORR * target.x,
+      CORR * target.y];
     instance.network.calculateOutput();
-    List<double> output = instance.network.outputNetwork;
+    List<double> output = instance.network.outputNetwork;/*
     Vector2 acceleration = new Vector2(output[0], output[1]);
-    instance.client.movable.acceleration = acceleration.normalize().scale(200.0);
+    double length = acceleration.length;
+    acceleration.scale(2.0).sub(new Vector2(1.0,1.0)).normalize();
+    if(length < 1.0){
+      acceleration.scale(length);
+    }
+    acceleration.scale(200.0);
+    instance.client.movable.acceleration = acceleration;*/
+
+    MovementInput mi = new MovementInput();
+    mi.accelerationFactor = output[0];
+    mi.newOrientation = output[1] * 2 * Math.PI * 2;
+    instance.client.server.computePlayerInput(instance.client, mi);
   }
 
   end(CommandInstance instance){
     if(instance.state == CommandInstanceState.ENDED) return;
-
-    print("${instance.network.name} died. Reward: ${instance.score}");
-
     instance.state = CommandInstanceState.ENDED;
-
   }
 
   void updateReward(CommandInstance instance){
