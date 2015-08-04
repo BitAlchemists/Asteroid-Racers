@@ -39,7 +39,7 @@ abstract class TrainingUnit {
 }
 
 class TrainingProgram {
-  List<TrainingUnit> trainingUnits;
+  List<TrainingUnit> trainingUnits = <TrainingUnit>[];
   IGameServer server;
 
   TrainingProgram();

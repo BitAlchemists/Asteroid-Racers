@@ -1,7 +1,8 @@
 package net_movement_input;
 
 message MovementInput {
-    optional double newOrientation = 1;
-    optional double accelerationFactor = 2;
+    optional double accelerationFactor = 1;
+    optional double newOrientation = 2;
+    optional double rotationSpeed = 3;
 }
 

@@ -1,32 +1,36 @@
 part of ai;
 
 class FlyTowardsTargetsTrainingProgram extends TrainingProgram {
-  final int NUM_TARGETS = 24;
-  final double TARGET_DISTANCE = 200.0;
+  int numTargets = 6;
+  double targetDistance = 275.0;
+  double targetDistanceRange = 25.0;
   Vector2 trainingCenter = new Vector2(-2700.0,1800.0);
-  int LIFETIME_MILLISECONDS = 1000;
+  int lifetimeMilliseconds = 3000; //should be multiples of 15 (milliseconds per frame
 
 
 
   FlyTowardsTargetsTrainingProgram();
 
   setUp(){
+    for(int i = 0; i < numTargets; i++){
+      num angle = (i.toDouble() / numTargets.toDouble());
+      double distance = targetDistance + (random.nextDouble()*2-1)*targetDistanceRange;
+      Vector2 position = new Vector2(Math.cos(angle * Math.PI * 2) * distance, Math.sin(angle * Math.PI * 2) * distance);
+      createTrainingUnit(position + trainingCenter);
+    }
+  }
 
-    trainingUnits = new List<TrainingUnit>.generate(NUM_TARGETS, (int i){
-      num angle = (i.toDouble() / NUM_TARGETS.toDouble());
-      Vector2 position = new Vector2(Math.cos(angle * Math.PI * 2) * TARGET_DISTANCE, Math.sin(angle * Math.PI * 2) * TARGET_DISTANCE);
+  FlyTowardsTargetTrainingUnit createTrainingUnit(Vector2 position){
+    Checkpoint checkpoint = new Checkpoint();
+    checkpoint.position = position;
+    checkpoint.radius = 30.0;
+    checkpoint.orientation = random.nextDouble() * Math.PI * 2;
+    checkpoint.state = CheckpointState.CLEARED;
 
-      Checkpoint checkpoint = new Checkpoint();
-      checkpoint.position = position + trainingCenter;
-      checkpoint.radius = 30.0;
-      checkpoint.orientation = 0.0;
-      checkpoint.state = CheckpointState.CLEARED;
+    server.world.addEntity(checkpoint);
 
-      server.world.addEntity(checkpoint);
-
-      return new FlyTowardsTargetTrainingUnit(trainingCenter,checkpoint, LIFETIME_MILLISECONDS);
-    });
-
+    var tpi = new FlyTowardsTargetTrainingUnit(trainingCenter,checkpoint, lifetimeMilliseconds);
+    trainingUnits.add(tpi);
   }
 
   tearDown(){
@@ -50,7 +54,7 @@ class FlyTowardsTargetTrainingUnit extends TrainingUnit {
 
   Future<double> run(TrainingProgramInstance tpi){
 
-    tpi.client.server.teleportPlayerTo(tpi.client,spawn,0.0,false);
+    tpi.client.server.teleportPlayerTo(tpi.client,spawn,target.orientation,false);
 
     CommandInstance ci = new CommandInstance();
     ci.client = tpi.client;

@@ -13,9 +13,9 @@ class Trainer {
   List<TrainingProgramInstance> _runningTrainingInstances = <TrainingProgramInstance>[];
   int _nextTrainingInstance;
 
-  int SAMPLE_SIZE = 1000;
+  int SAMPLE_SIZE = 100;
   int NUM_SIMULTANEOUS_SIMULATIONS = 100;
-  double LEARNING_RATE = 0.3;
+  double LEARNING_RATE = 0.2;
 
   start(){
     _trainingProgram = new FlyTowardsTargetsTrainingProgram();
@@ -44,7 +44,7 @@ class Trainer {
       int nameIndex = 0;
       for(MajorTom brain in networks){
         var jsonBrain = LukeSerializer.networkToJson(brain);
-        for(int i = 0; i < SAMPLE_SIZE~/networks.length; i++)
+        for(int i = 0; i < SAMPLE_SIZE-1; i++)
         {
           MajorTom network = LukeSerializer.jsonToNetwork(jsonBrain);
           network.name = "Major Tom #$nameIndex"; nameIndex++;
@@ -58,7 +58,7 @@ class Trainer {
     }
     else{
       print("did not find existing brains. creating new ones");
-      networks = new List<MajorTom>.generate(SAMPLE_SIZE*10, (int index) => new MajorTom([4,4,4,2],"Luke #$index"));
+      networks = new List<MajorTom>.generate(SAMPLE_SIZE*10, (int index) => new MajorTom([4,3,2],"Luke #$index"));
     }
 
     return networks;

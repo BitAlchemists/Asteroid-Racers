@@ -28,7 +28,7 @@ class MajorTom extends Network {
 
     for (int i = 1; i < neuronsInLayers.length; i++) {
       Layer layer = new Layer("HiddenLayer" + i.toString());
-      layer.createNeurons(neuronsInLayers[i], inputFunction: new WeightCombination(), activationFunction: new Sigmoid());
+      layer.createNeurons(neuronsInLayers[i], inputFunction: new WeightCombination(), activationFunction: new Tanh());
       this.addLayer(layer);
       for (Neuron neuron in this.layers[i].neurons) {
         neuron.addInputConnection(new Connection(umbral, neuron, INITIAL_WEIGHT_RANGE*2*random.nextDouble()-INITIAL_WEIGHT_RANGE));

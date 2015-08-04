@@ -46,12 +46,32 @@ class FlyTowardsTargetCommand implements Command {
 
     final double CORR = 1.0 / 1000.0;
 
-    instance.network.inputNetwork =
-    [
-      CORR * instance.client.movable.position.x,
+    // Absolute angle 1
+    Vector2 myPos = instance.client.movable.position;
+
+
+    double a1 = Math.atan2(target.y - myPos.y, target.x - myPos.x) / Math.PI;
+
+// Absolute angle 2
+    double myNormalizedOrientation = instance.client.movable.orientation / Math.PI - 1;  //atan2(direction.y, direction.x);
+
+// Relative angle
+    double rel_angle = a1 - myNormalizedOrientation;
+
+    List inputNetwork = [
+/*      CORR * instance.client.movable.position.x,
       CORR * instance.client.movable.position.y,
+      CORR * instance.client.movable.velocity.x,
+      CORR * instance.client.movable.velocity.y,
       CORR * target.x,
-      CORR * target.y];
+      CORR * target.y,
+      */
+      myNormalizedOrientation,
+      rel_angle,
+      instance.client.movable.position.distanceTo(target) * CORR,
+      instance.client.movable.velocity.length * CORR
+    ];
+    instance.network.inputNetwork = inputNetwork;
     instance.network.calculateOutput();
     List<double> output = instance.network.outputNetwork;/*
     Vector2 acceleration = new Vector2(output[0], output[1]);
@@ -64,8 +84,8 @@ class FlyTowardsTargetCommand implements Command {
     instance.client.movable.acceleration = acceleration;*/
 
     MovementInput mi = new MovementInput();
-    mi.accelerationFactor = output[0];
-    mi.newOrientation = output[1] * 2 * Math.PI * 2;
+    mi.accelerationFactor = (output[0] + 1) / 2;
+    mi.rotationSpeed = output[1] * 5.0;
     instance.client.server.computePlayerInput(instance.client, mi);
   }
 

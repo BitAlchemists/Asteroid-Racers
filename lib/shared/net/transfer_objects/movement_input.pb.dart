@@ -8,8 +8,9 @@ import 'package:protobuf/protobuf.dart';
 
 class MovementInput extends GeneratedMessage {
   static final BuilderInfo _i = new BuilderInfo('MovementInput')
-    ..a(1, 'newOrientation', GeneratedMessage.OD)
-    ..a(2, 'accelerationFactor', GeneratedMessage.OD)
+    ..a(1, 'accelerationFactor', GeneratedMessage.OD)
+    ..a(2, 'newOrientation', GeneratedMessage.OD)
+    ..a(3, 'rotationSpeed', GeneratedMessage.OD)
     ..hasRequiredFields = false
   ;
 
@@ -26,15 +27,20 @@ class MovementInput extends GeneratedMessage {
   }
   static MovementInput _defaultInstance;
 
-  double get newOrientation => getField(1);
-  void set newOrientation(double v) { setField(1, v); }
-  bool hasNewOrientation() => hasField(1);
-  void clearNewOrientation() => clearField(1);
+  double get accelerationFactor => getField(1);
+  void set accelerationFactor(double v) { setField(1, v); }
+  bool hasAccelerationFactor() => hasField(1);
+  void clearAccelerationFactor() => clearField(1);
 
-  double get accelerationFactor => getField(2);
-  void set accelerationFactor(double v) { setField(2, v); }
-  bool hasAccelerationFactor() => hasField(2);
-  void clearAccelerationFactor() => clearField(2);
+  double get newOrientation => getField(2);
+  void set newOrientation(double v) { setField(2, v); }
+  bool hasNewOrientation() => hasField(2);
+  void clearNewOrientation() => clearField(2);
+
+  double get rotationSpeed => getField(3);
+  void set rotationSpeed(double v) { setField(3, v); }
+  bool hasRotationSpeed() => hasField(3);
+  void clearRotationSpeed() => clearField(3);
 }
 
 class _ReadonlyMovementInput extends MovementInput with ReadonlyMessageMixin {}

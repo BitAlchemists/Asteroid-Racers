@@ -77,8 +77,8 @@ class GameServer implements IGameServer {
     _addArrows(x: -150, y: -1700, orientation: Math.PI * 1.5);        
     */
     _spawn = new Entity(type: EntityType.UNKNOWN);
-    //_spawn.position = new Vector2(0.0, 100.0);
-    _spawn.position = new Vector2(0.0, 0.0);
+    _spawn.position = new Vector2(-2300.0,1800.0);
+    //_spawn.position = new Vector2(0.0, 0.0);
 
     _spawn.radius = 200.0;
     _spawn.orientation = Math.PI;
@@ -133,6 +133,8 @@ class GameServer implements IGameServer {
       for(IServerService service in _services){
         service.preUpdate(gameLoop.dt);
       }
+
+      _physics.simulateRotation(0.015);
       _physics.simulateTranslation(0.015);
 
       // update
@@ -340,10 +342,14 @@ class GameServer implements IGameServer {
     }
 
     // 1. apply the new orientation
-    if(client.movable.orientation != input.newOrientation){
+    if(client.movable.orientation != input.newOrientation && input.newOrientation != null){
       client.movable.orientation = input.newOrientation;
     }
-    
+
+    if(client.movable.rotationSpeed != input.rotationSpeed && input.rotationSpeed != null){
+      client.movable.rotationSpeed = input.rotationSpeed;
+    }
+
     // 2. calculate the acceleration
     if(input.accelerationFactor != 0.0){
       double accelerationSpeed = 200.0 * input.accelerationFactor;

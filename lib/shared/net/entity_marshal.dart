@@ -189,6 +189,7 @@ class EntityMarshal {
     MovementInput netMovementInput = new MovementInput();
     netMovementInput.newOrientation = worldMovementInput.newOrientation;
     netMovementInput.accelerationFactor = worldMovementInput.accelerationFactor;
+    netMovementInput.rotationSpeed = worldMovementInput.rotationSpeed;
     return netMovementInput;
   }
 
@@ -196,6 +197,7 @@ class EntityMarshal {
     world.MovementInput worldMovementInput = new world.MovementInput();
     worldMovementInput.newOrientation = netMovementInput.newOrientation;
     worldMovementInput.accelerationFactor = netMovementInput.accelerationFactor;
+    worldMovementInput.rotationSpeed = netMovementInput.rotationSpeed;
     return worldMovementInput;
   }
 }

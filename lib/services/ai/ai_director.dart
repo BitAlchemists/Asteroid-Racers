@@ -8,28 +8,38 @@ class AIDirector implements IServerService {
 
   AIClientProxy _demoTom;
   FlyTowardsTargetsTrainingProgram _tp;
+  bool showDemo = true;
+  bool trainNetworks;
 
-  AIDirector();
+  AIDirector() {
+    trainNetworks = !showDemo;
+  }
 
-  start(){
-    trainer.server = server;
-    trainer.start();
+  start() {
+    if (showDemo) {
+      List<MajorTom> networks = LukeSerializer.readNetworksFromFile();
+      if (networks != null && networks.length > 0) {
+        _demoTom = new AIClientProxy();
+        _demoTom.server = this.server;
+        server.connectClient(_demoTom);
+        _demoTom.playerName = "Major Tom";
+        server.registerPlayer(_demoTom, _demoTom.playerName);
 
-    List<MajorTom> networks = LukeSerializer.readNetworksFromFile();
-    if(networks != null && networks.length > 0){
-      _demoTom = new AIClientProxy();
-      _demoTom.server = this.server;
-      server.connectClient(_demoTom);
-      _demoTom.playerName = "Major Tom";
-      server.registerPlayer(_demoTom, _demoTom.playerName);
+        _tp = new FlyTowardsTargetsTrainingProgram();
+        _tp.server = server;
+        _tp.trainingCenter = new Vector2(-2300.0, 1800.0);
+        //_tp.setUp();
+        _tp.createTrainingUnit(new Vector2(-2000.0, 1700.0));
+        _demoNetwork(networks[0]);
+      }
+    }
 
-      _tp = new FlyTowardsTargetsTrainingProgram();
-      _tp.server = server;
-      _tp.trainingCenter = new Vector2.zero();
-      _tp.setUp();
-      _demoNetwork(networks[0]);
+    if (trainNetworks){
+      trainer.server = server;
+      trainer.start();
     }
   }
+
 
   _demoNetwork(MajorTom network){
     TrainingProgramInstance tpi = new TrainingProgramInstance(_tp, network);
@@ -42,8 +52,8 @@ class AIDirector implements IServerService {
 
   void preUpdate(double dt)
   {
-    trainer.preUpdate(dt);
-    if(_demoTom != null) _demoTom.step(dt);
+    if(trainNetworks) trainer.preUpdate(dt);
+    if(showDemo && _demoTom != null) _demoTom.step(dt);
   }
 
   void update(double dt)
@@ -52,7 +62,7 @@ class AIDirector implements IServerService {
 
   void postUpdate(double dt)
   {
-    trainer.postUpdate(dt);
+    if(trainNetworks) trainer.postUpdate(dt);
   }
 
 }

@@ -53,7 +53,6 @@ Future runServer(List filePaths, String logPath, int port) {
 
   gameServer.start();
 
-
   return HttpServer.bind('0.0.0.0', port).then((HttpServer server) {
     print('listening for connections on $port');
         

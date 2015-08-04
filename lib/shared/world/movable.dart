@@ -3,8 +3,9 @@ part of world;
 class MovementInput {
   MovementInput();
 
-  double newOrientation;
   double accelerationFactor;
+  double newOrientation;
+  double rotationSpeed;
 }
 
 class Movable extends Entity {
