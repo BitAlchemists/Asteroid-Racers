@@ -29,12 +29,12 @@ class TargetScript extends Script {
   Completer _completer;
 
   List targets = [];
-  int nextTargetIndex = 0;
+  int _nextTargetIndex = 0;
+  Checkpoint currentTarget;
 
   TargetScript();
 
   Future run(){
-    print("run script");
     if(state == ScriptState.READY){
       state = ScriptState.RUNNING;
       _runNextTarget();
@@ -53,7 +53,7 @@ class TargetScript extends Script {
     {
       if(currentFrames++ >= lifeTimeFrames){
         _cleanUpCurrentTarget();
-        if(nextTargetIndex < targets.length){
+        if(_nextTargetIndex < targets.length){
           _runNextTarget();
         }
         else{
@@ -67,17 +67,14 @@ class TargetScript extends Script {
   }
 
   _runNextTarget(){
-    print("run next target");
-
     //get the next checkpoint
-    Checkpoint target;
-    target = targets[nextTargetIndex++];
-    target.state = CheckpointState.CURRENT;
-    target.updateRank += 1.0;
+    currentTarget = targets[_nextTargetIndex++];
+    currentTarget.state = CheckpointState.CURRENT;
+    currentTarget.updateRank += 1.0;
 
-    director.server.teleportPlayerTo(client, spawn, target.orientation, false);
+    director.server.teleportPlayerTo(client, spawn, currentTarget.orientation, false);
 
-    Command command = new FlyTowardsTargetCommand(target.position);
+    Command command = new FlyTowardsTargetCommand(currentTarget.position);
     command.network = network;
     client.command = command;
 
@@ -87,7 +84,7 @@ class TargetScript extends Script {
   _cleanUpCurrentTarget(){
     //get the previous target checkpoint
     Checkpoint target;
-    target = targets[nextTargetIndex-1];
+    target = targets[_nextTargetIndex-1];
     target.state = CheckpointState.FUTURE;
     target.updateRank += 1.0;
 
@@ -95,7 +92,6 @@ class TargetScript extends Script {
   }
 
   _finish(){
-    print("finish script");
     state = ScriptState.ENDED;
     _completer.complete();
   }
@@ -127,7 +123,15 @@ class CircleTargetScript extends TargetScript {
     checkpoint.orientation = random.nextDouble() * Math.PI * 2;
     checkpoint.state = CheckpointState.FUTURE;
 
-    director.server.world.addEntity(checkpoint);
+    director.server.spawnEntity(checkpoint);
     targets.add(checkpoint);
+  }
+
+  _finish(){
+    for(Checkpoint target in targets){
+      director.server.despawnEntity(target);
+    }
+    targets.clear();
+    super._finish();
   }
 }

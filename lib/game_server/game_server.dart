@@ -220,19 +220,10 @@ class GameServer implements IGameServer {
     
     if(client.movable != null){
       _physics.removeMovable(client.movable);
-      _world.removeEntity(client.movable);
       _crashCollisionDetector.activeEntities.remove(client.movable);
       _race.removePlayer(client);
       _entityToClientMap.remove(client.movable);
-
-      //TODO: remove this message from game server and move it to the world. Probably via a world update message?
-      net.IntMessage message = new net.IntMessage();
-      message.integer = client.movable.id;
-
-      net.Envelope envelope = new net.Envelope();
-      envelope.messageType = net.MessageType.ENTITY_REMOVE;
-      envelope.payload = message.writeToBuffer();
-      sendMessageToClientsExcept(envelope, client);
+      despawnEntity(client.movable);
     }
   }
   
@@ -259,7 +250,8 @@ class GameServer implements IGameServer {
     player.type = EntityType.SHIP;
     player.radius = 20.0;
     player.displayName = desiredUsername;
-    _world.addEntity(player);
+
+    spawnEntity(player);
     
     _entityToClientMap[player] = client;
     
@@ -368,6 +360,24 @@ class GameServer implements IGameServer {
     {
       client.movable.acceleration = new Vector2.zero();
     }
+  }
+
+  spawnEntity(Entity entity){
+    _world.addEntity(entity);
+    entity.updateRank += 1.0;
+  }
+
+  despawnEntity(Entity entity){
+    _world.removeEntity(entity);
+
+    //TODO: remove this message from game server and move it to the world. Probably via a world update message?
+    net.IntMessage message = new net.IntMessage();
+    message.integer = entity.id;
+
+    net.Envelope envelope = new net.Envelope();
+    envelope.messageType = net.MessageType.ENTITY_REMOVE;
+    envelope.payload = message.writeToBuffer();
+    broadcastMessage(envelope);
   }
   
   _broadcastUpdates(){

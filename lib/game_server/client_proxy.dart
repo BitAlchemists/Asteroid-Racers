@@ -157,7 +157,8 @@ class ClientProxy implements IClientProxy
                     "ISEE-3/ICE", // http://blog.xkcd.com/2014/05/30/isee-3/
                     "XKCD-303",
                     "Drei-Zimmer-Rakete",
-                    "Major Tom"];
+                    "Major Tom",
+                    "Patrouille HAL9000"];
       int index = new Math.Random().nextInt(names.length);
       username = names[index];
     }

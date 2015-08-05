@@ -23,6 +23,8 @@ abstract class IGameServer {
   void registerPlayer(IClientProxy client, String desiredUsername);
   void computePlayerInput(IClientProxy client, world.MovementInput input);
   void teleportPlayerTo(IClientProxy client, world.Vector2 position, double orientation, bool informClientToo);
+  void spawnEntity(world.Entity entity);
+  void despawnEntity(world.Entity entity);
   
   broadcastMessage(Envelope envelope, {Set<IClientProxy> blacklist});
   sendMessageToClientsExcept(Envelope envelope, IClientProxy client);
