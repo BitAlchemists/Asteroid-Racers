@@ -6,8 +6,10 @@ class AIDirector implements IServerService {
 
   Trainer trainer = new Trainer();
 
-  AIClientProxy _demoTom;
-  FlyTowardsTargetsTrainingProgram _tp;
+  List<AIClientProxy> _clients = <AIClientProxy>[];
+  List<Script> _scripts = <Script>[];
+
+  TrainingProgramInstance _tpi;
   bool showDemo = true;
   bool trainNetworks;
 
@@ -19,18 +21,8 @@ class AIDirector implements IServerService {
     if (showDemo) {
       List<MajorTom> networks = LukeSerializer.readNetworksFromFile();
       if (networks != null && networks.length > 0) {
-        _demoTom = new AIClientProxy();
-        _demoTom.server = this.server;
-        server.connectClient(_demoTom);
-        _demoTom.playerName = "Major Tom";
-        server.registerPlayer(_demoTom, _demoTom.playerName);
-
-        _tp = new FlyTowardsTargetsTrainingProgram();
-        _tp.server = server;
-        _tp.trainingCenter = new Vector2(-2300.0, 1800.0);
-        //_tp.setUp();
-        _tp.createTrainingUnit(new Vector2(-2000.0, 1700.0));
-        _demoNetwork(networks[0]);
+        var client = spawnClient();
+        runScript(new CircleTargetScript(), client, networks[0]);
       }
     }
 
@@ -40,20 +32,39 @@ class AIDirector implements IServerService {
     }
   }
 
+  AIClientProxy spawnClient(){
+    AIClientProxy client = new AIClientProxy();
+    client.server = this.server;
+    client.playerName = "Major Tom";
+    _clients.add(client);
 
-  _demoNetwork(MajorTom network){
-    TrainingProgramInstance tpi = new TrainingProgramInstance(_tp, network);
-    tpi.client = _demoTom;
+    server.connectClient(client);
+    server.registerPlayer(client, client.playerName);
 
-    _tp.run(tpi).then((_){
-      _demoNetwork(network);
+    return client;
+  }
+
+  Future runScript(Script script, AIClientProxy client, Network network){
+    script.director = this;
+    script.client = client;
+    script.network = network;
+    _scripts.add(script);
+
+    return script.run().then((_){
+      _scripts.remove(script);
     });
   }
+
+
+
 
   void preUpdate(double dt)
   {
     if(trainNetworks) trainer.preUpdate(dt);
-    if(showDemo && _demoTom != null) _demoTom.step(dt);
+
+    for(AIClientProxy client in _clients){
+      client.step(dt);
+    }
   }
 
   void update(double dt)
@@ -63,6 +74,10 @@ class AIDirector implements IServerService {
   void postUpdate(double dt)
   {
     if(trainNetworks) trainer.postUpdate(dt);
+
+    for(Script script in _scripts){
+      script.step(dt);
+    }
   }
 
 }

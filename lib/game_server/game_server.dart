@@ -152,7 +152,6 @@ class GameServer implements IGameServer {
     }
     catch(e, stack)
     {
-      print("exceltion in _onHeartBeat()");
       print(e);
       print(stack);
     }
@@ -206,7 +205,7 @@ class GameServer implements IGameServer {
     envelope.payload = chatMessage.writeToBuffer();
     client.send(envelope);
 
-    print("player connected. connected clients: ${_clients.length}");
+    //print("player connected. connected clients: ${_clients.length}");
   }
   
   void disconnectClient(IClientProxy client){
@@ -217,7 +216,7 @@ class GameServer implements IGameServer {
     }
 
     _clients.remove(client);
-    print("player ${client.movable.displayName} disconnected. connected clients: ${_clients.length}");
+    //print("player ${client.movable.displayName} disconnected. connected clients: ${_clients.length}");
     
     if(client.movable != null){
       _physics.removeMovable(client.movable);
@@ -255,7 +254,7 @@ class GameServer implements IGameServer {
   }
   
   void registerPlayer(IClientProxy client, String desiredUsername){
-    print("player identifies as $desiredUsername");    
+    //print("player identifies as $desiredUsername");
     Movable player = new Movable();
     player.type = EntityType.SHIP;
     player.radius = 20.0;

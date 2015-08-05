@@ -4,15 +4,17 @@ class TrainingProgramInstance {
   MajorTom network;
   TrainingProgram program;
   AIClientProxy client;
-  List scores = [];
-  double get score {
-    double finalScore = 0.0;
-    for(double score in scores){
-      finalScore += score;
-    }
-    finalScore /= scores.length;
-    return finalScore;
+
+  TrainingUnit currentTrainingUnit;
+  int framesInTrainingUnit;
+  Completer completer;
+
+  void updateScore(Command command)
+  {
+    currentTrainingUnit.updateScore(this);
   }
+
+  double score = 0.0;
   double get highscore => score;
 
   TrainingProgramInstance(this.program, this.network);
@@ -36,6 +38,8 @@ class TrainingProgramInstance {
 
 abstract class TrainingUnit {
   Future run(TrainingProgramInstance instance);
+  void step(TrainingProgramInstance instance, double dt);
+  double updateScore(TrainingProgramInstance instance);
 }
 
 class TrainingProgram {
@@ -49,16 +53,20 @@ class TrainingProgram {
   Future<TrainingProgramInstance> run(TrainingProgramInstance instance){
     int _nextTrainingUnit = 0;
 
-    Future _runNextTrainingUnit(_){
+    _runNextTrainingUnit(_){
       if(_nextTrainingUnit < trainingUnits.length) {
         TrainingUnit unit = trainingUnits[_nextTrainingUnit++];
-        return unit.run(instance).then((double score){
-          instance.scores.add(score);
+        instance.currentTrainingUnit = unit;
+        instance.framesInTrainingUnit = 0;
+        //print("running next training unit");
+        return unit.run(instance).then((_){
+          //print("training unit finished");
+          instance.currentTrainingUnit = null;
           return _runNextTrainingUnit(null);
         });
       }
 
-      return new Future.value(instance);
+      return instance;
     }
 
     return _runNextTrainingUnit(null);

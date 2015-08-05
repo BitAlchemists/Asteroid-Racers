@@ -86,7 +86,7 @@ class LukeSerializer {
       String json = file.readAsStringSync();
       Iterable lukes = JSON.decode(json);
       lukes = lukes.map(jsonToNetwork).toList();
-      print("loaded networks");
+      //print("loaded networks");
       return lukes;
     }
     return null;
@@ -96,7 +96,7 @@ class LukeSerializer {
     lukes = lukes.map(networkToJson).toList();
     String json = JSON.encode(lukes);
     new File(networksFilePath).writeAsStringSync(json);
-    print("saved networks");
+    //print("saved networks");
   }
 
   static String historiesFilePath = Directory.current.path + "/luke.txt";

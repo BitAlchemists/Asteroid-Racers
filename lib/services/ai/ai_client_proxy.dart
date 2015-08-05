@@ -4,7 +4,19 @@ class AIClientProxy implements IClientProxy {
 
   String playerName;
   Movable movable;
-  CommandInstance currentCommandInstance;
+  Command _command;
+  Command get command => _command;
+  set command(Command command){
+    if(_command != null){
+      _command.client = null;
+    }
+
+    _command = command;
+
+    if(_command != null){
+      _command.client = this;
+    }
+  }
   IGameServer server;
 
   AIClientProxy();
@@ -19,6 +31,8 @@ class AIClientProxy implements IClientProxy {
   }
 
   void step(double dt){
-    currentCommandInstance.command.step(currentCommandInstance, dt);
+    if(command != null){
+      command.step(dt);
+    }
   }
 }

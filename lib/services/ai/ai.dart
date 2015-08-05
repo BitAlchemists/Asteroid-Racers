@@ -18,8 +18,6 @@ part "trainer.dart";
 part "training_program.dart";
 part "major_tom.dart";
 part "major_tom_serializer.dart";
-
-//Training programs
-part "training_programs/fly_towards_target_training_program.dart";
+part "script.dart";
 
 Math.Random random = new Math.Random();
