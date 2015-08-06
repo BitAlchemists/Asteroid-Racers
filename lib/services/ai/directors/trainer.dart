@@ -62,7 +62,7 @@ class Trainer extends AIDirector {
           network.name = "Major Tom #$nameIndex"; nameIndex++;
           network.generation++;
           //brain.best_reward = double.MAX_FINITE;
-          network.mutate(MUTATION_RATE, MUTATION_STRENGTH);
+          network.mutate(MUTATION_RATE, MUTATION_STRENGTH, MajorTom.mutateConnectionRelative);
           newNetworks.add(network);
         }
       }

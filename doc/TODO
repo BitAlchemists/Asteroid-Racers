@@ -1,4 +1,19 @@
-- reimplement high score
-- implement FlyAwayFromTargetChallenge
-- implement FlyWithinTargetZoneChallenge
-- implement StayBehindTargetChallenge
+
+
+===== AI =====
+
+Commands:
+- stay within an area
+- stay with me (and dont ram me)
+- ram me
+- patrol between four points
+
+Performance:
+- move training into dedicated process with own world simulation
+
+Configuration:
+- save config ad hoc to manipulate runtime training
+
+Logging:
+- Log the results for each training run
+- Log the generation

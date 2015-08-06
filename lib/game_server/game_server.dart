@@ -80,7 +80,7 @@ class GameServer implements IGameServer {
     //_spawn.position = new Vector2(-2300.0,1800.0);
     _spawn.position = new Vector2(0.0, 0.0);
 
-    _spawn.radius = 200.0;
+    _spawn.radius = 0.0;
     _spawn.orientation = Math.PI;
 
     /* Dummy player

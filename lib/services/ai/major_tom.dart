@@ -52,28 +52,35 @@ class MajorTom extends Network {
     }
   }
 
-  void mutate(double mutationRate, double mutationStrength)
-  {
+  void mutate(double mutationRate, double mutationStrength, Function connectionMutator){
     for(Layer layer in this.layers)
     {
       for(Neuron neuron in layer.neurons)
       {
         for(Connection connection in neuron.inputConnections){
-          if (random.nextDouble() < mutationRate) {
-            /*
-            connection.weight.value *= 1 + mutationStrength * (random.nextDouble() * 2 - 1);
-            //if a connection weight is smaller than 0.001, it may change sign
-            if(connection.weight.value.abs() < 0.001) {
-              if(random.nextDouble() > 0.5) connection.weight.value *= -1;
-            }
-*/
-            double delta = (random.nextDouble() * 2 - 1) * mutationStrength;
-            connection.weight.value = (connection.weight.value + delta).clamp(-1.0, 1.0);
-
-          }
+          connectionMutator(mutationRate, mutationStrength, connection);
         }
       }
     }
   }
-  
+
+  static void mutateConnectionRelative(double mutationRate, double mutationStrength, Connection connection)
+  {
+    if (random.nextDouble() < mutationRate) {
+      connection.weight.value *= 1 + mutationStrength * (random.nextDouble() * 2 - 1);
+      //if a connection weight is smaller than 0.001, it may change sign
+      if(connection.weight.value.abs() < 0.001) {
+        if(random.nextDouble() > 0.5) connection.weight.value *= -1;
+      }
+    }
+  }
+
+  static void mutateConnectionAbsolute(double mutationRate, double mutationStrength, Connection connection)
+  {
+    if (random.nextDouble() < mutationRate) {
+      double delta = (random.nextDouble() * 2 - 1) * mutationStrength;
+      connection.weight.value = (connection.weight.value + delta).clamp(-1.0, 1.0);
+    }
+  }
+
 }

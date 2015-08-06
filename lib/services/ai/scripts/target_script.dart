@@ -1,26 +1,7 @@
 part of ai;
 
-enum ScriptState {
-  READY,
-  RUNNING,
-  ENDED
-}
-
-abstract class Script {
-  ScriptState state = ScriptState.READY;
-  AIDirector director;
-  AIClientProxy client;
-  Network network;
-  Evaluator evaluator;
-
-  Script();
-
-  Future run();
-  void step(double dt);
-}
-
 class TargetScript extends Script {
-  int lifeTimeFrames = 6000~/15; //should be multiples of 15 (milliseconds per frame
+  int lifeTimeFrames = 4500~/15; //should be multiples of 15 (milliseconds per frame
   int currentFrames = 0;
   Vector2 spawn;
 
@@ -58,7 +39,7 @@ class TargetScript extends Script {
       }
     }
     else {
-      print("Trying to step() script, but script state is ${state.toString()}");
+      //print("Trying to step() script, but script state is ${state.toString()} ${this.hashCode}");
     }
   }
 
@@ -113,10 +94,10 @@ class CircleTargetGenerator {
   static List<Entity> setupTargets(
       IGameServer server,
       {Vector2 center,
-      int numTargets: 6,
-      double targetDistance: 275.0,
-      double targetDistanceRange: 25.0,
-      double radius:60.0}){
+      int numTargets: 20,
+      double targetDistance: 300.0,
+      double targetDistanceRange: 80.0,
+      double radius:30.0}){
 
     if(center == null){
       center = new Vector2.zero();
