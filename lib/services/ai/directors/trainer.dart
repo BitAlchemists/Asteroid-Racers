@@ -6,9 +6,10 @@ int rewardCompare(double reward1, double reward2) => reward1.compareTo(reward2);
 
 class Trainer extends AIDirector {
   Function scriptFactory;
+  String folderName = "luke";
 
-  int SAMPLE_SIZE = 100;
-  int NUM_SIMULTANEOUS_SIMULATIONS = 100;
+  int SAMPLE_SIZE = 1000;
+  int NUM_SIMULTANEOUS_SIMULATIONS = 1000;
   double MUTATION_RATE = 0.1;
   double MUTATION_STRENGTH = 1.0;
 
@@ -24,7 +25,8 @@ class Trainer extends AIDirector {
   _startTraining(){
     _prepareTraining();
 
-    List<Future> simulations = new List<Future>.generate(NUM_SIMULTANEOUS_SIMULATIONS, (int index){
+    int numSimultaneousSimulations = Math.min(NUM_SIMULTANEOUS_SIMULATIONS, networks.length);
+    List<Future> simulations = new List<Future>.generate(numSimultaneousSimulations, (int index){
       return _runNextTrainingInstance();
     });
 
@@ -36,7 +38,9 @@ class Trainer extends AIDirector {
 
 
   _prepareTraining(){
-    networks = _prepareNetworks();
+    if(networks == null){
+      networks = _prepareNetworks();
+    }
     evaluations = new Map<MajorTom, double>.fromIterable(
         networks,
         key:(network) => network,
@@ -45,16 +49,16 @@ class Trainer extends AIDirector {
   }
 
   _prepareNetworks(){
-    List<MajorTom> networks = LukeSerializer.readNetworksFromFile();
+    List<MajorTom> networks = MajorTomSerializer.readNetworksFromFile(folderName);
     if(networks != null){
       //print("found brains. mutating them");
       List newNetworks = [];
       int nameIndex = 0;
       for(MajorTom brain in networks){
-        var jsonBrain = LukeSerializer.networkToJson(brain);
+        var jsonBrain = MajorTomSerializer.networkToJson(brain);
         for(int i = 0; i < SAMPLE_SIZE-1; i++)
         {
-          MajorTom network = LukeSerializer.jsonToNetwork(jsonBrain);
+          MajorTom network = MajorTomSerializer.jsonToNetwork(jsonBrain);
           network.name = "Major Tom #$nameIndex"; nameIndex++;
           network.generation++;
           //brain.best_reward = double.MAX_FINITE;
@@ -66,7 +70,7 @@ class Trainer extends AIDirector {
     }
     else{
       //print("did not find existing brains. creating new ones");
-      networks = new List<MajorTom>.generate(SAMPLE_SIZE*10, (int index) => new MajorTom([4,3,2],"Luke #$index"));
+      networks = new List<MajorTom>.generate(SAMPLE_SIZE*10, (int index) => new MajorTom([5,4,2],"Luke #$index"));
     }
 
     return networks;
@@ -78,6 +82,7 @@ class Trainer extends AIDirector {
     Script script = scriptFactory();
 
     return runScript(script, client, network).then((_){
+      despawnClient(client);
       evaluations[script.network] = script.evaluator.finalScore;
     });
   }
@@ -87,7 +92,7 @@ class Trainer extends AIDirector {
 
   postUpdate(double dt) {
     for(Script script in _scripts){
-      script.evaluator.evaluate(script);
+      script.evaluator.evaluate(script, dt);
     }
     super.postUpdate(dt);
   }
@@ -104,7 +109,7 @@ class Trainer extends AIDirector {
     bestTrainingSet.name = "Winner from last round";
     List<MajorTom> survivors = [bestTrainingSet];
 
-    LukeSerializer.writeNetworksToFile(survivors);
+    MajorTomSerializer.writeNetworksToFile(survivors, folderName);
 
     networks = null;
     evaluations = null;
@@ -128,7 +133,7 @@ class Trainer extends AIDirector {
     print(report);
 
     //save report to file
-    Directory logDirectory = new Directory.fromUri(new Uri.file(Directory.current.path + "/log"));
+    Directory logDirectory = new Directory.fromUri(new Uri.file(Directory.current.path + "/db/$folderName/log"));
     logDirectory.createSync(recursive:true);
     String logFileName = logDirectory.path + "/${new DateTime.now().millisecondsSinceEpoch}.log";
     new File(logFileName).writeAsStringSync(report);

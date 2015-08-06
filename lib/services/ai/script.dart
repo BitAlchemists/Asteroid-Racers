@@ -20,7 +20,7 @@ abstract class Script {
 }
 
 class TargetScript extends Script {
-  int lifeTimeFrames = 3000~/15; //should be multiples of 15 (milliseconds per frame
+  int lifeTimeFrames = 6000~/15; //should be multiples of 15 (milliseconds per frame
   int currentFrames = 0;
   Vector2 spawn;
 
@@ -30,7 +30,11 @@ class TargetScript extends Script {
   int _nextTargetIndex = 0;
   Checkpoint currentTarget;
 
-  TargetScript(this.spawn, this.targets);
+  TargetScript(this.targets, [this.spawn]){
+    if(spawn == null){
+      spawn = new Vector2.zero();
+    }
+  }
 
   Future run(){
     if(state == ScriptState.READY){
@@ -50,17 +54,21 @@ class TargetScript extends Script {
     if(state == ScriptState.RUNNING)
     {
       if(currentFrames++ >= lifeTimeFrames){
-        _cleanUpCurrentTarget();
-        if(_nextTargetIndex < targets.length){
-          _runNextTarget();
-        }
-        else{
-          _finish();
-        }
+        _onTargetFinish();
       }
     }
     else {
       print("Trying to step() script, but script state is ${state.toString()}");
+    }
+  }
+
+  _onTargetFinish(){
+    _cleanUpCurrentTarget();
+    if(_nextTargetIndex < targets.length){
+      _runNextTarget();
+    }
+    else{
+      _finish();
     }
   }
 
@@ -72,9 +80,14 @@ class TargetScript extends Script {
 
     director.server.teleportPlayerTo(client, spawn, currentTarget.orientation, false);
 
-    Command command = new FlyTowardsTargetCommand(currentTarget.position);
+    FlyTowardsTargetCommand command = new FlyTowardsTargetCommand(currentTarget);
     command.network = network;
+    command.didReachTargetCallback = (_){
+      _onTargetFinish();
+      return false; //don't continue to execute the command
+    };
     client.command = command;
+
 
     currentFrames = 0;
   }
@@ -99,13 +112,18 @@ class TargetScript extends Script {
 class CircleTargetGenerator {
   static List<Entity> setupTargets(
       IGameServer server,
-      Vector2 center,
-      [int numTargets = 6,
-      double targetDistance = 275.0,
-      double targetDistanceRange = 25.0]){
+      {Vector2 center,
+      int numTargets: 6,
+      double targetDistance: 275.0,
+      double targetDistanceRange: 25.0,
+      double radius:60.0}){
+
+    if(center == null){
+      center = new Vector2.zero();
+    }
 
     var targets = _createTargets(numTargets, targetDistance, targetDistanceRange, center);
-    targets = targets.map((Vector2 position) => _createCheckpoint(position)).toList();
+    targets = targets.map((Vector2 position) => _createCheckpoint(position, radius)).toList();
     targets.forEach((Entity entity) => server.spawnEntity(entity));
     return targets;
   }
@@ -126,10 +144,10 @@ class CircleTargetGenerator {
     });
   }
 
-  static Checkpoint _createCheckpoint(Vector2 position){
+  static Checkpoint _createCheckpoint(Vector2 position, double radius){
     Checkpoint checkpoint = new Checkpoint();
     checkpoint.position = position;
-    checkpoint.radius = 30.0;
+    checkpoint.radius = radius;
     checkpoint.orientation = random.nextDouble() * Math.PI * 2;
     checkpoint.state = CheckpointState.FUTURE;
     return checkpoint;

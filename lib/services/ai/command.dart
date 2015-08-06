@@ -21,7 +21,8 @@ abstract class Command {
 }
 
 class FlyTowardsTargetCommand extends Command {
-  Vector2 target;
+  Entity target;
+  Function didReachTargetCallback;
 
   FlyTowardsTargetCommand(this.target);
 
@@ -32,15 +33,27 @@ class FlyTowardsTargetCommand extends Command {
   step(double dt){
     if(state == CommandState.ENDED) return;
 
+    if(client.movable.position.distanceTo(target.position) < target.radius && didReachTargetCallback != null)
+    {
+      bool continueCommandExecution = didReachTargetCallback(this);
+      if(!continueCommandExecution) return;
+    }
+
+    _calcNextMove();
+  }
+
+  _calcNextMove(){
     //we use this correction factor to supply reasonable input to the neural network
     final double CORR = 1.0 / 1000.0;
 
     Vector2 myPos = client.movable.position;
 
+    //angle to target
+    double a1 = Math.atan2(target.position.y - myPos.y, target.position.x - myPos.x) / Math.PI;
 
-    double a1 = Math.atan2(target.y - myPos.y, target.x - myPos.x) / Math.PI;
+    double myVelocityAngle = Math.atan2(client.movable.velocity.y, client.movable.velocity.x) / Math.PI;
 
-// Absolute angle 2
+    //orientation angle
     double myNormalizedOrientation = client.movable.orientation / Math.PI - 1;  //atan2(direction.y, direction.x);
 
 // Relative angle
@@ -56,8 +69,9 @@ class FlyTowardsTargetCommand extends Command {
       */
       myNormalizedOrientation,
       rel_angle,
-      client.movable.position.distanceTo(target) * CORR,
-      client.movable.velocity.length * CORR
+      client.movable.position.distanceTo(target.position) * CORR,
+      client.movable.velocity.length * CORR,
+      myVelocityAngle
     ];
     network.inputNetwork = inputNetwork;
     network.calculateOutput();
@@ -75,6 +89,7 @@ class FlyTowardsTargetCommand extends Command {
     mi.accelerationFactor = (output[0] + 1) / 2;
     mi.rotationSpeed = output[1] * 5.0;
     client.server.computePlayerInput(client, mi);
+
   }
 
   end(){

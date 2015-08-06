@@ -23,6 +23,11 @@ abstract class AIDirector implements IServerService {
     return client;
   }
 
+  despawnClient(AIClientProxy client){
+    server.disconnectClient(client);
+    _clients.remove(client);
+  }
+
   Future runScript(Script script, AIClientProxy client, Network network){
     script.director = this;
     script.client = client;

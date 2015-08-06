@@ -13,7 +13,7 @@ part of ai;
 
  */
 
-class LukeSerializer {
+class MajorTomSerializer {
   static Object networkToJson(MajorTom network){
     Map raw = {"generation":network.generation, "name": network.name};
     // "best_reward":network.best_reward
@@ -78,9 +78,12 @@ class LukeSerializer {
     return network;
   }
 
-  static String networksFilePath = Directory.current.path + "/luke.txt";
 
-  static List<MajorTom> readNetworksFromFile() {
+
+  static List<MajorTom> readNetworksFromFile(String folderName) {
+    Directory logDirectory = new Directory.fromUri(new Uri.file(Directory.current.path + "/db/$folderName"));
+    String networksFilePath = logDirectory.path + "/luke.txt";
+
     File file = new File(networksFilePath);
     if(file.existsSync()){
       String json = file.readAsStringSync();
@@ -92,13 +95,16 @@ class LukeSerializer {
     return null;
   }
 
-  static void writeNetworksToFile(Iterable<MajorTom> lukes) {
+  static void writeNetworksToFile(Iterable<MajorTom> lukes, String folderName) {
+    Directory logDirectory = new Directory.fromUri(new Uri.file(Directory.current.path + "/db/$folderName"));
+    logDirectory.createSync(recursive:true);
+    String networksFilePath = logDirectory.path + "/luke.txt";
+
     lukes = lukes.map(networkToJson).toList();
     String json = JSON.encode(lukes);
     new File(networksFilePath).writeAsStringSync(json);
     //print("saved networks");
   }
 
-  static String historiesFilePath = Directory.current.path + "/luke.txt";
 
 }

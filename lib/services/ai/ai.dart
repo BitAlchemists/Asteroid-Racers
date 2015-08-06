@@ -31,20 +31,51 @@ bool train = !showDemo;
 registerAIServices(IGameServer gameServer){
   if(showDemo){
     AIDirector ai;
-    ai = new DemoDirector();
+    /*
+    ai = new DemoDirector("LeastDistanceToTargetsEvaluator", new Vector2(-300.0, 0.0));
+    gameServer.registerService(ai);
+
+    ai = new DemoDirector("SumOfDistanceToTargetsEvaluator", new Vector2(300.0, 0.0));
+    gameServer.registerService(ai);
+*/
+    ai = new DemoDirector("TimeToTargetEvaluator", new Vector2(0.0, 0.0));
     gameServer.registerService(ai);
   }
 
   if(train){
-    Trainer trainer = new Trainer();
-    Vector2 center = new Vector2(-2700.0, 1800.0);
-    var targets = CircleTargetGenerator.setupTargets(gameServer, center);
+    var targets = CircleTargetGenerator.setupTargets(gameServer);
+    Trainer trainer;
+
+    trainer = new Trainer();
     trainer.scriptFactory = (){
-      var script = new TargetScript(center, targets);
+      var script = new TargetScript(targets);
+      script.evaluator = new TimeToTargetEvaluator();
+      return script;
+    };
+    trainer.folderName = "TimeToTargetEvaluator";
+    //trainer.networks = MajorTomSerializer.readNetworksFromFile("LeastDistanceToTargetsEvaluator");
+    gameServer.registerService(trainer);
+
+    /*
+    trainer = new Trainer();
+    trainer.scriptFactory = (){
+      var script = new TargetScript(targets);
       script.evaluator = new LeastDistanceToTargetsEvaluator();
       return script;
     };
+    trainer.folderName = "LeastDistanceToTargetsEvaluator";
     gameServer.registerService(trainer);
+
+
+    trainer = new Trainer();
+    trainer.scriptFactory = (){
+      var script = new TargetScript(targets);
+      script.evaluator = new SumOfDistanceToTargetsEvaluator();
+      return script;
+    };
+    trainer.folderName = "SumOfDistanceToTargetsEvaluator";
+    gameServer.registerService(trainer);
+    */
   }
 
 }
