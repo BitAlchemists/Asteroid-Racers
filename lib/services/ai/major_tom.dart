@@ -52,29 +52,28 @@ class MajorTom extends Network {
     }
   }
 
-  void mutate(double mutationRate)
+  void mutate(double mutationRate, double mutationStrength)
   {
     for(Layer layer in this.layers)
     {
       for(Neuron neuron in layer.neurons)
       {
         for(Connection connection in neuron.inputConnections){
-          connection.weight.value *= 1 + mutationRate * (random.nextDouble() * 2 - 1);
-          //if a connection weight is smaller than 0.001, it may change sign
-          if(connection.weight.value.abs() < 0.001) {
-            if(random.nextDouble() > 0.5) connection.weight.value *= -1;
+          if (random.nextDouble() < mutationRate) {
+            /*
+            connection.weight.value *= 1 + mutationStrength * (random.nextDouble() * 2 - 1);
+            //if a connection weight is smaller than 0.001, it may change sign
+            if(connection.weight.value.abs() < 0.001) {
+              if(random.nextDouble() > 0.5) connection.weight.value *= -1;
+            }
+*/
+            double delta = (random.nextDouble() * 2 - 1) * mutationStrength;
+            connection.weight.value = (connection.weight.value + delta).clamp(-1.0, 1.0);
+
           }
         }
       }
     }
   }
-
-/*
-  BasicLearningRule adalineLearning = new BasicLearningRule(maxIterations);
-    adalineLearning.network = this;
-    adalineLearning.errorFunction = new MeanSquareError();
-    adalineLearning.learningRate = 0.01;
-    this.learningRule = adalineLearning;
-   */
-
+  
 }

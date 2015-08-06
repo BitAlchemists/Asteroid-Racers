@@ -11,6 +11,7 @@ abstract class Script {
   AIDirector director;
   AIClientProxy client;
   Network network;
+  Evaluator evaluator;
 
   Script();
 
@@ -19,12 +20,9 @@ abstract class Script {
 }
 
 class TargetScript extends Script {
-  int numTargets = 6;
-  double targetDistance = 275.0;
-  double targetDistanceRange = 25.0;
-  Vector2 spawn = new Vector2(-2700.0,1800.0);
   int lifeTimeFrames = 3000~/15; //should be multiples of 15 (milliseconds per frame
   int currentFrames = 0;
+  Vector2 spawn;
 
   Completer _completer;
 
@@ -32,7 +30,7 @@ class TargetScript extends Script {
   int _nextTargetIndex = 0;
   Checkpoint currentTarget;
 
-  TargetScript();
+  TargetScript(this.spawn, this.targets);
 
   Future run(){
     if(state == ScriptState.READY){
@@ -98,40 +96,43 @@ class TargetScript extends Script {
 
 }
 
-class CircleTargetScript extends TargetScript {
+class CircleTargetGenerator {
+  static List<Entity> setupTargets(
+      IGameServer server,
+      Vector2 center,
+      [int numTargets = 6,
+      double targetDistance = 275.0,
+      double targetDistanceRange = 25.0]){
 
-  CircleTargetScript();
-
-  Future run(){
-    _createTargets();
-    return super.run();
+    var targets = _createTargets(numTargets, targetDistance, targetDistanceRange, center);
+    targets = targets.map((Vector2 position) => _createCheckpoint(position)).toList();
+    targets.forEach((Entity entity) => server.spawnEntity(entity));
+    return targets;
   }
 
-  _createTargets(){
-    for(int i = 0; i < numTargets; i++){
-      num angle = (i.toDouble() / numTargets.toDouble());
-      double distance = targetDistance + (random.nextDouble()*2-1)*targetDistanceRange;
-      Vector2 position = new Vector2(Math.cos(angle * Math.PI * 2) * distance, Math.sin(angle * Math.PI * 2) * distance);
-      _createTarget(position + spawn);
+  static void teardownTargets(IGameServer server, List targets){
+    for(Checkpoint target in targets){
+      server.despawnEntity(target);
     }
+    targets.clear();
   }
 
-  _createTarget(Vector2 position){
+  static List<Vector2> _createTargets(int numTargets, double targetDistance, double targetDistanceRange, Vector2 center){
+    return new List<Vector2>.generate(numTargets,(index){
+      num angle = (index.toDouble() / numTargets.toDouble());
+      double distance = targetDistance + (random.nextDouble()*2-1)*targetDistanceRange;
+      Vector2 offset = new Vector2(Math.cos(angle * Math.PI * 2) * distance, Math.sin(angle * Math.PI * 2) * distance);
+      return center + offset;
+    });
+  }
+
+  static Checkpoint _createCheckpoint(Vector2 position){
     Checkpoint checkpoint = new Checkpoint();
     checkpoint.position = position;
     checkpoint.radius = 30.0;
     checkpoint.orientation = random.nextDouble() * Math.PI * 2;
     checkpoint.state = CheckpointState.FUTURE;
-
-    director.server.spawnEntity(checkpoint);
-    targets.add(checkpoint);
+    return checkpoint;
   }
 
-  _finish(){
-    for(Checkpoint target in targets){
-      director.server.despawnEntity(target);
-    }
-    targets.clear();
-    super._finish();
-  }
 }

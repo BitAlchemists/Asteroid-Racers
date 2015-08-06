@@ -6,11 +6,11 @@ int rewardCompare(double reward1, double reward2) => reward1.compareTo(reward2);
 
 class Trainer extends AIDirector {
   Function scriptFactory;
-  Function evaluationFunction;
 
   int SAMPLE_SIZE = 100;
   int NUM_SIMULTANEOUS_SIMULATIONS = 100;
-  double LEARNING_RATE = 0.2;
+  double MUTATION_RATE = 0.1;
+  double MUTATION_STRENGTH = 1.0;
 
   List<MajorTom> networks;
   Map<MajorTom, double> evaluations;
@@ -58,7 +58,7 @@ class Trainer extends AIDirector {
           network.name = "Major Tom #$nameIndex"; nameIndex++;
           network.generation++;
           //brain.best_reward = double.MAX_FINITE;
-          network.mutate(LEARNING_RATE);
+          network.mutate(MUTATION_RATE, MUTATION_STRENGTH);
           newNetworks.add(network);
         }
       }
@@ -75,16 +75,19 @@ class Trainer extends AIDirector {
   Future _runNextTrainingInstance(){
     var client = spawnClient();
     var network = networks[_nextInstanceIndex++];
-    var script = scriptFactory();
+    Script script = scriptFactory();
 
-    return runScript(script, client, network);
+    return runScript(script, client, network).then((_){
+      evaluations[script.network] = script.evaluator.finalScore;
+    });
   }
+
 
 
 
   postUpdate(double dt) {
     for(Script script in _scripts){
-      evaluations[script.network] = evaluationFunction(script, evaluations[script.network]);
+      script.evaluator.evaluate(script);
     }
     super.postUpdate(dt);
   }
@@ -98,7 +101,7 @@ class Trainer extends AIDirector {
     _createReport(networksByBestReward);
 
     MajorTom bestTrainingSet = networksByBestReward.first;
-    bestTrainingSet.name = "Best Training Set";
+    bestTrainingSet.name = "Winner from last round";
     List<MajorTom> survivors = [bestTrainingSet];
 
     LukeSerializer.writeNetworksToFile(survivors);
@@ -111,7 +114,7 @@ class Trainer extends AIDirector {
 
     String report = "${evaluations.length} done\n";
 
-    report += "Min score: ${evaluations[networksByBestReward.first]}\n";
+    report += "Min score: ${evaluations[networksByBestReward.first]} - ${networksByBestReward.first.name}\n";
 
     double scoreSum = 0.0;
     for(double score in evaluations.values){

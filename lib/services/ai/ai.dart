@@ -17,9 +17,11 @@ part "command.dart";
 part "major_tom.dart";
 part "major_tom_serializer.dart";
 part "script.dart";
+part "evaluator.dart";
 
 part "directors/trainer.dart";
 part "directors/demo_director.dart";
+
 
 Math.Random random = new Math.Random();
 
@@ -35,10 +37,12 @@ registerAIServices(IGameServer gameServer){
 
   if(train){
     Trainer trainer = new Trainer();
-    trainer.scriptFactory = () => new CircleTargetScript();
-    trainer.evaluationFunction = (CircleTargetScript script, double previousScore){
-      double distance = script.client.movable.position.distanceTo(script.currentTarget.position);
-      return previousScore + distance;
+    Vector2 center = new Vector2(-2700.0, 1800.0);
+    var targets = CircleTargetGenerator.setupTargets(gameServer, center);
+    trainer.scriptFactory = (){
+      var script = new TargetScript(center, targets);
+      script.evaluator = new LeastDistanceToTargetsEvaluator();
+      return script;
     };
     gameServer.registerService(trainer);
   }
