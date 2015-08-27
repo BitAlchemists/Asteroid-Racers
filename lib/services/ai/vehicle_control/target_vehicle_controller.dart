@@ -1,30 +1,10 @@
 part of ai;
 
-
-enum CommandState
-{
-  READY,
-  RUNNING,
-  ENDED
-}
-
-
-abstract class Command {
-
-  CommandState state = CommandState.READY;
-  Network network;
-  AIClientProxy client;
-
-  start();
-  step(double dt);
-  end();
-}
-
-class FlyTowardsTargetCommand extends Command {
+class TargetVehicleController extends VehicleController {
   Entity target;
   Function didReachTargetCallback;
 
-  FlyTowardsTargetCommand(this.target);
+  TargetVehicleController(this.target);
 
   start(){
     state = CommandState.RUNNING;
@@ -48,25 +28,16 @@ class FlyTowardsTargetCommand extends Command {
 
     Vector2 myPos = client.movable.position;
 
-    //angle to target
+    // my angle to the target
     double a1 = Math.atan2(target.position.y - myPos.y, target.position.x - myPos.x) / Math.PI;
-
+    // the angle to the direction in which we currently move
     double myVelocityAngle = Math.atan2(client.movable.velocity.y, client.movable.velocity.x) / Math.PI;
-
-    //orientation angle
+    // my current orientation
     double myNormalizedOrientation = client.movable.orientation / Math.PI - 1;  //atan2(direction.y, direction.x);
-
-// Relative angle
+    // Relative angle
     double rel_angle = a1 - myNormalizedOrientation;
 
     List inputNetwork = [
-/*      CORR * instance.client.movable.position.x,
-      CORR * instance.client.movable.position.y,
-      CORR * instance.client.movable.velocity.x,
-      CORR * instance.client.movable.velocity.y,
-      CORR * target.x,
-      CORR * target.y,
-      */
       myNormalizedOrientation,
       rel_angle,
       client.movable.position.distanceTo(target.position) * CORR,
@@ -75,15 +46,7 @@ class FlyTowardsTargetCommand extends Command {
     ];
     network.inputNetwork = inputNetwork;
     network.calculateOutput();
-    List<double> output = network.outputNetwork;/*
-    Vector2 acceleration = new Vector2(output[0], output[1]);
-    double length = acceleration.length;
-    acceleration.scale(2.0).sub(new Vector2(1.0,1.0)).normalize();
-    if(length < 1.0){
-      acceleration.scale(length);
-    }
-    acceleration.scale(200.0);
-    instance.client.movable.acceleration = acceleration;*/
+    List<double> output = network.outputNetwork;
 
     MovementInput mi = new MovementInput();
     mi.accelerationFactor = (output[0] + 1) / 2;
@@ -97,3 +60,30 @@ class FlyTowardsTargetCommand extends Command {
     state = CommandState.ENDED;
   }
 }
+
+/*
+//old code that just used acceleration
+
+input
+
+/*      CORR * instance.client.movable.position.x,
+      CORR * instance.client.movable.position.y,
+      CORR * instance.client.movable.velocity.x,
+      CORR * instance.client.movable.velocity.y,
+      CORR * target.x,
+      CORR * target.y,
+      */
+
+
+output
+
+/*
+    Vector2 acceleration = new Vector2(output[0], output[1]);
+    double length = acceleration.length;
+    acceleration.scale(2.0).sub(new Vector2(1.0,1.0)).normalize();
+    if(length < 1.0){
+      acceleration.scale(length);
+    }
+    acceleration.scale(200.0);
+    instance.client.movable.acceleration = acceleration;*/
+*/

@@ -1,6 +1,8 @@
 part of ai;
 
-class TargetScript extends Script {
+
+
+class RaceTargetScript extends Script {
   int lifeTimeFrames = 4500~/15; //should be multiples of 15 (milliseconds per frame
   int currentFrames = 0;
   Vector2 spawn;
@@ -11,7 +13,7 @@ class TargetScript extends Script {
   int _nextTargetIndex = 0;
   Checkpoint currentTarget;
 
-  TargetScript(this.targets, [this.spawn]){
+  RaceTargetScript(this.targets, [this.spawn]){
     if(spawn == null){
       spawn = new Vector2.zero();
     }
@@ -59,9 +61,9 @@ class TargetScript extends Script {
     currentTarget.state = CheckpointState.CURRENT;
     currentTarget.updateRank += 1.0;
 
-    director.server.teleportPlayerTo(client, spawn, currentTarget.orientation, false);
+    _updateVehiclePosition();
 
-    FlyTowardsTargetCommand command = new FlyTowardsTargetCommand(currentTarget);
+    TargetVehicleController command = new TargetVehicleController(currentTarget);
     command.network = network;
     command.didReachTargetCallback = (_){
       _onTargetFinish();
@@ -71,6 +73,10 @@ class TargetScript extends Script {
 
 
     currentFrames = 0;
+  }
+
+  _updateVehiclePosition(){
+
   }
 
   _cleanUpCurrentTarget(){
@@ -132,6 +138,15 @@ class CircleTargetGenerator {
     checkpoint.orientation = random.nextDouble() * Math.PI * 2;
     checkpoint.state = CheckpointState.FUTURE;
     return checkpoint;
+  }
+
+}
+
+class RespawnTargetScript extends RaceTargetScript {
+  RespawnTargetScript(targets, [spawn]) : super(targets, spawn);
+
+  _updateVehiclePosition(){
+    director.server.teleportPlayerTo(client, spawn, currentTarget.orientation, false);
   }
 
 }

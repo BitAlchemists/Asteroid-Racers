@@ -6,12 +6,11 @@ int rewardCompare(double reward1, double reward2) => reward1.compareTo(reward2);
 
 class Trainer extends AIDirector {
   Function scriptFactory;
+  Function networkMutator;
   String folderName = "luke";
 
   int SAMPLE_SIZE = 1000;
   int NUM_SIMULTANEOUS_SIMULATIONS = 1000;
-  double MUTATION_RATE = 0.1;
-  double MUTATION_STRENGTH = 1.0;
 
   List<MajorTom> networks;
   Map<MajorTom, double> evaluations;
@@ -49,6 +48,7 @@ class Trainer extends AIDirector {
   }
 
   _prepareNetworks(){
+    assert(networkMutator != null);
     List<MajorTom> networks = MajorTomSerializer.readNetworksFromFile(folderName);
     if(networks != null){
       //print("found brains. mutating them");
@@ -62,7 +62,7 @@ class Trainer extends AIDirector {
           network.name = "Major Tom #$nameIndex"; nameIndex++;
           network.generation++;
           //brain.best_reward = double.MAX_FINITE;
-          network.mutate(MUTATION_RATE, MUTATION_STRENGTH, MajorTom.mutateConnectionRelative);
+          networkMutator(network);
           newNetworks.add(network);
         }
       }
@@ -77,6 +77,7 @@ class Trainer extends AIDirector {
   }
 
   Future _runNextTrainingInstance(){
+    assert(scriptFactory != null);
     var client = spawnClient();
     var network = networks[_nextInstanceIndex++];
     Script script = scriptFactory();

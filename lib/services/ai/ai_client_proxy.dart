@@ -4,9 +4,9 @@ class AIClientProxy implements IClientProxy {
 
   String playerName;
   Movable movable;
-  Command _command;
-  Command get command => _command;
-  set command(Command command){
+  VehicleController _command;
+  VehicleController get command => _command;
+  set command(VehicleController command){
     if(_command != null){
       _command.client = null;
     }

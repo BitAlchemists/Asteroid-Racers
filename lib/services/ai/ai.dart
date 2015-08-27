@@ -15,7 +15,7 @@ import "package:asteroidracers/shared/shared_server.dart";
 
 part "ai_director.dart";
 part "ai_client_proxy.dart";
-part "command.dart";
+part "vehicle_controller.dart";
 part "major_tom.dart";
 part "major_tom_serializer.dart";
 part "script.dart";
@@ -26,7 +26,8 @@ part "directors/trainer.dart";
 part "directors/demo_director.dart";
 
 // Scripts
-part "scripts/target_script.dart";
+part "vehicle_control/target_script.dart";
+part "vehicle_control/target_vehicle_controller.dart";
 
 
 Math.Random random = new Math.Random();
@@ -49,15 +50,23 @@ registerAIServices(IGameServer gameServer){
   }
 
   if(train){
+
+    Function networkMutator = (MajorTom network){
+      double MUTATION_RATE = 0.1;
+      double MUTATION_STRENGTH = 1.0;
+      network.mutate(MUTATION_RATE, MUTATION_STRENGTH, MajorTom.mutateConnectionRelative);
+    };
+
     var targets = CircleTargetGenerator.setupTargets(gameServer);
     Trainer trainer;
 
     trainer = new Trainer();
     trainer.scriptFactory = (){
-      var script = new TargetScript(targets);
+      var script = new RaceTargetScript(targets);
       script.evaluator = new TimeToTargetEvaluator();
       return script;
     };
+    trainer.networkMutator = networkMutator;
     trainer.folderName = "TimeToTargetEvaluator";
     //trainer.networks = MajorTomSerializer.readNetworksFromFile("LeastDistanceToTargetsEvaluator");
     gameServer.registerService(trainer);

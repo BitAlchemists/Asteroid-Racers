@@ -12,7 +12,7 @@ class DemoDirector extends AIDirector {
       var client = spawnClient();
       Future.doWhile((){
         List targets = CircleTargetGenerator.setupTargets(server, center:center);
-        return runScript(new TargetScript(targets, center), client, networks[0]).then((_){
+        return runScript(new RaceTargetScript(targets, center), client, networks[0]).then((_){
           CircleTargetGenerator.teardownTargets(server, targets);
           return true;
         });

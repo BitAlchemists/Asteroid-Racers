@@ -2,6 +2,13 @@
 
 ===== AI =====
 
+ai.dart
+- abstract away the network manipulation code in a way that allows to configure it for a trainer
+- abstract away the network to client adapter
+
+Trainer:
+- create network manipulator that can change the confiuguration of a network without destroying the previous training
+
 Commands:
 - stay within an area
 - stay with me (and dont ram me)
@@ -17,3 +24,6 @@ Configuration:
 Logging:
 - Log the results for each training run
 - Log the generation
+
+Other:
+- implement Darwin

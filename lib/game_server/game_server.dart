@@ -47,13 +47,13 @@ class GameServer implements IGameServer {
   _createWorld(){
 
     List<Entity> asteroids = new List<Entity>();
-    /*
+
     asteroids.addAll(_world.generateAsteroidBelt(500, -2000, 250, 4000, 4000));
     asteroids.addAll(_world.generateAsteroidBelt(20, -300, -100, 200, -1000));
     asteroids.addAll(_world.generateAsteroidBelt(20, 100, -100, 200, -1000));
     asteroids.addAll(_world.generateAsteroidBelt(20, -150, -1300, 300, -300));
     _world.addEntities(asteroids);
-*/
+
     _crashCollisionDetector = new CollisionDetector();
     _crashCollisionDetector.activeEntitiesCanCollide = true;
     _crashCollisionDetector.passiveEntities = asteroids;
@@ -80,7 +80,7 @@ class GameServer implements IGameServer {
     //_spawn.position = new Vector2(-2300.0,1800.0);
     _spawn.position = new Vector2(0.0, 0.0);
 
-    _spawn.radius = 0.0;
+    _spawn.radius = 100.0;
     _spawn.orientation = Math.PI;
 
     /* Dummy player
@@ -288,7 +288,7 @@ class GameServer implements IGameServer {
 
             
     if(!_crashCollisionDetector.activeEntities.contains(movable)){
-      //_crashCollisionDetector.activeEntities.add(movable);
+      _crashCollisionDetector.activeEntities.add(movable);
     }
     
     teleportPlayerTo(client, position, orientation, false);
