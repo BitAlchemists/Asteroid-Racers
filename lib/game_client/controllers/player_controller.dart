@@ -129,13 +129,6 @@ class PlayerController extends EntityController implements stagexl.Animatable  {
     }
 
   }
-  
-  updateSprite(){
-    sprite.x = _entity.position.x;
-    sprite.y = _entity.position.y;
-    
-    _model.rotation = _entity.orientation;
-  }
 
   
   bool advanceTime(num dt){
@@ -184,7 +177,7 @@ class PlayerController extends EntityController implements stagexl.Animatable  {
     _movable.acceleration = new Vector2(acceleration3.x, acceleration3.y);
   }  
   
-  updateFromServer(Entity entity){
+  bool updateFromServer(Entity entity){
     // we exclude orientation and rotationSpeed from the update, so that we
     // can maintain smooth rotations on the client
     if(this.isLocalPlayer && _movable.canMove){
@@ -192,6 +185,6 @@ class PlayerController extends EntityController implements stagexl.Animatable  {
       movable.orientation = null;
       movable.rotationSpeed = null;
     }
-    super.updateFromServer(entity);
+    return super.updateFromServer(entity);
   }
 }

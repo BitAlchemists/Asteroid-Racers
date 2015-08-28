@@ -29,7 +29,9 @@ class GameRenderer implements stagexl.Animatable {
   ParallaxLayer _playerLayer;
   
   stagexl.Sprite playerSprite; /// This variable is used to update the offset of the parallax layers each frame
-    
+
+  Satellite _satellite;
+
   /// The stage is our host system. We use it for the heart beat.
   stagexl.Stage _stage;
 
@@ -39,7 +41,9 @@ class GameRenderer implements stagexl.Animatable {
   stagexl.TextField _usernameField;
   stagexl.TextField _debugOutputField;
   Window _debugWindow;
-  
+
+  List<EntityController> _updateSpriteList = [];
+
   GameRenderer(html.CanvasElement canvas){
     _stage = new stagexl.Stage(canvas);
     _stage.juggler.add(this);
@@ -55,10 +59,25 @@ class GameRenderer implements stagexl.Animatable {
   }
   
   bool advanceTime(num dt){
+    print("game renderer $dt");
+
+    for(EntityController ec in _updateSpriteList){
+      ec.updateSprite();
+    }
+    _updateSpriteList.clear();
+
+
     if(playerSprite != null){
       Vector2 position = new Vector2(playerSprite.x, playerSprite.y);
       this._updateParallaxOffsets(position);
     }
+
+    _satellite.juggler.advanceTime(dt);
+
+    for(ParallaxLayer layer in _parallaxLayers){
+      layer.advanceTime(dt);
+    }
+
     return true;
   }
 
@@ -69,7 +88,6 @@ class GameRenderer implements stagexl.Animatable {
   clearScene(){
     for(ParallaxLayer layer in _parallaxLayers){
       layer.removeFromParent();
-      _stage.juggler.remove(layer);
     }
     
     _entitiesLayer = null;      
@@ -121,13 +139,11 @@ class GameRenderer implements stagexl.Animatable {
     //Background
     _background = new StarBackground(2000.0, 2000.0, _stage);
     _stage.addChildAt(_background, 0);  
-    _stage.juggler.add(_background);
     _parallaxLayers.add(_background);
     
     //Earth layer
     _earthLayer = new ParallaxLayer(_stage, 0.3);
     _stage.addChildAt(_earthLayer, 1);
-    _stage.juggler.add(_earthLayer);
     _parallaxLayers.add(_earthLayer);
     
     Planet earth = new Planet(400, stagexl.Color.DarkBlue, stagexl.Color.Green);
@@ -139,19 +155,17 @@ class GameRenderer implements stagexl.Animatable {
     moon.y = -300;
     _earthLayer.addChild(moon);      
     
-    Satellite satellite = new Satellite();
-    satellite.x = 270;
-    satellite.y = 150;
-    satellite.rotation = 0.5;
-    _earthLayer.addChild(satellite);
-    _stage.juggler.add(satellite.juggler);      
+    _satellite = new Satellite();
+    _satellite.x = 270;
+    _satellite.y = 150;
+    _satellite.rotation = 0.5;
+    _earthLayer.addChild(_satellite);
   }
   
   buildEntitiesLayer(){
     //entities layer
     _entitiesLayer = new ParallaxLayer(_stage, 1.0);
     _stage.addChildAt(_entitiesLayer, _stage.numChildren);
-    _stage.juggler.add(_entitiesLayer);   
     _parallaxLayers.add(_entitiesLayer);
     
     // sample space station
@@ -163,7 +177,6 @@ class GameRenderer implements stagexl.Animatable {
     //entities layer
     _playerLayer = new ParallaxLayer(_stage, 1.0);
     _stage.addChildAt(_playerLayer, _stage.numChildren);
-    _stage.juggler.add(_playerLayer);   
     _parallaxLayers.add(_playerLayer);
     
     _uiLayer.removeFromParent();
@@ -217,5 +230,9 @@ class GameRenderer implements stagexl.Animatable {
     for(ParallaxLayer layer in _parallaxLayers){
       layer.parallaxOffset = parallaxOffset;
     }
+  }
+
+  updateSpriteInNextFrame(EntityController ec){
+    _updateSpriteList.add(ec);
   }
 }

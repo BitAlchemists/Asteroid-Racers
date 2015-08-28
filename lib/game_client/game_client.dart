@@ -53,7 +53,7 @@ class GameClient implements stagexl.Animatable, IGameClient {
 
   PlayerController _player;
   PlayerController get player => _player;
-  
+
   /// a map of entity controllers
   /// 
   /// the int key is the entityId
@@ -149,6 +149,10 @@ class GameClient implements stagexl.Animatable, IGameClient {
     
     _renderer.buildEntitiesLayer();    
     _renderer.stage.juggler.add(this);
+
+    //change the render order to prevent multiplayer spaceship jitter
+    _renderer.stage.juggler.remove(_renderer);
+    _renderer.stage.juggler.add(_renderer);
   }
   
   disconnect(){
@@ -180,7 +184,7 @@ class GameClient implements stagexl.Animatable, IGameClient {
   double previousRotation = 0.0;
 
   bool advanceTime(num dt){
-    
+    print("game client $dt");
     String debugOutput = ""; 
         
     if(_player != null) {      
@@ -221,12 +225,11 @@ class GameClient implements stagexl.Animatable, IGameClient {
       
       // we always update the sprite because it reduces code paths that need
       // to notify the renderer of position updates (e.g. teleporting)
-      _player.updateSprite();
-      
+      _renderer.updateSpriteInNextFrame(_player);
 
       debugOutput += "x: ${_player.entity.position.x.toInt()}\ny: ${_player.entity.position.y.toInt()}\n";
     }
-    
+
     time_since_last_ping += dt;
     if(time_since_last_ping > 0.05){
       time_since_last_ping = 0.0;
@@ -299,7 +302,10 @@ class GameClient implements stagexl.Animatable, IGameClient {
     }
     else {
       ec = _entityControllers[entity.id];
-      ec.updateFromServer(entity);
+      bool updateSprite = ec.updateFromServer(entity);
+      if(updateSprite){
+        _renderer.updateSpriteInNextFrame(ec);
+      }
     }    
   }
   
