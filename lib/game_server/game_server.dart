@@ -48,12 +48,12 @@ class GameServer implements IGameServer {
   _createWorld(){
 
     // Scene
-    SceneController.createScene1(world);
+    SceneController.createScene2(world);
 
     // Race
     _race = new RaceController();
     _race.gameServer = this;
-    SceneController.createRace1(world, _race);
+    SceneController.createRace2(world, _race);
     _joinRaceCollisionDetector = new CollisionDetector();
     _joinRaceCollisionDetector.passiveEntities = [_race.start];
 

@@ -7,7 +7,6 @@ class World
   int _nextEntityId = 0;
 
   List<Entity> passiveCollissionEntities;
-
   
   World();
   
