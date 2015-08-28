@@ -5,10 +5,10 @@ class SceneController{
   static createScene1(World world){
     List<Entity> asteroids = new List<Entity>();
 
-    asteroids.addAll(world.generateAsteroidBelt(500, -2000, 250, 4000, 4000));
-    asteroids.addAll(world.generateAsteroidBelt(20, -300, -100, 200, -1000));
-    asteroids.addAll(world.generateAsteroidBelt(20, 100, -100, 200, -1000));
-    asteroids.addAll(world.generateAsteroidBelt(20, -150, -1300, 300, -300));
+    asteroids.addAll(generateAsteroidBelt(-2000, 250, 4000, 4000));
+    asteroids.addAll(generateAsteroidBelt(-300, -100, 200, -1000, count:20));
+    asteroids.addAll(generateAsteroidBelt(100, -100, 200, -1000, count:20));
+    asteroids.addAll(generateAsteroidBelt(-150, -1300, 300, -300, count:20));
     world.addEntities(asteroids);
     world.passiveCollissionEntities = asteroids;
 
@@ -42,4 +42,47 @@ class SceneController{
     arrow.radius = 100.0;
     return arrow;
   }
+
+
+
+
+  static List<Entity> generateAsteroidBelt(num x, num y, num width, num height, {int count:null, num densityFactor:1}){
+
+    if(count == null){
+      double defaultDensity = 500 / (4000*4000);
+      double density = defaultDensity * densityFactor;
+      count = (width * height * density).toInt();
+    }
+
+    List<Entity> asteroids = new List<Entity>();
+    Vector2 offset = new Vector2(x.toDouble(), y.toDouble());
+    num minRadius = 3;
+    num maxRadius = 30;
+
+    Math.Random random = new Math.Random();
+
+    for (int i = 0; i < count; i++) {
+      num radius = random.nextDouble() * (maxRadius - minRadius) + minRadius;
+
+      //rectangle
+      Vector2 point = offset + new Vector2(
+      //negatives width/height values will lead to wrong borders here
+          radius + random.nextDouble() * (width - 2*radius),
+          radius + random.nextDouble() * (height - 2*radius));
+
+      /*
+      //circle
+      num angle = random.nextDouble() * 2 * Math.PI;
+      num radius = random.nextDouble();
+      vec3 point = new vec3(radius * xDistance * cos(angle), radius * yDistance * sin(angle), 0);
+      */
+
+
+      Entity entity = new Entity(type: EntityType.ASTEROID, position: point, radius: radius);
+      asteroids.add(entity);
+    }
+
+    return asteroids;
+  }
+
 }

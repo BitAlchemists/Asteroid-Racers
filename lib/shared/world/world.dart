@@ -8,13 +8,6 @@ class World
 
   List<Entity> passiveCollissionEntities;
 
-  /*
-  List<Entity> _asteroids = new List<Entity>();
-  List<Entity> _players = new List<Entity>();
-  
-  List<Entity> get asteroids => _asteroids;
-  List<Entity> get players => _players;
-  */
   
   World();
   
@@ -22,17 +15,7 @@ class World
   {
     entity.id = _nextEntityId++;
     _entities[entity.id] = entity;
-  /*  
-    switch(entity.type)
-    {
-      case EntityType.ASTEROID:
-        _asteroids.add(entity);
-        break;
-      case EntityType.SHIP:
-        _players.add(entity);
-        break;
-    }
-    */
+
   }
   
   void addEntities(Iterable<Entity> entities){
@@ -44,52 +27,6 @@ class World
   
   void removeEntity(Entity entity){
     _entities.remove(entity.id);
-    /*
-    switch(entity.type)
-    {
-      case EntityType.ASTEROID:
-        _asteroids.remove(entity);
-        break;
-      case EntityType.SHIP:
-        _players.remove(entity);
-        break;
-    }
-    */
   }
-  
-  /**
-   * Please only give positive values for acurate rectangle border
-   * */
-  List<Entity> generateAsteroidBelt(int count, num x, num y, num width, num height) {
-    List<Entity> asteroids = new List<Entity>();
-    Vector2 offset = new Vector2(x.toDouble(), y.toDouble());
-    num minRadius = 3;
-    num maxRadius = 30;
-    
-    Math.Random random = new Math.Random();
 
-    for (int i = 0; i < count; i++) {
-      num radius = random.nextDouble() * (maxRadius - minRadius) + minRadius;
-      
-      //rectangle 
-      Vector2 point = offset + new Vector2(
-          //negatives width/height values will lead to wrong borders here
-          radius + random.nextDouble() * (width - 2*radius), 
-          radius + random.nextDouble() * (height - 2*radius));
-      
-      /*
-      //circle
-      num angle = random.nextDouble() * 2 * Math.PI;
-      num radius = random.nextDouble();
-      vec3 point = new vec3(radius * xDistance * cos(angle), radius * yDistance * sin(angle), 0);
-      */
-      
-      
-      Entity entity = new Entity(type: EntityType.ASTEROID, position: point, radius: radius);
-      asteroids.add(entity);
-    }
-    
-    return asteroids;
-  }
-  
 }
