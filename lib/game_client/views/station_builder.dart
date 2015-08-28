@@ -22,8 +22,10 @@ class StationModule {
   ModuleConfig config;
   int xPos;
   int yPos;
+  var strokeColor;
+  var fillColor;
   
-  StationModule(this.config, this.xPos, this.yPos);
+  StationModule(this.config, this.xPos, this.yPos, [this.strokeColor=stagexl.Color.Gray, this.fillColor=stagexl.Color.LightGray]);
 }
 
 class StationBuilder {
@@ -35,19 +37,34 @@ class StationBuilder {
   
   
   static stagexl.Sprite sampleStation(){
-    var m1 = new StationModule(ModuleConfig.MEDIUM_NODE_HORIZONTAL, 0, 0);
-    var m2 = new StationModule(ModuleConfig.SMALL_NODE, 9, 0);
-    var m3 = new StationModule(ModuleConfig.MEDIUM_NODE_HORIZONTAL, 10, 0);
-    
-    var m4 = new StationModule(ModuleConfig.MEDIUM_CONTAINER_VERTICAL, 1, 1);
-    var m5 = new StationModule(ModuleConfig.MEDIUM_CONTAINER_VERTICAL, 5, -6);
-    var m6 = new StationModule(ModuleConfig.SMALL_CONTAINER_VERTICAL, 3, -3);
-    
-    var m7 = new StationModule(ModuleConfig.SMALL_CONTAINER_VERTICAL, 15, 1);
-    var m8 = new StationModule(ModuleConfig.SMALL_CONTAINER_VERTICAL, 17, 1);
-    var m9 = new StationModule(ModuleConfig.SMALL_CONTAINER_VERTICAL, 17, -3);
-    
-    var m10 = new StationModule(ModuleConfig.LARGE_CONTAINER_VERTICAL, 11, -6);
+    var strokeColorCenter = stagexl.Color.LightGray;
+    var fillColorCenter = stagexl.Color.NavajoWhite;
+
+    var strokeColorTop = stagexl.Color.LightSteelBlue;
+    var fillColorTop = stagexl.Color.DarkSlateBlue;
+
+    var strokeColorBottom = stagexl.Color.LightGoldenrodYellow;
+    var fillColorBottom = stagexl.Color.DarkOrange;
+
+    //main module
+    var m1 = new StationModule(ModuleConfig.MEDIUM_NODE_HORIZONTAL, 0, 0, strokeColorCenter, fillColorCenter);
+    var m2 = new StationModule(ModuleConfig.SMALL_NODE, 9, 0, strokeColorCenter, fillColorCenter);
+    var m3 = new StationModule(ModuleConfig.MEDIUM_NODE_HORIZONTAL, 10, 0, strokeColorCenter, fillColorCenter);
+
+    //modules left
+    // left down
+    var m4 = new StationModule(ModuleConfig.MEDIUM_CONTAINER_VERTICAL, 1, 1, strokeColorBottom, fillColorBottom);
+    // left up
+    var m5 = new StationModule(ModuleConfig.MEDIUM_CONTAINER_VERTICAL, 5, -6, strokeColorTop, fillColorTop);
+    var m6 = new StationModule(ModuleConfig.SMALL_CONTAINER_VERTICAL, 3, -3, strokeColorTop, fillColorTop);
+
+    //modules right
+    // right down
+    var m7 = new StationModule(ModuleConfig.SMALL_CONTAINER_VERTICAL, 15, 1, strokeColorBottom, fillColorBottom);
+    var m8 = new StationModule(ModuleConfig.SMALL_CONTAINER_VERTICAL, 17, 1, strokeColorBottom, fillColorBottom);
+    //right up
+    var m9 = new StationModule(ModuleConfig.SMALL_CONTAINER_VERTICAL, 17, -3, strokeColorTop, fillColorTop);
+    var m10 = new StationModule(ModuleConfig.LARGE_CONTAINER_VERTICAL, 11, -6, strokeColorTop, fillColorTop);
     
     stagexl.Sprite station = render([m1, m2, m3, m4, m5, m6, m7, m8, m9, m10]);
     station.applyCache(-1000, -1000, 2000, 2000);
@@ -77,8 +94,8 @@ class StationBuilder {
     double x = instance.xPos * blockLength;
     double y = instance.yPos * blockLength;
 
-    int strokeColor = stagexl.Color.Red;
-    int fillColor = stagexl.Color.DarkRed;
+    int strokeColor = instance.strokeColor;
+    int fillColor = instance.fillColor;
     
     //body
     _applyRect(x + blockInset, y + blockInset, x + blockInset + innerWidth, y + blockInset + innerHeight, station.graphics);

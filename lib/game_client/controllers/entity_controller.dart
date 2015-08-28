@@ -48,10 +48,11 @@ class EntityController {
     
     sprite.rotation = _entity.orientation;
   }
-  
-  updateFromServer(Entity entity){
+
+  //returns true when the sprite should be updated
+  bool updateFromServer(Entity entity){
     _entity.copyFrom(entity);
     //print("entity update: ${_entity.position.x} ${_entity.position.y}");
-    updateSprite();
+    return true;
   }
 }
