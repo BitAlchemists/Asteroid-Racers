@@ -13,6 +13,7 @@ import "package:asteroidracers/services/chat/chat_shared.dart";
 
 part "collision_detector.dart";
 part "race_controller.dart";
+part "scene_controller.dart";
 
 Math.Random random = new Math.Random();
 
@@ -46,42 +47,26 @@ class GameServer implements IGameServer {
 
   _createWorld(){
 
-    List<Entity> asteroids = new List<Entity>();
+    // Scene
+    SceneController.createScene1(world);
 
-    asteroids.addAll(_world.generateAsteroidBelt(500, -2000, 250, 4000, 4000));
-    asteroids.addAll(_world.generateAsteroidBelt(20, -300, -100, 200, -1000));
-    asteroids.addAll(_world.generateAsteroidBelt(20, 100, -100, 200, -1000));
-    asteroids.addAll(_world.generateAsteroidBelt(20, -150, -1300, 300, -300));
-    _world.addEntities(asteroids);
+    // Race
+    _race = new RaceController();
+    _race.gameServer = this;
+    SceneController.createRace1(world, _race);
+    _joinRaceCollisionDetector = new CollisionDetector();
+    _joinRaceCollisionDetector.passiveEntities = [_race.start];
 
-    _crashCollisionDetector = new CollisionDetector();
-    _crashCollisionDetector.activeEntitiesCanCollide = true;
-    _crashCollisionDetector.passiveEntities = asteroids;
-
-    _configureRace();
-
-
-    _addArrows({num x: 0.0, num y: 0.0, double orientation: 0.0}){
-      Entity arrows = new Entity(type: EntityType.ARROWS);
-      arrows.position = new Vector2(x.toDouble(), y.toDouble());
-      arrows.orientation = orientation;
-      arrows.radius = 100.0;
-      _world.addEntity(arrows);
-    }
-
-    _addArrows(y: -400, orientation: Math.PI);
-    /*_addArrows(y: -200, orientation: Math.PI);    
-    _addArrows(x: 100, y: -1200, orientation: Math.PI * 1.25);    
-    _addArrows(x: -100, y: -1200, orientation: Math.PI * 0.75);    
-    _addArrows(x: 150, y: -1700, orientation: Math.PI * 0.5);    
-    _addArrows(x: -150, y: -1700, orientation: Math.PI * 1.5);        
-    */
+    // Spawn
     _spawn = new Entity(type: EntityType.UNKNOWN);
-    //_spawn.position = new Vector2(-2300.0,1800.0);
     _spawn.position = new Vector2(0.0, 0.0);
-
     _spawn.radius = 100.0;
     _spawn.orientation = Math.PI;
+
+    // Collision Detection
+    _crashCollisionDetector = new CollisionDetector();
+    _crashCollisionDetector.activeEntitiesCanCollide = true;
+    _crashCollisionDetector.passiveEntities = world.passiveCollissionEntities;
 
     /* Dummy player
     Entity dummyPlayer = new Entity(EntityType.SHIP, new Vector2(50.0, 50.0), 10.0);
@@ -93,23 +78,6 @@ class GameServer implements IGameServer {
     _physics = new PhysicsSimulator();
   }
 
-  _configureRace(){
-    _race = new RaceController();
-    _race.gameServer = this;
-    _joinRaceCollisionDetector = new CollisionDetector();
-
-    /*
-    _race.addStart(0.0, -200.0, Math.PI);
-    _race.addCheckpoint(0.0, -600.0, Math.PI);
-    _race.addFinish(0.0, -800.0, Math.PI);
-
-    _joinRaceCollisionDetector.passiveEntities = [_race.start];
-
-    _world.addEntities(_race.checkpoints);
-    _world.addEntity(_race.start);
-    _world.addEntity(_race.finish);
-    */
-  }
 
   start(){
       // Construct a game loop.

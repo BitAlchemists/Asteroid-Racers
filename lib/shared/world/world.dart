@@ -5,7 +5,9 @@ class World
   final Map<int, Entity> _entities = new Map<int, Entity>();
   Map<int, Entity> get entities => _entities;
   int _nextEntityId = 0;
-  
+
+  List<Entity> passiveCollissionEntities;
+
   /*
   List<Entity> _asteroids = new List<Entity>();
   List<Entity> _players = new List<Entity>();
