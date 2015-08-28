@@ -11,23 +11,24 @@ import "package:asteroidracers/shared/net.dart" as net; //todo: layer the code s
 import "package:asteroidracers/shared/shared_server.dart";
 import "package:asteroidracers/services/chat/chat_shared.dart";
 
-import "ai/ai.dart";
-
 part "collision_detector.dart";
 part "race_controller.dart";
 
 Math.Random random = new Math.Random();
 
 class GameServer implements IGameServer {
+
   final Set<IClientProxy> _clients = new Set<IClientProxy>();
   final World _world = new World();
+  List<IServerService> _services = <IServerService>[];
+
   CollisionDetector _crashCollisionDetector;
   CollisionDetector _joinRaceCollisionDetector;
   PhysicsSimulator _physics;
   RaceController _race;
   Entity _spawn;
   Map<Entity, IClientProxy> _entityToClientMap = new Map<Entity, IClientProxy>();
-  AIDirector _AIDirector;
+
 
   World get world => _world;
   
@@ -37,49 +38,28 @@ class GameServer implements IGameServer {
   GameServer(){
     _createWorld();
   }
-  
+
+  void registerService(IServerService service){
+    service.server = this;
+    _services.add(service);
+  }
+
   _createWorld(){
+
     List<Entity> asteroids = new List<Entity>();
-    asteroids.addAll(_world.generateAsteroidBelt(1000, -4000, 250, 8000, 4000));
-    _world.addEntities(asteroids);
 
+    asteroids.addAll(_world.generateAsteroidBelt(500, -2000, 250, 4000, 4000));
     asteroids.addAll(_world.generateAsteroidBelt(20, -300, -100, 200, -1000));
-    _world.addEntities(asteroids);
-
     asteroids.addAll(_world.generateAsteroidBelt(20, 100, -100, 200, -1000));
-    _world.addEntities(asteroids);
-    
-
     asteroids.addAll(_world.generateAsteroidBelt(20, -150, -1300, 300, -300));
     _world.addEntities(asteroids);
-        
-    //asteroids = _world.generateAsteroidBelt(1000, -4000, 250, 8000, 4000);
-    //_world.addEntities(asteroids);
 
     _crashCollisionDetector = new CollisionDetector();
     _crashCollisionDetector.activeEntitiesCanCollide = true;
     _crashCollisionDetector.passiveEntities = asteroids;
-    
-    
-    _race = new RaceController();
-    _race.gameServer = this;
-/*
- *     _race.addCheckpoint(200.0, 0.0);
-    _race.addCheckpoint(200.0, 300.0, 70.0);
-    _race.addCheckpoint(400.0, 500.0, 50.0);
-    _race.addCheckpoint(100.0, 600.0, 50.0);
-    _race.addCheckpoint(200.0, 900.0, 100.0);*/
-    _race.addStart(0.0, -200.0, Math.PI);
-    _race.addCheckpoint(0.0, -600.0, Math.PI);
-    //_race.addCheckpoint(0.0, -1700.0);
-    _race.addFinish(0.0, -800.0, Math.PI);
 
-    _world.addEntities(_race.checkpoints);
-    _world.addEntity(_race.start);
-    _world.addEntity(_race.finish);
-    
-    _joinRaceCollisionDetector = new CollisionDetector();
-    _joinRaceCollisionDetector.passiveEntities = [_race.start];
+    _configureRace();
+
 
     _addArrows({num x: 0.0, num y: 0.0, double orientation: 0.0}){
       Entity arrows = new Entity(type: EntityType.ARROWS);
@@ -88,19 +68,21 @@ class GameServer implements IGameServer {
       arrows.radius = 100.0;
       _world.addEntity(arrows);
     }
-        
+
     _addArrows(y: -400, orientation: Math.PI);
     /*_addArrows(y: -200, orientation: Math.PI);    
     _addArrows(x: 100, y: -1200, orientation: Math.PI * 1.25);    
     _addArrows(x: -100, y: -1200, orientation: Math.PI * 0.75);    
     _addArrows(x: 150, y: -1700, orientation: Math.PI * 0.5);    
     _addArrows(x: -150, y: -1700, orientation: Math.PI * 1.5);        
-    */        
+    */
     _spawn = new Entity(type: EntityType.UNKNOWN);
-    _spawn.position = new Vector2(0.0, 100.0);
-    _spawn.radius = 200.0;
+    //_spawn.position = new Vector2(-2300.0,1800.0);
+    _spawn.position = new Vector2(0.0, 0.0);
+
+    _spawn.radius = 100.0;
     _spawn.orientation = Math.PI;
-    
+
     /* Dummy player
     Entity dummyPlayer = new Entity(EntityType.SHIP, new Vector2(50.0, 50.0), 10.0);
     dummyPlayer.displayName = "Dummy";
@@ -109,8 +91,24 @@ class GameServer implements IGameServer {
     */
     
     _physics = new PhysicsSimulator();
-    _AIDirector = new AIDirector(_world);
-    _AIDirector.populateWorld();
+  }
+
+  _configureRace(){
+    _race = new RaceController();
+    _race.gameServer = this;
+    _joinRaceCollisionDetector = new CollisionDetector();
+
+    /*
+    _race.addStart(0.0, -200.0, Math.PI);
+    _race.addCheckpoint(0.0, -600.0, Math.PI);
+    _race.addFinish(0.0, -800.0, Math.PI);
+
+    _joinRaceCollisionDetector.passiveEntities = [_race.start];
+
+    _world.addEntities(_race.checkpoints);
+    _world.addEntity(_race.start);
+    _world.addEntity(_race.finish);
+    */
   }
 
   start(){
@@ -118,17 +116,45 @@ class GameServer implements IGameServer {
       GameLoop gameLoop = new GameLoopIsolate();
       gameLoop.onUpdate = (_onHeartBeat);
       gameLoop.start();
+
+      for(IServerService service in _services){
+        service.start();
+      }
+
   }
   
   //Heart Beat
   
   _onHeartBeat(GameLoop gameLoop){
     //print('${gameLoop.frame}: ${gameLoop.gameTime} [dt = ${gameLoop.dt}].');
-    _AIDirector.step(gameLoop.dt);
-    _physics.simulateTranslation(gameLoop.dt);
-    _checkCollisions();
-    _race.update();
-    _broadcastUpdates();
+    try{
+
+      // pre update
+      for(IServerService service in _services){
+        service.preUpdate(gameLoop.dt);
+      }
+
+      _physics.simulateRotation(0.015);
+      _physics.simulateTranslation(0.015);
+
+      // update
+      for(IServerService service in _services){
+        service.update(gameLoop.dt);
+      }
+      _checkCollisions();
+      _race.update();
+
+      // post update
+      for(IServerService service in _services){
+        service.postUpdate(gameLoop.dt);
+      }
+      _broadcastUpdates();
+    }
+    catch(e, stack)
+    {
+      print(e);
+      print(stack);
+    }
   }
   
   void _checkCollisions()
@@ -168,7 +194,6 @@ class GameServer implements IGameServer {
   //Client-Server communication
   
   void connectClient(IClientProxy client){
-    print("player connected");
     _clients.add(client);
 
     ChatMessage chatMessage = new ChatMessage();
@@ -180,38 +205,25 @@ class GameServer implements IGameServer {
     envelope.payload = chatMessage.writeToBuffer();
     client.send(envelope);
 
-    print("connected clients: ${_clients.length}");
+    //print("player connected. connected clients: ${_clients.length}");
   }
   
   void disconnectClient(IClientProxy client){
     
-    if(client.movable != null && client.movable.displayName != null)
-    {
-      print("player ${client.movable.displayName} disconnected");      
-    }
-    else
+    if(client.movable == null || client.movable.displayName == null)
     {
       print("client disconnected before handshake");
     }
-    
+
     _clients.remove(client);
-    print("connected clients: ${_clients.length}");
+    //print("player ${client.movable.displayName} disconnected. connected clients: ${_clients.length}");
     
     if(client.movable != null){
       _physics.removeMovable(client.movable);
-      _world.removeEntity(client.movable);
       _crashCollisionDetector.activeEntities.remove(client.movable);
       _race.removePlayer(client);
       _entityToClientMap.remove(client.movable);
-
-      //TODO: remove this message from game server and move it to the world. Probably via a world update message?
-      net.IntMessage message = new net.IntMessage();
-      message.integer = client.movable.id;
-
-      net.Envelope envelope = new net.Envelope();
-      envelope.messageType = net.MessageType.ENTITY_REMOVE;
-      envelope.payload = message.writeToBuffer();
-      sendMessageToClientsExcept(envelope, client);
+      despawnEntity(client.movable);
     }
   }
   
@@ -220,7 +232,7 @@ class GameServer implements IGameServer {
   }
   
   broadcastMessage(net.Envelope envelope, {Set<IClientProxy> blacklist}) {
-    Set<IClientProxy> recipients = _clients;    
+    Set<IClientProxy> recipients = _clients.toSet(); //make a copy to prevent concurrent modification exceptions
     
     if(blacklist != null){
       recipients = recipients.difference(blacklist);      
@@ -233,12 +245,13 @@ class GameServer implements IGameServer {
   }
   
   void registerPlayer(IClientProxy client, String desiredUsername){
-    print("player identifies as $desiredUsername");    
+    //print("player identifies as $desiredUsername");
     Movable player = new Movable();
     player.type = EntityType.SHIP;
     player.radius = 20.0;
     player.displayName = desiredUsername;
-    _world.addEntity(player);
+
+    spawnEntity(player);
     
     _entityToClientMap[player] = client;
     
@@ -275,13 +288,14 @@ class GameServer implements IGameServer {
 
             
     if(!_crashCollisionDetector.activeEntities.contains(movable)){
-      _crashCollisionDetector.activeEntities.add(movable);      
+      _crashCollisionDetector.activeEntities.add(movable);
     }
     
     teleportPlayerTo(client, position, orientation, false);
   }
   
-  teleportPlayerTo(IClientProxy client, Vector2 position, double orientation, bool informClientToo){
+  void teleportPlayerTo(IClientProxy client, Vector2 position, double orientation, bool informClientToo){
+    assert(position != null);
     client.movable.position = position;
     client.movable.orientation = orientation;
     client.movable.canMove = true;
@@ -306,17 +320,31 @@ class GameServer implements IGameServer {
     }
   }   
   
-  void computePlayerInput(IClientProxy client, net.MovementInput input){
+  void computePlayerInput(IClientProxy client, MovementInput input){
     client.movable.updateRank += 1;
-    
+
+    if(input.accelerationFactor < 0.0) {
+      print("getting unsanitized input from ${client.playerName}");
+      input.accelerationFactor = 0.0;
+    }
+
+    if(input.accelerationFactor > 1.0) {
+      print("getting unsanitized input from ${client.playerName}");
+      input.accelerationFactor = 1.0;
+    }
+
     // 1. apply the new orientation
-    if(client.movable.orientation != input.newOrientation){
+    if(client.movable.orientation != input.newOrientation && input.newOrientation != null){
       client.movable.orientation = input.newOrientation;
     }
-    
+
+    if(client.movable.rotationSpeed != input.rotationSpeed && input.rotationSpeed != null){
+      client.movable.rotationSpeed = input.rotationSpeed;
+    }
+
     // 2. calculate the acceleration
-    if(input.accelerate){
-      double accelerationSpeed = 200.0;
+    if(input.accelerationFactor != 0.0){
+      double accelerationSpeed = 200.0 * input.accelerationFactor;
       Vector2 direction = new Vector2(0.0, accelerationSpeed);
     
       // duplicate code in [PlayerController]
@@ -334,21 +362,42 @@ class GameServer implements IGameServer {
       client.movable.acceleration = new Vector2.zero();
     }
   }
+
+  spawnEntity(Entity entity){
+    _world.addEntity(entity);
+    entity.updateRank += 1.0;
+  }
+
+  despawnEntity(Entity entity){
+    _world.removeEntity(entity);
+
+    //TODO: remove this message from game server and move it to the world. Probably via a world update message?
+    net.IntMessage message = new net.IntMessage();
+    message.integer = entity.id;
+
+    net.Envelope envelope = new net.Envelope();
+    envelope.messageType = net.MessageType.ENTITY_REMOVE;
+    envelope.payload = message.writeToBuffer();
+    broadcastMessage(envelope);
+  }
   
   _broadcastUpdates(){
-    var entities = _clients.
-        where((IClientProxy client) => client.movable != null).
-        map((client) => client.movable).
-        where((Movable movable) => movable.updateRank > 0).
+    var entities = _world.entities.values.
+        where((Entity entity) => entity.updateRank > 0).
         toList(growable: false);
-    entities.sort((Movable a, Movable b) => (b.updateRank.compareTo(a.updateRank)));
+    entities.sort((Entity a, Entity b) => (b.updateRank.compareTo(a.updateRank)));
+
+    for(Entity entity in entities){
+      entity.updateRank += 1;
+    }
+
     var broadcastables = entities.take(2);
     
-    for(Movable movable in broadcastables){
-      movable.updateRank = 0;
+    for(Entity entity in broadcastables){
+      entity.updateRank = 0;
       net.Envelope envelope = new net.Envelope();
       envelope.messageType = net.MessageType.ENTITY;
-      envelope.payload = net.EntityMarshal.worldEntityToNetEntity(movable).writeToBuffer();
+      envelope.payload = net.EntityMarshal.worldEntityToNetEntity(entity).writeToBuffer();
       broadcastMessage(envelope);
     }
     

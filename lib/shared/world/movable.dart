@@ -1,5 +1,13 @@
 part of world;
 
+class MovementInput {
+  MovementInput();
+
+  double accelerationFactor;
+  double newOrientation;
+  double rotationSpeed;
+}
+
 class Movable extends Entity {
   bool canMove = false;
   double rotationSpeed = 0.0;

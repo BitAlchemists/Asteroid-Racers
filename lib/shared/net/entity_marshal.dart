@@ -184,4 +184,20 @@ class EntityMarshal {
     netVector2.y = y;
     return netVector2;
   }
+
+  static MovementInput worldMovementInputToNetMovementInput(world.MovementInput worldMovementInput){
+    MovementInput netMovementInput = new MovementInput();
+    netMovementInput.newOrientation = worldMovementInput.newOrientation;
+    netMovementInput.accelerationFactor = worldMovementInput.accelerationFactor;
+    netMovementInput.rotationSpeed = worldMovementInput.rotationSpeed;
+    return netMovementInput;
+  }
+
+  static world.MovementInput netMovementInputToWorldMovementInput(MovementInput netMovementInput){
+    world.MovementInput worldMovementInput = new world.MovementInput();
+    worldMovementInput.newOrientation = netMovementInput.newOrientation;
+    worldMovementInput.accelerationFactor = netMovementInput.accelerationFactor;
+    worldMovementInput.rotationSpeed = netMovementInput.rotationSpeed;
+    return worldMovementInput;
+  }
 }

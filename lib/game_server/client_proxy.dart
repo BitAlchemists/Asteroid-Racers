@@ -18,8 +18,6 @@ class ClientProxy implements IClientProxy
     };
   
   world.Movable movable;
-
-  // IClientProxy
   String get playerName => movable.displayName;
   
   ClientProxy(this._connection){
@@ -159,7 +157,8 @@ class ClientProxy implements IClientProxy
                     "ISEE-3/ICE", // http://blog.xkcd.com/2014/05/30/isee-3/
                     "XKCD-303",
                     "Drei-Zimmer-Rakete",
-                    "Major Tom"];
+                    "Major Tom",
+                    "Patrouille HAL9000"];
       int index = new Math.Random().nextInt(names.length);
       username = names[index];
     }
@@ -190,7 +189,7 @@ class ClientProxy implements IClientProxy
       return;
     }
     
-    gameServer.computePlayerInput(client, input);
+    gameServer.computePlayerInput(client, EntityMarshal.netMovementInputToWorldMovementInput(input));
   }
     
   static _onPingPong(ClientProxy client, Envelope envelope){

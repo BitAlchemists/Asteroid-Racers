@@ -6,7 +6,7 @@ part of game_client;
 class PlayerController extends EntityController implements stagexl.Animatable  {
   final double _acceleration = 200.0;
   final double _rotationSpeed = 5.0;
-  bool accelerate = false;
+  double accelerationFactor = 0.0;
   
   bool isLocalPlayer = false;
       
@@ -88,7 +88,7 @@ class PlayerController extends EntityController implements stagexl.Animatable  {
           break; 
           
         case html.KeyCode.UP:        
-          accelerate = true;
+          accelerationFactor = 1.0;
           break; 
       }
     });
@@ -105,7 +105,7 @@ class PlayerController extends EntityController implements stagexl.Animatable  {
           break; 
           
         case html.KeyCode.UP:        
-          accelerate = false;
+          accelerationFactor = 0.0;
           break; 
       }
     });
@@ -144,7 +144,7 @@ class PlayerController extends EntityController implements stagexl.Animatable  {
     _particleEmitter.updateConfig(particleConfig);
     _particleEmitter.setEmitterLocation(this.entity.position.x, this.entity.position.y);
         
-    if(accelerate){
+    if(accelerationFactor != 0.0){
       _particleEmitter.start();
       _accelerate(new Vector2(0.0, _acceleration));
     }

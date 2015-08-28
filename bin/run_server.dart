@@ -1,21 +1,14 @@
 import '../lib/tcp_server/tcp_server.dart';
 import "package:path/path.dart" as path;
 
-bool UNSAFE_DEVELOPMENT_ENVIRONMENT = true;
 
 main() {
-  String serverPath = path.current;
-  serverPath = path.dirname(serverPath);
-  serverPath = path.join(serverPath, "build/web/");
-  
-  String gameRoot = path.current;
-  gameRoot = path.dirname(gameRoot);
-  
-  List lookupPaths = [serverPath];
-  if(UNSAFE_DEVELOPMENT_ENVIRONMENT){
-    lookupPaths.add(gameRoot);
-  }
-  
-  print("serverpath: $serverPath");
+  String rootPath = path.current;
+  var serverPath = path.join(rootPath, "web/");
+  var buildServerPath = path.join(rootPath, "build/web/");
+
+  List lookupPaths = [buildServerPath, serverPath];
+
+  print("lookupPaths: $lookupPaths");
   runServer(lookupPaths, null, 1337);    
 }

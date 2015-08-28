@@ -21,6 +21,8 @@ import 'package:mime_type/mime_type.dart';
 import "package:asteroidracers/services/chat/chat_shared.dart";
 import "package:asteroidracers/services/chat/chat_server.dart";
 
+import "package:asteroidracers/services/ai/ai.dart" as ai;
+
 
 part 'utils/static_file_handler.dart';
 part "utils/server-utils.dart";
@@ -31,12 +33,11 @@ part "net/web_socket_client_connection_manager.dart";
 
 
 
-
-
 Future runServer(List filePaths, String logPath, int port) {
   GameServer gameServer = new GameServer();
   ClientProxy.gameServer = gameServer;
-  gameServer.start();
+
+
   WebSocketClientConnectionManager connectionManager = new WebSocketClientConnectionManager(gameServer);
   StaticFileHandler fileHandler = new StaticFileHandler(filePaths);
 
@@ -45,6 +46,9 @@ Future runServer(List filePaths, String logPath, int port) {
   _chat = new ChatServer(gameServer);
   ClientProxy.registerMessageHandler(MessageType.CHAT, _chat.onChatMessage);
 
+  //ai.registerAIServices(gameServer);
+
+  gameServer.start();
 
   return HttpServer.bind('0.0.0.0', port).then((HttpServer server) {
     print('listening for connections on $port');

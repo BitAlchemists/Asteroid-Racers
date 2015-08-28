@@ -5,6 +5,7 @@ import "package:asteroidracers/shared/world.dart" as world;
 
 import "net/envelope.pb.dart";
 export "net/envelope.pb.dart";
+import "net/transfer_objects/movement_input.pb.dart";
 export "net/transfer_objects/movement_input.pb.dart";
 export "net/transfer_objects/handshake.pb.dart";
 import "net/transfer_objects/entity.pb.dart";
