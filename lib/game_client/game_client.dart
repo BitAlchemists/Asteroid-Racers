@@ -184,8 +184,7 @@ class GameClient implements stagexl.Animatable, IGameClient {
   double previousRotation = 0.0;
 
   bool advanceTime(num dt){
-    print("game client $dt");
-    String debugOutput = ""; 
+    String debugOutput = "";
         
     if(_player != null) {      
       double previousOrientation = _player.entity.orientation;

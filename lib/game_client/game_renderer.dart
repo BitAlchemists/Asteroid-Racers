@@ -28,10 +28,9 @@ class GameRenderer implements stagexl.Animatable {
   /// This layer only holds the player, so that the player is always in front of other things in the scene
   ParallaxLayer _playerLayer;
   
-  stagexl.Sprite playerSprite; /// This variable is used to update the offset of the parallax layers each frame
+  stagexl.Sprite playerSprite; /// This variable is used to update the offset of the parallax layers each fra
 
   Satellite _satellite;
-
   /// The stage is our host system. We use it for the heart beat.
   stagexl.Stage _stage;
 
@@ -59,7 +58,6 @@ class GameRenderer implements stagexl.Animatable {
   }
   
   bool advanceTime(num dt){
-    print("game renderer $dt");
 
     for(EntityController ec in _updateSpriteList){
       ec.updateSprite();
@@ -70,14 +68,14 @@ class GameRenderer implements stagexl.Animatable {
     if(playerSprite != null){
       Vector2 position = new Vector2(playerSprite.x, playerSprite.y);
       this._updateParallaxOffsets(position);
-    }
+
 
     _satellite.juggler.advanceTime(dt);
 
     for(ParallaxLayer layer in _parallaxLayers){
       layer.advanceTime(dt);
     }
-
+ }
     return true;
   }
 
@@ -138,7 +136,7 @@ class GameRenderer implements stagexl.Animatable {
     
     //Background
     _background = new StarBackground(2000.0, 2000.0, _stage);
-    _stage.addChildAt(_background, 0);  
+    _stage.addChildAt(_background, 0); ;
     _parallaxLayers.add(_background);
     
     //Earth layer

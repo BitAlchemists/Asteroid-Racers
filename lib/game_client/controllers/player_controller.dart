@@ -175,7 +175,16 @@ class PlayerController extends EntityController implements stagexl.Animatable  {
       getTranslation();
     
     _movable.acceleration = new Vector2(acceleration3.x, acceleration3.y);
-  }  
+  }
+
+  /// we overwrite the EntityController method to make sure that the model name does not turn with the model
+  /// only the model rotates
+  updateSprite(){
+    sprite.x = _entity.position.x;
+    sprite.y = _entity.position.y;
+
+    _model.rotation = _entity.orientation;
+  }
   
   bool updateFromServer(Entity entity){
     // we exclude orientation and rotationSpeed from the update, so that we
