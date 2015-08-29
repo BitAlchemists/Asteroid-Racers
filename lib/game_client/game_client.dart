@@ -218,6 +218,7 @@ class GameClient implements stagexl.Animatable, IGameClient {
       
       // store the acceleration state for the next frame
       previousAcceleration = _player.accelerationFactor;
+      previousRotation = _player._movable.rotationSpeed;
       
       // now simulate the local position
       _simulator.simulateTranslation(dt);
