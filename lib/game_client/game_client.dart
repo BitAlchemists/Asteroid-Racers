@@ -76,7 +76,7 @@ class GameClient implements stagexl.Animatable, IGameClient {
     server.onDisconnectDelegate = _onDisconnect;
 
     logging.hierarchicalLoggingEnabled = true;
-    log.level = logging.Level.FINE;
+    //log.level = logging.Level.FINE;
     log.onRecord.listen((logging.LogRecord record){
       print(record.level.toString() + ": " + record.message);
     });
@@ -113,20 +113,20 @@ class GameClient implements stagexl.Animatable, IGameClient {
   }
   
   _configureChat(){
-    log.fine("add chat window to gui");
+    log.finer("add chat window to gui");
     ChatWindow chatWindow = new ChatWindow();
-    _renderer.addWindowToGUI(chatWindow);
+    _renderer.addChatWindowToGUI(chatWindow);
 
-    log.fine("new chat controller");
+    log.finest("new chat controller");
     _chat = new ChatController(chatWindow.chatInput, chatWindow.chatOutput);
     // send chat messages entered by the player to the server proxy
-    log.fine("listen to chat messages");
+    log.finest("listen to chat messages");
     _chat.onSendChatMesage.listen(server.send);
     // register the chat controller for chat messages. The server proxy will send them to the chat controller
-    log.fine("register message handler");
+    log.finest("register message handler");
     server.registerMessageHandler(net.MessageType.CHAT, _chat.onReceiveMessage);
     // send log messages to onReceiveLogMessage()
-    log.fine("listen to received messages");
+    log.finest("listen to received messages");
   }
     
   _onTapConnect(_){

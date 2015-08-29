@@ -13,7 +13,12 @@ class Window extends stagexl.Sprite {
   num _height = yOffset;
   num get height => _height;
 
-  num width;
+  num _width;
+  num get width => _width;
+  set width(num width){
+    _width = width;
+    _updateWindowBackground();
+  }
   
   Window(){
 
@@ -22,14 +27,18 @@ class Window extends stagexl.Sprite {
   void pushView(stagexl.DisplayObject view){
     view.x = xOffset; 
     view.y = _height;
-    var _contentWidth = width - 2*xOffset;
-    view.width = _contentWidth;
+    updateViewWidth(view);
     view.addTo(this);
     
     _height = view.y + view.height;
     _updateWindowBackground();
   }
-  
+
+  updateViewWidth(stagexl.DisplayObject view){
+    var _contentWidth = width - 2*xOffset;
+    view.width = _contentWidth;
+  }
+
   void pushSpace(num pixels){
     _height += pixels;
     _updateWindowBackground();
@@ -38,7 +47,7 @@ class Window extends stagexl.Sprite {
   void _updateWindowBackground(){
     this.graphics.clear();
     this.graphics.rectRound(0, 0, this.width, _height, 10, 10);
-    this.graphics.fillColor(0xee444444);
+    this.graphics.fillColor(0xaa444444);
   }
   
 }

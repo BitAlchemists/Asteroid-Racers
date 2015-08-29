@@ -38,7 +38,7 @@ class EntityController {
         RenderHelper.applyArrows(sprite, radius: entity.radius);
         break;
       default:
-        print("cant _createSprite() for unknown entity.");
+        log.config("cant _createSprite() for unknown entity.");
     }            
   }
   

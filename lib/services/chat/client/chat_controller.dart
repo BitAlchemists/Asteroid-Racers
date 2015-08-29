@@ -52,14 +52,18 @@ class ChatController {
   }
   
   displayMessage(String msg, String from) {
-   _display("$from: $msg\n");
+   _display("$from: $msg");
  }
 
  displayNotice(String notice) {
-   _display("[system]: $notice\n");
+   _display("[system]: $notice");
  }
 
  _display(String str) {
-   _chatOutput.text = "$str${_chatOutput.text}";
+   String text = "${_chatOutput.text}\n$str";
+   var splitter = new convert.LineSplitter();
+   List lines = splitter.convert(text);
+   text = lines.reversed.take(5).toList().reversed.join("\n"); //only take the lowest 5 lines into the next round
+   _chatOutput.text = text;
  }
 }

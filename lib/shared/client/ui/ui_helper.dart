@@ -13,7 +13,7 @@ class UIHelper {
     return textField;
   }
 
-  static stagexl.TextField createInputField([num numLines = 1]){
+  static stagexl.TextField createInputField({num numLines: 1}){
     stagexl.TextField textField = new stagexl.TextField();
     textField.backgroundColor = stagexl.Color.White;
     textField.background = true;  

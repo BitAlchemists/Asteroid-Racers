@@ -40,6 +40,7 @@ class GameRenderer implements stagexl.Animatable {
   stagexl.TextField _usernameField;
   stagexl.TextField _debugOutputField;
   Window _debugWindow;
+  Window _chatWindow;
 
   List<EntityController> _updateSpriteList = [];
 
@@ -54,7 +55,12 @@ class GameRenderer implements stagexl.Animatable {
     _stage.backgroundColor = stagexl.Color.Black;
     _stage.doubleClickEnabled = true;
     _stage.focus = _stage;
-    
+
+    _stage.onResize.listen(_onResize);
+  }
+
+  _onResize(stagexl.Event e){
+    _updateChatWindowPosition();
   }
   
   bool advanceTime(num dt){
@@ -183,10 +189,17 @@ class GameRenderer implements stagexl.Animatable {
   
   }
   
-  addWindowToGUI(Window window){
-    window.x = 10;
-    window.y = _debugWindow.y + _debugWindow.height + 10;
+  addChatWindowToGUI(Window window){
+    _chatWindow = window;
+    _updateChatWindowPosition();
     window.addTo(_uiLayer);
+  }
+
+  _updateChatWindowPosition(){
+    num offset = 10;
+    _chatWindow.x = offset;
+    _chatWindow.width = _stage.stageWidth - offset * 2;
+    _chatWindow.y = _stage.stageHeight - _chatWindow.height - offset;
   }
   
   updateConnectButton(int state){
