@@ -4,9 +4,10 @@ import "dart:async";
 import 'dart:html' as html;
 import "dart:typed_data";
 
+import "package:logging/logging.dart" as logging;
+
 import "package:asteroidracers/shared/net.dart";
 import "package:asteroidracers/shared/world.dart" as world;
-import "package:asteroidracers/game_client/utils/client_logger.dart";
 import "package:asteroidracers/game_server/game_server.dart"; //this is used for the simulated local server
 import "package:asteroidracers/game_server/client_proxy.dart"; //this is used for the simulated local server
 import 'package:asteroidracers/shared/shared_server.dart';

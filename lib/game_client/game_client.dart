@@ -8,7 +8,8 @@ import 'dart:math' as Math;
 import 'package:vector_math/vector_math.dart';
 import 'package:stagexl/stagexl.dart' as stagexl;
 import "package:stagexl_particle/stagexl_particle.dart" as stagexl_particle;
-import 'utils/client_logger.dart';
+import "package:logging/logging.dart" as logging;
+
 
 //Ours
 import 'package:asteroidracers/shared/ui.dart';
@@ -35,6 +36,8 @@ part "controllers/checkpoint_controller.dart";
 part "controllers/race_portal_controller.dart";
 
 Math.Random random = new Math.Random();
+
+logging.Logger log = new logging.Logger("GameClient");
 
 class GameConfig {
   bool localServer = true;
@@ -71,20 +74,30 @@ class GameClient implements stagexl.Animatable, IGameClient {
         
     server = new ServerProxy(this);
     server.onDisconnectDelegate = _onDisconnect;
+
+    logging.hierarchicalLoggingEnabled = true;
+    log.level = logging.Level.FINE;
+    log.onRecord.listen((logging.LogRecord record){
+      print(record.level.toString() + ": " + record.message);
+    });
   }
   
   
   setup(html.CanvasElement canvas){
+    log.fine("set up renderer, build UI layer");
     _renderer = new GameRenderer(canvas);
     _renderer.buildUILayer(_onTapConnect);
 
+    log.fine("add stage to render loop");
     var renderLoop = new stagexl.RenderLoop();
     renderLoop.addStage(_renderer.stage);
-      
+
+    log.fine("configure chat");
     _configureChat();
     
     bool tabHandled = false;
-    
+
+    log.fine("configure input");
     _renderer.stage.onKeyDown.listen((stagexl.KeyboardEvent ke){
       if(!tabHandled && ke.keyCode == html.KeyCode.ONE){
         _renderer.toggleGUI();
@@ -100,16 +113,20 @@ class GameClient implements stagexl.Animatable, IGameClient {
   }
   
   _configureChat(){
+    log.fine("add chat window to gui");
     ChatWindow chatWindow = new ChatWindow();
     _renderer.addWindowToGUI(chatWindow);
-    
+
+    log.fine("new chat controller");
     _chat = new ChatController(chatWindow.chatInput, chatWindow.chatOutput);
     // send chat messages entered by the player to the server proxy
+    log.fine("listen to chat messages");
     _chat.onSendChatMesage.listen(server.send);
     // register the chat controller for chat messages. The server proxy will send them to the chat controller
+    log.fine("register message handler");
     server.registerMessageHandler(net.MessageType.CHAT, _chat.onReceiveMessage);
     // send log messages to onReceiveLogMessage()
-    ClientLogger.instance.stdout.listen(_chat.onReceiveLogMessage);
+    log.fine("listen to received messages");
   }
     
   _onTapConnect(_){
@@ -128,9 +145,10 @@ class GameClient implements stagexl.Animatable, IGameClient {
   connect(){
     String username = _renderer.username;   
     
-    print("connecting...");
+    log.info("Connecting...");
     server.connect(_config.localServer, _config.debugLocalServerNetEncoding, username).then(_onConnect).catchError((html.Event e){
-      log("could not connect.");
+      log.info("could not connect.");
+      _chat.displayNotice("Could not connect.");
       _onDisconnect();
     });
     
@@ -140,7 +158,8 @@ class GameClient implements stagexl.Animatable, IGameClient {
   
   
   _onConnect(_){
-    print("connected");
+    log.info("Connected");
+    _chat.displayNotice("Connected.");
     _renderer.updateConnectButton(server.state);
     
     if(_config.renderBackground){
@@ -160,6 +179,7 @@ class GameClient implements stagexl.Animatable, IGameClient {
   }
   
   _onDisconnect(){
+    _chat.displayNotice("Disconnected");
     _renderer.updateConnectButton(server.state);
     _renderer.stage.juggler.remove(this);
     _renderer.clearScene();
@@ -293,7 +313,7 @@ class GameClient implements stagexl.Animatable, IGameClient {
       if(entity.type == EntityType.SHIP &&
           entity.displayName != null &&
           entity.displayName != ""){
-        log("'${entity.displayName}' appearing on our radars.");
+        _chat.displayNotice("'${entity.displayName}' appearing on our radars.");
       }
       
       if(_config.debugCollisions){
@@ -321,7 +341,7 @@ class GameClient implements stagexl.Animatable, IGameClient {
       if(entity.type == EntityType.SHIP &&
           entity.displayName != null &&
           entity.displayName != ""){
-        log("'${entity.displayName}' disappeared from our radars.");
+        _chat.displayNotice("'${entity.displayName}' disappeared from our radars.");
       }
     }
   }
@@ -334,7 +354,7 @@ class GameClient implements stagexl.Animatable, IGameClient {
     EntityController ec = _entityControllers[entityId];
 
     if(ec == null) {
-      print("cannot handle collision: entity controller for entity with id $entityId not found");
+      log.warning("cannot handle collision: entity controller for entity with id $entityId not found");
       return;
     }
 

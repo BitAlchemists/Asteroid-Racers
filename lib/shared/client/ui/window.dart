@@ -6,24 +6,23 @@ class Window extends stagexl.Sprite {
   static num yOffset = 10;
   static num xOffset = 10;
   static num buttonHeight = 40;
-  
-  num get contentWidth => _contentWidth;
+
+  num get contentWidth => this.width - 2*xOffset;
 
   //instance variables  
   num _height = yOffset;
-  num _contentWidth;
-    
   num get height => _height;
+
+  num width;
   
-  Window(num width){
-    this.width = width;
-    _contentWidth = width - 2*xOffset;
+  Window(){
 
   }
   
   void pushView(stagexl.DisplayObject view){
     view.x = xOffset; 
     view.y = _height;
+    var _contentWidth = width - 2*xOffset;
     view.width = _contentWidth;
     view.addTo(this);
     

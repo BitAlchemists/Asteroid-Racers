@@ -8,7 +8,8 @@ class UIHelper {
     textField.textColor = stagexl.Color.White;
     textField.height = textField.textHeight * numLines;
     textField.text = text;
-    
+    textField.wordWrap = true;
+
     return textField;
   }
 
@@ -19,7 +20,7 @@ class UIHelper {
     textField.textColor = stagexl.Color.Black;
     textField.height = textField.textHeight * numLines + 5;
     textField.type = stagexl.TextFieldType.INPUT;
-    
+
     return textField;
   }
 }

@@ -7,7 +7,8 @@ class ChatWindow extends Window {
   stagexl.TextField _chatOutput;
   stagexl.TextField get chatOutput => _chatOutput;
   
-  ChatWindow() : super(250){
+  ChatWindow() : super(){
+    this.width = 250;
     _chatInput = UIHelper.createInputField();
     _chatInput.onMouseClick.listen((_) => this.stage.focus = _chatInput);
     this.pushView(_chatInput);

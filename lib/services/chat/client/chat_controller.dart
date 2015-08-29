@@ -51,10 +51,6 @@ class ChatController {
     displayMessage(chatMessage.text, chatMessage.from);
   }
   
-  onReceiveLogMessage(String message) {
-    displayMessage(message, "system");
-  }
-  
   displayMessage(String msg, String from) {
    _display("$from: $msg\n");
  }

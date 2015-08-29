@@ -101,7 +101,8 @@ class GameRenderer implements stagexl.Animatable {
     _uiLayer.addTo(_stage);
         
     // debug window
-    _debugWindow = new Window(boxWidth);
+    _debugWindow = new Window();
+    _debugWindow.width = boxWidth;
     _debugWindow.x = 10;
     _debugWindow.y = 10;
     _debugWindow.addTo(_uiLayer);

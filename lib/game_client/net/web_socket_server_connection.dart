@@ -12,6 +12,7 @@ class WebSocketServerConnection implements ServerConnection {
   //Public properties
   Stream<Envelope> get onReceiveMessage => _receiveMessageStreamController.stream;
   Function onDisconnectDelegate;
+  logging.Logger log = new logging.Logger("GameClient.Net.WebSocketServerConnection");
   
   //ctor
   WebSocketServerConnection(this._url);
@@ -32,7 +33,6 @@ class WebSocketServerConnection implements ServerConnection {
   }
  
   _onConnected(e) {
-    log('Connected');
     _isConnecting = false;
     _onConnectCompleter.complete();
     _onConnectCompleter = null;
@@ -45,15 +45,13 @@ class WebSocketServerConnection implements ServerConnection {
   
   _onDisconnected(e){
     if(_isConnecting){
-      log("Could not connect");
       _isConnecting = false;
       _onConnectCompleter.completeError(e);
       _onConnectCompleter = null;
     }
     else
     {
-      log("Disconnected");
-      onDisconnectDelegate();        
+      onDisconnectDelegate();
     }
   }
 
@@ -64,7 +62,7 @@ class WebSocketServerConnection implements ServerConnection {
     if (_webSocket != null && _webSocket.readyState == html.WebSocket.OPEN) {
       _webSocket.send(encodedMessage);
     } else {
-      log('WebSocket not connected, message $encodedMessage not sent');
+      log.warning('WebSocket not connected, message $encodedMessage not sent');
     }
   }
   

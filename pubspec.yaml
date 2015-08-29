@@ -11,6 +11,7 @@ dependencies:
   protobuf: "0.4.0"
   vector_math: '1.4.3'
   neural_network: "0.0.4"
+  logging: any
 transformers:
 - $dart2js:
     commandLineOptions: [--enable-enum]

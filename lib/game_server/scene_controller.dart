@@ -56,7 +56,7 @@ class SceneController{
     _addArrow(x: xOffset - corridorWidth * 0.5, y:-corridorWidth - blockLength, orientation: Math.PI * 0.0);
 
 
-    race.addFinish(xOffset, corridorWidth, Math.PI);
+    race.addFinish(xOffset - corridorWidth * 0.5, corridorWidth, Math.PI);
 
     world.addEntities(race.checkpoints);
     world.addEntity(race.start);
