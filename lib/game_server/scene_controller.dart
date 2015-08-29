@@ -18,27 +18,50 @@ class SceneController{
   }
 
   static createRace2(World world, RaceController race){
-    race.addStart(xOffset, 0.0, Math.PI * 0.5);
-    race.addCheckpoint(xOffset + blockLength + corridorWidth + blockLength, 0.0, Math.PI); //right
-    race.addCheckpoint(xOffset + blockLength + corridorWidth + blockLength, blockLength, Math.PI); //down right
-    race.addCheckpoint(xOffset + blockLength + corridorWidth, blockLength, Math.PI); //down
-    race.addCheckpoint(xOffset + blockLength + corridorWidth/2, -blockLength, Math.PI); // top
-    race.addCheckpoint(xOffset, -blockLength, Math.PI); // top left
-    race.addFinish(xOffset, -corridorWidth, Math.PI);
+
+    //what? :P
+    _addArrow({num x: 0.0, num y: 0.0, double orientation: 0.0}) => world.addEntity(createArrow(x:x,y:y,orientation:orientation));
+
+
+    //left
+    race.addStart(xOffset, 0.0, Math.PI * 1.5);
+    _addArrow(x: xOffset, y: 0, orientation: Math.PI * 1.5);
+
+    //center
+    _addArrow(x: xOffset + blockLength - corridorWidth * 1.5, orientation: Math.PI * 1.5);
+    _addArrow(x: xOffset + blockLength + corridorWidth * 2.5, orientation: Math.PI * 1.5);
+
+    //right
+    race.addCheckpoint(xOffset + blockLength + corridorWidth + blockLength, 0.0, Math.PI * 0.0);
+    _addArrow(x: xOffset + blockLength + corridorWidth + blockLength, orientation: Math.PI * 0.0);
+
+    //down right
+    race.addCheckpoint(xOffset + blockLength + corridorWidth + blockLength + corridorWidth/2, blockLength + corridorWidth, Math.PI * 0.5);
+    _addArrow(x: xOffset + blockLength + corridorWidth + blockLength + corridorWidth * 0.5, y:blockLength + corridorWidth, orientation: Math.PI * 0.5);
+
+    //down
+    race.addCheckpoint(xOffset + blockLength + corridorWidth * 0.5, blockLength + corridorWidth, Math.PI * 1.0);
+    _addArrow(x: xOffset + blockLength + corridorWidth * 0.5, y:blockLength + corridorWidth, orientation: Math.PI * 1.0);
+
+    //center
+    _addArrow(x: xOffset + blockLength + corridorWidth * 0.5, y:corridorWidth * 1.5, orientation: Math.PI * 1.0);
+    _addArrow(x: xOffset + blockLength + corridorWidth * 0.5, y:-corridorWidth * 1.5, orientation: Math.PI * 1.0);
+
+    // top
+    race.addCheckpoint(xOffset + blockLength + corridorWidth/2, -blockLength - corridorWidth, Math.PI * 0.5);
+    _addArrow(x: xOffset + blockLength + corridorWidth * 0.5, y:-corridorWidth - blockLength, orientation: Math.PI * 0.5);
+
+    // top left
+    race.addCheckpoint(xOffset - corridorWidth * 0.5, -blockLength - corridorWidth, Math.PI * 0.0);
+    _addArrow(x: xOffset - corridorWidth * 0.5, y:-corridorWidth - blockLength, orientation: Math.PI * 0.0);
+
+
+    race.addFinish(xOffset, corridorWidth, Math.PI);
 
     world.addEntities(race.checkpoints);
     world.addEntity(race.start);
     world.addEntity(race.finish);
 
-    //what? :P
-    _addArrow({num x: 0.0, num y: 0.0, double orientation: 0.0}) => world.addEntity(createArrow(x:x,y:y,orientation:orientation));
-
-    _addArrow(y: -400, orientation: Math.PI);
-    _addArrow(y: -200, orientation: Math.PI);
-    _addArrow(x: 100, y: -1200, orientation: Math.PI * 1.25);
-    _addArrow(x: -100, y: -1200, orientation: Math.PI * 0.75);
-    _addArrow(x: 150, y: -1700, orientation: Math.PI * 0.5);
-    _addArrow(x: -150, y: -1700, orientation: Math.PI * 1.5);
   }
 
   static createScene1(World world){
