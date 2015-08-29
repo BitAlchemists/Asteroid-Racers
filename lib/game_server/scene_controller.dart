@@ -24,8 +24,8 @@ class SceneController{
 
 
     //left
-    race.addStart(xOffset, 0.0, Math.PI * 1.5);
-    _addArrow(x: xOffset, y: 0, orientation: Math.PI * 1.5);
+    race.addStart(xOffset-corridorWidth*0.5, 0.0, Math.PI * 1.5);
+    _addArrow(x: xOffset-corridorWidth*0.5, y: 0, orientation: Math.PI * 1.5);
 
     //center
     _addArrow(x: xOffset + blockLength - corridorWidth * 1.5, orientation: Math.PI * 1.5);
