@@ -21,7 +21,7 @@ import 'package:mime_type/mime_type.dart';
 import "package:asteroidracers/services/chat/chat_shared.dart";
 import "package:asteroidracers/services/chat/chat_server.dart";
 
-import "package:asteroidracers/services/ai/ai.dart" as ai;
+//import "package:asteroidracers/services/ai/ai.dart" as ai;
 
 
 part 'utils/static_file_handler.dart';
