@@ -19,12 +19,17 @@ class RaceController {
     _portal = new RacePortal();
     _portal.position = new Vector2(x, y);
     _portal.radius = circleRadius;
-    _portal.orientation = Math.PI;
-    for(int i = 0; i < 4; i++){
-      double angle = Math.PI/2 - Math.PI/3*i;
+    _portal.orientation = orientation;
+    int numOfSpawns = 4;
+    for(int i = 0; i < numOfSpawns; i++){
+      double angle = Math.PI/2 - Math.PI/(numOfSpawns-1)*i;
       Vector2 vec = new Vector2(Math.sin(angle), Math.cos(angle));
       vec *= circleRadius * 0.7;
       Entity start = new Entity(type:EntityType.UNKNOWN);
+      // this is the relativ position within the RacePortal, not accounting for orientation
+      // actual spawn position is determined in spawnEntityForPlayer later
+      // we dont already calculate the actual position to make it easier for the client to position
+      // the rendered spawn points realative to its orientation
       start.position = vec;
       start.radius = 15.0;
       start.orientation = _portal.orientation;
@@ -172,7 +177,17 @@ class RaceController {
       int i = playerIdList.indexOf(client);
       Entity spawnEntity = new Entity.copy(_portal.positions[i]);
       spawnEntity.radius = client.movable.radius;
+
+      //calculate the actual position with respect to the orientation of the portal
+      double sin = Math.sin(_portal.orientation);
+      double cos = Math.cos(_portal.orientation);
+
+      double x = spawnEntity.position.x * cos - spawnEntity.position.y * sin;
+      double y = spawnEntity.position.x * sin + spawnEntity.position.y * cos;
+      spawnEntity.position = new Vector2(x,y);
+
       spawnEntity.position += _portal.position;
+
       return spawnEntity;
     }
     

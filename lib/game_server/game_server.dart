@@ -273,7 +273,14 @@ class GameServer implements IGameServer {
     
     client.movable.updateRank += 1;
   }
-  
+
+  /// This function returns a random point in the circle
+  /// It does this by randomly generating a point in a rect around the circle.
+  /// If the position is within the circle, this becomes the spawn point.
+  /// Else, a new spawn random point will be generated and tested for.
+  /// This provides a uniform random point selection, opposed to selecting
+  /// a random angle and random distance, which would create more spawn density
+  /// towards the center
   Vector2 randomPointInCircle(){
     double x = random.nextDouble()*2 - 1;
     double y = random.nextDouble()*2 - 1;
