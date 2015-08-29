@@ -24,6 +24,7 @@ git clone https://github.com/BitAlchemists/Asteroid-Racers.git
 cd Asteroid-Racers/
 
 /usr/lib/dart/bin/pub get
+/usr/lib/dart/bin/pub build
 
 There are two ways to test the client locally.
 
