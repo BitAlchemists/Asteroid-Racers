@@ -6,6 +6,8 @@ import 'dart:async';
 import "dart:typed_data";
 
 import 'package:path/path.dart' as path;
+import "package:logging/logging.dart" as logging;
+
 import "package:asteroidracers/shared/net.dart";
 import "package:asteroidracers/shared/shared_server.dart";
 import "package:asteroidracers/game_server/game_server.dart";
@@ -31,7 +33,7 @@ part 'net/web_socket_client_connection.dart';
 part "net/web_socket_client_connection_manager.dart";
 
 
-
+logging.Logger log = new logging.Logger("TCPServer");
 
 Future runServer(List filePaths, String logPath, int port) {
   GameServer gameServer = new GameServer();
@@ -51,7 +53,7 @@ Future runServer(List filePaths, String logPath, int port) {
   gameServer.start();
 
   return HttpServer.bind('0.0.0.0', port).then((HttpServer server) {
-    print('listening for connections on $port');
+    log.info('listening for connections on $port');
         
     
     
@@ -68,11 +70,11 @@ Future runServer(List filePaths, String logPath, int port) {
         }        
       }
       catch(e) {
-        print("catching error " + e.toString());
+        log.warning("catching error " + e.toString());
         request.response.statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
         request.response.write("500 - Internal Server Error");
       }
     });
   },
-  onError: (error) => print("Error starting HTTP server: $error"));
+  onError: (error) => log.severe("Error starting HTTP server: $error"));
 }

@@ -17,6 +17,7 @@ import 'package:asteroidracers/services/chat/chat_client.dart';
 import "package:asteroidracers/shared/net.dart" as net; //todo: remove this and layer all its code out to serverproxy
 import "package:asteroidracers/game_client/server_proxy.dart";
 import "package:asteroidracers/shared/shared_client.dart";
+import "package:asteroidracers/shared/logging.dart";
 
 //Views
 part "game_renderer.dart";
@@ -77,9 +78,7 @@ class GameClient implements stagexl.Animatable, IGameClient {
 
     logging.hierarchicalLoggingEnabled = true;
     //log.level = logging.Level.FINE;
-    log.onRecord.listen((logging.LogRecord record){
-      print(record.level.toString() + ": " + record.message);
-    });
+    printLogRecords(log); //registers log records for print()
   }
   
   

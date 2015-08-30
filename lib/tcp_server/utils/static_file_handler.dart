@@ -12,13 +12,16 @@ class StaticFileHandler {
   }
 
   onRequest(HttpRequest request) {
+    log.finer("static file request: " + request.uri.path);
+
     final String localPath =
         request.uri.path == '/' ? 'asteroidracers.html' : request.uri.path.substring(1, request.uri.path.length);
+
 
     bool fileFound = false;
     for(String basePath in filePaths){
       String filePath = path.join(basePath, localPath);
-      print("file request for path $filePath");
+      log.fine("file request for path $filePath");
       File file = new File(filePath);
       if(file.existsSync()){
         sendFileResponse(file, request);

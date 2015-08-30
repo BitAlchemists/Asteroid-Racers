@@ -5,12 +5,12 @@ time(msg, callback()) {
   var sw = new Stopwatch()..start();
   callback();
   sw.stop();
-  print('Timing for $msg: ${sw.elapsedMicroseconds} us');
+  log.config('Timing for $msg: ${sw.elapsedMicroseconds} us');
 }
 
 // runs the callback on the event loop at the next opportunity
 Future queue(callback()) {
   return (new Future.delayed(Duration.ZERO, callback)).catchError((e){
-    print("error in queue()ed callback: ${e.toString()}");
+    log.warning("error in queue()ed callback: ${e.toString()}");
   });
 }
