@@ -3,7 +3,7 @@ part of game_server;
 class SceneController{
 
   static double xOffset = 250.0;
-  static double blockLength = 2000.0;
+  static double blockLength = 1000.0;
   static double corridorWidth = 200.0;
 
   static createScene2(World world){
