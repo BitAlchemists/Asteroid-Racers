@@ -11,6 +11,9 @@ class GUIController {
   Window _debugWindow;
   Window _chatWindow;
 
+  stagexl.Sprite _radar;
+
+
   GUIController(this._stage){
     _stage.onResize.listen(_onResize);
   }
@@ -68,6 +71,27 @@ class GUIController {
 
     _debugWindow.pushSpace(10);
 
+    _radar = new stagexl.Sprite();
+    _radar.graphics.circle(_stage.stageWidth/2, _stage.stageHeight/2, 200);
+    _radar.graphics.strokeColor(stagexl.Color.Navy);
+    _radar.addTo(_stage);
+
+  }
+
+  updateRadar(EntityController player, List<EntityController> otherPlayers){
+    _radar.removeChildren();
+    for(EntityController otherPlayer in otherPlayers){
+
+      Vector2 direction = otherPlayer.entity.position - player.entity.position;
+      direction.normalize().scale(200.0);
+
+      stagexl.Sprite pointer;
+      pointer = new stagexl.Sprite();
+      pointer.graphics.circle(_stage.stageWidth/2 + direction.x, _stage.stageHeight/2 + direction.y, 20);
+      pointer.graphics.strokeColor(stagexl.Color.Green);
+      pointer.addTo(_radar);
+
+    }
   }
 
   updateConnectButton(int state){

@@ -32,7 +32,7 @@ class GameRenderer implements stagexl.Animatable {
 
   GUIController gui;
 
-  List<EntityController> _updateSpriteList = [];
+  Set<EntityController> _updateSpriteSet = new Set<EntityController>();
 
   GameRenderer(html.CanvasElement canvas){
     _stage = new stagexl.Stage(canvas);
@@ -52,10 +52,10 @@ class GameRenderer implements stagexl.Animatable {
 
   bool advanceTime(num dt){
 
-    for(EntityController ec in _updateSpriteList){
+    for(EntityController ec in _updateSpriteSet){
       ec.updateSprite();
     }
-    _updateSpriteList.clear();
+    _updateSpriteSet.clear();
 
 
     if(playerSprite != null){
@@ -173,6 +173,6 @@ class GameRenderer implements stagexl.Animatable {
   }
 
   updateSpriteInNextFrame(EntityController ec){
-    _updateSpriteList.add(ec);
+    _updateSpriteSet.add(ec);
   }
 }

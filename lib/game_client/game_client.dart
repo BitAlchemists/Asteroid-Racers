@@ -63,6 +63,7 @@ class GameClient implements stagexl.Animatable, IGameClient {
   /// 
   /// the int key is the entityId
   final Map<int, EntityController> _entityControllers = new Map<int, EntityController>();
+  final List<EntityController> _otherPlayers = new List<EntityController>();
   
   ChatController _chat;
 
@@ -247,6 +248,8 @@ class GameClient implements stagexl.Animatable, IGameClient {
       // to notify the renderer of position updates (e.g. teleporting)
       _renderer.updateSpriteInNextFrame(_player);
 
+      _renderer.gui.updateRadar(_player, _otherPlayers);
+
       debugOutput += "x: ${_player.entity.position.x.toInt()}\ny: ${_player.entity.position.y.toInt()}\n";
     }
 
@@ -313,6 +316,7 @@ class GameClient implements stagexl.Animatable, IGameClient {
       if(entity.type == EntityType.SHIP &&
           entity.displayName != null &&
           entity.displayName != ""){
+        _otherPlayers.add(ec);
         _chat.displayNotice("'${entity.displayName}' appearing on our radars.");
       }
       
@@ -341,6 +345,7 @@ class GameClient implements stagexl.Animatable, IGameClient {
       if(entity.type == EntityType.SHIP &&
           entity.displayName != null &&
           entity.displayName != ""){
+        _otherPlayers.remove(ec);
         _chat.displayNotice("'${entity.displayName}' disappeared from our radars.");
       }
     }
