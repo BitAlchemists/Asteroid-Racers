@@ -21,6 +21,7 @@ import "package:asteroidracers/shared/logging.dart";
 
 //Views
 part "game_renderer.dart";
+part "gui.dart";
 part 'views/render_helper.dart';
 part "views/explosion.dart";
 part "views/star_background.dart";
@@ -114,7 +115,7 @@ class GameClient implements stagexl.Animatable, IGameClient {
   _configureChat(){
     log.finer("add chat window to gui");
     ChatWindow chatWindow = new ChatWindow();
-    _renderer.addChatWindowToGUI(chatWindow);
+    _renderer.gui.addChatWindowToGUI(chatWindow);
 
     log.finest("new chat controller");
     _chat = new ChatController(chatWindow.chatInput, chatWindow.chatOutput);
@@ -142,7 +143,7 @@ class GameClient implements stagexl.Animatable, IGameClient {
   }
   
   connect(){
-    String username = _renderer.username;   
+    String username = _renderer.gui.username;
     
     log.info("Connecting...");
     server.connect(_config.localServer, _config.debugLocalServerNetEncoding, username).then(_onConnect).catchError((html.Event e){
@@ -151,7 +152,7 @@ class GameClient implements stagexl.Animatable, IGameClient {
       _onDisconnect();
     });
     
-    _renderer.updateConnectButton(server.state); 
+    _renderer.gui.updateConnectButton(server.state);
     
   }
   
@@ -159,7 +160,7 @@ class GameClient implements stagexl.Animatable, IGameClient {
   _onConnect(_){
     log.info("Connected");
     _chat.displayNotice("Connected.");
-    _renderer.updateConnectButton(server.state);
+    _renderer.gui.updateConnectButton(server.state);
     
     if(_config.renderBackground){
       _renderer.buildBackgroundLayer();
@@ -179,7 +180,7 @@ class GameClient implements stagexl.Animatable, IGameClient {
   
   _onDisconnect(){
     _chat.displayNotice("Disconnected");
-    _renderer.updateConnectButton(server.state);
+    _renderer.gui.updateConnectButton(server.state);
     _renderer.stage.juggler.remove(this);
     _renderer.clearScene();
         
@@ -260,7 +261,7 @@ class GameClient implements stagexl.Animatable, IGameClient {
     double newFps = updateFps(1/dt);
     debugOutput += "FPS: ${newFps.toInt()}\n";
 
-    _renderer.debugOutput = debugOutput;      
+    _renderer.gui.debugOutput = debugOutput;
     
     return true;
   }

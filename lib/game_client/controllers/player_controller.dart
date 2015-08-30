@@ -4,7 +4,7 @@ part of game_client;
  * A controller for player entities. Also handles to local player.
  */
 class PlayerController extends EntityController implements stagexl.Animatable  {
-  final double _acceleration = 200.0;
+  final double _acceleration = 400.0;
   final double _rotationSpeed = 5.0;
   double accelerationFactor = 0.0;
   
@@ -167,7 +167,7 @@ class PlayerController extends EntityController implements stagexl.Animatable  {
   void _accelerate(Vector2 direction){
     //duplicate code in [GameServer]
     
-    //TODO: this can most propably be calculated in a simpler way. do it!
+    //TODO: this can most probably be calculated in a simpler way. do it!
     Vector3 acceleration3 = 
       new Matrix4.identity().
       rotateZ(_entity.orientation).

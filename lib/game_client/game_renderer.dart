@@ -8,10 +8,6 @@ part of game_client;
 class GameRenderer implements stagexl.Animatable {
 
   stagexl.Stage get stage => _stage;
-  String get username => _usernameField.text;
-  set debugOutput(String debugOutput){
-    _debugOutputField.text = debugOutput;
-  }
 
   /// A list of all our layers, used for iterating over them
   List _parallaxLayers = [];
@@ -34,13 +30,7 @@ class GameRenderer implements stagexl.Animatable {
   /// The stage is our host system. We use it for the heart beat.
   stagexl.Stage _stage;
 
-  //UI
-  stagexl.Sprite _uiLayer;
-  Button _connectButton;
-  stagexl.TextField _usernameField;
-  stagexl.TextField _debugOutputField;
-  Window _debugWindow;
-  Window _chatWindow;
+  GUIController gui;
 
   List<EntityController> _updateSpriteList = [];
 
@@ -56,13 +46,10 @@ class GameRenderer implements stagexl.Animatable {
     _stage.doubleClickEnabled = true;
     _stage.focus = _stage;
 
-    _stage.onResize.listen(_onResize);
+
+    gui = new GUIController(_stage);
   }
 
-  _onResize(stagexl.Event e){
-    _updateChatWindowPosition();
-  }
-  
   bool advanceTime(num dt){
 
     for(EntityController ec in _updateSpriteList){
@@ -86,7 +73,7 @@ class GameRenderer implements stagexl.Animatable {
   }
 
   toggleGUI(){
-    _uiLayer.visible = !_uiLayer.visible;
+    gui.toggleGUI();
   }
   
   clearScene(){
@@ -99,44 +86,9 @@ class GameRenderer implements stagexl.Animatable {
     _earthLayer = null;
     _playerLayer = null;
   }
-  
+
   buildUILayer(Function onTapConnect){
-    num boxWidth = 150;
-    
-    _uiLayer = new stagexl.Sprite();
-    _uiLayer.addTo(_stage);
-        
-    // debug window
-    _debugWindow = new Window();
-    _debugWindow.width = boxWidth;
-    _debugWindow.x = 10;
-    _debugWindow.y = 10;
-    _debugWindow.addTo(_uiLayer);
-    
-    // username
-    var usernameCaptionField = UIHelper.createTextField(text: "Username:");
-    _debugWindow.pushView(usernameCaptionField);
-    
-    _usernameField = UIHelper.createInputField();
-    _usernameField.onMouseClick.listen((_) => _stage.focus = _usernameField);
-    _debugWindow.pushView(_usernameField);
-    
-    _debugWindow.pushSpace(5);
-    
-    // connect button
-    _connectButton = new Button(_debugWindow.contentWidth, Window.buttonHeight)
-    ..text = "Hello World";
-    _debugWindow.pushView(_connectButton);
-    _connectButton.onMouseClick.listen(onTapConnect);
-    
-    _debugWindow.pushSpace(10);
-    
-    // debug output
-    _debugOutputField = UIHelper.createTextField(numLines: 4);
-    _debugWindow.pushView(_debugOutputField);
-    
-    _debugWindow.pushSpace(10);
-   
+    gui.buildUILayer(stage, onTapConnect);
   }
   
   buildBackgroundLayer(){
@@ -170,7 +122,7 @@ class GameRenderer implements stagexl.Animatable {
   buildEntitiesLayer(){
     //entities layer
     _entitiesLayer = new ParallaxLayer(_stage, 1.0);
-    _stage.addChildAt(_entitiesLayer, _stage.numChildren);
+    _stage.addChildAt(_entitiesLayer, _stage.numChildren-1);
     _parallaxLayers.add(_entitiesLayer);
     
     // sample space station
@@ -181,40 +133,16 @@ class GameRenderer implements stagexl.Animatable {
     
     //entities layer
     _playerLayer = new ParallaxLayer(_stage, 1.0);
-    _stage.addChildAt(_playerLayer, _stage.numChildren);
+    _stage.addChildAt(_playerLayer, _stage.numChildren-1);
     _parallaxLayers.add(_playerLayer);
     
-    _uiLayer.removeFromParent();
-    _stage.addChild(_uiLayer);
+//    _uiLayer.removeFromParent();
+//    _stage.addChild(_uiLayer);
   
-  }
-  
-  addChatWindowToGUI(Window window){
-    _chatWindow = window;
-    _updateChatWindowPosition();
-    window.addTo(_uiLayer);
   }
 
-  _updateChatWindowPosition(){
-    num offset = 10;
-    _chatWindow.x = offset;
-    _chatWindow.width = _stage.stageWidth - offset * 2;
-    _chatWindow.y = _stage.stageHeight - _chatWindow.height - offset;
-  }
   
-  updateConnectButton(int state){
-    switch(state){
-      case ServerConnectionState.DISCONNECTED:
-        _connectButton.text = "Connect";
-        break;
-      case ServerConnectionState.IS_CONNECTING:
-        _connectButton.text = "Connecting...";
-        break;
-      case ServerConnectionState.CONNECTED:
-        _connectButton.text = "Disconnect";
-        break;
-    }
-  }
+
   
   addEntityFromController(EntityController ec){
     

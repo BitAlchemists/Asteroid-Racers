@@ -5,6 +5,7 @@ import "dart:async";
 
 import 'package:game_loop/game_loop_isolate.dart';
 import "package:vector_math/vector_math.dart";
+import "package:logging/logging.dart" as logging;
 
 import "package:asteroidracers/shared/world.dart";
 import "package:asteroidracers/shared/net.dart" as net; //todo: layer the code so that we can remove this.
@@ -16,6 +17,7 @@ part "race_controller.dart";
 part "scene_controller.dart";
 
 Math.Random random = new Math.Random();
+logging.Logger log = new logging.Logger("GameServer");
 
 class GameServer implements IGameServer {
 
@@ -180,7 +182,7 @@ class GameServer implements IGameServer {
     
     if(client.movable == null || client.movable.displayName == null)
     {
-      print("client disconnected before handshake");
+      log.info("client disconnected before handshake");
     }
 
     _clients.remove(client);
@@ -299,12 +301,12 @@ class GameServer implements IGameServer {
     client.movable.updateRank += 1;
 
     if(input.accelerationFactor < 0.0) {
-      print("getting unsanitized input from ${client.playerName}");
+      log.warning("getting unsanitized input from ${client.playerName}");
       input.accelerationFactor = 0.0;
     }
 
     if(input.accelerationFactor > 1.0) {
-      print("getting unsanitized input from ${client.playerName}");
+      log.warning("getting unsanitized input from ${client.playerName}");
       input.accelerationFactor = 1.0;
     }
 
@@ -319,7 +321,7 @@ class GameServer implements IGameServer {
 
     // 2. calculate the acceleration
     if(input.accelerationFactor != 0.0){
-      double accelerationSpeed = 200.0 * input.accelerationFactor;
+      double accelerationSpeed = 400.0 * input.accelerationFactor;
       Vector2 direction = new Vector2(0.0, accelerationSpeed);
     
       // duplicate code in [PlayerController]
