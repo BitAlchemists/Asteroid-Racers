@@ -8,8 +8,9 @@ class RaceController {
   final Map<IClientProxy, int> _lastTouchedCheckpointIndex = new Map<IClientProxy, int>(); //player.id, checkpoint index
   Iterable<IClientProxy> get _players => _lastTouchedCheckpointIndex.keys;
   GameServer gameServer;
-  
-  
+  int numOfPlayers = 4;
+
+
   List<Entity> get checkpoints => _checkpoints;
   RacePortal get start => _portal;
   Entity get finish => _finish;
@@ -20,9 +21,9 @@ class RaceController {
     _portal.position = new Vector2(x, y);
     _portal.radius = circleRadius;
     _portal.orientation = orientation;
-    int numOfSpawns = 4;
-    for(int i = 0; i < numOfSpawns; i++){
-      double angle = Math.PI/2 - Math.PI/(numOfSpawns-1)*i;
+
+    for(int i = 0; i < numOfPlayers; i++){
+      double angle = Math.PI/2 - Math.PI/(numOfPlayers-1)*i;
       Vector2 vec = new Vector2(Math.sin(angle), Math.cos(angle));
       vec *= circleRadius * 0.7;
       Entity start = new Entity(type:EntityType.UNKNOWN);
@@ -123,11 +124,25 @@ class RaceController {
     return _lastTouchedCheckpointIndex.containsKey(client);
   }
   
-  addPlayer(IClientProxy client){
+  bool addPlayer(IClientProxy client){
+    if(_players.length < numOfPlayers){
+      return false;
+    }
+
     _resetCheckpointsForPlayer(client);
     
     Entity spawn = spawnEntityForPlayer(client);
     gameServer.teleportPlayerTo(client, spawn.position, spawn.orientation, true);
+
+    net.IntMessage message = new net.IntMessage();
+    message.integer = start.id;
+
+    net.Envelope envelope = new net.Envelope();
+    envelope.messageType = net.MessageType.RACE_JOIN;
+    envelope.payload = message.writeToBuffer();
+    client.send(envelope);
+
+    return true;
   }
   
   _resetCheckpointsForPlayer(IClientProxy client){

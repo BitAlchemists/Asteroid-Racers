@@ -2,7 +2,6 @@ part of net;
 
 class EntityMarshal {
 
-  //TODO: add movable, raceportal, checkpoint
   static world.Entity netEntityToWorldEntity(Entity netEntity) {
 
     world.EntityType entityType = world.EntityType.values[netEntity.type];
@@ -137,51 +136,19 @@ class EntityMarshal {
   }
 
   static world.Vector2 netVector2ToWorldVector2(Vector2 netVector2) {
-    double x = 0.0;
-    double y = 0.0;
+    assert(netVector2.x != null);
+    assert(netVector2.y != null);
 
-    if(netVector2.x != null) {
-      x = netVector2.x;
-    }
-    else
-    {
-      print("netVector2ToWorldVector2: x == 0");
-    }
-
-    if(netVector2.y != null) {
-      y = netVector2.y;
-    }
-    else
-    {
-      print("netVector2ToWorldVector2: y == 0");
-    }
-
-    return new world.Vector2(x,y);
+    return new world.Vector2(netVector2.x,netVector2.y);
   }
 
   static Vector2 worldVector2ToNetVector2(world.Vector2 worldVector2) {
-    double x = 0.0;
-    double y = 0.0;
-
-    if(worldVector2.x != null) {
-      x = worldVector2.x;
-    }
-    else
-    {
-      print("worldVector2ToNetVector2: x == 0");
-    }
-
-    if(worldVector2.y != null) {
-      y = worldVector2.y;
-    }
-    else
-    {
-      print("worldVector2ToNetVector2: y == 0");
-    }
+    assert(worldVector2.x != null);
+    assert(worldVector2.y != null);
 
     Vector2 netVector2 = new Vector2();
-    netVector2.x = x;
-    netVector2.y = y;
+    netVector2.x = worldVector2.x;
+    netVector2.y = worldVector2.y;
     return netVector2;
   }
 

@@ -1,7 +1,6 @@
 library world;
 
 import 'dart:convert';
-import 'dart:math' as Math;
 import "package:vector_math/vector_math.dart";
 export "package:vector_math/vector_math.dart";
 

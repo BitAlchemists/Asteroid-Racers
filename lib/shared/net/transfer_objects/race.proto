@@ -1,0 +1,10 @@
+package net_race;
+
+
+message RaceJoin {
+    required int32 id = 1;
+}
+
+message RaceLeave {
+
+}

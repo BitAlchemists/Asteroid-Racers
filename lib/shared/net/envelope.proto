@@ -9,6 +9,8 @@ enum MessageType {
     PING_PONG = 6;
     COLLISION = 7;
     INPUT = 8;
+    RACE_JOIN = 9;
+    RACE_LEAVE = 10;
 }
 
 message Envelope {

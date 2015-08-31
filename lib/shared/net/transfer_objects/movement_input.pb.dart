@@ -3,7 +3,6 @@
 ///
 library net_movement_input;
 
-import 'package:fixnum/fixnum.dart';
 import 'package:protobuf/protobuf.dart';
 
 class MovementInput extends GeneratedMessage {

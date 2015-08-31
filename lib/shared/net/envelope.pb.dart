@@ -14,6 +14,8 @@ class MessageType extends ProtobufEnum {
   static const MessageType PING_PONG = const MessageType._(6, 'PING_PONG');
   static const MessageType COLLISION = const MessageType._(7, 'COLLISION');
   static const MessageType INPUT = const MessageType._(8, 'INPUT');
+  static const MessageType RACE_JOIN = const MessageType._(9, 'RACE_JOIN');
+  static const MessageType RACE_LEAVE = const MessageType._(10, 'RACE_LEAVE');
 
   static const List<MessageType> values = const <MessageType> [
     CHAT,
@@ -24,6 +26,8 @@ class MessageType extends ProtobufEnum {
     PING_PONG,
     COLLISION,
     INPUT,
+    RACE_JOIN,
+    RACE_LEAVE,
   ];
 
   static final Map<int, MessageType> _byValue = ProtobufEnum.initByValue(values);

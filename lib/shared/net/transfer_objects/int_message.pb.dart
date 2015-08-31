@@ -3,7 +3,6 @@
 ///
 library net_int_message;
 
-import 'package:fixnum/fixnum.dart';
 import 'package:protobuf/protobuf.dart';
 
 class IntMessage extends GeneratedMessage {
