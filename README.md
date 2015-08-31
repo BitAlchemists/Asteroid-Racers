@@ -26,21 +26,22 @@ cd Asteroid-Racers/
 /usr/lib/dart/bin/pub get
 /usr/lib/dart/bin/pub build
 
+Run the game
+------------
+
 There are two ways to test the client locally.
 
 1) The server runs within the browser:
-- set config.localServer in web/asteroidracers.dart to true
-- run web/asteroidracers.html
+- run web/asteroidracers_standalone.html
 
 2) The server runs as a dedicated application:
-- set config.localServer in web/asteroidracers.dart to false
-- pub build
-- run bin/run_server.dart to run the server
-- run web/asteroidracers.html to run the client
+- to run the server: dart bin/run_server.dart
+- to run the client: open localhost:1337 in your browser OR run web/asteroidracers.html
 
 For details visit the wiki: https://github.com/BitAlchemists/Asteroid-Racers/wiki
 
 
 Install protobuf
+----------------
 https://www.dartlang.org/articles/serialization/#protobuf-review
 
