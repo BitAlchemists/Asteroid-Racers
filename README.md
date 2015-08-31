@@ -43,5 +43,6 @@ For details visit the wiki: https://github.com/BitAlchemists/Asteroid-Racers/wik
 
 Install protobuf
 ----------------
-https://www.dartlang.org/articles/serialization/#protobuf-review
+* https://github.com/dart-lang/dart-protoc-plugin
+* https://www.dartlang.org/articles/serialization/#protobuf-review
 
