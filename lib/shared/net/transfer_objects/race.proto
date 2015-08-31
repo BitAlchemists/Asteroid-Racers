@@ -5,6 +5,10 @@ message RaceJoin {
     required int32 id = 1;
 }
 
+message RaceEvent {
+    required int32 nextActiveCheckpointEntityId = 1;
+}
+
 message RaceLeave {
 
 }

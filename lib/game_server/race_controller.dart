@@ -87,13 +87,8 @@ class RaceController {
       if(CollisionDetector.doEntitiesCollide(client.movable, nextCheckpoint))
       {
         _lastTouchedCheckpointIndex[client] = lastTouchedCheckpointIndex + 1;              
-        
-        Checkpoint messageEntity = new Checkpoint.copy(nextCheckpoint);
-        messageEntity.state = CheckpointState.CLEARED;
-        net.Envelope envelope = new net.Envelope();
-        envelope.messageType = net.MessageType.ENTITY;
-        envelope.payload = net.EntityMarshal.worldEntityToNetEntity(messageEntity).writeToBuffer();
-        client.send(envelope);
+
+        sendCheckpointUpdate(client, nextCheckpoint, CheckpointState.CLEARED);
 
         if(nextCheckpoint == _checkpoints.last){
           //completed the race
@@ -101,14 +96,8 @@ class RaceController {
         }
         else {
           nextCheckpoint = _checkpoints[lastTouchedCheckpointIndex+2];
-          
-          messageEntity = new Checkpoint.copy(nextCheckpoint);
-          messageEntity.state = CheckpointState.CURRENT;
-          net.Envelope envelope = new net.Envelope();
-          envelope.messageType = net.MessageType.ENTITY;
-          envelope.payload = net.EntityMarshal.worldEntityToNetEntity(messageEntity).writeToBuffer();
-          client.send(envelope);
-        }      
+          sendCheckpointUpdate(client, nextCheckpoint, CheckpointState.CURRENT);
+        }
       }
     });
 
@@ -129,11 +118,6 @@ class RaceController {
       return false;
     }
 
-    _resetCheckpointsForPlayer(client);
-    
-    Entity spawn = spawnEntityForPlayer(client);
-    gameServer.teleportPlayerTo(client, spawn.position, spawn.orientation, true);
-
     net.IntMessage message = new net.IntMessage();
     message.integer = start.id;
 
@@ -142,33 +126,22 @@ class RaceController {
     envelope.payload = message.writeToBuffer();
     client.send(envelope);
 
+    _resetCheckpointsForPlayer(client);
+    
+    Entity spawn = spawnEntityForPlayer(client);
+    gameServer.teleportPlayerTo(client, spawn.position, spawn.orientation, true);
+
     return true;
   }
   
   _resetCheckpointsForPlayer(IClientProxy client){
     _lastTouchedCheckpointIndex[client] = 0;
-    
-    Checkpoint messageEntity = new Checkpoint.copy(_checkpoints[0]);
-    messageEntity.state = CheckpointState.CLEARED;
-    net.Envelope envelope = new net.Envelope();
-    envelope.messageType = net.MessageType.ENTITY;
-    envelope.payload = net.EntityMarshal.worldEntityToNetEntity(messageEntity).writeToBuffer();
-    client.send(envelope);
-    
-    messageEntity = new Checkpoint.copy(_checkpoints[1]);
-    messageEntity.state = CheckpointState.CURRENT;
-    envelope = new net.Envelope();
-    envelope.messageType = net.MessageType.ENTITY;
-    envelope.payload = net.EntityMarshal.worldEntityToNetEntity(messageEntity).writeToBuffer();
-    client.send(envelope);
-    
+
+    sendCheckpointUpdate(client,_checkpoints[0], CheckpointState.CLEARED);
+    sendCheckpointUpdate(client,_checkpoints[1], CheckpointState.CURRENT);
+
     for(int i = 2; i < _checkpoints.length; i++){
-      Checkpoint messageEntity = new Checkpoint.copy(_checkpoints[i]);
-      messageEntity.state = CheckpointState.FUTURE;
-      net.Envelope envelope = new net.Envelope();
-      envelope.messageType = net.MessageType.ENTITY;
-      envelope.payload = net.EntityMarshal.worldEntityToNetEntity(messageEntity).writeToBuffer();
-      client.send(envelope);
+      sendCheckpointUpdate(client, _checkpoints[i], CheckpointState.FUTURE);
     }
   }
 
@@ -208,6 +181,26 @@ class RaceController {
     
     
     return _checkpoints[i];
+  }
+
+  static void sendCheckpointUpdate(IClientProxy client, Checkpoint checkpoint, CheckpointState state){
+
+    if(state == CheckpointState.CURRENT){
+      net.IntMessage message = new net.IntMessage();
+      message.integer = checkpoint.id;
+
+      net.Envelope envelope = new net.Envelope();
+      envelope.messageType = net.MessageType.RACE_EVENT;
+      envelope.payload = message.writeToBuffer();
+      client.send(envelope);
+    }
+
+    Checkpoint messageEntity = new Checkpoint.copy(checkpoint);
+    messageEntity.state = state;
+    net.Envelope envelope = new net.Envelope();
+    envelope.messageType = net.MessageType.ENTITY;
+    envelope.payload = net.EntityMarshal.worldEntityToNetEntity(messageEntity).writeToBuffer();
+    client.send(envelope);
   }
 
 }

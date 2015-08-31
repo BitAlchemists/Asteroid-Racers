@@ -10,7 +10,8 @@ enum MessageType {
     COLLISION = 7;
     INPUT = 8;
     RACE_JOIN = 9;
-    RACE_LEAVE = 10;
+    RACE_EVENT = 10;
+    RACE_LEAVE = 11;
 }
 
 message Envelope {

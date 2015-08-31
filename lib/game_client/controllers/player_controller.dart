@@ -125,6 +125,7 @@ class PlayerController extends EntityController implements stagexl.Animatable  {
       _displayNameTextField.y = entity.radius;
       _displayNameTextField.x = - _displayNameTextField.textWidth / 2.0;
       _displayNameTextField.width = _displayNameTextField.textWidth;
+      _displayNameTextField.autoSize = stagexl.TextFieldAutoSize.CENTER;
       sprite.addChild(_displayNameTextField);
     }
 

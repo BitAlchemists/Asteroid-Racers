@@ -3,6 +3,7 @@
 ///
 library net_envelope;
 
+import 'package:fixnum/fixnum.dart';
 import 'package:protobuf/protobuf.dart';
 
 class MessageType extends ProtobufEnum {
@@ -15,7 +16,8 @@ class MessageType extends ProtobufEnum {
   static const MessageType COLLISION = const MessageType._(7, 'COLLISION');
   static const MessageType INPUT = const MessageType._(8, 'INPUT');
   static const MessageType RACE_JOIN = const MessageType._(9, 'RACE_JOIN');
-  static const MessageType RACE_LEAVE = const MessageType._(10, 'RACE_LEAVE');
+  static const MessageType RACE_EVENT = const MessageType._(10, 'RACE_EVENT');
+  static const MessageType RACE_LEAVE = const MessageType._(11, 'RACE_LEAVE');
 
   static const List<MessageType> values = const <MessageType> [
     CHAT,
@@ -27,6 +29,7 @@ class MessageType extends ProtobufEnum {
     COLLISION,
     INPUT,
     RACE_JOIN,
+    RACE_EVENT,
     RACE_LEAVE,
   ];
 

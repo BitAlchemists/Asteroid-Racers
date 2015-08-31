@@ -25,15 +25,15 @@ class SceneController{
 
     //left
     race.addStart(xOffset-corridorWidth*0.5, 0.0, Math.PI * 1.5);
-    _addArrow(x: xOffset-corridorWidth*0.5, y: 0, orientation: Math.PI * 1.5);
+    _addArrow(x: xOffset+corridorWidth*0.5, y: 0, orientation: Math.PI * 1.5);
 
     //center
     _addArrow(x: xOffset + blockLength - corridorWidth * 1.5, orientation: Math.PI * 1.5);
     _addArrow(x: xOffset + blockLength + corridorWidth * 2.5, orientation: Math.PI * 1.5);
 
     //right
-    race.addCheckpoint(xOffset + blockLength + corridorWidth + blockLength, 0.0, Math.PI * 0.0);
-    _addArrow(x: xOffset + blockLength + corridorWidth + blockLength, orientation: Math.PI * 0.0);
+    race.addCheckpoint(xOffset + blockLength + corridorWidth + blockLength + corridorWidth * 0.5, 0.0, Math.PI * 0.0);
+    _addArrow(x: xOffset + blockLength + corridorWidth + blockLength + corridorWidth * 0.5, orientation: Math.PI * 0.0);
 
     //down right
     race.addCheckpoint(xOffset + blockLength + corridorWidth + blockLength + corridorWidth/2, blockLength + corridorWidth, Math.PI * 0.5);

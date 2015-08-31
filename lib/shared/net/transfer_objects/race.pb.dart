@@ -32,6 +32,32 @@ class RaceJoin extends GeneratedMessage {
 
 class _ReadonlyRaceJoin extends RaceJoin with ReadonlyMessageMixin {}
 
+class RaceEvent extends GeneratedMessage {
+  static final BuilderInfo _i = new BuilderInfo('RaceEvent')
+    ..a(1, 'nextActiveCheckpointEntityId', GeneratedMessage.Q3)
+  ;
+
+  RaceEvent() : super();
+  RaceEvent.fromBuffer(List<int> i, [ExtensionRegistry r = ExtensionRegistry.EMPTY]) : super.fromBuffer(i, r);
+  RaceEvent.fromJson(String i, [ExtensionRegistry r = ExtensionRegistry.EMPTY]) : super.fromJson(i, r);
+  RaceEvent clone() => new RaceEvent()..mergeFromMessage(this);
+  BuilderInfo get info_ => _i;
+  static RaceEvent create() => new RaceEvent();
+  static PbList<RaceEvent> createRepeated() => new PbList<RaceEvent>();
+  static RaceEvent getDefault() {
+    if (_defaultInstance == null) _defaultInstance = new _ReadonlyRaceEvent();
+    return _defaultInstance;
+  }
+  static RaceEvent _defaultInstance;
+
+  int get nextActiveCheckpointEntityId => getField(1);
+  void set nextActiveCheckpointEntityId(int v) { setField(1, v); }
+  bool hasNextActiveCheckpointEntityId() => hasField(1);
+  void clearNextActiveCheckpointEntityId() => clearField(1);
+}
+
+class _ReadonlyRaceEvent extends RaceEvent with ReadonlyMessageMixin {}
+
 class RaceLeave extends GeneratedMessage {
   static final BuilderInfo _i = new BuilderInfo('RaceLeave')
     ..hasRequiredFields = false

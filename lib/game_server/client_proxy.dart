@@ -197,7 +197,7 @@ class ClientProxy implements IClientProxy
   }
     
   static _onPingPong(ClientProxy client, Envelope envelope){
-    log.info("ping ${envelope.payload} from ${client.movable.displayName}");
+    //log.finest("ping ${envelope.payload} from ${client.movable.displayName}");
     client.send(envelope);
   }
 }

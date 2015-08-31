@@ -73,6 +73,7 @@ class GameClient implements stagexl.Animatable, IGameClient {
   GameRenderer _renderer;
 
   RacePortalController _racePortalController;
+  CheckpointController _nextCheckpoint;
 
   GameClient(this._config) {    
     _simulator = new PhysicsSimulator();  
@@ -253,8 +254,8 @@ class GameClient implements stagexl.Animatable, IGameClient {
       Map<EntityController, int> _otherEntities = new Map<EntityController, int>.fromIterable(_otherPlayers,
       key: (ec) => ec,
       value: (ec) => stagexl.Color.Green);
-      if(_racePortalController != null){
-        _otherEntities[_racePortalController] = stagexl.Color.Yellow;
+      if(_nextCheckpoint != null){
+        _otherEntities[_nextCheckpoint] = stagexl.Color.Yellow;
       }
       _renderer.gui.updateRadar(_player, _otherEntities);
 
@@ -378,6 +379,12 @@ class GameClient implements stagexl.Animatable, IGameClient {
   joinRace(int entityId){
     RacePortalController ec = _entityControllers[entityId];
     _racePortalController = ec;
+    _racePortalController.showLeaveButton = true;
+  }
+
+  nextCheckpoint(int entityId){
+    EntityController ec = _entityControllers[entityId];
+    _nextCheckpoint = ec;
   }
 }
 

@@ -48,12 +48,14 @@ class CollisionDetector {
       collisionHandler(tuple[0], tuple[1]);
     }
   }
-  
+
+  /// me optimize by not comparing actual length (which requires a Math.sqrt operation),
+  /// but rater comparing squared lengths
   static bool doEntitiesCollide(Entity a, Entity b)
   {
-    double distance = (a.position - b.position).length;
-    double colissionDistance = a.radius + b.radius; 
-    return distance <= colissionDistance;
+    double distance2 = (a.position - b.position).length2;
+    double collisionDistance = a.radius + b.radius;
+    return distance2 <= (collisionDistance * collisionDistance);
   }
   
   /*
