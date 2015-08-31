@@ -8,10 +8,10 @@ import "package:asteroidracers/shared/net.dart";
 import "package:asteroidracers/shared/world.dart" as world;
 import "package:asteroidracers/shared/shared_server.dart";
 
-logging.Logger log = new logging.Logger("GameServer.ClientProxy");
 
 class ClientProxy implements IClientProxy
 {
+  static logging.Logger log = new logging.Logger("GameServer.ClientProxy");
   final Connection _connection;
   static IGameServer gameServer;
   static final Map<String, MessageHandler> _messageHandlers = 

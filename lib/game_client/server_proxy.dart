@@ -26,6 +26,7 @@ class ServerConnectionState {
 }
 
 class ServerProxy {
+  logging.Logger log = new logging.Logger("GameClient.Net.ServerProxy");
   ServerConnection _serverConnection;
   IGameClient _gameController;
   Map<String, MessageHandler> _messageHandlers;

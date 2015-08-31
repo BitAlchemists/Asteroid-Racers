@@ -17,9 +17,9 @@ part "race_controller.dart";
 part "scene_controller.dart";
 
 Math.Random random = new Math.Random();
-logging.Logger log = new logging.Logger("GameServer");
 
 class GameServer implements IGameServer {
+  logging.Logger log = new logging.Logger("GameServer");
 
   final Set<IClientProxy> _clients = new Set<IClientProxy>();
   final World _world = new World();

@@ -1,6 +1,7 @@
 part of game_client;
 
 class EntityController {
+  static logging.Logger log = new logging.Logger("GameClient.EntityController");
   final Entity _entity;
   Entity get entity => _entity;
     

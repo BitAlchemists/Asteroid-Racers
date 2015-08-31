@@ -39,8 +39,6 @@ part "controllers/race_portal_controller.dart";
 
 Math.Random random = new Math.Random();
 
-logging.Logger log = new logging.Logger("GameClient");
-
 class GameConfig {
   bool localServer = true;
   bool debugLocalServerNetEncoding = false;
@@ -53,7 +51,9 @@ class GameConfig {
  */
 class GameClient implements stagexl.Animatable, IGameClient {
   GameConfig _config;
-  
+  logging.Logger log = new logging.Logger("GameClient");
+
+
   PhysicsSimulator _simulator;
 
   PlayerController _player;

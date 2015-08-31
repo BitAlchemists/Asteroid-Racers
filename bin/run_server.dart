@@ -3,9 +3,9 @@ import "package:path/path.dart" as path;
 import "package:logging/logging.dart" as logging;
 import "package:asteroidracers/shared/logging.dart";
 
-logging.Logger log = new logging.Logger("");
 
 main() {
+  logging.Logger log = new logging.Logger("");
   printLogRecords(log);
 
   String rootPath = path.current;

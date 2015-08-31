@@ -3,7 +3,6 @@
 ///
 library net_race;
 
-import 'package:fixnum/fixnum.dart';
 import 'package:protobuf/protobuf.dart';
 
 class RaceJoin extends GeneratedMessage {
