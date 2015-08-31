@@ -2,9 +2,13 @@ library game_server_client_proxy;
 
 import "dart:math" as Math;
 
+import "package:logging/logging.dart" as logging;
+
 import "package:asteroidracers/shared/net.dart";
 import "package:asteroidracers/shared/world.dart" as world;
 import "package:asteroidracers/shared/shared_server.dart";
+
+logging.Logger log = new logging.Logger("GameServer.ClientProxy");
 
 class ClientProxy implements IClientProxy
 {
@@ -185,7 +189,7 @@ class ClientProxy implements IClientProxy
     MovementInput input = new MovementInput.fromBuffer(envelope.payload);
     
     if(!client.movable.canMove){
-      print("client sent player update during !canMove");
+      log.finest("client sent player update during !canMove");
       return;
     }
     
@@ -193,7 +197,7 @@ class ClientProxy implements IClientProxy
   }
     
   static _onPingPong(ClientProxy client, Envelope envelope){
-    //print("ping ${message.payload} from ${client.movable.displayName}");
+    log.info("ping ${envelope.payload} from ${client.movable.displayName}");
     client.send(envelope);
   }
 }

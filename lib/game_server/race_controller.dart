@@ -8,7 +8,7 @@ class RaceController {
   final Map<IClientProxy, int> _lastTouchedCheckpointIndex = new Map<IClientProxy, int>(); //player.id, checkpoint index
   Iterable<IClientProxy> get _players => _lastTouchedCheckpointIndex.keys;
   GameServer gameServer;
-  int numOfPlayers = 4;
+  int maxPlayers = 4;
 
 
   List<Entity> get checkpoints => _checkpoints;
@@ -22,8 +22,8 @@ class RaceController {
     _portal.radius = circleRadius;
     _portal.orientation = orientation;
 
-    for(int i = 0; i < numOfPlayers; i++){
-      double angle = Math.PI/2 - Math.PI/(numOfPlayers-1)*i;
+    for(int i = 0; i < maxPlayers; i++){
+      double angle = Math.PI/2 - Math.PI/(maxPlayers-1)*i;
       Vector2 vec = new Vector2(Math.sin(angle), Math.cos(angle));
       vec *= circleRadius * 0.7;
       Entity start = new Entity(type:EntityType.UNKNOWN);
@@ -125,7 +125,7 @@ class RaceController {
   }
   
   bool addPlayer(IClientProxy client){
-    if(_players.length < numOfPlayers){
+    if(_players.length >= maxPlayers){
       return false;
     }
 

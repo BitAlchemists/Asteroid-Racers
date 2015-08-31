@@ -78,17 +78,17 @@ class GUIController {
 
   }
 
-  updateRadar(EntityController player, List<EntityController> otherPlayers){
+  updateRadar(EntityController player, Map<EntityController,int> otherEntities){
     _radar.removeChildren();
-    for(EntityController otherPlayer in otherPlayers){
+    for(EntityController otherEntity in otherEntities.keys){
 
-      Vector2 direction = otherPlayer.entity.position - player.entity.position;
+      Vector2 direction = otherEntity.entity.position - player.entity.position;
       direction.normalize().scale(200.0);
 
       stagexl.Sprite pointer;
       pointer = new stagexl.Sprite();
       pointer.graphics.circle(_stage.stageWidth/2 + direction.x, _stage.stageHeight/2 + direction.y, 20);
-      pointer.graphics.strokeColor(stagexl.Color.Green);
+      pointer.graphics.strokeColor(otherEntities[otherEntity]);
       pointer.addTo(_radar);
 
     }

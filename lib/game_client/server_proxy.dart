@@ -43,7 +43,8 @@ class ServerProxy {
         MessageType.ENTITY_REMOVE.name: this._onEntityRemove,
         MessageType.PLAYER.name: this._onPlayer,
         MessageType.PING_PONG.name: this._onPingPong,
-        MessageType.COLLISION.name: this._onCollision
+        MessageType.COLLISION.name: this._onCollision,
+        MessageType.RACE_JOIN.name: this._onRaceJoin
       };
   }
   
@@ -116,7 +117,7 @@ class ServerProxy {
     try {      
       if(envelope.messageType == null)
       {
-        print("message type == null");
+        log.warning("message type == null");
         //TODO: disconnect this client
         return;
       }
@@ -127,12 +128,12 @@ class ServerProxy {
         messageHandler(envelope);
       }
       else {
-        print("no appropriate message handler for messageType ${envelope.messageType.name} found.");
+        log.warning("no appropriate message handler for messageType ${envelope.messageType.name} found.");
       }            
     }
     catch (e, stack)
     {
-      print("exception during ServerProxy.onMessage: ${e.toString()}\nStack:\n$stack");
+      log.severe("exception during ServerProxy.onMessage: ${e.toString()}\nStack:\n$stack");
     }
   }
   
@@ -186,6 +187,11 @@ class ServerProxy {
   _onCollision(Envelope envelope){
     IntMessage message = new IntMessage.fromBuffer(envelope.payload);
     _gameController.handleCollision(message.integer);
+  }
+
+  _onRaceJoin(Envelope envelope){
+    IntMessage message = new IntMessage.fromBuffer(envelope.payload);
+    _gameController.joinRace(message.integer);
   }
 }
 

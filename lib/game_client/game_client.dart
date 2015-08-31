@@ -71,7 +71,9 @@ class GameClient implements stagexl.Animatable, IGameClient {
   
   /// The renderer for displaying the games visual content
   GameRenderer _renderer;
-  
+
+  RacePortalController _racePortalController;
+
   GameClient(this._config) {    
     _simulator = new PhysicsSimulator();  
         
@@ -248,7 +250,13 @@ class GameClient implements stagexl.Animatable, IGameClient {
       // to notify the renderer of position updates (e.g. teleporting)
       _renderer.updateSpriteInNextFrame(_player);
 
-      _renderer.gui.updateRadar(_player, _otherPlayers);
+      Map<EntityController, int> _otherEntities = new Map<EntityController, int>.fromIterable(_otherPlayers,
+      key: (ec) => ec,
+      value: (ec) => stagexl.Color.Green);
+      if(_racePortalController != null){
+        _otherEntities[_racePortalController] = stagexl.Color.Yellow;
+      }
+      _renderer.gui.updateRadar(_player, _otherEntities);
 
       debugOutput += "x: ${_player.entity.position.x.toInt()}\ny: ${_player.entity.position.y.toInt()}\n";
     }
@@ -270,9 +278,7 @@ class GameClient implements stagexl.Animatable, IGameClient {
   }
   
   double fpsAverage = null;
-  /**
-   * Display the animation's FPS in a div.
-   */
+
   double updateFps(num fps) {
     
     if (fpsAverage == null) {
@@ -367,6 +373,11 @@ class GameClient implements stagexl.Animatable, IGameClient {
       (ec.entity as Movable).canMove = false;      
     }
     Explosion.renderExplosion(_renderer.stage, ec.sprite, ec.entity.radius);
+  }
+
+  joinRace(int entityId){
+    RacePortalController ec = _entityControllers[entityId];
+    _racePortalController = ec;
   }
 }
 
