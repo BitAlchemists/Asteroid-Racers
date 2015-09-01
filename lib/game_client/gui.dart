@@ -80,16 +80,43 @@ class GUIController {
 
   updateRadar(EntityController player, Map<EntityController,int> otherEntities){
     _radar.removeChildren();
-    for(EntityController otherEntity in otherEntities.keys){
+    for(EntityController ec in otherEntities.keys){
 
-      Vector2 direction = otherEntity.entity.position - player.entity.position;
+      Vector2 direction = ec.entity.position - player.entity.position;
       direction.normalize().scale(200.0);
+
+      num pointerRadius = 20;
 
       stagexl.Sprite pointer;
       pointer = new stagexl.Sprite();
-      pointer.graphics.circle(_stage.stageWidth/2 + direction.x, _stage.stageHeight/2 + direction.y, 20);
-      pointer.graphics.strokeColor(otherEntities[otherEntity]);
+      pointer.graphics.circle(_stage.stageWidth/2 + direction.x, _stage.stageHeight/2 + direction.y, pointerRadius);
+      pointer.graphics.strokeColor(otherEntities[ec]);
       pointer.addTo(_radar);
+
+      String displayText = "";
+
+      if(ec.entity.displayName != null && ec.entity.displayName != "")
+      {
+        displayText += ec.entity.displayName + "\n";
+      }
+
+      if(ec.entity is Movable){
+        Movable movable = ec.entity;
+        displayText += "Velocity x:" + movable.velocity.x.toStringAsPrecision(3) + "\n";
+        displayText += "Velocity y:" + movable.velocity.y.toStringAsPrecision(3) + "\n";
+      }
+
+      displayText += "Distance: " + (ec.entity.position - player.entity.position).length.toStringAsPrecision(4);
+
+      stagexl.TextField _displayNameTextField = new stagexl.TextField();
+      _displayNameTextField.text = displayText;
+      _displayNameTextField.textColor = stagexl.Color.LightBlue;
+      _displayNameTextField.y = pointerRadius + _stage.stageHeight/2 + direction.y;
+      _displayNameTextField.x = - _displayNameTextField.textWidth / 2.0 + _stage.stageWidth/2 + direction.x;
+      _displayNameTextField.width = _displayNameTextField.textWidth;
+      _displayNameTextField.autoSize = stagexl.TextFieldAutoSize.CENTER;
+      pointer.addChild(_displayNameTextField);
+
 
     }
   }
