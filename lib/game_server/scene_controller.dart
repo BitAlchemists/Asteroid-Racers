@@ -32,7 +32,7 @@ class SceneController{
       double a = Math.sin(currentAngle);
       double b = Math.cos(currentAngle);
 
-      double nextDistance = random.nextDouble() * maxDistance;
+      double nextDistance = random.nextDouble() * (maxDistance-minDistance) + minDistance;
       Vector2 nextPos = currentCheckpoint.position + new Vector2(a,b).scale(nextDistance);
 
       double nextAngle = currentAngle + randomAngle();
