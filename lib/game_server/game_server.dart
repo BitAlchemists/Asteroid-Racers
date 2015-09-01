@@ -51,6 +51,7 @@ class GameServer implements IGameServer {
 
     // Scene
     //SceneController.createScene2(world);
+    SceneController.createSmallDensityField(world);
 
     // Race
     _race = new RaceController();

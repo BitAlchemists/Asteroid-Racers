@@ -17,6 +17,17 @@ class SceneController{
     world.passiveCollissionEntities.addAll(asteroids);
   }
 
+  static createSmallDensityField(World world){
+
+    int blockLength = 4000;
+
+    List<Entity> asteroids = new List<Entity>();
+
+    asteroids.addAll(generateAsteroidBelt(-blockLength/2, -blockLength/2, blockLength, blockLength, densityFactor:0.2));
+    world.addEntities(asteroids);
+    world.passiveCollissionEntities.addAll(asteroids);
+  }
+
   static createRandomRace(World world, RaceController race){
 
     double minDistance = 500.0;
