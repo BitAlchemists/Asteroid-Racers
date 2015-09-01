@@ -6,7 +6,7 @@ class World
   Map<int, Entity> get entities => _entities;
   int _nextEntityId = 0;
 
-  List<Entity> passiveCollissionEntities;
+  final List<Entity> passiveCollissionEntities = new List<Entity>();
   
   World();
   

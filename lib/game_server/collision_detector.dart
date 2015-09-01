@@ -5,8 +5,8 @@ typedef void CollisionHandler(Entity collidingEntity, Entity otherEntity);
 class CollisionDetector {
   
   bool activeEntitiesCanCollide = false;
-  List<Entity> passiveEntities = new List<Entity>();
-  List<Entity> activeEntities = new List<Entity>();
+  final List<Entity> passiveEntities = new List<Entity>();
+  final List<Entity> activeEntities = new List<Entity>();
 
   CollisionDetector();
   

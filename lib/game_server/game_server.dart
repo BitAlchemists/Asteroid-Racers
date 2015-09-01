@@ -50,14 +50,15 @@ class GameServer implements IGameServer {
   _createWorld(){
 
     // Scene
-    SceneController.createScene2(world);
+    //SceneController.createScene2(world);
 
     // Race
     _race = new RaceController();
     _race.gameServer = this;
-    SceneController.createRace2(world, _race);
+    //SceneController.createRace2(world, _race);
+    SceneController.createRandomRace(world, _race);
     _joinRaceCollisionDetector = new CollisionDetector();
-    _joinRaceCollisionDetector.passiveEntities = [_race.start];
+    _joinRaceCollisionDetector.passiveEntities.add(_race.start);
 
     // Spawn
     _spawn = new Entity(type: EntityType.UNKNOWN);
@@ -68,7 +69,7 @@ class GameServer implements IGameServer {
     // Collision Detection
     _crashCollisionDetector = new CollisionDetector();
     _crashCollisionDetector.activeEntitiesCanCollide = true;
-    _crashCollisionDetector.passiveEntities = world.passiveCollissionEntities;
+    _crashCollisionDetector.passiveEntities.addAll(world.passiveCollissionEntities);
 
     /* Dummy player
     Entity dummyPlayer = new Entity(EntityType.SHIP, new Vector2(50.0, 50.0), 10.0);

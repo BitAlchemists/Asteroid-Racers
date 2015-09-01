@@ -14,7 +14,45 @@ class SceneController{
     asteroids.addAll(generateAsteroidBelt(xOffset + blockLength + corridorWidth, -blockLength - corridorWidth/2, blockLength, blockLength));
     asteroids.addAll(generateAsteroidBelt(xOffset + blockLength + corridorWidth, corridorWidth/2, blockLength, blockLength));
     world.addEntities(asteroids);
-    world.passiveCollissionEntities = asteroids;
+    world.passiveCollissionEntities.addAll(asteroids);
+  }
+
+  static createRandomRace(World world, RaceController race){
+
+    double minDistance = 500.0;
+    double maxDistance = 1000.0;
+
+    double randomAngle() => (random.nextDouble() * 2 - 1) * Math.PI * 0.5;
+
+    double currentAngle = randomAngle();
+    Entity currentCheckpoint = race.addStart(0.0, 0.0, currentAngle);
+
+    int numOfCheckpoints = 5;
+    for(int i = 0; i < numOfCheckpoints; i++){
+      double a = Math.sin(currentAngle);
+      double b = Math.cos(currentAngle);
+
+      double nextDistance = random.nextDouble() * maxDistance;
+      Vector2 nextPos = currentCheckpoint.position + new Vector2(a,b).scale(nextDistance);
+
+      double nextAngle = currentAngle + randomAngle();
+      currentCheckpoint = race.addCheckpoint(nextPos.x, nextPos.y, nextAngle);
+      currentAngle = nextAngle;
+    }
+
+    double a = Math.sin(currentAngle);
+    double b = Math.cos(currentAngle);
+
+    double nextDistance = random.nextDouble() * maxDistance;
+    Vector2 vec = currentCheckpoint.position + new Vector2(a,b).scale(nextDistance);
+
+    double nextAngle = randomAngle();
+    race.addFinish(vec.x, vec.y, nextAngle);
+
+    world.addEntities(race.checkpoints);
+    world.addEntity(race.start);
+    world.addEntity(race.finish);
+
   }
 
   static createRace2(World world, RaceController race){
@@ -72,7 +110,7 @@ class SceneController{
     asteroids.addAll(generateAsteroidBelt(100, -100, 200, -1000, count:20));
     asteroids.addAll(generateAsteroidBelt(-150, -1300, 300, -300, count:20));
     world.addEntities(asteroids);
-    world.passiveCollissionEntities = asteroids;
+    world.passiveCollissionEntities.addAll(asteroids);
 
     //what? :P
     _addArrow({num x: 0.0, num y: 0.0, double orientation: 0.0}) => world.addEntity(createArrow(x:x,y:y,orientation:orientation));
