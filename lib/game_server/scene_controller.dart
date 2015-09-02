@@ -56,14 +56,19 @@ class SceneController{
       currentAngle = nextAngle;
     }
 
-    double a = Math.sin(currentAngle);
-    double b = Math.cos(currentAngle);
+    double a = Math.cos(currentAngle);
+    double b = Math.sin(currentAngle);
+    Vector2 direction = new Vector2(a, b);
 
-    double nextDistance = random.nextDouble() * maxDistance;
-    Vector2 vec = currentCheckpoint.position + new Vector2(a,b).scale(nextDistance);
+    double firstArrowDistance = 200.0;
+    Vector2 firstArrow = currentCheckpoint.position + direction.scaled(firstArrowDistance);
+    world.addEntity(createArrow(firstArrow.x, firstArrow.y, currentAngle));
 
-    double nextAngle = randomAngle();
-    race.addFinish(vec.x, vec.y, nextAngle);
+    double nextDistance = random.nextDouble() * (maxDistance-minDistance) + minDistance;
+    Vector2 nextPos = currentCheckpoint.position + direction.scaled(nextDistance);
+
+    double nextAngle = currentAngle + randomAngle();
+    race.addFinish(nextPos.x, nextPos.y, nextAngle);
 
     world.addEntities(race.checkpoints);
     world.addEntity(race.start);
@@ -172,8 +177,8 @@ class SceneController{
 
     List<Entity> asteroids = new List<Entity>();
     Vector2 offset = new Vector2(x.toDouble(), y.toDouble());
-    num minRadius = 3;
-    num maxRadius = 30;
+    num minRadius = 6;
+    num maxRadius = 60;
 
     Math.Random random = new Math.Random();
 

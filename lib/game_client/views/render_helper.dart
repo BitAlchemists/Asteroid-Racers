@@ -157,7 +157,7 @@ class RenderHelper {
   
   static applyAsteroid(stagexl.Graphics graphics, double outerRadius) {
     double innerRadius = outerRadius * 0.75;
-    int numVertices = outerRadius.toInt();
+    int numVertices = Math.min(outerRadius.toInt(), 30);
     
     int color = randColor(80,512);
     applyCobweb(graphics, outerRadius, innerRadius, numVertices, strokeColor: color);
