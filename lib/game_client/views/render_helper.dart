@@ -246,9 +246,16 @@ class RenderHelper {
     finish.mask = new stagexl.Mask.circle(0, 0, radius);
     finish.alpha = 0.8;
   }
-  
+
+  /// applies a downward facing arrow. I constructed it that way and later realized i should orient it toward
+  /// the x-axis to ease orientation. This is fixed by adding a subsprite that is rotated
   static applyArrows(stagexl.Sprite arrows, {int numArrows: 3, double radius: 100.0})
   {
+
+    stagexl.Sprite subsprite = new stagexl.Sprite();
+    subsprite.rotation = - Math.PI * 0.5;
+    arrows.addChild(subsprite);
+
     double width = radius;
     double height = radius;
     
@@ -289,8 +296,10 @@ class RenderHelper {
       Vector2 leftWingB = leftWing + downLeft;
       Vector2 leftWingBC = leftWing + downLeft + upLeft;
       Vector2 leftWingC = leftWing + upLeft;
-      
-      stagexl.Graphics g = arrows.graphics;
+
+
+
+      stagexl.Graphics g = subsprite.graphics;
       g.beginPath();
       
       //rightWing

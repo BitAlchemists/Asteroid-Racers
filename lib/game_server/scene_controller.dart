@@ -19,11 +19,11 @@ class SceneController{
 
   static createSmallDensityField(World world){
 
-    int blockLength = 4000;
+    int blockLength = 8000;
 
     List<Entity> asteroids = new List<Entity>();
 
-    asteroids.addAll(generateAsteroidBelt(-blockLength/2, -blockLength/2, blockLength, blockLength, densityFactor:0.2));
+    asteroids.addAll(generateAsteroidBelt(-blockLength/2, -blockLength/2, blockLength, blockLength, densityFactor:0.4));
     world.addEntities(asteroids);
     world.passiveCollissionEntities.addAll(asteroids);
   }
@@ -38,13 +38,18 @@ class SceneController{
     double currentAngle = randomAngle();
     Entity currentCheckpoint = race.addStart(0.0, 0.0, currentAngle);
 
-    int numOfCheckpoints = 5;
+    int numOfCheckpoints = 8;
     for(int i = 0; i < numOfCheckpoints; i++){
-      double a = Math.sin(currentAngle);
-      double b = Math.cos(currentAngle);
+      double a = Math.cos(currentAngle);
+      double b = Math.sin(currentAngle);
+      Vector2 direction = new Vector2(a, b);
+
+      double firstArrowDistance = 200.0;
+      Vector2 firstArrow = currentCheckpoint.position + direction.scaled(firstArrowDistance);
+      world.addEntity(createArrow(firstArrow.x, firstArrow.y, currentAngle));
 
       double nextDistance = random.nextDouble() * (maxDistance-minDistance) + minDistance;
-      Vector2 nextPos = currentCheckpoint.position + new Vector2(a,b).scale(nextDistance);
+      Vector2 nextPos = currentCheckpoint.position + direction.scaled(nextDistance);
 
       double nextAngle = currentAngle + randomAngle();
       currentCheckpoint = race.addCheckpoint(nextPos.x, nextPos.y, nextAngle);
@@ -69,7 +74,7 @@ class SceneController{
   static createRace2(World world, RaceController race){
 
     //what? :P
-    _addArrow({num x: 0.0, num y: 0.0, double orientation: 0.0}) => world.addEntity(createArrow(x:x,y:y,orientation:orientation));
+    _addArrow({num x: 0.0, num y: 0.0, double orientation: 0.0}) => world.addEntity(createArrow(x, y, orientation));
 
 
     //left
@@ -124,7 +129,7 @@ class SceneController{
     world.passiveCollissionEntities.addAll(asteroids);
 
     //what? :P
-    _addArrow({num x: 0.0, num y: 0.0, double orientation: 0.0}) => world.addEntity(createArrow(x:x,y:y,orientation:orientation));
+    _addArrow({num x: 0.0, num y: 0.0, double orientation: 0.0}) => world.addEntity(createArrow(x, y, orientation));
 
     _addArrow(y: -400, orientation: Math.PI);
     _addArrow(y: -200, orientation: Math.PI);
@@ -146,7 +151,7 @@ class SceneController{
   }
 
 
-  static createArrow({num x: 0.0, num y: 0.0, double orientation: 0.0}){
+  static createArrow(num x, num y, double orientation){
     Entity arrow = new Entity(type: EntityType.ARROWS);
     arrow.position = new Vector2(x.toDouble(), y.toDouble());
     arrow.orientation = orientation;
