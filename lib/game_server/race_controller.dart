@@ -84,7 +84,7 @@ class RaceController {
     
     _lastTouchedCheckpointIndex.forEach((IClientProxy client, int lastTouchedCheckpointIndex){
       Entity nextCheckpoint = _checkpoints[lastTouchedCheckpointIndex+1];
-      if(CollisionDetector.doEntitiesCollide(client.movable, nextCheckpoint))
+      if(CollisionDetector.checkColission(client.movable, nextCheckpoint) > 0)
       {
         _lastTouchedCheckpointIndex[client] = lastTouchedCheckpointIndex + 1;              
 

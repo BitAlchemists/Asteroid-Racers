@@ -100,12 +100,13 @@ class GUIController {
         displayText += ec.entity.displayName + "\n";
       }
 
+      /*
       if(ec.entity is Movable){
         Movable movable = ec.entity;
         Vector2 relativeVelocity = (player.entity as Movable).velocity - movable.velocity;
         displayText += "vel x:" + relativeVelocity.x.toStringAsPrecision(4) + "\n";
         displayText += "vel y:" + relativeVelocity.y.toStringAsPrecision(4) + "\n";
-      }
+      }*/
 
       displayText += "Distance: " + (ec.entity.position - player.entity.position).length.toStringAsPrecision(4);
 

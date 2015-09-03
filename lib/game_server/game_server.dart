@@ -131,11 +131,49 @@ class GameServer implements IGameServer {
   
   void _checkCollisions()
   {
-    _crashCollisionDetector.detectCollisions(_onPlayerCollision);
+    _crashCollisionDetector.detectCollisions(_onPlayerCollisionExplode);
+    //_crashCollisionDetector.detectCollisions(_onPlayerCollisionBounce);
     _joinRaceCollisionDetector.detectCollisions(_onPlayerTouchRacePortal);
   }
-  
-  _onPlayerCollision(Movable playerEntity, Entity otherEntity){
+
+
+  _onPlayerCollisionBounce(Movable playerEntity, Entity otherEntity, double penetration){
+    //setup
+    double m1 = 1.0;
+    double m2 = 1.0;
+    double elasticity1 = 0.5;
+    double elasticity2 = 0.5;
+
+    Vector2 vel1 = playerEntity.velocity;
+    Vector2 vel2;
+
+    if(otherEntity is Movable){
+      Movable otherMovable = otherEntity;
+      vel2 = otherMovable.velocity;
+    }
+    else{
+      vel2 = new Vector2.zero();
+    }
+
+    Vector2 norm = playerEntity.position - otherEntity.position;
+    norm.normalize();
+
+    double closingVel = (vel1 - vel2).dot(norm);
+
+    //calculate impuls
+    double impulse1 = - (1+elasticity1)*closingVel / (1/m1 + 1/m2);
+    //double impulse2 = - (1+elasticity2)*closingVel / (1/m1 + 1/m2);
+
+    playerEntity.position += norm * ( m2/(m1+m2) * penetration );
+    //otherEntity.position += norm * ( m1/(m1+m2) * penetration );
+
+    // repulsive collision
+    playerEntity.velocity += norm * (impulse1/m1);
+
+    playerEntity.updateRank += 1;
+  }
+
+  _onPlayerCollisionExplode(Movable playerEntity, Entity otherEntity, double penetration){
     _crashCollisionDetector.activeEntities.remove(playerEntity);
     playerEntity.canMove = false;
 
@@ -157,7 +195,7 @@ class GameServer implements IGameServer {
     });
   }
   
-  _onPlayerTouchRacePortal(Movable playerEntity, RacePortal portal){
+  _onPlayerTouchRacePortal(Movable playerEntity, RacePortal portal, double penetration){
     var player = _clientForEntity(playerEntity);
     _joinRaceCollisionDetector.activeEntities.remove(playerEntity);
     portal.raceController.addPlayer(player);

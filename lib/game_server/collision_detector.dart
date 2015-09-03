@@ -1,6 +1,6 @@
 part of game_server;
 
-typedef void CollisionHandler(Entity collidingEntity, Entity otherEntity);
+typedef void CollisionHandler(Entity collidingEntity, Entity otherEntity, double penetration);
 
 class CollisionDetector {
   
@@ -22,10 +22,11 @@ class CollisionDetector {
         for(int j = i+1; j < activeEntities.length; j++)
         {
           Entity b = activeEntities[j];
-          if(doEntitiesCollide(a, b))
+          double penetration = checkColission(a, b);
+          if(penetration > 0)
           {
-            collisions.add([a,b]);
-            collisions.add([b,a]);
+            collisions.add([a,b, penetration]);
+            collisions.add([b,a, penetration]);
           }
         }
       }
@@ -37,25 +38,25 @@ class CollisionDetector {
       for(int j = 0; j < activeEntities.length; j++)
       {
         Entity active = activeEntities[j];
-        if(doEntitiesCollide(passive, active))
+        double penetration = checkColission(passive, active);
+        if(penetration > 0)
         {
-          collisions.add([active, passive]);
+          collisions.add([active, passive, penetration]);
         }
       }
     }
     
     for(var tuple in collisions){
-      collisionHandler(tuple[0], tuple[1]);
+      collisionHandler(tuple[0], tuple[1], tuple[2]);
     }
   }
 
-  /// me optimize by not comparing actual length (which requires a Math.sqrt operation),
-  /// but rater comparing squared lengths
-  static bool doEntitiesCollide(Entity a, Entity b)
+  /// if return value is greater than zero, a colission happens
+  static double checkColission(Entity a, Entity b)
   {
-    double distance2 = (a.position - b.position).length2;
+    double distance = (a.position - b.position).length;
     double collisionDistance = a.radius + b.radius;
-    return distance2 <= (collisionDistance * collisionDistance);
+    return collisionDistance - distance;
   }
   
   /*
