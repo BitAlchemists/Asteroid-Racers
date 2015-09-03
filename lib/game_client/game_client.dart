@@ -12,12 +12,13 @@ import "package:logging/logging.dart" as logging;
 
 
 //Ours
-import 'package:asteroidracers/shared/ui.dart';
-import 'package:asteroidracers/services/chat/chat_client.dart';
-import "package:asteroidracers/shared/net.dart" as net; //todo: remove this and layer all its code out to serverproxy
-import "package:asteroidracers/game_client/server_proxy.dart";
-import "package:asteroidracers/shared/shared_client.dart";
 import "package:asteroidracers/shared/logging.dart";
+import "package:asteroidracers/shared/shared_client.dart";
+import 'package:asteroidracers/shared/ui.dart';
+import "package:asteroidracers/shared/net.dart" as net; //todo: remove this and layer all its code out to serverproxy
+import "package:asteroidracers/services/net/server_connection.dart";
+import 'package:asteroidracers/services/chat/chat_client.dart';
+import "package:asteroidracers/game_client/server_proxy.dart";
 
 //Views
 part "game_renderer.dart";
@@ -41,7 +42,6 @@ Math.Random random = new Math.Random();
 
 class GameConfig {
   bool localServer = true;
-  bool debugLocalServerNetEncoding = false;
   bool debugCollisions = false; 
   bool renderBackground = true;
 }
@@ -50,9 +50,9 @@ class GameConfig {
  * The Game client sets up the game and handles the interaction between player and server
  */
 class GameClient implements stagexl.Animatable, IGameClient {
-  GameConfig _config;
   logging.Logger log = new logging.Logger("GameClient");
-
+  GameConfig _config;
+  ServerConnection _connection;
 
   PhysicsSimulator _simulator;
 
@@ -75,7 +75,7 @@ class GameClient implements stagexl.Animatable, IGameClient {
   RacePortalController _racePortalController;
   CheckpointController _nextCheckpoint;
 
-  GameClient(this._config) {    
+  GameClient(this._config, this._connection) {
     _simulator = new PhysicsSimulator();  
         
     server = new ServerProxy(this);
@@ -136,7 +136,7 @@ class GameClient implements stagexl.Animatable, IGameClient {
   _onTapConnect(_){
     switch(server.state){
         case ServerConnectionState.DISCONNECTED:
-          connect();
+          connect(_connection);
           break;
         case ServerConnectionState.IS_CONNECTING:
           break;
@@ -146,11 +146,11 @@ class GameClient implements stagexl.Animatable, IGameClient {
       }
   }
   
-  connect(){
+  connect(ServerConnection connection){
     String username = _renderer.gui.username;
     
     log.info("Connecting...");
-    server.connect(_config.localServer, _config.debugLocalServerNetEncoding, username).then(_onConnect).catchError((html.Event e){
+    server.connect(connection, username).then(_onConnect).catchError((html.Event e){
       log.info("could not connect.");
       _chat.displayNotice("Could not connect.");
       _onDisconnect();

@@ -131,8 +131,8 @@ class GameServer implements IGameServer {
   
   void _checkCollisions()
   {
-    _crashCollisionDetector.detectCollisions(_onPlayerCollisionExplode);
-    //_crashCollisionDetector.detectCollisions(_onPlayerCollisionBounce);
+    //_crashCollisionDetector.detectCollisions(_onPlayerCollisionExplode);
+    _crashCollisionDetector.detectCollisions(_onPlayerCollisionBounce);
     _joinRaceCollisionDetector.detectCollisions(_onPlayerTouchRacePortal);
   }
 
@@ -141,7 +141,7 @@ class GameServer implements IGameServer {
     //setup
     double m1 = 1.0;
     double m2 = 1.0;
-    double elasticity1 = 0.5;
+    double elasticity1 = 1.0;
     double elasticity2 = 0.5;
 
     Vector2 vel1 = playerEntity.velocity;

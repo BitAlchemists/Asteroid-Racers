@@ -15,7 +15,7 @@ class StaticFileHandler {
     log.finer("static file request: " + request.uri.path);
 
     final String localPath =
-        request.uri.path == '/' ? 'asteroidracers.html' : request.uri.path.substring(1, request.uri.path.length);
+        request.uri.path == '/' ? 'asteroidracers_multiplayer.html' : request.uri.path.substring(1, request.uri.path.length);
 
 
     bool fileFound = false;

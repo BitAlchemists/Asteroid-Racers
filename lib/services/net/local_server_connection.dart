@@ -1,4 +1,13 @@
-part of game_client_net;
+library net_local_server_connection;
+
+import "dart:async";
+
+import "package:asteroidracers/shared/net.dart";
+import "package:asteroidracers/shared/shared_server.dart";
+import "package:asteroidracers/services/net/server_connection.dart";
+import "package:asteroidracers/game_server/game_server.dart";
+import "package:asteroidracers/game_server/client_proxy.dart";
+
 
 typedef void OnReceiveMessageFunction(Envelope envelope);
 

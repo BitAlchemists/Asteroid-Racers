@@ -2,6 +2,7 @@ library asteroidracers;
 
 import 'dart:html';
 
+import "package:asteroidracers/services/net/local_server_connection.dart";
 import "package:asteroidracers/game_client/game_client.dart";
 
 /**
@@ -9,16 +10,22 @@ import "package:asteroidracers/game_client/game_client.dart";
  */
 void main() {  
   var canvas = querySelector('#stage');
-  
+
   GameConfig config = new GameConfig();
   config.localServer = true;
-  config.debugLocalServerNetEncoding = true;
   config.debugCollisions = false;
   config.renderBackground = true;
-  
-  GameClient gameClient = new GameClient(config);
+  bool debugLocalServerNetEncoding = false;
+
+  var connection = localConnection(debugLocalServerNetEncoding);
+  GameClient gameClient = new GameClient(config, connection);
   gameClient.setup(canvas);
-  gameClient.connect();
+  gameClient.connect(connection);
   
   canvas.focus();
+}
+
+LocalServerConnection localConnection(bool debug)
+{
+  return new LocalServerConnection(debug);
 }

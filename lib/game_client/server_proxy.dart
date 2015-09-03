@@ -1,21 +1,13 @@
 library game_client_net;
 
 import "dart:async";
-import 'dart:html' as html;
-import "dart:typed_data";
 
 import "package:logging/logging.dart" as logging;
 
 import "package:asteroidracers/shared/net.dart";
 import "package:asteroidracers/shared/world.dart" as world;
-import "package:asteroidracers/game_server/game_server.dart"; //this is used for the simulated local server
-import "package:asteroidracers/game_server/client_proxy.dart"; //this is used for the simulated local server
-import 'package:asteroidracers/shared/shared_server.dart';
 import 'package:asteroidracers/shared/shared_client.dart';
-
-part "net/local_server_connection.dart";
-part "net/server_connection.dart";
-part "net/web_socket_server_connection.dart";
+import "package:asteroidracers/services/net/server_connection.dart";
 
 typedef void MessageHandler(Envelope envelope);
 
@@ -55,16 +47,10 @@ class ServerProxy {
     _messageHandlers[messageType.name] = messageHandler;
   }
   
-  Future connect(bool local, bool debugJson, String desiredUsername)
+  Future connect(ServerConnection serverConnection, String desiredUsername)
   {
-    if(local) {
-      _serverConnection = localConnection(debugJson);    
-    }
-    else
-    {
-      _serverConnection = webConnection();  
-    }
-    
+    _serverConnection = serverConnection;
+
     _serverConnection.onReceiveMessage.listen(_onReceiveMessage);
     _serverConnection.onDisconnectDelegate = _onDisconnect;
     
@@ -80,21 +66,6 @@ class ServerProxy {
       envelope.payload = handshake.writeToBuffer();
       _serverConnection.send(envelope);
     });
-  }
-  
-  Connection webConnection()
-  {
-    //ServerConnection server;
-    //var domain = html.document.domain;
-    html.Location location = html.window.location;
-    var port = 1337;
-    var wsPath = "ws://" + location.hostname + ":" + port.toString() + "/ws";
-    return new WebSocketServerConnection(wsPath);
-  }
-
-  Connection localConnection(bool debug)
-  {
-    return new LocalServerConnection(debug);
   }
   
   disconnect()

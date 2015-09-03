@@ -1,4 +1,13 @@
-part of game_client_net;
+library net.connection.server.web_socket;
+
+import "dart:html" as html;
+import "dart:async";
+import "dart:typed_data";
+
+import "package:logging/logging.dart" as logging;
+
+import "package:asteroidracers/shared/net.dart";
+import "package:asteroidracers/services/net/server_connection.dart";
 
 class WebSocketServerConnection implements ServerConnection {
   //Private Fields
