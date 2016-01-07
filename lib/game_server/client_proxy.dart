@@ -19,6 +19,7 @@ class ClientProxy implements IClientProxy
       MessageType.HANDSHAKE.name: _onHandshake,
       MessageType.INPUT.name: _onPlayerInput,
       MessageType.PING_PONG.name: _onPingPong,
+      MessageType.RACE_LEAVE.name: _onRaceLeave
     };
   
   world.Movable movable;
@@ -38,6 +39,7 @@ class ClientProxy implements IClientProxy
   }
   
   void send(Envelope envelope) {
+    //TODO: pool envelopes here and send them every few milliseconds? after the server frame?
     _connection.send(envelope);
   }
   
@@ -45,17 +47,27 @@ class ClientProxy implements IClientProxy
     try {      
       if(envelope.messageType == null) {
         print("message type == null");
-        //TODO: disconnect this client
+        //TODO: disconnect this client?
         return;
       }
       
       MessageHandler messageHandler = _messageHandlers[envelope.messageType.name];
+      if(log.level <= logging.Level.INFO){
+        var excludedMessageTypes = [MessageType.PING_PONG];
+
+        // only log packets that are not within the list of excluded message types
+        if(!excludedMessageTypes.contains(envelope.messageType)){
+          log.info("receicing message type ${envelope.messageType.name}");
+        }
+      }
+
+
       
       if(messageHandler != null){
         messageHandler(this, envelope);
       }
       else {
-        print("no appropriate message handler for messageType ${envelope.messageType} found.");
+        log.warning("no appropriate message handler for messageType ${envelope.messageType} found.");
       }            
     }
     catch (e, stack)
@@ -199,5 +211,9 @@ class ClientProxy implements IClientProxy
   static _onPingPong(ClientProxy client, Envelope envelope){
     //log.finest("ping ${envelope.payload} from ${client.movable.displayName}");
     client.send(envelope);
+  }
+
+  static _onRaceLeave(ClientProxy client, Envelope envelope){
+    gameServer.clientLeavesRace(client);
   }
 }

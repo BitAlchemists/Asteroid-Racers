@@ -38,7 +38,8 @@ class ServerProxy {
         MessageType.PING_PONG.name: this._onPingPong,
         MessageType.COLLISION.name: this._onCollision,
         MessageType.RACE_JOIN.name: this._onRaceJoin,
-        MessageType.RACE_EVENT.name: this._onRaceEvent
+        MessageType.RACE_EVENT.name: this._onRaceEvent,
+        MessageType.RACE_LEAVE.name: this._onRaceLeave
       };
   }
   
@@ -170,6 +171,17 @@ class ServerProxy {
   _onRaceEvent(Envelope envelope){
     IntMessage message = new IntMessage.fromBuffer(envelope.payload);
     _gameController.nextCheckpoint(message.integer);
+  }
+
+  _onRaceLeave(Envelope envelope){
+    IntMessage message = new IntMessage.fromBuffer(envelope.payload);
+    _gameController.leaveRace();
+  }
+
+  requestLeaveRace(){
+    Envelope envelope = new Envelope();
+    envelope.messageType = MessageType.RACE_LEAVE;
+    send(envelope);
   }
 }
 

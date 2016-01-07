@@ -4,6 +4,7 @@ class RacePortalController extends EntityController {
  
   RacePortalController(entity) : super(entity);
   bool showLeaveButton;
+  Function leaveFunction;
   
   _createSprite(RacePortal platform) {
     sprite.graphics.circle(0,0,platform.radius);
@@ -29,6 +30,12 @@ class RacePortalController extends EntityController {
         sprite.graphics.clear();
         sprite.graphics.circle(0,0,platform.radius);
         sprite.graphics.fillColor(0x4000ff00);
+      }
+    });
+
+    sprite.onMouseClick.listen((stagexl.MouseEvent me){
+      if(showLeaveButton){
+        leaveFunction();
       }
     });
   }

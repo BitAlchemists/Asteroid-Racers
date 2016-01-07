@@ -2,6 +2,8 @@ library net_local_server_connection;
 
 import "dart:async";
 
+import "package:logging/logging.dart" as logging;
+
 import "package:asteroidracers/shared/net.dart";
 import "package:asteroidracers/shared/shared_server.dart";
 import "package:asteroidracers/services/net/server_connection.dart";
@@ -12,6 +14,7 @@ import "package:asteroidracers/game_server/client_proxy.dart";
 typedef void OnReceiveMessageFunction(Envelope envelope);
 
 class LocalServerConnection implements ServerConnection {
+  logging.Logger log = new logging.Logger("LocalServerConnection");
   
   final bool _debug;
   bool _isMaster; //is this one the master or the slave?
@@ -63,7 +66,14 @@ class LocalServerConnection implements ServerConnection {
       object = envelope.writeToBuffer();
     }
 
-    _inverseConnection._receiveMessage(object);
+    if(_inverseConnection != null){
+      _inverseConnection._receiveMessage(object);
+    }
+    else
+    {
+      log.info("_inverseConnection is null");
+    }
+
   }
   
   void _receiveMessage(var object)

@@ -81,8 +81,8 @@ class GameClient implements stagexl.Animatable, IGameClient {
     server = new ServerProxy(this);
     server.onDisconnectDelegate = _onDisconnect;
 
-    logging.hierarchicalLoggingEnabled = true;
-    //log.level = logging.Level.FINE;
+    //logging.hierarchicalLoggingEnabled = true;
+    //log.level = logging.Level.INFO;
     printLogRecords(log); //registers log records for print()
   }
   
@@ -380,11 +380,18 @@ class GameClient implements stagexl.Animatable, IGameClient {
     RacePortalController ec = _entityControllers[entityId];
     _racePortalController = ec;
     _racePortalController.showLeaveButton = true;
+    _racePortalController.leaveFunction = server.requestLeaveRace;
   }
 
+  //ToDo: find a verb for this method name
   nextCheckpoint(int entityId){
     EntityController ec = _entityControllers[entityId];
     _nextCheckpoint = ec;
+  }
+
+  leaveRace(){
+    _racePortalController.showLeaveButton = false;
+    //TODO: Implement this
   }
 }
 

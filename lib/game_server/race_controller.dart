@@ -147,6 +147,10 @@ class RaceController {
 
   removePlayer(IClientProxy client){
     _lastTouchedCheckpointIndex.remove(client);
+
+    net.Envelope envelope = new net.Envelope();
+    envelope.messageType = net.MessageType.RACE_LEAVE;
+    client.send(envelope);
   }
   
   _playerReachedFinish(IClientProxy client){
