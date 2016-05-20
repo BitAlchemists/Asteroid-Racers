@@ -48,7 +48,7 @@ Future runServer(List filePaths, String logPath, int port) {
   _chat = new ChatServer(gameServer);
   ClientProxy.registerMessageHandler(MessageType.CHAT, _chat.onChatMessage);
 
-  ai.registerAIDemoService(gameServer);
+  //ai.registerAIDemoService(gameServer);
 
   gameServer.start();
 
