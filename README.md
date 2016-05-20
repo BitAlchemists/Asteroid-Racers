@@ -8,6 +8,7 @@ Set up the development environment
 - Download the Dart SDK: https://www.dartlang.org/downloads/
 - Clone the Asteroid-Racers repo
 - pub get
+- pub build
 
 For Linux servers:
 apt-get update
@@ -32,7 +33,7 @@ Run the game
 There are two ways to test the client locally.
 
 1) The server runs within the browser:
-- run web/asteroidracers_standalone.html
+- run web/asteroidracers_singleplayer.html
 
 2) The server runs as a dedicated application:
 - to run the server: dart bin/run_server.dart
