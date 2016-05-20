@@ -56,7 +56,7 @@ Future runServer(List filePaths, String logPath, int port) {
   //return completer.future;
 
   return HttpServer.bind('0.0.0.0', port).then((HttpServer server) {
-    log.info('listening for connections on $port');
+    log.info('listening for connections on http://localhost:$port');
         
     
     

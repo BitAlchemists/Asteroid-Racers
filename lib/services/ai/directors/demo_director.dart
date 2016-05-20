@@ -1,25 +1,32 @@
 part of ai;
 
 class DemoDirector extends AIDirector {
-  String folderName = "luke";
-  Vector2 center = new Vector2.zero();
-  Function createTargetsFunction;
+  String networkName;
+  List<Function> scriptFactories = <Function>[];
 
-  DemoDirector([this.folderName, this.center, this.createTargetsFunction]);
+  DemoDirector(this.networkName);
 
   start(){
-    var client = spawnClient();
-    Future.doWhile((){
-      List<MajorTom> networks = MajorTomSerializer.readNetworksFromFile(folderName);
-      if (networks != null && networks.length > 0) {
-        List targets = createTargetsFunction(server);
-        return runScript(new RespawnTargetScript(targets, center, 9000~/15), client, networks[0]).then((_){
-          CircleTargetGenerator.teardownTargets(server, targets);
+    for(Function scriptFactory in this.scriptFactories){
+      var client = spawnClient();
+      runDemoLoopWithLatestNetwork((network){
+        Script script = scriptFactory();
+        return runScript(script, client, network).then((_){
           return true;
         });
+      });
+    }
+  }
+
+  runDemoLoopWithLatestNetwork (runFunction){
+    Future.doWhile((){
+      List<MajorTom> networks = MajorTomSerializer.readNetworksFromFile(networkName);
+
+      if (networks != null && networks.length > 0) {
+        return runFunction(networks[0]);
       }
       else{
-        log.info("No AI networks found in folder name $folderName. Not going to show demo.");
+        log.info("No AI networks found in folder name $networkName. Not going to show demo.");
         return false;
       }
     });

@@ -128,7 +128,7 @@ class GameRenderer implements stagexl.Animatable {
     // sample space station
     stagexl.Sprite station = StationBuilder.sampleStation();
     station.y = -50;
-    station.x = -1200;
+    station.x = 100;
     _entitiesLayer.addChild(station);  
     
     //entities layer

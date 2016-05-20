@@ -48,9 +48,14 @@ class QuadraticSumOfDistanceToTargetsEvaluator extends Evaluator<RaceTargetScrip
 
   void evaluate(RaceTargetScript script, double dt){
     Entity currentTarget = script.currentTarget;
-    num sumOfDistanceToTargets = script.client.movable.position.distanceTo(currentTarget.position);
-    num score = sumOfDistanceToTargets + script.client.movable.rotationSpeed.abs();
-    finalScore += score * dt;
+    num distance = script.client.movable.position.distanceTo(currentTarget.position);
+
+    num score = script.client.movable.rotationSpeed.abs();
+
+    //if(distance > currentTarget.radius) {
+      score += distance;
+      finalScore += score * dt;
+    //}
   }
 }
 

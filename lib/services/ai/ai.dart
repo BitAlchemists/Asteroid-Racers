@@ -30,6 +30,7 @@ part "directors/demo_director.dart";
 // Scripts
 part "vehicle_control/target_script.dart";
 part "vehicle_control/target_vehicle_controller.dart";
+part "vehicle_control/target_generator.dart";
 
 logging.Logger log = new logging.Logger("AI");
 
@@ -75,27 +76,42 @@ registerAITrainingService(IGameServer gameServer){
 
 registerAIDemoService(IGameServer gameServer){
   log.finest("registerAIDemoService");
-  AIDirector ai;
+  DemoDirector ai;
   // LeastDistanceToTargetsEvaluator
   // SumOfDistanceToTargetsEvaluator
   // TimeToTargetEvaluator
-  ai = new DemoDirector("QuadraticSumOfDistanceToTargets_4_10_8_6_4_2", new Vector2(0.0, 0.0), createTrainingTargets);
+
+  ai = new DemoDirector("QuadraticSumOfDistanceToTargets_4_10_8_6_4_2");
+
+  Vector2 center = new Vector2(-300.0,-600.0);
+  ai.scriptFactories.add(()=>new RespawnTargetScript(
+      createTrainingTargets(gameServer, center),
+      center,
+      AI_TRAINING_FRAMES));
+
+  List targets = createDemoRaceTrackTargets(gameServer, new Vector2(0.0,600.0));
+  ai.scriptFactories.add(()=>new RaceTargetScript(
+      targets,
+      targets.first.position,
+      36000~/15));
+
   gameServer.registerService(ai);
-
 }
 
-List createTrainingTargets(server){
-  return CircleTargetGenerator.setupTargets(
+List createTrainingTargets(server, [center]){
+  if(center == null) center = new Vector2.zero();
+
+  return TargetGenerator.setupFluxCompensatorTargets(
       server,
-      center:new Vector2.zero());
+      center:center);
 }
 
-List createDemoTargets(server){
-  return CircleTargetGenerator.setupRandomTargets(
+List createDemoRaceTrackTargets(server, [center]){
+  if(center == null) center = new Vector2.zero();
+
+  return TargetGenerator.setupDemoRaceTrackTargets(
       server,
-      center:new Vector2.zero(),
-      numTargets:AI_TRAINING_TARGETS,
-      targetDistance:AI_TRAINING_TARGET_DISTANCE,
-      targetDistanceRange:AI_TRAINING_TARGET_DISTANCE_RANGE);
+      center:center);
 }
+
 
