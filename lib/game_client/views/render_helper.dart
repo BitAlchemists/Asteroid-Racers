@@ -253,7 +253,7 @@ class RenderHelper {
   {
 
     stagexl.Sprite subsprite = new stagexl.Sprite();
-    subsprite.rotation = - Math.PI * 0.5;
+    //subsprite.rotation = - Math.PI * 0.5;
     arrows.addChild(subsprite);
 
     double width = radius;
