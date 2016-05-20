@@ -151,6 +151,21 @@ class RaceController {
     net.Envelope envelope = new net.Envelope();
     envelope.messageType = net.MessageType.RACE_LEAVE;
     client.send(envelope);
+
+    /*
+    // remove the checkpoints
+    for(Entity checkpoint in _checkpoints){
+      Checkpoint messageEntity = new Checkpoint.copy(checkpoint);
+
+      net.IntMessage message = new net.IntMessage();
+      message.integer = checkpoint.id;
+
+      net.Envelope envelope = new net.Envelope();
+      envelope.messageType = net.MessageType.ENTITY_REMOVE;
+      envelope.payload = message.writeToBuffer();
+      client.send(envelope);
+    }
+    */
   }
   
   _playerReachedFinish(IClientProxy client){

@@ -19,7 +19,7 @@ abstract class IGameServer {
   void registerService(IServerService service);
 
   void connectClient(IClientProxy client);
-  void registerPlayer(IClientProxy client, String desiredUsername);
+  void registerPlayer(IClientProxy client, String desiredUsername, [bool canCollide = true]);
   void spawnEntity(world.Entity entity);
   void despawnEntity(world.Entity entity);
   void disconnectClient(IClientProxy client);

@@ -80,8 +80,8 @@ class MajorTomSerializer {
 
 
 
-  static List<MajorTom> readNetworksFromFile(String folderName) {
-    Directory logDirectory = new Directory.fromUri(new Uri.file(Directory.current.path + "/db/$folderName"));
+  static List<MajorTom> readNetworksFromFile(String networkName) {
+    Directory logDirectory = new Directory.fromUri(new Uri.file(Directory.current.path + "/db/$networkName"));
     String networksFilePath = logDirectory.path + "/luke.txt";
 
     File file = new File(networksFilePath);
@@ -95,8 +95,8 @@ class MajorTomSerializer {
     return null;
   }
 
-  static void writeNetworksToFile(Iterable<MajorTom> lukes, String folderName) {
-    Directory logDirectory = new Directory.fromUri(new Uri.file(Directory.current.path + "/db/$folderName"));
+  static void writeNetworksToFile(Iterable<MajorTom> lukes, String networkName) {
+    Directory logDirectory = new Directory.fromUri(new Uri.file(Directory.current.path + "/db/$networkName"));
     logDirectory.createSync(recursive:true);
     String networksFilePath = logDirectory.path + "/luke.txt";
 

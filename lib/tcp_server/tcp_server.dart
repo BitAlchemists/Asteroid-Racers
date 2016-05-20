@@ -23,7 +23,7 @@ import 'package:mime_type/mime_type.dart';
 import "package:asteroidracers/services/chat/chat_shared.dart";
 import "package:asteroidracers/services/chat/chat_server.dart";
 
-//import "package:asteroidracers/services/ai/ai.dart" as ai;
+import "package:asteroidracers/services/ai/ai.dart" as ai;
 
 
 part 'utils/static_file_handler.dart';
@@ -48,9 +48,12 @@ Future runServer(List filePaths, String logPath, int port) {
   _chat = new ChatServer(gameServer);
   ClientProxy.registerMessageHandler(MessageType.CHAT, _chat.onChatMessage);
 
-  //ai.registerAIServices(gameServer);
+  ai.registerAIDemoService(gameServer);
 
   gameServer.start();
+
+  //Completer completer = new Completer();
+  //return completer.future;
 
   return HttpServer.bind('0.0.0.0', port).then((HttpServer server) {
     log.info('listening for connections on $port');

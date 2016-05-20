@@ -72,7 +72,7 @@ class GUIController {
     _debugWindow.pushSpace(10);
 
     _radar = new stagexl.Sprite();
-    _radar.graphics.circle(_stage.stageWidth/2, _stage.stageHeight/2, 200);
+    _radar.graphics.circle(_stage.stageWidth/2, _stage.stageHeight/2, 50);
     _radar.graphics.strokeColor(stagexl.Color.Navy);
     _radar.addTo(_stage);
 
@@ -83,9 +83,9 @@ class GUIController {
     for(EntityController ec in otherEntities.keys){
 
       Vector2 direction = ec.entity.position - player.entity.position;
-      direction.normalize().scale(200.0);
+      direction.normalize().scale(50.0);
 
-      num pointerRadius = 20;
+      num pointerRadius = 2;
 
       stagexl.Sprite pointer;
       pointer = new stagexl.Sprite();

@@ -97,7 +97,17 @@ class ServerProxy {
       }
       
       MessageHandler messageHandler = _messageHandlers[envelope.messageType.name];
-      
+
+      // log the message type
+      if(log.level <= logging.Level.INFO){
+        var excludedMessageTypes = [MessageType.PING_PONG, MessageType.ENTITY];
+        // only log packets that are not within the list of excluded message types
+        if(!excludedMessageTypes.contains(envelope.messageType)){
+          log.info("receiving message type ${envelope.messageType.name}");
+        }
+      }
+
+      // handle the message
       if(messageHandler != null){
         messageHandler(envelope);
       }
@@ -108,6 +118,9 @@ class ServerProxy {
     catch (e, stack)
     {
       log.severe("exception during ServerProxy.onMessage: ${e.toString()}\nStack:\n$stack");
+      if(envelope.messageType != null){
+        log.severe("affected message type: ${envelope.messageType}");
+      }
     }
   }
   
@@ -170,7 +183,7 @@ class ServerProxy {
 
   _onRaceEvent(Envelope envelope){
     IntMessage message = new IntMessage.fromBuffer(envelope.payload);
-    _gameController.nextCheckpoint(message.integer);
+    _gameController.activateNextCheckpoint(message.integer);
   }
 
   _onRaceLeave(Envelope envelope){

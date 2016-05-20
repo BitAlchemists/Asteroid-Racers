@@ -83,7 +83,7 @@ class GameClient implements stagexl.Animatable, IGameClient {
 
     //logging.hierarchicalLoggingEnabled = true;
     //log.level = logging.Level.INFO;
-    printLogRecords(log); //registers log records for print()
+    registerLogging(log); //registers log records for print()
   }
   
   
@@ -251,9 +251,11 @@ class GameClient implements stagexl.Animatable, IGameClient {
       // to notify the renderer of position updates (e.g. teleporting)
       _renderer.updateSpriteInNextFrame(_player);
 
+      // update the radar
       Map<EntityController, int> _otherEntities = new Map<EntityController, int>.fromIterable(_otherPlayers,
       key: (ec) => ec,
       value: (ec) => stagexl.Color.Green);
+      // add the next checkpoint to the radar
       if(_nextCheckpoint != null){
         _otherEntities[_nextCheckpoint] = stagexl.Color.Yellow;
       }
@@ -384,7 +386,7 @@ class GameClient implements stagexl.Animatable, IGameClient {
   }
 
   //ToDo: find a verb for this method name
-  nextCheckpoint(int entityId){
+  activateNextCheckpoint(int entityId){
     EntityController ec = _entityControllers[entityId];
     _nextCheckpoint = ec;
   }

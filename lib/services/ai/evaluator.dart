@@ -31,13 +31,26 @@ class LeastDistanceToTargetsEvaluator extends Evaluator<RaceTargetScript> {
 }
 
 class SumOfDistanceToTargetsEvaluator extends Evaluator<RaceTargetScript> {
-  double finalScore;
+  double finalScore = 0.0;
 
   SumOfDistanceToTargetsEvaluator();
 
   void evaluate(RaceTargetScript script, double dt){
     Entity currentTarget = script.currentTarget;
-    finalScore += script.client.movable.position.distanceTo(currentTarget.position);
+    finalScore += script.client.movable.position.distanceTo(currentTarget.position) * dt;
+  }
+}
+
+class QuadraticSumOfDistanceToTargetsEvaluator extends Evaluator<RaceTargetScript> {
+  double finalScore = 0.0;
+
+  QuadraticSumOfDistanceToTargetsEvaluator();
+
+  void evaluate(RaceTargetScript script, double dt){
+    Entity currentTarget = script.currentTarget;
+    num sumOfDistanceToTargets = script.client.movable.position.distanceTo(currentTarget.position);
+    num score = sumOfDistanceToTargets + script.client.movable.rotationSpeed.abs();
+    finalScore += score * dt;
   }
 }
 

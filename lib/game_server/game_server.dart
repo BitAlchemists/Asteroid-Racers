@@ -51,16 +51,18 @@ class GameServer implements IGameServer {
 
     // Scene
     //SceneController.createScene2(world);
-    SceneController.createSmallDensityField(world);
+    //SceneController.createSmallDensityField(world);
 
+    _joinRaceCollisionDetector = new CollisionDetector();
+/*
     // Race
     _race = new RaceController();
     _race.gameServer = this;
-    //SceneController.createRace2(world, _race);
-    SceneController.createRandomRace(world, _race);
-    _joinRaceCollisionDetector = new CollisionDetector();
-    _joinRaceCollisionDetector.passiveEntities.add(_race.start);
+    SceneController.createRace2(world, _race);
+    //SceneController.createRandomRace(world, _race);
 
+    _joinRaceCollisionDetector.passiveEntities.add(_race.start);
+*/
     // Spawn
     _spawn = new Entity(type: EntityType.UNKNOWN);
     _spawn.position = new Vector2(0.0, 0.0);
@@ -83,22 +85,59 @@ class GameServer implements IGameServer {
   }
 
 
-  start(){
+  start([GameLoop gameLoop]){
       // Construct a game loop.
-      GameLoop gameLoop = new GameLoopIsolate();
-      gameLoop.onUpdate = (_onHeartBeat);
-      gameLoop.start();
+    if(gameLoop == null){
+      gameLoop = new GameLoopIsolate();
+    }
+    gameLoop.onUpdate = (_onHeartBeat);
+    gameLoop.start();
 
-      for(IServerService service in _services){
-        service.start();
-      }
-
+    for(IServerService service in _services){
+      service.start();
+    }
   }
   
-  //Heart Beat
+  //Client-Server communication
   
+  void connectClient(IClientProxy client){
+    _clients.add(client);
+
+    ChatMessage chatMessage = new ChatMessage();
+    chatMessage.from = "Server";
+    chatMessage.text = "Welcome to the 'Apollo 13' development server.";
+
+    net.Envelope envelope = new net.Envelope();
+    envelope.messageType = net.MessageType.CHAT;
+    envelope.payload = chatMessage.writeToBuffer();
+    client.send(envelope);
+
+    //print("player connected. connected clients: ${_clients.length}");
+  }
+  
+  void disconnectClient(IClientProxy client){
+    
+    if(client.movable == null || client.movable.displayName == null)
+    {
+      log.info("client disconnected before handshake");
+    }
+
+    _clients.remove(client);
+    //print("player ${client.movable.displayName} disconnected. connected clients: ${_clients.length}");
+    
+    if(client.movable != null){
+      _physics.removeMovable(client.movable);
+      _crashCollisionDetector.activeEntities.remove(client.movable);
+      clientLeavesRace(client);
+      _entityToClientMap.remove(client.movable);
+      despawnEntity(client.movable);
+    }
+  }
+
+  //Heart Beat
+
   _onHeartBeat(GameLoop gameLoop){
-    //print('${gameLoop.frame}: ${gameLoop.gameTime} [dt = ${gameLoop.dt}].');
+    log.finest('begin frame ${gameLoop.frame}: ${gameLoop.gameTime} [dt = ${gameLoop.dt}].');
     try{
 
       // pre update
@@ -114,7 +153,7 @@ class GameServer implements IGameServer {
         service.update(gameLoop.dt);
       }
       _checkCollisions();
-      _race.update();
+      if (_race != null) _race.update();
 
       // post update
       for(IServerService service in _services){
@@ -127,8 +166,9 @@ class GameServer implements IGameServer {
       print(e);
       print(stack);
     }
+    log.finest('end frame ${gameLoop.frame}');
   }
-  
+
   void _checkCollisions()
   {
     _crashCollisionDetector.detectCollisions(_onPlayerCollisionExplode);
@@ -191,61 +231,25 @@ class GameServer implements IGameServer {
     envelope.messageType = net.MessageType.COLLISION;
     envelope.payload = message.writeToBuffer();
     broadcastMessage(envelope);
-    
+
     //respawn
     new Future.delayed(new Duration(seconds:1), (){
       //if the entity still exists
       if(_world.entities.containsKey(playerEntity.id)){
         IClientProxy client = _clientForEntity(playerEntity);
-        spawnPlayer(client, true);         
+        spawnPlayer(client, true);
       }
     });
   }
-  
+
   _onPlayerTouchRacePortal(Movable playerEntity, RacePortal portal, double penetration){
     var player = _clientForEntity(playerEntity);
     _joinRaceCollisionDetector.activeEntities.remove(playerEntity);
     portal.raceController.addPlayer(player);
   }
-  
-  //Client-Server communication
-  
-  void connectClient(IClientProxy client){
-    _clients.add(client);
-
-    ChatMessage chatMessage = new ChatMessage();
-    chatMessage.from = "Server";
-    chatMessage.text = "Welcome to the 'Apollo 13' development server.";
-
-    net.Envelope envelope = new net.Envelope();
-    envelope.messageType = net.MessageType.CHAT;
-    envelope.payload = chatMessage.writeToBuffer();
-    client.send(envelope);
-
-    //print("player connected. connected clients: ${_clients.length}");
-  }
-  
-  void disconnectClient(IClientProxy client){
-    
-    if(client.movable == null || client.movable.displayName == null)
-    {
-      log.info("client disconnected before handshake");
-    }
-
-    _clients.remove(client);
-    //print("player ${client.movable.displayName} disconnected. connected clients: ${_clients.length}");
-    
-    if(client.movable != null){
-      _physics.removeMovable(client.movable);
-      _crashCollisionDetector.activeEntities.remove(client.movable);
-      clientLeavesRace(client);
-      _entityToClientMap.remove(client.movable);
-      despawnEntity(client.movable);
-    }
-  }
 
   void clientLeavesRace(IClientProxy client){
-    _race.removePlayer(client);
+    if(_race != null) _race.removePlayer(client);
   }
   
   sendMessageToClientsExcept(net.Envelope envelope, IClientProxy client){
@@ -265,7 +269,7 @@ class GameServer implements IGameServer {
     }
   }
   
-  void registerPlayer(IClientProxy client, String desiredUsername){
+  void registerPlayer(IClientProxy client, String desiredUsername, [bool canCollide = true]){
     //print("player identifies as $desiredUsername");
     Movable player = new Movable();
     player.type = EntityType.SHIP;
@@ -277,15 +281,17 @@ class GameServer implements IGameServer {
     _entityToClientMap[player] = client;
     
     client.movable = player;
-    
-    _joinRaceCollisionDetector.activeEntities.add(client.movable);
-    
+
+    if(canCollide){
+      _joinRaceCollisionDetector.activeEntities.add(client.movable);
+    }
+
     _physics.addMovable(client.movable);
         
-    spawnPlayer(client, false);
+    spawnPlayer(client, false, canCollide);
   }
   
-  spawnPlayer(IClientProxy client, bool informClientToo){
+  spawnPlayer(IClientProxy client, bool informClientToo, [bool canCollide = true]){
     
     Movable movable = client.movable;
     Vector2 position;
@@ -294,7 +300,7 @@ class GameServer implements IGameServer {
     Entity spawn = null;
 
 
-    if(_race.isClientInRace(client)){
+    if(_race != null && _race.isClientInRace(client)){
       spawn = _race.spawnEntityForPlayer(client);
     }
     else {
@@ -308,7 +314,7 @@ class GameServer implements IGameServer {
     orientation = spawn.orientation;
 
             
-    if(!_crashCollisionDetector.activeEntities.contains(movable)){
+    if(!_crashCollisionDetector.activeEntities.contains(movable) && canCollide){
       _crashCollisionDetector.activeEntities.add(movable);
     }
     

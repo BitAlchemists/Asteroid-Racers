@@ -3,7 +3,12 @@ part of ai;
 
 
 class RaceTargetScript extends Script {
-  int lifeTimeFrames = 4500~/15; //should be multiples of 15 (milliseconds per frame
+
+  // lifetime is counted in frames to allow every Bot to live for the same time. We use frames for lifetime measurement
+  // so that every AI gets the same amount of frames to prove their value. Every frame is about 15 milliseconds long
+  // should be multiples of 15 (milliseconds per frame)
+  static const int lifeTimeFramesDefault = 4500~/15;
+  int lifeTimeFrames;
   int currentFrames = 0;
   Vector2 spawn;
 
@@ -13,7 +18,7 @@ class RaceTargetScript extends Script {
   int _nextTargetIndex = 0;
   Checkpoint currentTarget;
 
-  RaceTargetScript(this.targets, [this.spawn]){
+  RaceTargetScript(this.targets, [this.spawn, this.lifeTimeFrames = lifeTimeFramesDefault]){
     if(spawn == null){
       spawn = new Vector2.zero();
     }
@@ -28,7 +33,7 @@ class RaceTargetScript extends Script {
     }
     else
     {
-      print("Trying to run() script, but script state is ${state.toString()}");
+      log.warning("Trying to run() script, but script state is ${state.toString()}");
       return new Future.value(null);
     }
   }
@@ -66,8 +71,9 @@ class RaceTargetScript extends Script {
     TargetVehicleController command = new TargetVehicleController(currentTarget);
     command.network = network;
     command.didReachTargetCallback = (_){
-      _onTargetFinish();
-      return false; //don't continue to execute the command
+      //_onTargetFinish();
+      //return false; //don't continue to execute the command
+      return true;
     };
     client.command = command;
 
@@ -97,12 +103,12 @@ class RaceTargetScript extends Script {
 }
 
 class CircleTargetGenerator {
-  static List<Entity> setupTargets(
+  static List<Entity> setupRandomTargets(
       IGameServer server,
       {Vector2 center,
       int numTargets: 20,
-      double targetDistance: 300.0,
-      double targetDistanceRange: 80.0,
+      double targetDistance: 800.0,
+      double targetDistanceRange: 200.0,
       double radius:30.0}){
 
     if(center == null){
@@ -115,11 +121,25 @@ class CircleTargetGenerator {
     return targets;
   }
 
-  static void teardownTargets(IGameServer server, List targets){
-    for(Checkpoint target in targets){
-      server.despawnEntity(target);
+  static List<Entity> setupTargets(
+      IGameServer server,
+      {Vector2 center,
+      double radius:30.0}){
+
+    if(center == null){
+      center = new Vector2.zero();
     }
-    targets.clear();
+
+    List<Vector2> targets = new List<Vector2>();
+    targets.addAll(_createTargets(1, 0.0, 0.0, center));
+    targets.addAll(_createTargets(3, 200.0, 0.0, center));
+    targets.addAll(_createTargets(3, 400.0, 0.0, center));
+    targets.addAll(_createTargets(3, 600.0, 0.0, center));
+    targets.addAll(_createTargets(3, 800.0, 0.0, center));
+    targets.addAll(_createTargets(3, 1000.0, 0.0, center));
+    targets = targets.map((Vector2 position) => _createCheckpoint(position, radius)).toList();
+    targets.forEach((Entity entity) => server.spawnEntity(entity));
+    return targets;
   }
 
   static List<Vector2> _createTargets(int numTargets, double targetDistance, double targetDistanceRange, Vector2 center){
@@ -129,6 +149,13 @@ class CircleTargetGenerator {
       Vector2 offset = new Vector2(Math.cos(angle * Math.PI * 2) * distance, Math.sin(angle * Math.PI * 2) * distance);
       return center + offset;
     });
+  }
+
+  static void teardownTargets(IGameServer server, List targets){
+    for(Checkpoint target in targets){
+      server.despawnEntity(target);
+    }
+    targets.clear();
   }
 
   static Checkpoint _createCheckpoint(Vector2 position, double radius){
@@ -143,7 +170,7 @@ class CircleTargetGenerator {
 }
 
 class RespawnTargetScript extends RaceTargetScript {
-  RespawnTargetScript(targets, [spawn]) : super(targets, spawn);
+  RespawnTargetScript(targets, [spawn, lifeTimeFrames]) : super(targets, spawn, lifeTimeFrames);
 
   _updateVehiclePosition(){
     director.server.teleportPlayerTo(client, spawn, currentTarget.orientation, false);

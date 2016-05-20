@@ -18,7 +18,7 @@ abstract class AIDirector implements IServerService {
     _clients.add(client);
 
     server.connectClient(client);
-    server.registerPlayer(client, client.playerName);
+    server.registerPlayer(client, client.playerName, false);
 
     return client;
   }

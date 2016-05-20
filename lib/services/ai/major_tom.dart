@@ -64,6 +64,8 @@ class MajorTom extends Network {
     }
   }
 
+  // mutationRate is the chance that a given neuron might mutate. 0.1 would be a 10% chance that the neuron will change
+  // mutationStrength tells how many % a value might change. 1.0 would change it by 100%
   static void mutateConnectionRelative(double mutationRate, double mutationStrength, Connection connection)
   {
     if (random.nextDouble() < mutationRate) {

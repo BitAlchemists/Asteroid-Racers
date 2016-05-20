@@ -22,7 +22,22 @@ class Entity
   int id;
   String displayName;
   Vector2 position;
-  double orientation = 0.0;
+  double _orientation = 0.0;
+  set orientation(double value){
+    if(value == null){
+      _orientation = null;
+      return;
+    }
+
+    if(value > Math.PI){
+      value -= 2*Math.PI;
+    }
+    if(value < -Math.PI){
+      value += 2*Math.PI;
+    }
+    _orientation = value;
+  }
+  double get orientation => _orientation;
   double radius;
 
   //static const double ENTITY_UPDATE_PRIORITY_NO_UPDATE = 0.0;
@@ -64,4 +79,6 @@ class Entity
       radius = entity.radius; 
     }
   }
+
+
 }

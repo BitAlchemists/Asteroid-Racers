@@ -4,9 +4,10 @@ import "package:logging/logging.dart" as logging;
 import "package:asteroidracers/shared/logging.dart";
 
 
-main() {
+main() async {
   logging.Logger log = new logging.Logger("");
-  printLogRecords(log);
+  log.level = logging.Level.INFO;
+  registerLogging(log);
 
   String rootPath = path.current;
   var serverPath = path.join(rootPath, "web/");
@@ -14,6 +15,6 @@ main() {
 
   List lookupPaths = [buildServerPath, serverPath];
 
-  log.info("lookupPaths: $lookupPaths");
-  runServer(lookupPaths, null, 1337);    
+  log.fine("lookupPaths: $lookupPaths");
+  return runServer(lookupPaths, null, 1337);
 }

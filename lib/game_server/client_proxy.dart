@@ -50,19 +50,19 @@ class ClientProxy implements IClientProxy
         //TODO: disconnect this client?
         return;
       }
-      
-      MessageHandler messageHandler = _messageHandlers[envelope.messageType.name];
-      if(log.level <= logging.Level.INFO){
-        var excludedMessageTypes = [MessageType.PING_PONG];
 
+      MessageHandler messageHandler = _messageHandlers[envelope.messageType.name];
+
+      // log the message type
+      if(log.level <= logging.Level.INFO){
+        var excludedMessageTypes = [MessageType.PING_PONG, MessageType.INPUT];
         // only log packets that are not within the list of excluded message types
         if(!excludedMessageTypes.contains(envelope.messageType)){
-          log.info("receicing message type ${envelope.messageType.name}");
+          log.info("receiving message type ${envelope.messageType.name}");
         }
       }
 
-
-      
+      // handle the message
       if(messageHandler != null){
         messageHandler(this, envelope);
       }
@@ -72,10 +72,9 @@ class ClientProxy implements IClientProxy
     }
     catch (e, stack)
     {
-      print("exception during ClientProxy.onMessage: ${e.toString()}");
+      log.severe("exception during ServerProxy.onMessage: ${e.toString()}\nStack:\n$stack");
       if(envelope.messageType != null){
-        print("affected message type: ${envelope.messageType}");
-        print("stack:\n$stack");
+        log.severe("affected message type: ${envelope.messageType}");
       }
     }
   }
