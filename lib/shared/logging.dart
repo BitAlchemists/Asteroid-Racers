@@ -5,7 +5,7 @@ export "package:logging/logging.dart";
 
 registerLogging(logging.Logger log){
   log.onRecord.listen((logging.LogRecord record){
-    print(record.loggerName + " " + record.level.toString() + ": " + record.message);
+    print(record.time.toString() + " " + record.level.toString() + " " + record.loggerName + ": " + record.message);
   });
 }
 

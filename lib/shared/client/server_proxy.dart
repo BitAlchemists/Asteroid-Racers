@@ -18,9 +18,9 @@ class ServerConnectionState {
 }
 
 class ServerProxy {
-  logging.Logger log = new logging.Logger("GameClient.Net.ServerProxy");
+  logging.Logger log = new logging.Logger("BaseClient.Net.ServerProxy");
   ServerConnection _serverConnection;
-  IGameClient _gameController;
+  IGameClient _gameClient;
   Map<String, MessageHandler> _messageHandlers;
   Function onDisconnectDelegate;
   int _state = ServerConnectionState.DISCONNECTED;
@@ -28,7 +28,7 @@ class ServerProxy {
   int get state => _state;
   ServerConnection get connection => _serverConnection;
   
-  ServerProxy(this._gameController)
+  ServerProxy(this._gameClient)
   {    
     _messageHandlers = 
       {
@@ -127,21 +127,21 @@ class ServerProxy {
   _onEntityRemove(Envelope envelope)
   {
     IntMessage message = new IntMessage.fromBuffer(envelope.payload);
-    _gameController.removeEntity(message.integer);
+    _gameClient.removeEntity(message.integer);
   }
 
   _onEntityUpdate(Envelope envelope)
   {
     Entity netEntity = new Entity.fromBuffer(envelope.payload);
     world.Entity worldEntity = EntityMarshal.netEntityToWorldEntity(netEntity);
-    _gameController.updateEntity(worldEntity);
+    _gameClient.updateEntity(worldEntity);
   }
   
   _onPlayer(Envelope envelope)
   {
     Entity entity = new Entity.fromBuffer(envelope.payload);
     world.Movable movable = EntityMarshal.netEntityToWorldEntity(entity);
-    _gameController.createPlayer(movable);
+    _gameClient.createPlayer(movable);
   }
 
   //we calculate our time in relation to the server start time
@@ -173,22 +173,37 @@ class ServerProxy {
   
   _onCollision(Envelope envelope){
     IntMessage message = new IntMessage.fromBuffer(envelope.payload);
-    _gameController.handleCollision(message.integer);
+    _gameClient.handleCollision(message.integer);
   }
 
   _onRaceJoin(Envelope envelope){
     IntMessage message = new IntMessage.fromBuffer(envelope.payload);
-    _gameController.joinRace(message.integer);
+    _gameClient.joinRace(message.integer);
   }
 
   _onRaceEvent(Envelope envelope){
     IntMessage message = new IntMessage.fromBuffer(envelope.payload);
-    _gameController.activateNextCheckpoint(message.integer);
+    _gameClient.activateNextCheckpoint(message.integer);
   }
 
   _onRaceLeave(Envelope envelope){
     IntMessage message = new IntMessage.fromBuffer(envelope.payload);
-    _gameController.leaveRace();
+    _gameClient.leaveRace();
+  }
+
+  movePlayer(world.MovementInput worldMI){
+    MovementInput netMI = new MovementInput();
+    netMI.accelerationFactor = worldMI.accelerationFactor;
+    if(worldMI.newOrientation != null){
+      netMI.newOrientation = worldMI.newOrientation;
+    }
+    netMI.rotationSpeed = worldMI.rotationSpeed;
+
+    Envelope envelope = new Envelope();
+    envelope.messageType = MessageType.INPUT;
+    envelope.payload = netMI.writeToBuffer();
+
+    send(envelope);
   }
 
   requestLeaveRace(){

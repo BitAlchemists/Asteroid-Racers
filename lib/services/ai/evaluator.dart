@@ -5,12 +5,12 @@ abstract class Evaluator<S> {
   double get finalScore;
 }
 
-class LeastDistanceToTargetsEvaluator extends Evaluator<RaceTargetScript> {
+class LeastDistanceToTargetsEvaluator extends Evaluator<RaceTargetTrainingScript> {
   Map<Entity, double> scores = new Map<Entity, double>();
 
   LeastDistanceToTargetsEvaluator();
 
-  void evaluate(RaceTargetScript script, double dt){
+  void evaluate(RaceTargetTrainingScript script, double dt){
     Entity currentTarget = script.currentTarget;
     double distance = script.client.movable.position.distanceTo(currentTarget.position);
 
@@ -30,23 +30,23 @@ class LeastDistanceToTargetsEvaluator extends Evaluator<RaceTargetScript> {
   }
 }
 
-class SumOfDistanceToTargetsEvaluator extends Evaluator<RaceTargetScript> {
+class SumOfDistanceToTargetsEvaluator extends Evaluator<RaceTargetTrainingScript> {
   double finalScore = 0.0;
 
   SumOfDistanceToTargetsEvaluator();
 
-  void evaluate(RaceTargetScript script, double dt){
+  void evaluate(RaceTargetTrainingScript script, double dt){
     Entity currentTarget = script.currentTarget;
     finalScore += script.client.movable.position.distanceTo(currentTarget.position) * dt;
   }
 }
 
-class QuadraticSumOfDistanceToTargetsEvaluator extends Evaluator<RaceTargetScript> {
+class QuadraticSumOfDistanceToTargetsEvaluator extends Evaluator<RaceTargetTrainingScript> {
   double finalScore = 0.0;
 
   QuadraticSumOfDistanceToTargetsEvaluator();
 
-  void evaluate(RaceTargetScript script, double dt){
+  void evaluate(RaceTargetTrainingScript script, double dt){
     Entity currentTarget = script.currentTarget;
     num distance = script.client.movable.position.distanceTo(currentTarget.position);
 
@@ -59,12 +59,12 @@ class QuadraticSumOfDistanceToTargetsEvaluator extends Evaluator<RaceTargetScrip
   }
 }
 
-class TimeToTargetEvaluator extends Evaluator<RaceTargetScript> {
+class TimeToTargetEvaluator extends Evaluator<RaceTargetTrainingScript> {
   double finalScore = 0.0;
 
   TimeToTargetEvaluator();
 
-  void evaluate(RaceTargetScript script, double dt){
+  void evaluate(RaceTargetTrainingScript script, double dt){
     finalScore += dt;
   }
 

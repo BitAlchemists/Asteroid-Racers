@@ -9,7 +9,7 @@ enum ScriptState {
 abstract class Script {
   ScriptState state = ScriptState.READY;
   AIDirector director;
-  AIClientProxy client;
+  AIGameClient client;
   Network network;
   Evaluator evaluator;
 

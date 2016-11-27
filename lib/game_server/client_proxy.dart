@@ -14,18 +14,19 @@ class ClientProxy implements IClientProxy
   static logging.Logger log = new logging.Logger("GameServer.ClientProxy");
   final Connection _connection;
   static IGameServer gameServer;
-  static final Map<String, MessageHandler> _messageHandlers = 
-    {
-      MessageType.HANDSHAKE.name: _onHandshake,
-      MessageType.INPUT.name: _onPlayerInput,
-      MessageType.PING_PONG.name: _onPingPong,
-      MessageType.RACE_LEAVE.name: _onRaceLeave
-    };
-  
+  static Map<String, MessageHandler> _messageHandlers = {
+    MessageType.HANDSHAKE.name: _onHandshake,
+    MessageType.INPUT.name: _onPlayerInput,
+    MessageType.PING_PONG.name: _onPingPong,
+    MessageType.RACE_LEAVE.name: _onRaceLeave
+  };
+
+
   world.Movable movable;
   String get playerName => movable.displayName;
   
   ClientProxy(this._connection){
+
     _connection.onReceiveMessage.listen(onMessage);
     _connection.onDisconnectDelegate = _onDisconnect;
   }
@@ -207,12 +208,12 @@ class ClientProxy implements IClientProxy
     gameServer.computePlayerInput(client, EntityMarshal.netMovementInputToWorldMovementInput(input));
   }
     
-  static _onPingPong(ClientProxy client, Envelope envelope){
+  static _onPingPong(IClientProxy client, Envelope envelope){
     //log.finest("ping ${envelope.payload} from ${client.movable.displayName}");
     client.send(envelope);
   }
 
-  static _onRaceLeave(ClientProxy client, Envelope envelope){
+  static _onRaceLeave(IClientProxy client, Envelope envelope){
     gameServer.clientLeavesRace(client);
   }
 }

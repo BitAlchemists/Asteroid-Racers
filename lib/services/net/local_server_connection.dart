@@ -7,6 +7,7 @@ import "package:logging/logging.dart" as logging;
 import "package:asteroidracers/shared/net.dart";
 import "package:asteroidracers/shared/shared_server.dart";
 import "package:asteroidracers/services/net/server_connection.dart";
+export "package:asteroidracers/services/net/server_connection.dart";
 import "package:asteroidracers/game_server/game_server.dart";
 import "package:asteroidracers/game_server/client_proxy.dart";
 
@@ -15,8 +16,9 @@ typedef void OnReceiveMessageFunction(Envelope envelope);
 
 class LocalServerConnection implements ServerConnection {
   logging.Logger log = new logging.Logger("LocalServerConnection");
-  
-  final bool _debug;
+
+  GameServer _gameServer;
+  bool _debug;
   bool _isMaster; //is this one the master or the slave?
   LocalServerConnection _inverseConnection;
   IClientProxy _clientProxy;
@@ -25,8 +27,18 @@ class LocalServerConnection implements ServerConnection {
   Stream<Envelope> get onReceiveMessage => _receiveMessageStreamController.stream;
   Function onDisconnectDelegate;
   
-  LocalServerConnection([bool this._debug = false])
+  LocalServerConnection({bool debug:false, IGameServer gameServer})
   {
+    _debug = debug;
+    if(gameServer != null) {
+      _gameServer = gameServer;
+    }
+    else {
+      log.info("Starting dedicated GameServer");
+      _gameServer = new GameServer();
+      ClientProxy.gameServer = _gameServer;
+      _gameServer.start();
+    }
     _isMaster = true;
   }
   
@@ -36,12 +48,9 @@ class LocalServerConnection implements ServerConnection {
   }
   
   Future connect(){
-    GameServer gameServer = new GameServer();
-    ClientProxy.gameServer = gameServer;
-    gameServer.start();
     _inverseConnection = new LocalServerConnection._inverse(this, _debug);
     _clientProxy = new ClientProxy(_inverseConnection);
-    ClientProxy.gameServer.connectClient(_clientProxy);
+    _gameServer.connectClient(_clientProxy);
     return new Future.value();
   }
   
@@ -49,7 +58,6 @@ class LocalServerConnection implements ServerConnection {
     if(_isMaster){
       _inverseConnection.disconnect();
       _clientProxy = null;
-      ClientProxy.gameServer = null;
     }
     
     

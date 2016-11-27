@@ -27,5 +27,5 @@ void main() {
 
 LocalServerConnection localConnection(bool debug)
 {
-  return new LocalServerConnection(debug);
+  return new LocalServerConnection(debug:debug);
 }

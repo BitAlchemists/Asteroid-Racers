@@ -39,16 +39,19 @@ Future runServer(List filePaths, String logPath, int port) {
   GameServer gameServer = new GameServer();
   ClientProxy.gameServer = gameServer;
 
-
   WebSocketClientConnectionManager connectionManager = new WebSocketClientConnectionManager(gameServer);
   StaticFileHandler fileHandler = new StaticFileHandler(filePaths);
 
   //todo: refactor this to be generic for all types of clients (low prio until we make an admin client)
   ChatServer _chat;
   _chat = new ChatServer(gameServer);
+
   ClientProxy.registerMessageHandler(MessageType.CHAT, _chat.onChatMessage);
 
+  gameServer.prepareDemoConfiguration();
+
   //ai.registerAIDemoService(gameServer);
+  ai.registerAIRacingService(gameServer);
 
   gameServer.start();
 

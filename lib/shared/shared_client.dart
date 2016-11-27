@@ -7,4 +7,7 @@ abstract class IGameClient {
   void createPlayer(Entity entity);
   void handleCollision(int entityId);
   void removeEntity(int entityId);
+  void joinRace(int entityId);
+  void activateNextCheckpoint(int entityId);
+  void leaveRace();
 }

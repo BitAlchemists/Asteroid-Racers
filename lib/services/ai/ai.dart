@@ -10,21 +10,27 @@ import "package:neural_network/neural_network.dart";
 import "package:asteroidracers/shared/world.dart";
 import "package:asteroidracers/shared/net.dart" as net;
 import "package:asteroidracers/shared/shared_server.dart";
+import "package:asteroidracers/shared/shared_client.dart";
+import "package:asteroidracers/shared/world.dart";
+import "package:asteroidracers/services/net/local_server_connection.dart";
+import "package:logging/logging.dart" as logging;
+import "package:asteroidracers/shared/client/server_proxy.dart";
+
 
 import "package:logging/logging.dart" as logging;
 
 // Core
 
 part "ai_director.dart";
-part "ai_client_proxy.dart";
-part "vehicle_controller.dart";
+part "package:asteroidracers/services/ai/vehicle_control/vehicle_controller.dart";
 part "major_tom.dart";
 part "major_tom_serializer.dart";
 part "script.dart";
 part "evaluator.dart";
+part "ai_game_client.dart";
 
 // Directors
-part "directors/trainer.dart";
+part "directors/training_director.dart";
 part "directors/demo_director.dart";
 
 // Scripts
@@ -55,11 +61,11 @@ registerAITrainingService(IGameServer gameServer){
   };
 
   var targets = createTrainingTargets(gameServer);
-  Trainer trainer;
+  AITrainingDirector trainer;
 
-  trainer = new Trainer();
+  trainer = new AITrainingDirector();
   trainer.scriptFactory = (){
-    var script = new RespawnTargetScript(targets, new Vector2.zero(), AI_TRAINING_FRAMES);
+    var script = new RespawnTargetTrainingScript(targets, new Vector2.zero(), AI_TRAINING_FRAMES);
     script.evaluator = new QuadraticSumOfDistanceToTargetsEvaluator();
     return script;
   };
@@ -84,16 +90,30 @@ registerAIDemoService(IGameServer gameServer){
   ai = new DemoDirector("QuadraticSumOfDistanceToTargets_4_10_8_6_4_2");
 
   Vector2 center = new Vector2(-300.0,-600.0);
-  ai.scriptFactories.add(()=>new RespawnTargetScript(
+  ai.scriptFactories.add(()=>new RespawnTargetTrainingScript(
       createTrainingTargets(gameServer, center),
       center,
       AI_TRAINING_FRAMES));
 
   List targets = createDemoRaceTrackTargets(gameServer, new Vector2(0.0,600.0));
-  ai.scriptFactories.add(()=>new RaceTargetScript(
+  ai.scriptFactories.add(()=>new RaceTargetTrainingScript(
       targets,
       targets.first.position,
       36000~/15));
+
+  gameServer.registerService(ai);
+}
+
+registerAIRacingService(IGameServer gameServer){
+  log.finest("registerAIDemoService");
+  var ai;
+  // LeastDistanceToTargetsEvaluator
+  // SumOfDistanceToTargetsEvaluator
+  // TimeToTargetEvaluator
+
+  ai = new DemoDirector("QuadraticSumOfDistanceToTargets_4_10_8_6_4_2");
+  ai.scriptFactories.add(()=>new RaceTargetScript());
+
 
   gameServer.registerService(ai);
 }

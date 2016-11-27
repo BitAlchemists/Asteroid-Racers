@@ -4,7 +4,7 @@ double betterReward(double reward1, double reward2) => (rewardCompare(reward1, r
 int rewardCompare(double reward1, double reward2) => reward1.compareTo(reward2);
 
 
-class Trainer extends AIDirector {
+class AITrainingDirector extends AIDirector {
   Function scriptFactory;
   Function networkMutator;
   String networkName = "luke";
@@ -100,7 +100,7 @@ class Trainer extends AIDirector {
 
   postUpdate(double dt) {
     log.finest("postUpdate()");
-    for(Script script in _scripts){
+    for(Script script in _runningScripts){
       script.evaluator.evaluate(script, dt);
     }
     super.postUpdate(dt);

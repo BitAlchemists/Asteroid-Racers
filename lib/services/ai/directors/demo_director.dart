@@ -1,5 +1,14 @@
 part of ai;
 
+/*
+ DemoDirector runs demos for a list of scripts. It is designed to demo
+  the capabilities of the latest network. This means, that it can be used
+  while training new iterations of the network.
+
+  The latest version of the network is loaded and ran against the script.
+  When the script is finished cycle begins again.
+  */
+
 class DemoDirector extends AIDirector {
   String networkName;
   List<Function> scriptFactories = <Function>[];
@@ -8,7 +17,7 @@ class DemoDirector extends AIDirector {
 
   start(){
     for(Function scriptFactory in this.scriptFactories){
-      var client = spawnClient();
+      AIGameClient client = spawnClient();
       runDemoLoopWithLatestNetwork((network){
         Script script = scriptFactory();
         return runScript(script, client, network).then((_){

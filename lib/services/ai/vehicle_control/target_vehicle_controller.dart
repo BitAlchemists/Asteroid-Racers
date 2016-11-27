@@ -5,33 +5,27 @@ part of ai;
 
 class TargetVehicleController extends VehicleController {
   Entity target;
-  Function didReachTargetCallback;
 
-  TargetVehicleController(this.target);
+  TargetVehicleController();
 
-  start(){
-    state = CommandState.RUNNING;
-  }
 
   step(double dt){
-    if(state == CommandState.ENDED) return;
-
-    if(client.movable.position.distanceTo(target.position) < target.radius && didReachTargetCallback != null)
-    {
-      bool continueCommandExecution = didReachTargetCallback(this);
-      if(!continueCommandExecution) return;
-    }
-
     _calcNextMove();
   }
 
   _calcNextMove(){
+
+    if(target == null){
+      //we don't have a target, we don't need to move
+      return;
+    }
+
     //we use this correction factor to supply reasonable input to the neural network
     final double CORR = 1.0 / 1000.0;
 
-    Vector2 myPos = client.movable.position;
+    Vector2 myPos = movable.position;
     // my current orientation
-    double southAngle = client.movable.orientation / Math.PI;  //atan2(direction.y, direction.x);
+    double southAngle = movable.orientation / Math.PI;  //atan2(direction.y, direction.x);
 
 
     // my angle to the target
@@ -55,7 +49,7 @@ class TargetVehicleController extends VehicleController {
 
 
     // the angle to the direction in which we currently move
-    double velocityToSouthAngle = Math.atan2(client.movable.velocity.y, client.movable.velocity.x) / Math.PI;
+    double velocityToSouthAngle = Math.atan2(movable.velocity.y, movable.velocity.x) / Math.PI;
     //we have to transform this to be oriented along the y axis
     velocityToSouthAngle -= 0.5;
     //make sure it fits our boundaries -1..+1
@@ -77,11 +71,14 @@ class TargetVehicleController extends VehicleController {
     //minInputNetwork: [-0.9999911852053975, -1.9972613015197478, 0.00023830192972466562, 0.0, -0.9999992133028137]
     //maxInputNetwork: [0.9999958905801077, 1.9995088206681455, 16.047014841265174, 3.2066125582549314, 0.9999998861877442]
 
+    var distanceToTarget = movable.position.distanceTo(target.position);
+    var velocity = movable.velocity.length;
+
     List input = [
       targetAngle,
-      client.movable.position.distanceTo(target.position) * CORR,
+      distanceToTarget * CORR,
       velocityAngle,
-      client.movable.velocity.length * CORR
+      velocity * CORR
     ];
 
     /*
@@ -103,7 +100,10 @@ class TargetVehicleController extends VehicleController {
     MovementInput mi = new MovementInput();
     mi.accelerationFactor = (output[0] + 1) / 2; // we are working with TanH, so we are normalizing this output to be 0..1
     mi.rotationSpeed = output[1] * 5.0; //5 degrees left or right per second
-    client.server.computePlayerInput(client, mi);
+    mi.newOrientation = double.NAN;
+
+    client.server.movePlayer(mi);
+
 /*
 
     double sampleLogChance = 0.00001;
@@ -132,10 +132,6 @@ output - acceleration: 0.6989224313018303 rotation: -0.20497752915450804
 
   }
 
-  end(){
-    if(state == CommandState.ENDED) return;
-    state = CommandState.ENDED;
-  }
 }
 
 /*

@@ -1,8 +1,63 @@
 part of ai;
 
-
-
 class RaceTargetScript extends Script {
+  Completer _completer;
+  TargetVehicleController _vehicleController;
+  static const int DELAY = 5;
+
+  Future run(){
+
+      if (state == ScriptState.READY) {
+        assert(client != null);
+
+        state = ScriptState.RUNNING;
+
+        _vehicleController = new TargetVehicleController();
+        _vehicleController.network = network;
+        _vehicleController.client = client;
+        client.vehicleController = _vehicleController;
+        client.updateEntityDelegate = updateEntity;
+        client.activateCheckpointDelegate = activateNextCheckpoint;
+
+        _completer = new Completer();
+        return _completer.future;
+      }
+
+      else {
+        log.warning(
+            "Trying to run() script, but script state is ${state.toString()}");
+        return new Future.value(null);
+      }
+  }
+
+  void step(double dt){
+
+  }
+
+  updateEntity(Entity entity) {
+    if (entity.type == EntityType.LAUNCH_PLATFORM &&
+        _vehicleController.target == null) {
+      new Timer(new Duration(seconds: DELAY), (){
+        _vehicleController.target = entity;
+      });
+    }
+  }
+
+  activateNextCheckpoint(Entity entity){
+    new Timer(new Duration(seconds: DELAY), () {
+      _vehicleController.target = entity;
+    });
+  }
+
+  _finish(){
+    _vehicleController.client = null;
+    client.vehicleController = null;
+    state = ScriptState.ENDED;
+    _completer.complete();
+  }
+}
+
+class RaceTargetTrainingScript extends Script {
 
   // lifetime is counted in frames to allow every Bot to live for the same time. We use frames for lifetime measurement
   // so that every AI gets the same amount of frames to prove their value. Every frame is about 15 milliseconds long
@@ -11,6 +66,7 @@ class RaceTargetScript extends Script {
   int maxTimePerTarget;
   int currentFrames = 0;
   Vector2 spawn;
+  TargetVehicleController _vehicleController;
 
   Completer _completer;
 
@@ -18,7 +74,7 @@ class RaceTargetScript extends Script {
   int _nextTargetIndex = 0;
   Checkpoint currentTarget;
 
-  RaceTargetScript(this.targets, [this.spawn, this.maxTimePerTarget = maxTimePerTargetDefault]){
+  RaceTargetTrainingScript(this.targets, [this.spawn, this.maxTimePerTarget = maxTimePerTargetDefault]){
     if(spawn == null){
       spawn = new Vector2.zero();
     }
@@ -27,6 +83,11 @@ class RaceTargetScript extends Script {
   Future run(){
     if(state == ScriptState.READY){
       state = ScriptState.RUNNING;
+
+      _vehicleController = new TargetVehicleController();
+      _vehicleController.network = network;
+      client.vehicleController = _vehicleController;
+
       _runNextTarget();
       _completer = new Completer();
       return _completer.future;
@@ -41,6 +102,14 @@ class RaceTargetScript extends Script {
   void step(double dt){
     if(state == ScriptState.RUNNING)
     {
+      //check if the client reached the target
+      if(client.movable.position.distanceTo(currentTarget.position)
+          < currentTarget.radius)
+      {
+        _onTargetFinish();
+        return;
+      }
+
       if(currentFrames++ >= maxTimePerTarget){
         _onTargetFinish();
       }
@@ -68,18 +137,9 @@ class RaceTargetScript extends Script {
 
     _updateVehiclePosition();
 
-    TargetVehicleController command = new TargetVehicleController(currentTarget);
-    command.network = network;
-    command.didReachTargetCallback = _didReachTargetCallback;
-    client.command = command;
-
+    _vehicleController.target = currentTarget;
 
     currentFrames = 0;
-  }
-
-  bool _didReachTargetCallback(_){
-    _onTargetFinish();
-    return false; //don't continue to execute the command
   }
 
   _updateVehiclePosition(){
@@ -93,21 +153,23 @@ class RaceTargetScript extends Script {
     target.state = CheckpointState.FUTURE;
     target.updateRank += 1.0;
 
-    client.command = null;
+    client.vehicleController = null;
   }
 
   _finish(){
+    client.vehicleController = null;
     state = ScriptState.ENDED;
     _completer.complete();
   }
 
 }
 
-class RespawnTargetScript extends RaceTargetScript {
-  RespawnTargetScript(targets, [spawn, lifeTimeFrames]) : super(targets, spawn, lifeTimeFrames);
+class RespawnTargetTrainingScript extends RaceTargetTrainingScript {
+  RespawnTargetTrainingScript(targets, [spawn, lifeTimeFrames]) : super(targets, spawn, lifeTimeFrames);
 
   _updateVehiclePosition(){
-    director.server.teleportPlayerTo(client, spawn, currentTarget.orientation, false);
+    IClientProxy clientProxy = director.server.clients.firstWhere((IClientProxy clientProxy) => clientProxy.movable.id == client.movable.id);
+    director.server.teleportPlayerTo(clientProxy, spawn, currentTarget.orientation, false);
   }
 
   bool _didReachTargetCallback(_){

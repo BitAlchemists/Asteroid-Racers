@@ -18,7 +18,7 @@ import 'package:asteroidracers/shared/ui.dart';
 import "package:asteroidracers/shared/net.dart" as net; //todo: remove this and layer all its code out to serverproxy
 import "package:asteroidracers/services/net/server_connection.dart";
 import 'package:asteroidracers/services/chat/chat_client.dart';
-import "package:asteroidracers/game_client/server_proxy.dart";
+import "package:asteroidracers/shared/client/server_proxy.dart";
 
 //Views
 part "game_renderer.dart";
@@ -49,7 +49,7 @@ class GameConfig {
 /**
  * The Game client sets up the game and handles the interaction between player and server
  */
-class GameClient implements stagexl.Animatable, IGameClient {
+class GameClient implements IGameClient, stagexl.Animatable {
   logging.Logger log = new logging.Logger("GameClient");
   GameConfig _config;
   ServerConnection _connection;
@@ -225,18 +225,12 @@ class GameClient implements stagexl.Animatable, IGameClient {
       {
         // notify the server
         if(server != null){
-
-          //TODO: move this code to ServerProxy
-          net.MovementInput movementInput = new net.MovementInput();
+          MovementInput movementInput = new MovementInput();
           movementInput.accelerationFactor = _player.accelerationFactor;
           movementInput.newOrientation = _player.entity.orientation;
           movementInput.rotationSpeed = _player._movable.rotationSpeed;
 
-          net.Envelope envelope = new net.Envelope();
-          envelope.messageType = net.MessageType.INPUT;
-          envelope.payload = movementInput.writeToBuffer();
-
-          server.send(envelope);
+          server.movePlayer(movementInput);
         }   
       }
       

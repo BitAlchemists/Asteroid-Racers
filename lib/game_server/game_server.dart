@@ -39,12 +39,16 @@ class GameServer implements IGameServer {
   Set<IClientProxy> get clients => _clients;
   
   GameServer(){
-    _createWorld();
+
   }
 
   void registerService(IServerService service){
     service.server = this;
     _services.add(service);
+  }
+
+  void prepareDemoConfiguration(){
+    _createWorld();
   }
 
   _createWorld(){
@@ -368,11 +372,11 @@ class GameServer implements IGameServer {
     }
 
     // 1. apply the new orientation
-    if(client.movable.orientation != input.newOrientation && input.newOrientation != null){
+    if(client.movable.orientation != input.newOrientation && !input.newOrientation.isNaN){
       client.movable.orientation = input.newOrientation;
     }
 
-    if(client.movable.rotationSpeed != input.rotationSpeed && input.rotationSpeed != null){
+    if(client.movable.rotationSpeed != input.rotationSpeed && !input.rotationSpeed.isNaN){
       client.movable.rotationSpeed = input.rotationSpeed;
     }
 
