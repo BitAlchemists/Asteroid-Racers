@@ -27,6 +27,7 @@ class ServerProxy {
   
   int get state => _state;
   ServerConnection get connection => _serverConnection;
+  StreamSubscription _onReceiveMessageStreamSubscription;
   
   ServerProxy(this._gameClient)
   {    
@@ -42,6 +43,10 @@ class ServerProxy {
         MessageType.RACE_LEAVE.name: this._onRaceLeave
       };
   }
+
+  destructor(){
+    _messageHandlers = null;
+  }
   
   registerMessageHandler(MessageType messageType, MessageHandler messageHandler)
   {
@@ -52,8 +57,8 @@ class ServerProxy {
   {
     _serverConnection = serverConnection;
 
-    _serverConnection.onReceiveMessage.listen(_onReceiveMessage);
     _serverConnection.onDisconnectDelegate = _onDisconnect;
+    _onReceiveMessageStreamSubscription = _serverConnection.onReceiveMessage.listen(_onReceiveMessage);
     
     _state = ServerConnectionState.IS_CONNECTING;
     return _serverConnection.connect().then((_){
@@ -77,8 +82,12 @@ class ServerProxy {
   _onDisconnect()
   {
     _state = ServerConnectionState.DISCONNECTED;
-    _serverConnection = null;
     this.onDisconnectDelegate();
+    _onReceiveMessageStreamSubscription.cancel();
+    _onReceiveMessageStreamSubscription = null;
+    _serverConnection.onDisconnectDelegate = null;
+    _serverConnection = null;
+
   }
   
   send(Envelope envelope)
@@ -103,7 +112,7 @@ class ServerProxy {
         var excludedMessageTypes = [MessageType.PING_PONG, MessageType.ENTITY];
         // only log packets that are not within the list of excluded message types
         if(!excludedMessageTypes.contains(envelope.messageType)){
-          log.info("receiving message type ${envelope.messageType.name}");
+          log.fine("receiving message type ${envelope.messageType.name}");
         }
       }
 

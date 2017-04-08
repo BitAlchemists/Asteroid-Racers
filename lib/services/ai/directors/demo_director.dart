@@ -9,18 +9,31 @@ part of ai;
   When the script is finished cycle begins again.
   */
 
-class DemoDirector extends AIDirector {
+class AIDemoDirector extends AIDirector {
+  logging.Logger _log = new logging.Logger("ai.AIDemoDirector");
   String networkName;
   List<Function> scriptFactories = <Function>[];
+  String playername;
 
-  DemoDirector(this.networkName);
+  AIDemoDirector(this.networkName, this.playername);
 
   start(){
+    _log.fine("start()");
+    int playerCount = 0;
+
     for(Function scriptFactory in this.scriptFactories){
-      AIGameClient client = spawnClient();
       runDemoLoopWithLatestNetwork((network){
+        _log.fine("start() runFunction()");
+
+        String clientName;
+        if(this.playername != null){
+          clientName = "$playername${playerCount++}";
+        }
+
+        AIGameClient client = spawnClient(clientName);
         Script script = scriptFactory();
         return runScript(script, client, network).then((_){
+          despawnClient(client);
           return true;
         });
       });
@@ -28,14 +41,16 @@ class DemoDirector extends AIDirector {
   }
 
   runDemoLoopWithLatestNetwork (runFunction){
+    _log.fine("runDemoLoopWithLatestNetwork()");
     Future.doWhile((){
+      _log.fine("runDemoLoopWithLatestNetwork() doWhile()");
       List<MajorTom> networks = MajorTomSerializer.readNetworksFromFile(networkName);
 
       if (networks != null && networks.length > 0) {
         return runFunction(networks[0]);
       }
       else{
-        log.info("No AI networks found in folder name $networkName. Not going to show demo.");
+        _log.info("No AI networks found in folder name $networkName. Not going to show demo.");
         return false;
       }
     });

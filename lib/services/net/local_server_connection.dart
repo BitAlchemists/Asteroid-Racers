@@ -22,7 +22,7 @@ class LocalServerConnection implements ServerConnection {
   bool _isMaster; //is this one the master or the slave?
   LocalServerConnection _inverseConnection;
   IClientProxy _clientProxy;
-  final StreamController<Envelope> _receiveMessageStreamController = new StreamController<Envelope>.broadcast();
+  final StreamController<Envelope> _receiveMessageStreamController = new StreamController<Envelope>();
   
   Stream<Envelope> get onReceiveMessage => _receiveMessageStreamController.stream;
   Function onDisconnectDelegate;
@@ -59,7 +59,6 @@ class LocalServerConnection implements ServerConnection {
       _inverseConnection.disconnect();
       _clientProxy = null;
     }
-    
     
     _inverseConnection = null;
     this.onDisconnectDelegate();

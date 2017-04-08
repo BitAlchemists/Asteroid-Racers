@@ -3,6 +3,7 @@ part of ai;
 
 abstract class AIDirector implements IServerService {
   IGameServer server;
+  logging.Logger _log = new logging.Logger("ai.AIDirector");
 
   List<IGameClient> _clients = <IGameClient>[];
   List<Script> _runningScripts = <Script>[];
@@ -11,11 +12,11 @@ abstract class AIDirector implements IServerService {
 
   start();
 
-  IGameClient spawnClient(){
+  IGameClient spawnClient([String name = "Major Tom"]){
 
     var connection = new LocalServerConnection(gameServer: server);
     AIGameClient client = new AIGameClient(connection);
-    client.username = "Major Tom";
+    client.username = name;
     /*
     AIClientProxy client = new AIClientProxy();
     client.server = this.server;
@@ -24,7 +25,6 @@ abstract class AIDirector implements IServerService {
     _clients.add(client);
 
     client.connect();
-
 /*
     server.connectClient(client);
     server.registerPlayer(client, client.playerName, false);
@@ -34,11 +34,14 @@ abstract class AIDirector implements IServerService {
   }
 
   despawnClient(AIGameClient client){
+    _log.fine("despawnClient()");
     client.disconnect();
     _clients.remove(client);
+    client.destructor();
   }
 
   Future runScript(Script script, AIGameClient client, Network network){
+    _log.fine("runScript()");
     script.director = this;
     script.client = client;
     script.network = network;

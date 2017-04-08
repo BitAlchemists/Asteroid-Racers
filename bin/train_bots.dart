@@ -30,6 +30,10 @@ main() async {
   const int FRAMES_PER_CYCLE = 100;
 
   Future.doWhile((){
+    if(frameCounter > 100000){
+      return true;
+    }
+
     for(int i = 0; i < FRAMES_PER_CYCLE; i++){
       loop.onUpdate(loop);
     }
@@ -40,7 +44,7 @@ main() async {
     if(counter >= 1.0){
       secondsPassed++;
       counter -= 1;
-      //print("frameCounter: $frameCounter");
+      log.info("frameCounter: $frameCounter");
     }
 
     return true;

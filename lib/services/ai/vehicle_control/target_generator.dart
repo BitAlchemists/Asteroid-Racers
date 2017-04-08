@@ -70,7 +70,7 @@ class TargetGenerator {
     }
 
     List targets = new List<Vector2>();
-    targets.addAll(_createTargets(8, 800.0, 0.0, center));
+    targets.addAll(_createTargets(1, 800.0, 0.0, center));
 
     //int radiusTypeCounter = 0;
     targets = targets.map((Vector2 position){

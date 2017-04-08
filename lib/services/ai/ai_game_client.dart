@@ -3,7 +3,7 @@ part of ai;
 
 
 class AIGameClient implements IGameClient {
-  logging.Logger log = new logging.Logger("AIGameClient");
+  logging.Logger _log = new logging.Logger("ai.AIGameClient");
 
   String username;
   Map<int, Entity> _entities = <int, Entity>{};
@@ -11,32 +11,39 @@ class AIGameClient implements IGameClient {
   ServerConnection _connection;
   ServerProxy server;
   VehicleController vehicleController;
-  //Movable movable; //is this needed?
 
+  Function createPlayerDelegate;
   Function updateEntityDelegate;
   Function joinRaceDelegate;
   Function activateCheckpointDelegate;
+  Function handleCollisionDelegate;
 
 
   AIGameClient(this._connection){
     server = new ServerProxy(this);
+    server.registerMessageHandler(net.MessageType.CHAT, (_){});
     server.onDisconnectDelegate = _onDisconnect;
   }
 
+  destructor(){
+    server.onDisconnectDelegate = null;
+    server.destructor();
+  }
+
   connect(){
-    log.info("Connecting...");
+    _log.fine("Connecting...");
     server.connect(_connection, username).then(_onConnect).catchError((_){
-      log.info("could not connect.");
+      _log.info("could not connect.");
       _onDisconnect();
     });
   }
 
   _onConnect(_){
-    log.info("Connected");
+    _log.fine("Connected");
   }
 
   _onDisconnect(){
-    log.info("Disconnected");
+    _log.fine("Disconnected");
   }
 
   disconnect(){
@@ -48,15 +55,19 @@ class AIGameClient implements IGameClient {
       vehicleController.step(dt);
     }
     else {
-      log.finer("vehicleController == null");
+      _log.finer("vehicleController == null");
     }
   }
 
   void createPlayer(Entity entity){
+    _log.fine("createPlayer()");
     assert(vehicleController != null);
-    //movable = entity;
     vehicleController.movable = entity;
     _entities[entity.id] = entity;
+
+    if(createPlayerDelegate != null){
+      createPlayerDelegate();
+    }
   }
 
   void updateEntity(Entity updatingEntity) {
@@ -117,8 +128,6 @@ class AIGameClient implements IGameClient {
   }
 
   /// handles a collision event for an entity.
-  ///
-  /// the entity will be stopped from moving and an explosion sprite will be rendered
   handleCollision(int entityId)
   {
     Entity entity = _entities[entityId];
@@ -126,10 +135,14 @@ class AIGameClient implements IGameClient {
     if(entity is Movable){
       (entity as Movable).canMove = false;
     }
+
+    if(handleCollisionDelegate != null){
+      handleCollisionDelegate(entity);
+    }
   }
 
   joinRace(int entityId){
-    log.fine("joinRace: $entityId");
+    _log.fine("joinRace: $entityId");
     if(joinRaceDelegate != null){
       joinRaceDelegate(entityId);
     }
@@ -137,7 +150,7 @@ class AIGameClient implements IGameClient {
 
   //ToDo: find a verb for this method name
   activateNextCheckpoint(int entityId){
-    log.fine("activateNextCheckpoint: $entityId");
+    _log.fine("activateNextCheckpoint: $entityId");
     if(activateCheckpointDelegate != null){
       Entity entity = _entities[entityId];
       activateCheckpointDelegate(entity);
@@ -145,6 +158,6 @@ class AIGameClient implements IGameClient {
   }
 
   leaveRace(){
-    log.fine("leaveRace");
+    _log.fine("leaveRace");
   }
 }

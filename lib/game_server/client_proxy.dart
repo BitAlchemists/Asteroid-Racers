@@ -59,7 +59,7 @@ class ClientProxy implements IClientProxy
         var excludedMessageTypes = [MessageType.PING_PONG, MessageType.INPUT];
         // only log packets that are not within the list of excluded message types
         if(!excludedMessageTypes.contains(envelope.messageType)){
-          log.info("receiving message type ${envelope.messageType.name}");
+          log.fine("receiving message type ${envelope.messageType.name}");
         }
       }
 

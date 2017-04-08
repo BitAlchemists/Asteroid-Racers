@@ -38,9 +38,7 @@ class GameServer implements IGameServer {
   // IGameServer
   Set<IClientProxy> get clients => _clients;
   
-  GameServer(){
-
-  }
+  GameServer();
 
   void registerService(IServerService service){
     service.server = this;
@@ -51,8 +49,35 @@ class GameServer implements IGameServer {
     _createWorld();
   }
 
+  _setup(){
+    _physics = new PhysicsSimulator();
+
+    // Spawn
+    _spawn = new Entity(type: EntityType.UNKNOWN);
+    _spawn.position = new Vector2(0.0, 0.0);
+    _spawn.radius = 100.0;
+    _spawn.orientation = Math.PI;
+
+  }
+
   _createWorld(){
 
+    //_prepareScene2();
+
+    // Collision Detection
+    _crashCollisionDetector = new CollisionDetector();
+    _crashCollisionDetector.activeEntitiesCanCollide = true;
+    _crashCollisionDetector.passiveEntities.addAll(world.passiveCollissionEntities);
+
+    /* Dummy player
+    Entity dummyPlayer = new Entity(EntityType.SHIP, new Vector2(50.0, 50.0), 10.0);
+    dummyPlayer.displayName = "Dummy";
+    _world.addEntity(dummyPlayer);
+    _collisionDetector.asteroids.add(dummyPlayer);
+    */
+  }
+
+  _prepareScene2(){
     // Scene
     SceneController.createScene2(world);
     //SceneController.createSmallDensityField(world);
@@ -67,29 +92,11 @@ class GameServer implements IGameServer {
 
     _joinRaceCollisionDetector.passiveEntities.add(_race.start);
 
-    // Spawn
-    _spawn = new Entity(type: EntityType.UNKNOWN);
-    _spawn.position = new Vector2(0.0, 0.0);
-    _spawn.radius = 100.0;
-    _spawn.orientation = Math.PI;
-
-    // Collision Detection
-    _crashCollisionDetector = new CollisionDetector();
-    _crashCollisionDetector.activeEntitiesCanCollide = true;
-    _crashCollisionDetector.passiveEntities.addAll(world.passiveCollissionEntities);
-
-    /* Dummy player
-    Entity dummyPlayer = new Entity(EntityType.SHIP, new Vector2(50.0, 50.0), 10.0);
-    dummyPlayer.displayName = "Dummy";
-    _world.addEntity(dummyPlayer);
-    _collisionDetector.asteroids.add(dummyPlayer);
-    */
-    
-    _physics = new PhysicsSimulator();
   }
 
 
   start([GameLoop gameLoop]){
+    _setup();
       // Construct a game loop.
     if(gameLoop == null){
       gameLoop = new GameLoopIsolate();
@@ -131,7 +138,9 @@ class GameServer implements IGameServer {
     
     if(client.movable != null){
       _physics.removeMovable(client.movable);
-      _crashCollisionDetector.activeEntities.remove(client.movable);
+      if(_crashCollisionDetector != null){
+        _crashCollisionDetector.activeEntities.remove(client.movable);
+      }
       clientLeavesRace(client);
       _entityToClientMap.remove(client.movable);
       despawnEntity(client.movable);
@@ -175,9 +184,13 @@ class GameServer implements IGameServer {
 
   void _checkCollisions()
   {
-    _crashCollisionDetector.detectCollisions(_onPlayerCollisionExplode);
+    if(_crashCollisionDetector != null){
+      _crashCollisionDetector.detectCollisions(_onPlayerCollisionExplode);
+    }
     //_crashCollisionDetector.detectCollisions(_onPlayerCollisionBounce);
-    _joinRaceCollisionDetector.detectCollisions(_onPlayerTouchRacePortal);
+    if(_joinRaceCollisionDetector != null){
+      _joinRaceCollisionDetector.detectCollisions(_onPlayerTouchRacePortal);
+    }
   }
 
 
@@ -225,6 +238,7 @@ class GameServer implements IGameServer {
   }
 
   _onPlayerCollisionExplode(Movable playerEntity, Entity otherEntity, double penetration){
+    log.info("_onPlayerCollisionExplode() - ${playerEntity.displayName} collided with ${otherEntity.displayName}");
     _crashCollisionDetector.activeEntities.remove(playerEntity);
     playerEntity.canMove = false;
 
@@ -287,7 +301,9 @@ class GameServer implements IGameServer {
     client.movable = player;
 
     if(canCollide){
-      _joinRaceCollisionDetector.activeEntities.add(client.movable);
+      if(_joinRaceCollisionDetector != null){
+        _joinRaceCollisionDetector.activeEntities.add(client.movable);
+      }
     }
 
     _physics.addMovable(client.movable);
@@ -318,7 +334,9 @@ class GameServer implements IGameServer {
     orientation = spawn.orientation;
 
             
-    if(!_crashCollisionDetector.activeEntities.contains(movable) && canCollide){
+    if(_crashCollisionDetector != null &&
+        !_crashCollisionDetector.activeEntities.contains(movable) &&
+        canCollide){
       _crashCollisionDetector.activeEntities.add(movable);
     }
     
@@ -326,6 +344,8 @@ class GameServer implements IGameServer {
   }
   
   void teleportPlayerTo(IClientProxy client, Vector2 position, double orientation, bool informClientToo){
+    log.fine("teleporting ${client.playerName} to ${position.x} ${position.y}");
+
     assert(position != null);
     client.movable.position = position;
     client.movable.orientation = orientation;

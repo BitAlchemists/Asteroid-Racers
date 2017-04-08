@@ -38,21 +38,29 @@ part "vehicle_control/target_script.dart";
 part "vehicle_control/target_vehicle_controller.dart";
 part "vehicle_control/target_generator.dart";
 
-logging.Logger log = new logging.Logger("AI");
 
 Math.Random random = new Math.Random();
 
 
 //Training config
-const int AI_TRAINING_SAMPLE_SIZE = 100;
-const int AI_TRAINING_TARGETS = 20;
+//const String AI_TRAINING_DB_NAME = "QuadraticSumOfDistanceToTargets_4_10_8_6_4_2";
+//const List AI_TRAINING_NETWORK = const [4,10,8,6,4,2];
+
+const String AI_TRAINING_DB_NAME = "QuadraticSumOfDistanceToTargets_4_4_4_2";
+const List AI_TRAINING_NETWORK = const [4,4,4,2];
+
+
+const int AI_TRAINING_SAMPLE_SIZE = 10;
+const double AI_TRAINING_SURVIVAL_RATE = 0.1;
+const int AI_TRAINING_TARGETS = 3;
 const int AI_TRAINING_FRAMES = 9000~/15;
 const double AI_TRAINING_TARGET_DISTANCE = 1000.0;
-const double AI_TRAINING_TARGET_DISTANCE_RANGE = 1000.0;
+const double AI_TRAINING_TARGET_DISTANCE_RANGE = 200.0;
 
 
 
 registerAITrainingService(IGameServer gameServer){
+  logging.Logger log = new logging.Logger("ai");
   log.finest("registerAITrainingService");
   Function networkMutator = (MajorTom network){
     double MUTATION_RATE = 0.1;
@@ -70,9 +78,10 @@ registerAITrainingService(IGameServer gameServer){
     return script;
   };
   trainer.networkMutator = networkMutator;
-  trainer.networkName = "QuadraticSumOfDistanceToTargets_4_10_8_6_4_2";
-  trainer.networkConfiguration = [4,10,8,6,4,2];
+  trainer.networkName = AI_TRAINING_DB_NAME;
+  trainer.networkConfiguration = AI_TRAINING_NETWORK;
   trainer.sampleSize = AI_TRAINING_SAMPLE_SIZE;
+  trainer.survivalRate = AI_TRAINING_SURVIVAL_RATE;
   // LeastDistanceToTargetsEvaluator
   // SumOfDistanceToTargetsEvaluator
   // TimeToTargetEvaluator
@@ -81,13 +90,14 @@ registerAITrainingService(IGameServer gameServer){
 }
 
 registerAIDemoService(IGameServer gameServer){
+  logging.Logger log = new logging.Logger("ai");
   log.finest("registerAIDemoService");
-  DemoDirector ai;
+  AIDemoDirector ai;
   // LeastDistanceToTargetsEvaluator
   // SumOfDistanceToTargetsEvaluator
   // TimeToTargetEvaluator
 
-  ai = new DemoDirector("QuadraticSumOfDistanceToTargets_4_10_8_6_4_2");
+  ai = new AIDemoDirector(AI_TRAINING_DB_NAME, "Demo");
 
   Vector2 center = new Vector2(-300.0,-600.0);
   ai.scriptFactories.add(()=>new RespawnTargetTrainingScript(
@@ -105,13 +115,14 @@ registerAIDemoService(IGameServer gameServer){
 }
 
 registerAIRacingService(IGameServer gameServer){
+  logging.Logger log = new logging.Logger("ai");
   log.finest("registerAIDemoService");
   var ai;
   // LeastDistanceToTargetsEvaluator
   // SumOfDistanceToTargetsEvaluator
   // TimeToTargetEvaluator
 
-  ai = new DemoDirector("QuadraticSumOfDistanceToTargets_4_10_8_6_4_2");
+  ai = new AIDemoDirector(AI_TRAINING_DB_NAME, "Demo");
   ai.scriptFactories.add(()=>new RaceTargetScript());
 
 

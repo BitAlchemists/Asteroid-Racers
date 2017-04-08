@@ -5,18 +5,20 @@ int rewardCompare(double reward1, double reward2) => reward1.compareTo(reward2);
 
 
 class AITrainingDirector extends AIDirector {
+  logging.Logger _log = new logging.Logger("ai.AITrainingDirector");
   Function scriptFactory;
   Function networkMutator;
   String networkName = "luke";
   List networkConfiguration;
 
-  int sampleSize = 1000;
+  int sampleSize; //1000
+  double survivalRate; // 0.2
   // WARNING: There seems to be code missing that generates new clients when the old ones are done. So the next variable
   // has to have the same value the SAMPLE_SIZE has; for now.
   int get simultaneousSimulations => sampleSize;
 
   List<MajorTom> networks;
-  Map<MajorTom, double> evaluations;
+  Map<MajorTom, QuadraticSumOfDistanceToTargetsEvaluator> evaluations;
   List<Script> runningScripts;
   int _nextInstanceIndex;
 
@@ -25,8 +27,10 @@ class AITrainingDirector extends AIDirector {
   }
 
   _startTraining(){
-    log.finer("_startTraining()");
+    _log.finer("_startTraining()");
     _prepareTraining();
+
+    _log.info("Starting training with ${networks.length} instances");
 
     int numSimultaneousSimulations = Math.min(simultaneousSimulations, networks.length);
     List<Future> simulations = new List<Future>.generate(numSimultaneousSimulations, (int index){
@@ -41,19 +45,14 @@ class AITrainingDirector extends AIDirector {
 
 
   _prepareTraining(){
-    log.finest("_prepareTraining()");
-    if(networks == null){
-      networks = _prepareNetworks();
-    }
-    evaluations = new Map<MajorTom, double>.fromIterable(
-        networks,
-        key:(network) => network,
-        value:(_) => 0.0);
+    _log.fine("_prepareTraining()");
+    networks = _prepareNetworks();
+    evaluations = new Map<MajorTom, QuadraticSumOfDistanceToTargetsEvaluator>();
     _nextInstanceIndex = 0;
   }
 
   _prepareNetworks(){
-    log.finest("_prepareNetworks()");
+    _log.fine("_prepareNetworks()");
     assert(networkMutator != null);
     List<MajorTom> networks = MajorTomSerializer.readNetworksFromFile(networkName);
     if(networks != null){
@@ -62,7 +61,8 @@ class AITrainingDirector extends AIDirector {
       int nameIndex = 0;
       for(MajorTom brain in networks){
         var jsonBrain = MajorTomSerializer.networkToJson(brain);
-        for(int i = 0; i < sampleSize-1; i++)
+        int numOfChildren = Math.max(1,(sampleSize/networks.length-1).toInt());
+        for(int i = 0; i < numOfChildren; i++)
         {
           MajorTom network = MajorTomSerializer.jsonToNetwork(jsonBrain);
           network.name = "Major Tom #$nameIndex"; nameIndex++;
@@ -83,15 +83,15 @@ class AITrainingDirector extends AIDirector {
   }
 
   Future _runNextTrainingInstance(){
-    log.finest("_runNextTrainingInstance()");
+    _log.finest("_runNextTrainingInstance()");
     assert(scriptFactory != null);
-    var client = spawnClient();
     var network = networks[_nextInstanceIndex++];
+    var client = spawnClient(network.name);
     Script script = scriptFactory();
 
     return runScript(script, client, network).then((_){
       despawnClient(client);
-      evaluations[script.network] = script.evaluator.finalScore;
+      evaluations[script.network] = script.evaluator;
     });
   }
 
@@ -99,25 +99,28 @@ class AITrainingDirector extends AIDirector {
 
 
   postUpdate(double dt) {
-    log.finest("postUpdate()");
+    _log.finest("postUpdate()");
     for(Script script in _runningScripts){
-      script.evaluator.evaluate(script, dt);
+      if(script.state == ScriptState.RUNNING){
+        script.evaluator.evaluate(script, dt);
+      }
     }
     super.postUpdate(dt);
   }
 
 
   _finishTraining(){
-    log.finer("_finishTraining()");
+    _log.finer("_finishTraining()");
 
     List<MajorTom> networksByBestReward = evaluations.keys.toList();
-    networksByBestReward.sort((a,b) => evaluations[a].compareTo(evaluations[b]));
+    networksByBestReward.sort((a,b) => evaluations[a].finalScore.compareTo(evaluations[b].finalScore));
 
+
+    _log.info("Network with best reward: ${evaluations[networksByBestReward.first].finalScore}");
     _createReport(networksByBestReward);
 
-    MajorTom bestTrainingSet = networksByBestReward.first;
-    bestTrainingSet.name = "Winner from last round";
-    List<MajorTom> survivors = [bestTrainingSet];
+    int survivingNetworks = Math.max((networksByBestReward.length*survivalRate).toInt(), 1);;
+    List<MajorTom> survivors = networksByBestReward.sublist(0,survivingNetworks);
 
     MajorTomSerializer.writeNetworksToFile(survivors, networkName);
 
@@ -128,24 +131,33 @@ class AITrainingDirector extends AIDirector {
   File file;
 
   _createReport(List<MajorTom> networksByBestReward){
-    log.finest("_createReport()");
+    _log.finest("_createReport()");
+
+    List<MajorTom> networksBySmallestDistance = evaluations.keys.toList();
+    networksBySmallestDistance.sort((a,b) => evaluations[a].smallestDistance.compareTo(evaluations[b].smallestDistance));
 
     DateTime now = new DateTime.now();
 
-    String report = "${now.toString()} ${evaluations.length} done. ";
+    String report = "${now.toString()} ${evaluations.length} done.\n";
 
-    report += "Min score: ${evaluations[networksByBestReward.first].toStringAsFixed(0)} - ${networksByBestReward.first.name}";
-/*
+    report += "Min score: ${evaluations[networksByBestReward.first].finalScore.toStringAsFixed(0)} - ${networksByBestReward.first.name}\n";
+    report += "Min dist:  ${evaluations[networksBySmallestDistance.first].smallestDistance.toStringAsFixed(0)} - ${networksBySmallestDistance.first.name}\n";
+
     double scoreSum = 0.0;
-    for(double score in evaluations.values){
-      scoreSum += score;
+    double distanceSum = 0.0;
+    for(QuadraticSumOfDistanceToTargetsEvaluator evaluator in evaluations.values){
+      scoreSum += evaluator.finalScore;
+      distanceSum += evaluator.smallestDistance;
     }
     scoreSum /= evaluations.length;
+    distanceSum /= evaluations.length;
     report += "Avg score: ${scoreSum}\n";
+    report += "Avg dist:  ${distanceSum}\n";
 
-    report += "Max score: ${evaluations[networksByBestReward.last]}\n";
-*/
-    log.info(report);
+    report += "Max score: ${evaluations[networksByBestReward.last].finalScore}\n";
+    report += "Max distance: ${evaluations[networksBySmallestDistance.last].smallestDistance}\n";
+
+    //_log.info(report);
 
     //print("minInputNetwork: $minInputNetwork");
     //print("maxInputNetwork: $maxInputNetwork");
