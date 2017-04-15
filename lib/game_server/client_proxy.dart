@@ -1,6 +1,7 @@
 library game_server_client_proxy;
 
 import "dart:math" as Math;
+import "dart:async";
 
 import "package:logging/logging.dart" as logging;
 
@@ -11,8 +12,9 @@ import "package:asteroidracers/shared/shared_server.dart";
 
 class ClientProxy implements IClientProxy
 {
-  static logging.Logger log = new logging.Logger("GameServer.ClientProxy");
-  final Connection _connection;
+  static logging.Logger _log = new logging.Logger("GameServer.ClientProxy");
+  Connection _connection;
+  StreamSubscription<Envelope> _streamSubscription;
   static IGameServer gameServer;
   static Map<String, MessageHandler> _messageHandlers = {
     MessageType.HANDSHAKE.name: _onHandshake,
@@ -26,8 +28,8 @@ class ClientProxy implements IClientProxy
   String get playerName => movable.displayName;
   
   ClientProxy(this._connection){
-
-    _connection.onReceiveMessage.listen(onMessage);
+    _log.fine("ClientProxy()");
+    _streamSubscription = _connection.onReceiveMessage.listen(onMessage);
     _connection.onDisconnectDelegate = _onDisconnect;
   }
   
@@ -36,7 +38,16 @@ class ClientProxy implements IClientProxy
   }
   
   _onDisconnect([e]){
+    _log.fine("_onDisconnect()");
     gameServer.disconnectClient(this);
+  }
+
+  handleDisconnect(){
+    _log.fine("handleDisconnect()");
+    _streamSubscription.cancel();
+    _streamSubscription = null;
+    _connection.onDisconnectDelegate = null;
+    _connection = null;
   }
   
   void send(Envelope envelope) {
@@ -55,11 +66,11 @@ class ClientProxy implements IClientProxy
       MessageHandler messageHandler = _messageHandlers[envelope.messageType.name];
 
       // log the message type
-      if(log.level <= logging.Level.INFO){
+      if(_log.level <= logging.Level.INFO){
         var excludedMessageTypes = [MessageType.PING_PONG, MessageType.INPUT];
         // only log packets that are not within the list of excluded message types
         if(!excludedMessageTypes.contains(envelope.messageType)){
-          log.fine("receiving message type ${envelope.messageType.name}");
+          _log.fine("receiving message type ${envelope.messageType.name}");
         }
       }
 
@@ -68,14 +79,14 @@ class ClientProxy implements IClientProxy
         messageHandler(this, envelope);
       }
       else {
-        log.warning("no appropriate message handler for messageType ${envelope.messageType} found.");
+        _log.warning("no appropriate message handler for messageType ${envelope.messageType} found.");
       }            
     }
     catch (e, stack)
     {
-      log.severe("exception during ServerProxy.onMessage: ${e.toString()}\nStack:\n$stack");
+      _log.severe("exception during ServerProxy.onMessage: ${e.toString()}\nStack:\n$stack");
       if(envelope.messageType != null){
-        log.severe("affected message type: ${envelope.messageType}");
+        _log.severe("affected message type: ${envelope.messageType}");
       }
     }
   }
@@ -201,7 +212,7 @@ class ClientProxy implements IClientProxy
     MovementInput input = new MovementInput.fromBuffer(envelope.payload);
     
     if(!client.movable.canMove){
-      log.finest("client sent player update during !canMove");
+      _log.finest("client sent player update during !canMove");
       return;
     }
     

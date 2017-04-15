@@ -13,7 +13,7 @@ abstract class AIDirector implements IServerService {
   start();
 
   IGameClient spawnClient([String name = "Major Tom"]){
-
+    _log.fine("spawnClient()");
     var connection = new LocalServerConnection(gameServer: server);
     AIGameClient client = new AIGameClient(connection);
     client.username = name;
@@ -48,6 +48,7 @@ abstract class AIDirector implements IServerService {
     _runningScripts.add(script);
     return script.run().then((_){
       _runningScripts.remove(script);
+      script.client = null;
     });
   }
 

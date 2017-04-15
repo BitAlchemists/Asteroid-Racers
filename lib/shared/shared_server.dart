@@ -10,6 +10,7 @@ abstract class IClientProxy {
   world.Movable movable;
   String get playerName;
   void send(Envelope envelope); //can we delete this? it implies knowledge about messaging
+  handleDisconnect();
 }
 
 abstract class IGameServer {

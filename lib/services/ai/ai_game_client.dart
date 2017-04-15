@@ -20,18 +20,22 @@ class AIGameClient implements IGameClient {
 
 
   AIGameClient(this._connection){
+    _log.fine("AIGameClient()");
     server = new ServerProxy(this);
     server.registerMessageHandler(net.MessageType.CHAT, (_){});
     server.onDisconnectDelegate = _onDisconnect;
   }
 
   destructor(){
+    _log.fine("destructor()");
     server.onDisconnectDelegate = null;
     server.destructor();
+    server = null;
+    _connection = null;
   }
 
   connect(){
-    _log.fine("Connecting...");
+    _log.fine("connect()");
     server.connect(_connection, username).then(_onConnect).catchError((_){
       _log.info("could not connect.");
       _onDisconnect();
@@ -39,14 +43,15 @@ class AIGameClient implements IGameClient {
   }
 
   _onConnect(_){
-    _log.fine("Connected");
+    _log.fine("_onConnect()");
   }
 
   _onDisconnect(){
-    _log.fine("Disconnected");
+    _log.fine("_onDisconnect()");
   }
 
   disconnect(){
+    _log.fine("disconnect()");
     server.disconnect();
   }
 

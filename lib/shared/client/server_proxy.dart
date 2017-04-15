@@ -18,7 +18,7 @@ class ServerConnectionState {
 }
 
 class ServerProxy {
-  logging.Logger log = new logging.Logger("BaseClient.Net.ServerProxy");
+  logging.Logger _log = new logging.Logger("BaseClient.Net.ServerProxy");
   ServerConnection _serverConnection;
   IGameClient _gameClient;
   Map<String, MessageHandler> _messageHandlers;
@@ -30,7 +30,8 @@ class ServerProxy {
   StreamSubscription _onReceiveMessageStreamSubscription;
   
   ServerProxy(this._gameClient)
-  {    
+  {
+    _log.fine("ServerProxy");
     _messageHandlers = 
       {
         MessageType.ENTITY.name: this._onEntityUpdate,
@@ -45,7 +46,9 @@ class ServerProxy {
   }
 
   destructor(){
+    _log.fine("destructor()");
     _messageHandlers = null;
+    _gameClient = null;
   }
   
   registerMessageHandler(MessageType messageType, MessageHandler messageHandler)
@@ -55,6 +58,7 @@ class ServerProxy {
   
   Future connect(ServerConnection serverConnection, String desiredUsername)
   {
+    _log.fine("connect()");
     _serverConnection = serverConnection;
 
     _serverConnection.onDisconnectDelegate = _onDisconnect;
@@ -76,18 +80,20 @@ class ServerProxy {
   
   disconnect()
   {
+    _log.fine("disconnect()");
     _serverConnection.disconnect();
+    _serverConnection = null;
   }
   
   _onDisconnect()
   {
+    _log.fine("_onDisconnect()");
     _state = ServerConnectionState.DISCONNECTED;
     this.onDisconnectDelegate();
     _onReceiveMessageStreamSubscription.cancel();
     _onReceiveMessageStreamSubscription = null;
     _serverConnection.onDisconnectDelegate = null;
     _serverConnection = null;
-
   }
   
   send(Envelope envelope)
@@ -100,7 +106,7 @@ class ServerProxy {
     try {      
       if(envelope.messageType == null)
       {
-        log.warning("message type == null");
+        _log.warning("message type == null");
         //TODO: disconnect this client
         return;
       }
@@ -108,11 +114,11 @@ class ServerProxy {
       MessageHandler messageHandler = _messageHandlers[envelope.messageType.name];
 
       // log the message type
-      if(log.level <= logging.Level.INFO){
+      if(_log.level <= logging.Level.INFO){
         var excludedMessageTypes = [MessageType.PING_PONG, MessageType.ENTITY];
         // only log packets that are not within the list of excluded message types
         if(!excludedMessageTypes.contains(envelope.messageType)){
-          log.fine("receiving message type ${envelope.messageType.name}");
+          _log.fine("receiving message type ${envelope.messageType.name}");
         }
       }
 
@@ -121,14 +127,14 @@ class ServerProxy {
         messageHandler(envelope);
       }
       else {
-        log.warning("no appropriate message handler for messageType ${envelope.messageType.name} found.");
+        _log.warning("no appropriate message handler for messageType ${envelope.messageType.name} found.");
       }            
     }
     catch (e, stack)
     {
-      log.severe("exception during ServerProxy.onMessage: ${e.toString()}\nStack:\n$stack");
+      _log.severe("exception during ServerProxy.onMessage: ${e.toString()}\nStack:\n$stack");
       if(envelope.messageType != null){
-        log.severe("affected message type: ${envelope.messageType}");
+        _log.severe("affected message type: ${envelope.messageType}");
       }
     }
   }

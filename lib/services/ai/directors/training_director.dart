@@ -116,7 +116,7 @@ class AITrainingDirector extends AIDirector {
     networksByBestReward.sort((a,b) => evaluations[a].finalScore.compareTo(evaluations[b].finalScore));
 
 
-    _log.info("Network with best reward: ${evaluations[networksByBestReward.first].finalScore}");
+    _log.info("Network with best reward: ${evaluations[networksByBestReward.first].finalScore} - worst reward: ${evaluations[networksByBestReward.last].finalScore}");
     _createReport(networksByBestReward);
 
     int survivingNetworks = Math.max((networksByBestReward.length*survivalRate).toInt(), 1);;

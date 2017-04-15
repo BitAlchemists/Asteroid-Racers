@@ -9,7 +9,14 @@ import 'package:game_loop/game_loop_common.dart';
 main() async {
   logging.Logger log = new logging.Logger("");
   log.level = logging.Level.INFO;
+  logging.hierarchicalLoggingEnabled = true;
   registerLogging(log);
+
+  logging.Logger tmp;
+  tmp = new logging.Logger("BaseClient.Net.ServerProxy");
+  tmp.level = logging.Level.INFO;
+  tmp = new logging.Logger("ai.RaceTargetTrainingScript");
+  tmp.level = logging.Level.INFO;
 
   log.info("Hi :) Starting at ${new DateTime.now()}");
 
@@ -25,26 +32,24 @@ main() async {
 
   double counter = 0.0;
   int frameCounter = 0;
-  int secondsPassed = 0;
+  double secondsPassed = 0.0;
+  const double SECONDS_PER_UPDATE = 60.0;
 
   const int FRAMES_PER_CYCLE = 100;
 
   Future.doWhile((){
-    if(frameCounter > 100000){
-      return true;
-    }
-
-    for(int i = 0; i < FRAMES_PER_CYCLE; i++){
+    //for(int i = 0; i < FRAMES_PER_CYCLE; i++){
       loop.onUpdate(loop);
-    }
-    frameCounter += FRAMES_PER_CYCLE;
+      frameCounter += 1;
+    //}
+    //frameCounter += FRAMES_PER_CYCLE;
 
     counter += loop.dt;
 
-    if(counter >= 1.0){
-      secondsPassed++;
-      counter -= 1;
-      log.info("frameCounter: $frameCounter");
+    if(counter >= SECONDS_PER_UPDATE){
+      secondsPassed += SECONDS_PER_UPDATE;
+      counter -= SECONDS_PER_UPDATE;
+      log.info("$secondsPassed simulated seconds. $frameCounter frames.");
     }
 
     return true;
