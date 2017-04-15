@@ -14,6 +14,11 @@ import "package:asteroidracers/game_server/client_proxy.dart";
 
 typedef void OnReceiveMessageFunction(Envelope envelope);
 
+/// TE 2017-04-08 This class was initially used by the Browser app if it ran the
+/// server within itself. It later was also used by the AIClient. After
+/// switching the AIClient over to Isolates it may be possible that the Web
+/// Client may also want to use Isolates in the future.
+
 class LocalServerConnection implements ServerConnection {
   logging.Logger log = new logging.Logger("LocalServerConnection");
 

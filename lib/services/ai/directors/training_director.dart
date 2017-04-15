@@ -82,11 +82,11 @@ class AITrainingDirector extends AIDirector {
     return networks;
   }
 
-  Future _runNextTrainingInstance(){
+  Future _runNextTrainingInstance() async {
     _log.finest("_runNextTrainingInstance()");
     assert(scriptFactory != null);
     var network = networks[_nextInstanceIndex++];
-    var client = spawnClient(network.name);
+    AIClientIsolateProxy client = await _runClientInIsolate(network.name);
     Script script = scriptFactory();
 
     return runScript(script, client, network).then((_){

@@ -4,6 +4,7 @@ import "dart:async";
 import "dart:math" as Math;
 import "dart:io";
 import "dart:convert";
+import "dart:isolate";
 
 import "package:neural_network/neural_network.dart";
 

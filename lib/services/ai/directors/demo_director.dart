@@ -30,7 +30,7 @@ class AIDemoDirector extends AIDirector {
           clientName = "$playername${playerCount++}";
         }
 
-        AIGameClient client = spawnClient(clientName);
+        AIGameClient client = _runClientInIsolate(clientName);
         Script script = scriptFactory();
         return runScript(script, client, network).then((_){
           despawnClient(client);
