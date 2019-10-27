@@ -12,7 +12,7 @@ class LeastDistanceToTargetsEvaluator extends Evaluator<RaceTargetTrainingScript
 
   void evaluate(RaceTargetTrainingScript script, double dt){
     Entity currentTarget = script.currentTarget;
-    double distance = script.client.movable.position.distanceTo(currentTarget.position);
+    double distance = script.client.vehicleController.movable.position.distanceTo(currentTarget.position);
 
     if(scores[currentTarget] == null){
       scores[currentTarget] = distance;
@@ -37,7 +37,7 @@ class SumOfDistanceToTargetsEvaluator extends Evaluator<RaceTargetTrainingScript
 
   void evaluate(RaceTargetTrainingScript script, double dt){
     Entity currentTarget = script.currentTarget;
-    finalScore += script.client.movable.position.distanceTo(currentTarget.position) * dt;
+    finalScore += script.client.vehicleController.movable.position.distanceTo(currentTarget.position) * dt;
   }
 }
 
@@ -48,9 +48,9 @@ class QuadraticSumOfDistanceToTargetsEvaluator extends Evaluator<RaceTargetTrain
 
   void evaluate(RaceTargetTrainingScript script, double dt){
     Entity currentTarget = script.currentTarget;
-    num distance = script.client.movable.position.distanceTo(currentTarget.position);
+    num distance = script.client.vehicleController.movable.position.distanceTo(currentTarget.position);
 
-    num score = script.client.movable.rotationSpeed.abs();
+    num score = script.client.vehicleController.movable.rotationSpeed.abs();
 
     //if(distance > currentTarget.radius) {
       score += distance;

@@ -15,12 +15,13 @@ import "package:asteroidracers/game_server/client_proxy.dart";
 typedef void OnReceiveMessageFunction(Envelope envelope);
 
 class LocalServerConnection implements ServerConnection {
-  logging.Logger log = new logging.Logger("LocalServerConnection");
+  logging.Logger log = new logging.Logger("services.net.LocalServerConnection");
 
   GameServer _gameServer;
   bool _debug;
   bool _isMaster; //is this one the master or the slave?
   LocalServerConnection _inverseConnection;
+  bool _disconnecting = false;
   IClientProxy _clientProxy;
   final StreamController<Envelope> _receiveMessageStreamController = new StreamController<Envelope>.broadcast();
   
@@ -48,6 +49,7 @@ class LocalServerConnection implements ServerConnection {
   }
   
   Future connect(){
+    log.finest("connect()");
     _inverseConnection = new LocalServerConnection._inverse(this, _debug);
     _clientProxy = new ClientProxy(_inverseConnection);
     _gameServer.connectClient(_clientProxy);
@@ -55,6 +57,10 @@ class LocalServerConnection implements ServerConnection {
   }
   
   void disconnect(){
+
+    assert(_disconnecting == false);
+    _disconnecting = true;
+
     if(_isMaster){
       _inverseConnection.disconnect();
       _clientProxy = null;
@@ -67,6 +73,8 @@ class LocalServerConnection implements ServerConnection {
   
   
   void send(Envelope envelope){
+
+    if(_disconnecting) return;
 
     var object = envelope;
 

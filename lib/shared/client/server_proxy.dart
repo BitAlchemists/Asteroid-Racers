@@ -10,6 +10,7 @@ import 'package:asteroidracers/shared/shared_client.dart';
 import "package:asteroidracers/services/net/server_connection.dart";
 
 typedef void MessageHandler(Envelope envelope);
+DoNothingMessageHandler(Envelope envelope){}
 
 class ServerConnectionState {
   static const int DISCONNECTED = 0;
@@ -18,7 +19,7 @@ class ServerConnectionState {
 }
 
 class ServerProxy {
-  logging.Logger log = new logging.Logger("BaseClient.Net.ServerProxy");
+  logging.Logger log = new logging.Logger("shared.client.ServerProxy");
   ServerConnection _serverConnection;
   IGameClient _gameClient;
   Map<String, MessageHandler> _messageHandlers;
@@ -43,13 +44,15 @@ class ServerProxy {
       };
   }
   
-  registerMessageHandler(MessageType messageType, MessageHandler messageHandler)
+  registerMessageHandler(String messageName, MessageHandler messageHandler)
   {
-    _messageHandlers[messageType.name] = messageHandler;
+    _messageHandlers[messageName] = messageHandler;
   }
-  
-  Future connect(ServerConnection serverConnection, String desiredUsername)
+
+  /// completes once the handshake is complete
+  Future connect(ServerConnection serverConnection)
   {
+    log.fine("connect()");
     _serverConnection = serverConnection;
 
     _serverConnection.onReceiveMessage.listen(_onReceiveMessage);
@@ -57,18 +60,12 @@ class ServerProxy {
     
     _state = ServerConnectionState.IS_CONNECTING;
     return _serverConnection.connect().then((_){
+      log.fine("_onConnect()");
       _state = ServerConnectionState.CONNECTED;
-
-      Handshake handshake = new Handshake();
-      handshake.username = desiredUsername;
-
-      Envelope envelope = new Envelope();
-      envelope.messageType = MessageType.HANDSHAKE;
-      envelope.payload = handshake.writeToBuffer();
-      _serverConnection.send(envelope);
     });
   }
-  
+
+
   disconnect()
   {
     _serverConnection.disconnect();
@@ -103,7 +100,7 @@ class ServerProxy {
         var excludedMessageTypes = [MessageType.PING_PONG, MessageType.ENTITY];
         // only log packets that are not within the list of excluded message types
         if(!excludedMessageTypes.contains(envelope.messageType)){
-          log.info("receiving message type ${envelope.messageType.name}");
+          log.fine("receiving message type ${envelope.messageType.name}");
         }
       }
 
@@ -126,19 +123,35 @@ class ServerProxy {
   
   _onEntityRemove(Envelope envelope)
   {
+    log.fine("_onEntityRemove()");
     IntMessage message = new IntMessage.fromBuffer(envelope.payload);
     _gameClient.removeEntity(message.integer);
   }
 
   _onEntityUpdate(Envelope envelope)
   {
+    log.fine("_onEntityUpdate()");
     Entity netEntity = new Entity.fromBuffer(envelope.payload);
     world.Entity worldEntity = EntityMarshal.netEntityToWorldEntity(netEntity);
     _gameClient.updateEntity(worldEntity);
   }
+
+  sendHandshake(String desiredUsername){
+    log.fine("sendHandshake()");
+    Handshake handshake = new Handshake();
+    handshake.username = desiredUsername;
+
+    log.fine("sending handshake");
+    Envelope envelope = new Envelope();
+    envelope.messageType = MessageType.HANDSHAKE;
+    envelope.payload = handshake.writeToBuffer();
+    _serverConnection.send(envelope);
+
+  }
   
   _onPlayer(Envelope envelope)
   {
+    log.fine("_onPlayer()");
     Entity entity = new Entity.fromBuffer(envelope.payload);
     world.Movable movable = EntityMarshal.netEntityToWorldEntity(entity);
     _gameClient.createPlayer(movable);
@@ -149,6 +162,7 @@ class ServerProxy {
   double pingAverage = 0.0;
 
   ping(){
+    log.fine("ping()");
     IntMessage message = new IntMessage();
     message.integer = new DateTime.now().millisecondsSinceEpoch - serverStartTime;
 
@@ -159,6 +173,7 @@ class ServerProxy {
   }
 
   _onPingPong(Envelope envelope){
+    log.fine("_onPingPong()");
     IntMessage message = new IntMessage.fromBuffer(envelope.payload);
     int ms = message.integer;
     int now = new DateTime.now().millisecondsSinceEpoch - serverStartTime;
@@ -172,26 +187,30 @@ class ServerProxy {
   }
   
   _onCollision(Envelope envelope){
+    log.fine("_onCollision()");
     IntMessage message = new IntMessage.fromBuffer(envelope.payload);
     _gameClient.handleCollision(message.integer);
   }
 
   _onRaceJoin(Envelope envelope){
+    log.fine("_onRaceJoin()");
     IntMessage message = new IntMessage.fromBuffer(envelope.payload);
     _gameClient.joinRace(message.integer);
   }
 
   _onRaceEvent(Envelope envelope){
+    log.fine("_onRaceEvent()");
     IntMessage message = new IntMessage.fromBuffer(envelope.payload);
     _gameClient.activateNextCheckpoint(message.integer);
   }
 
   _onRaceLeave(Envelope envelope){
-    IntMessage message = new IntMessage.fromBuffer(envelope.payload);
+    log.fine("_onRaceLeave()");
     _gameClient.leaveRace();
   }
 
   movePlayer(world.MovementInput worldMI){
+    log.fine("movePlayer()");
     MovementInput netMI = new MovementInput();
     netMI.accelerationFactor = worldMI.accelerationFactor;
     if(worldMI.newOrientation != null){
@@ -207,6 +226,7 @@ class ServerProxy {
   }
 
   requestLeaveRace(){
+    log.fine("requestLeaveRace()");
     Envelope envelope = new Envelope();
     envelope.messageType = MessageType.RACE_LEAVE;
     send(envelope);

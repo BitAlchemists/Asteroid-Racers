@@ -1,5 +1,6 @@
 library shared_server;
 
+import "dart:async";
 import "package:asteroidracers/shared/net/envelope.pb.dart";
 import "package:asteroidracers/shared/world.dart" as world;
 //import "package:asteroidracers/shared/net.dart" as net;
@@ -31,10 +32,11 @@ abstract class IGameServer {
   sendMessageToClientsExcept(Envelope envelope, IClientProxy client);
 }
 
+
 abstract class IServerService {
   IGameServer server;
 
-  void start();
+  Future start();
   void preUpdate(double dt);
   void update(double dt);
   void postUpdate(double dt);

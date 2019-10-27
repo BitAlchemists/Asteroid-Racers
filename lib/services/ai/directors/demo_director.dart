@@ -12,15 +12,15 @@ part of ai;
 class DemoDirector extends AIDirector {
   String networkName;
   List<Function> scriptFactories = <Function>[];
+  logging.Logger log = new logging.Logger("services.ai.DemoDirector");
 
   DemoDirector(this.networkName);
 
-  start(){
+  start() async{
     for(Function scriptFactory in this.scriptFactories){
-      AIGameClient client = spawnClient();
       runDemoLoopWithLatestNetwork((network){
-        Script script = scriptFactory();
-        return runScript(script, client, network).then((_){
+        Script script = scriptFactory(network);
+        return runScript(script).then((_){
           return true;
         });
       });

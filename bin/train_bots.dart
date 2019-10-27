@@ -7,14 +7,19 @@ import "package:asteroidracers/services/ai/ai.dart" as ai;
 import 'package:game_loop/game_loop_common.dart';
 
 main() async {
+  logging.hierarchicalLoggingEnabled = true;
   logging.Logger log = new logging.Logger("");
   log.level = logging.Level.INFO;
+  new logging.Logger("services.ai.AIGameClient").level = logging.Level.WARNING;
+  //new logging.Logger("shared.client.ServerProxy").level = logging.Level.WARNING;
+  //new logging.Logger("GameServer.ClientProxy").level = logging.Level.INFO;
   registerLogging(log);
 
   log.info("Hi :) Starting at ${new DateTime.now()}");
 
   GameServer gameServer = new GameServer();
   ClientProxy.gameServer = gameServer;
+  gameServer.prepareDemoConfiguration();
   ai.registerAITrainingService(gameServer);
 
   var loop = new NoGameLoop();
@@ -24,21 +29,20 @@ main() async {
   gameServer.start(loop);
 
   double counter = 0.0;
-  int frameCounter = 0;
-  int secondsPassed = 0;
 
   const int FRAMES_PER_CYCLE = 100;
 
   Future.doWhile((){
+
     for(int i = 0; i < FRAMES_PER_CYCLE; i++){
       loop.onUpdate(loop);
     }
-    frameCounter += FRAMES_PER_CYCLE;
+    //frameCounter += FRAMES_PER_CYCLE;
 
     counter += loop.dt;
 
     if(counter >= 1.0){
-      secondsPassed++;
+      //secondsPassed++;
       counter -= 1;
       //print("frameCounter: $frameCounter");
     }
@@ -72,7 +76,6 @@ class AIGameLoop extends GameLoop {
   double _previousFrameTime;
   double _frameTime = 0.0;
   double get frameTime => _frameTime;
-  double _nextResize = 0.0;
 
   double _accumulatedTime = 0.0;
   /** Seconds of accumulated time. */
@@ -98,7 +101,6 @@ class AIGameLoop extends GameLoop {
   void _processInputEvents() {
   }
 
-  double _timeLost = 0.0;
   void _update() {
     if (_previousFrameTime == null) {
       _frameTime = time;
@@ -116,7 +118,7 @@ class AIGameLoop extends GameLoop {
     if (_accumulatedTime > maxAccumulatedTime) {
       // If the animation frame callback was paused we may end up with
       // a huge time delta. Clamp it to something reasonable.
-      _timeLost += _accumulatedTime-maxAccumulatedTime;
+      //_timeLost += _accumulatedTime-maxAccumulatedTime;
       _accumulatedTime = maxAccumulatedTime;
     }
 

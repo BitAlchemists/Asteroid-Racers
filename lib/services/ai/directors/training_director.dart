@@ -9,8 +9,9 @@ class AITrainingDirector extends AIDirector {
   Function networkMutator;
   String networkName = "luke";
   List networkConfiguration;
+  logging.Logger log = new logging.Logger("services.ai.TrainingDirector");
 
-  int sampleSize = 1000;
+  int sampleSize = 1;
   // WARNING: There seems to be code missing that generates new clients when the old ones are done. So the next variable
   // has to have the same value the SAMPLE_SIZE has; for now.
   int get simultaneousSimulations => sampleSize;
@@ -57,7 +58,7 @@ class AITrainingDirector extends AIDirector {
     assert(networkMutator != null);
     List<MajorTom> networks = MajorTomSerializer.readNetworksFromFile(networkName);
     if(networks != null){
-      //print("found brains. mutating them");
+      log.info("found networks of name $networkName. mutating them");
       List newNetworks = [];
       int nameIndex = 0;
       for(MajorTom brain in networks){
@@ -75,22 +76,20 @@ class AITrainingDirector extends AIDirector {
       networks.addAll(newNetworks);
     }
     else{
-      //print("did not find existing brains. creating new ones");
+      log.info("did not find existing networks of name $networkName. creating new ones");
       networks = new List<MajorTom>.generate(sampleSize, (int index) => new MajorTom(networkConfiguration,"Luke #$index"));
     }
 
     return networks;
   }
 
-  Future _runNextTrainingInstance(){
+  Future _runNextTrainingInstance() async{
     log.finest("_runNextTrainingInstance()");
     assert(scriptFactory != null);
-    var client = spawnClient();
     var network = networks[_nextInstanceIndex++];
-    Script script = scriptFactory();
+    NetworkTrainingScript script = scriptFactory(network);
 
-    return runScript(script, client, network).then((_){
-      despawnClient(client);
+    return runScript(script).then((_){
       evaluations[script.network] = script.evaluator.finalScore;
     });
   }
@@ -100,8 +99,10 @@ class AITrainingDirector extends AIDirector {
 
   postUpdate(double dt) {
     log.finest("postUpdate()");
-    for(Script script in _runningScripts){
-      script.evaluator.evaluate(script, dt);
+    for(NetworkTrainingScript script in _runningScripts){
+      if(script.state == ScriptState.RUNNING){
+        script.evaluator.evaluate(script, dt);
+      }
     }
     super.postUpdate(dt);
   }

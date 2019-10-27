@@ -3,7 +3,7 @@ part of ai;
 
 
 class AIGameClient implements IGameClient {
-  logging.Logger log = new logging.Logger("AIGameClient");
+  logging.Logger log = new logging.Logger("services.ai.AIGameClient");
 
   String username;
   Map<int, Entity> _entities = <int, Entity>{};
@@ -20,23 +20,38 @@ class AIGameClient implements IGameClient {
 
   AIGameClient(this._connection){
     server = new ServerProxy(this);
+
+    //workaround to suppress warnings
+    server.registerMessageHandler("CHAT", DoNothingMessageHandler);
+
     server.onDisconnectDelegate = _onDisconnect;
   }
 
-  connect(){
+  Completer _connectCompleter;
+  Future connect() async {
     log.info("Connecting...");
-    server.connect(_connection, username).then(_onConnect).catchError((_){
-      log.info("could not connect.");
+    assert(_connectCompleter == null);
+    _connectCompleter = new Completer();
+
+    server.connect(_connection).then(_onConnect).catchError((error){
+      log.info("could not connect. $error");
       _onDisconnect();
     });
+
+    return _connectCompleter.future;
   }
 
   _onConnect(_){
-    log.info("Connected");
+    log.info("Connected. Sending handshake...");
+    server.sendHandshake(username);
   }
 
   _onDisconnect(){
     log.info("Disconnected");
+    if(_connectCompleter != null) {
+      _connectCompleter.completeError("error");
+      _connectCompleter = null;
+    }
   }
 
   disconnect(){
@@ -48,7 +63,7 @@ class AIGameClient implements IGameClient {
       vehicleController.step(dt);
     }
     else {
-      log.finer("vehicleController == null");
+      log.finest("vehicleController == null");
     }
   }
 
@@ -57,6 +72,10 @@ class AIGameClient implements IGameClient {
     //movable = entity;
     vehicleController.movable = entity;
     _entities[entity.id] = entity;
+
+    assert(_connectCompleter != null);
+    _connectCompleter.complete();
+    _connectCompleter = null;
   }
 
   void updateEntity(Entity updatingEntity) {
@@ -124,7 +143,7 @@ class AIGameClient implements IGameClient {
     Entity entity = _entities[entityId];
 
     if(entity is Movable){
-      (entity as Movable).canMove = false;
+      entity.canMove = false;
     }
   }
 

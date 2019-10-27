@@ -90,7 +90,7 @@ class GameServer implements IGameServer {
 
 
   start([GameLoop gameLoop]){
-      // Construct a game loop.
+    log.info("Starting Game Server...");
     if(gameLoop == null){
       gameLoop = new GameLoopIsolate();
     }
@@ -98,6 +98,7 @@ class GameServer implements IGameServer {
     gameLoop.start();
 
     for(IServerService service in _services){
+      log.info("Starting service ${service.runtimeType}");
       service.start();
     }
   }
@@ -105,6 +106,7 @@ class GameServer implements IGameServer {
   //Client-Server communication
   
   void connectClient(IClientProxy client){
+    log.finest("connectClient()");
     _clients.add(client);
 
     ChatMessage chatMessage = new ChatMessage();
@@ -180,7 +182,7 @@ class GameServer implements IGameServer {
     _joinRaceCollisionDetector.detectCollisions(_onPlayerTouchRacePortal);
   }
 
-
+/*
   _onPlayerCollisionBounce(Movable playerEntity, Entity otherEntity, double penetration){
     logging.Logger log = new logging.Logger("GameServer.CollisionBounce");
     log.level = logging.Level.ALL;
@@ -223,6 +225,7 @@ class GameServer implements IGameServer {
 
     playerEntity.updateRank += 1;
   }
+*/
 
   _onPlayerCollisionExplode(Movable playerEntity, Entity otherEntity, double penetration){
     _crashCollisionDetector.activeEntities.remove(playerEntity);

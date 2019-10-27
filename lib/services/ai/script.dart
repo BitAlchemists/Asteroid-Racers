@@ -9,9 +9,6 @@ enum ScriptState {
 abstract class Script {
   ScriptState state = ScriptState.READY;
   AIDirector director;
-  AIGameClient client;
-  Network network;
-  Evaluator evaluator;
 
   Script();
 
@@ -19,3 +16,8 @@ abstract class Script {
   void step(double dt);
 }
 
+abstract class NetworkTrainingScript extends Script {
+  Network network;
+  Evaluator evaluator;
+  AIGameClient client;
+}

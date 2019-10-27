@@ -15,6 +15,8 @@ class TargetVehicleController extends VehicleController {
 
   _calcNextMove(){
 
+    assert(network != null);
+
     if(target == null){
       //we don't have a target, we don't need to move
       return;

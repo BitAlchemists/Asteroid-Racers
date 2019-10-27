@@ -15,7 +15,6 @@ import "package:logging/logging.dart" as logging;
 import "package:asteroidracers/shared/logging.dart";
 import "package:asteroidracers/shared/shared_client.dart";
 import 'package:asteroidracers/shared/ui.dart';
-import "package:asteroidracers/shared/net.dart" as net; //todo: remove this and layer all its code out to serverproxy
 import "package:asteroidracers/services/net/server_connection.dart";
 import 'package:asteroidracers/services/chat/chat_client.dart';
 import "package:asteroidracers/shared/client/server_proxy.dart";
@@ -128,7 +127,7 @@ class GameClient implements IGameClient, stagexl.Animatable {
     _chat.onSendChatMesage.listen(server.send);
     // register the chat controller for chat messages. The server proxy will send them to the chat controller
     log.finest("register message handler");
-    server.registerMessageHandler(net.MessageType.CHAT, _chat.onReceiveMessage);
+    server.registerMessageHandler("CHAT", _chat.onReceiveMessage);
     // send log messages to onReceiveLogMessage()
     log.finest("listen to received messages");
   }
@@ -147,10 +146,8 @@ class GameClient implements IGameClient, stagexl.Animatable {
   }
   
   connect(ServerConnection connection){
-    String username = _renderer.gui.username;
-    
     log.info("Connecting...");
-    server.connect(connection, username).then(_onConnect).catchError((html.Event e){
+    server.connect(connection).then(_onConnect).catchError((html.Event e){
       log.info("could not connect.");
       _chat.displayNotice("Could not connect.");
       _onDisconnect();
@@ -176,6 +173,9 @@ class GameClient implements IGameClient, stagexl.Animatable {
     //change the render order to prevent multiplayer spaceship jitter
     _renderer.stage.juggler.remove(_renderer);
     _renderer.stage.juggler.add(_renderer);
+
+    String username = _renderer.gui.username;
+    server.sendHandshake(username);
   }
   
   disconnect(){
