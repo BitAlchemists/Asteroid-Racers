@@ -28,6 +28,7 @@ class ServerProxy {
   
   int get state => _state;
   ServerConnection get connection => _serverConnection;
+  StreamSubscription _onReceiveSubscription;
   
   ServerProxy(this._gameClient)
   {    
@@ -55,7 +56,7 @@ class ServerProxy {
     log.fine("connect()");
     _serverConnection = serverConnection;
 
-    _serverConnection.onReceiveMessage.listen(_onReceiveMessage);
+    _onReceiveSubscription = _serverConnection.onReceiveMessage.listen(_onReceiveMessage);
     _serverConnection.onDisconnectDelegate = _onDisconnect;
     
     _state = ServerConnectionState.IS_CONNECTING;
@@ -73,7 +74,10 @@ class ServerProxy {
   
   _onDisconnect()
   {
+    _onReceiveSubscription.cancel();
+    _onReceiveSubscription = null;
     _state = ServerConnectionState.DISCONNECTED;
+    _serverConnection.onDisconnectDelegate = null;
     _serverConnection = null;
     this.onDisconnectDelegate();
   }

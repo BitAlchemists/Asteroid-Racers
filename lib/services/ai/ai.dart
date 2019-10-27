@@ -20,8 +20,11 @@ import "package:asteroidracers/shared/client/server_proxy.dart";
 
 part "ai_director.dart";
 part "vehicle_control/vehicle_controller.dart";
+part "network/network_serializer.dart";
 part "network/major_tom.dart";
 part "network/major_tom_serializer.dart";
+part "network/rnn.dart";
+part "network/rnn_serializer.dart";
 part "script.dart";
 part "evaluator.dart";
 part "ai_game_client.dart";
@@ -40,7 +43,7 @@ Math.Random random = new Math.Random();
 
 
 //Training config
-const int AI_TRAINING_SAMPLE_SIZE = 100;
+const int AI_TRAINING_SAMPLE_SIZE = 10;
 const int AI_TRAINING_TARGETS = 20;
 const int AI_TRAINING_FRAMES = 9000~/15;
 const double AI_TRAINING_TARGET_DISTANCE = 1000.0;
@@ -48,8 +51,35 @@ const double AI_TRAINING_TARGET_DISTANCE_RANGE = 1000.0;
 
 logging.Logger log = new logging.Logger("services.ai");
 
-registerAITrainingService(IGameServer gameServer){
-  log.finest("registerAITrainingService");
+registerRNNTrainingService(IGameServer gameServer) {
+  log.finest("registerRNNTrainingService");
+
+  var targets = createTrainingTargets(gameServer);
+  AITrainingDirector trainer;
+
+  trainer = new AITrainingDirector();
+  trainer.scriptFactory = (network){
+    NetworkTrainingScript script = new RespawnTargetTrainingScript(network, targets, new Vector2.zero(), AI_TRAINING_FRAMES);
+    script.evaluator = new QuadraticSumOfDistanceToTargetsEvaluator();
+    return script;
+  };
+  trainer.networkName = "RNN #1";
+  trainer.networkMutator = (RNN rnn){rnn.mutate();};
+  trainer.networkSerializer = new RNNSerializer();
+  trainer.networkFactory = (name){
+    return new RNN.generate([4,2], name);
+  };
+
+  trainer.sampleSize = AI_TRAINING_SAMPLE_SIZE;
+// LeastDistanceToTargetsEvaluator
+// SumOfDistanceToTargetsEvaluator
+// TimeToTargetEvaluator
+  gameServer.registerService(trainer);
+
+}
+
+registerMajorTomAITrainingService(IGameServer gameServer){
+  log.finest("registerAITrainingService()");
   Function networkMutator = (MajorTom network){
     double MUTATION_RATE = 0.1;
     double MUTATION_STRENGTH = 1.0;
@@ -67,8 +97,8 @@ registerAITrainingService(IGameServer gameServer){
   };
   trainer.networkMutator = networkMutator;
   trainer.networkName = "QuadraticSumOfDistanceToTargets_4_10_8_6_4_2";
-  trainer.networkConfiguration = [4,10,8,6,4,2];
   trainer.sampleSize = AI_TRAINING_SAMPLE_SIZE;
+  trainer.networkSerializer = new MajorTomSerializer();
   // LeastDistanceToTargetsEvaluator
   // SumOfDistanceToTargetsEvaluator
   // TimeToTargetEvaluator
@@ -78,27 +108,31 @@ registerAITrainingService(IGameServer gameServer){
 
 registerAIDemoService(IGameServer gameServer){
   log.finest("registerAIDemoService");
-  DemoDirector ai;
+  DemoDirector director;
   // LeastDistanceToTargetsEvaluator
   // SumOfDistanceToTargetsEvaluator
   // TimeToTargetEvaluator
 
-  ai = new DemoDirector("QuadraticSumOfDistanceToTargets_4_10_8_6_4_2");
+  director = new DemoDirector("RNN #1");
 
   Vector2 center = new Vector2(-300.0,-600.0);
-  ai.scriptFactories.add(()=>new RespawnTargetTrainingScript(
+  director.scriptFactories.add((network)=>new RespawnTargetTrainingScript(
+      network,
       createTrainingTargets(gameServer, center),
       center,
       AI_TRAINING_FRAMES));
+  director.serializer = new RNNSerializer();
 
+  /*
   List targets = createDemoRaceTrackTargets(gameServer, new Vector2(0.0,600.0));
-  ai.scriptFactories.add((network)=>new RaceTargetTrainingScript(
+  director.scriptFactories.add((network)=>new RaceTargetTrainingScript(
       network,
       targets,
       targets.first.position,
       36000~/15));
+      */
 
-  gameServer.registerService(ai);
+  gameServer.registerService(director);
 }
 
 registerAIRacingService(IGameServer gameServer){

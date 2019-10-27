@@ -4,7 +4,7 @@ part of ai;
  * For use in a training context to respawn after each attempt to reach a target
  */
 class RaceTargetTrainingScript extends NetworkTrainingScript {
-  Network network;
+  NeuralNetwork network;
   Evaluator evaluator;
   AIGameClient client;
 

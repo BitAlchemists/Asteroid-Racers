@@ -17,7 +17,7 @@ abstract class Script {
 }
 
 abstract class NetworkTrainingScript extends Script {
-  Network network;
+  NeuralNetwork network;
   Evaluator evaluator;
   AIGameClient client;
 }

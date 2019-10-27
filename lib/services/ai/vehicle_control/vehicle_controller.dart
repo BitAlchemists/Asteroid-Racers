@@ -3,7 +3,7 @@ part of ai;
 
 
 abstract class VehicleController {
-  Network network;
+  NeuralNetwork network;
   AIGameClient client;
   Movable movable;
 

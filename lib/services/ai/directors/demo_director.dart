@@ -13,6 +13,7 @@ class DemoDirector extends AIDirector {
   String networkName;
   List<Function> scriptFactories = <Function>[];
   logging.Logger log = new logging.Logger("services.ai.DemoDirector");
+  NetworkSerializer serializer;
 
   DemoDirector(this.networkName);
 
@@ -29,7 +30,7 @@ class DemoDirector extends AIDirector {
 
   runDemoLoopWithLatestNetwork (runFunction){
     Future.doWhile((){
-      List<MajorTom> networks = MajorTomSerializer.readNetworksFromFile(networkName);
+      List<MajorTom> networks = serializer.readNetworksFromFile(networkName);
 
       if (networks != null && networks.length > 0) {
         return runFunction(networks[0]);

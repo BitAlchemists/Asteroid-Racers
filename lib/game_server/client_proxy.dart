@@ -1,9 +1,9 @@
 library game_server_client_proxy;
 
 import "dart:math" as Math;
+import "dart:async";
 
 import "package:logging/logging.dart" as logging;
-
 import "package:asteroidracers/shared/net.dart";
 import "package:asteroidracers/shared/world.dart" as world;
 import "package:asteroidracers/shared/shared_server.dart";
@@ -14,6 +14,8 @@ class ClientProxy implements IClientProxy
   static logging.Logger log = new logging.Logger("GameServer.ClientProxy");
   final Connection _connection;
   static IGameServer gameServer;
+  StreamSubscription _onReceiveSubscription;
+
   static Map<String, MessageHandler> _messageHandlers = {
     MessageType.HANDSHAKE.name: _onHandshake,
     MessageType.INPUT.name: _onPlayerInput,
@@ -26,8 +28,7 @@ class ClientProxy implements IClientProxy
   String get playerName => movable.displayName;
   
   ClientProxy(this._connection){
-
-    _connection.onReceiveMessage.listen(onMessage);
+    _onReceiveSubscription = _connection.onReceiveMessage.listen(onMessage);
     _connection.onDisconnectDelegate = _onDisconnect;
   }
   
@@ -37,6 +38,9 @@ class ClientProxy implements IClientProxy
   
   _onDisconnect([e]){
     gameServer.disconnectClient(this);
+    _onReceiveSubscription.cancel();
+    _onReceiveSubscription = null;
+    _connection.onDisconnectDelegate = null;
   }
   
   void send(Envelope envelope) {

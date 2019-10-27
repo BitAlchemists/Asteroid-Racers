@@ -23,7 +23,7 @@ class LocalServerConnection implements ServerConnection {
   LocalServerConnection _inverseConnection;
   bool _disconnecting = false;
   IClientProxy _clientProxy;
-  final StreamController<Envelope> _receiveMessageStreamController = new StreamController<Envelope>.broadcast();
+  StreamController<Envelope> _receiveMessageStreamController;
   
   Stream<Envelope> get onReceiveMessage => _receiveMessageStreamController.stream;
   Function onDisconnectDelegate;
@@ -41,11 +41,13 @@ class LocalServerConnection implements ServerConnection {
       _gameServer.start();
     }
     _isMaster = true;
+    _receiveMessageStreamController = new StreamController<Envelope>.broadcast();
   }
   
   LocalServerConnection._inverse(this._inverseConnection, this._debug)
   {
     _isMaster = false;
+    _receiveMessageStreamController = new StreamController<Envelope>.broadcast();
   }
   
   Future connect(){
@@ -63,12 +65,14 @@ class LocalServerConnection implements ServerConnection {
 
     if(_isMaster){
       _inverseConnection.disconnect();
-      _clientProxy = null;
     }
-    
-    
+
+    _clientProxy = null;
     _inverseConnection = null;
+    _receiveMessageStreamController.close();
+    _receiveMessageStreamController = null;
     this.onDisconnectDelegate();
+    _gameServer = null;
   }
   
   

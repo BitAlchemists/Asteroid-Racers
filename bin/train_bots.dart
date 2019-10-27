@@ -20,7 +20,7 @@ main() async {
   GameServer gameServer = new GameServer();
   ClientProxy.gameServer = gameServer;
   gameServer.prepareDemoConfiguration();
-  ai.registerAITrainingService(gameServer);
+  ai.registerRNNTrainingService(gameServer);
 
   var loop = new NoGameLoop();
   //loop.updateTimeStep = 0.0001;

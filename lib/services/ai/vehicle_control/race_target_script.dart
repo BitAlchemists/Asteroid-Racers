@@ -6,7 +6,7 @@ part of ai;
 class RaceTargetScript extends Script {
 
   AIGameClient client;
-  Network network;
+  NeuralNetwork network;
   Completer _completer;
   TargetVehicleController _vehicleController;
   logging.Logger log = new logging.Logger("services.ai.RaceTargetScript");

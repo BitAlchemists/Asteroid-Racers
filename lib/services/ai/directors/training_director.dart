@@ -7,8 +7,9 @@ int rewardCompare(double reward1, double reward2) => reward1.compareTo(reward2);
 class AITrainingDirector extends AIDirector {
   Function scriptFactory;
   Function networkMutator;
+  Function networkFactory;
   String networkName = "luke";
-  List networkConfiguration;
+  NetworkSerializer networkSerializer;
   logging.Logger log = new logging.Logger("services.ai.TrainingDirector");
 
   int sampleSize = 1;
@@ -16,14 +17,16 @@ class AITrainingDirector extends AIDirector {
   // has to have the same value the SAMPLE_SIZE has; for now.
   int get simultaneousSimulations => sampleSize;
 
-  List<MajorTom> networks;
-  Map<MajorTom, double> evaluations;
+  List<NeuralNetwork> networks;
+  Map<NeuralNetwork, double> evaluations;
   List<Script> runningScripts;
   int _nextInstanceIndex;
 
   start(){
     _startTraining();
   }
+
+  int _iterations = 0;
 
   _startTraining(){
     log.finer("_startTraining()");
@@ -46,7 +49,7 @@ class AITrainingDirector extends AIDirector {
     if(networks == null){
       networks = _prepareNetworks();
     }
-    evaluations = new Map<MajorTom, double>.fromIterable(
+    evaluations = new Map<NeuralNetwork, double>.fromIterable(
         networks,
         key:(network) => network,
         value:(_) => 0.0);
@@ -56,16 +59,16 @@ class AITrainingDirector extends AIDirector {
   _prepareNetworks(){
     log.finest("_prepareNetworks()");
     assert(networkMutator != null);
-    List<MajorTom> networks = MajorTomSerializer.readNetworksFromFile(networkName);
+    List<NeuralNetwork> networks = networkSerializer.readNetworksFromFile(networkName);
     if(networks != null){
       log.info("found networks of name $networkName. mutating them");
       List newNetworks = [];
       int nameIndex = 0;
-      for(MajorTom brain in networks){
-        var jsonBrain = MajorTomSerializer.networkToJson(brain);
+      for(NeuralNetwork brain in networks){
+        var jsonBrain = networkSerializer.networkToJson(brain);
         for(int i = 0; i < sampleSize-1; i++)
         {
-          MajorTom network = MajorTomSerializer.jsonToNetwork(jsonBrain);
+          NeuralNetwork network = networkSerializer.jsonToNetwork(jsonBrain);
           network.name = "Major Tom #$nameIndex"; nameIndex++;
           network.generation++;
           //brain.best_reward = double.MAX_FINITE;
@@ -77,7 +80,7 @@ class AITrainingDirector extends AIDirector {
     }
     else{
       log.info("did not find existing networks of name $networkName. creating new ones");
-      networks = new List<MajorTom>.generate(sampleSize, (int index) => new MajorTom(networkConfiguration,"Luke #$index"));
+      networks = new List<NeuralNetwork>.generate(sampleSize, (int index) => networkFactory("Luke #$index"));
     }
 
     return networks;
@@ -111,16 +114,16 @@ class AITrainingDirector extends AIDirector {
   _finishTraining(){
     log.finer("_finishTraining()");
 
-    List<MajorTom> networksByBestReward = evaluations.keys.toList();
+    List<NeuralNetwork> networksByBestReward = evaluations.keys.toList();
     networksByBestReward.sort((a,b) => evaluations[a].compareTo(evaluations[b]));
 
     _createReport(networksByBestReward);
 
-    MajorTom bestTrainingSet = networksByBestReward.first;
+    NeuralNetwork bestTrainingSet = networksByBestReward.first;
     bestTrainingSet.name = "Winner from last round";
-    List<MajorTom> survivors = [bestTrainingSet];
+    List<NeuralNetwork> survivors = [bestTrainingSet];
 
-    MajorTomSerializer.writeNetworksToFile(survivors, networkName);
+    networkSerializer.writeNetworksToFile(survivors, networkName);
 
     networks = null;
     evaluations = null;
@@ -128,7 +131,7 @@ class AITrainingDirector extends AIDirector {
 
   File file;
 
-  _createReport(List<MajorTom> networksByBestReward){
+  _createReport(List<NeuralNetwork> networksByBestReward){
     log.finest("_createReport()");
 
     DateTime now = new DateTime.now();

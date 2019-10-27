@@ -50,8 +50,8 @@ Future runServer(List filePaths, String logPath, int port) {
 
   gameServer.prepareDemoConfiguration();
 
-  //ai.registerAIDemoService(gameServer);
-  ai.registerAIRacingService(gameServer);
+  ai.registerAIDemoService(gameServer);
+  //ai.registerAIRacingService(gameServer);
 
   gameServer.start();
 

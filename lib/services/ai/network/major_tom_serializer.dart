@@ -1,20 +1,7 @@
 part of ai;
 
-
-/*
-
-  [ [ generation: 1,
-      outputLayer:
-      [
-
-      ]
-  ]
-
-
- */
-
-class MajorTomSerializer {
-  static Object networkToJson(MajorTom network){
+class MajorTomSerializer implements NetworkSerializer {
+  Object networkToJson(MajorTom network){
     Map raw = {"generation":network.generation, "name": network.name};
     // "best_reward":network.best_reward
     List rawLayers = [];
@@ -29,7 +16,7 @@ class MajorTomSerializer {
         rawLayer.add(rawNeuron);
 
         for(Connection connection in neuron.inputConnections){
-          rawNeuron.add(connection.weightValue);
+          rawNeuron.add(connection.weight);
         }
       }
     }
@@ -39,7 +26,7 @@ class MajorTomSerializer {
     return raw;
   }
 
-  static MajorTom jsonToNetwork(Object json){
+  MajorTom jsonToNetwork(Object json){
     Map raw = json as Map;
     List rawLayers = raw["layers"];
 
@@ -68,7 +55,7 @@ class MajorTomSerializer {
         for(int inputConnectionIndex = 0; inputConnectionIndex < previousLayer.neurons.length + 1; inputConnectionIndex++)
         {
           Connection connection = neuron.inputConnections[inputConnectionIndex];
-          connection.weight.value = rawNeuron[inputConnectionIndex];
+          connection.weight = rawNeuron[inputConnectionIndex];
         }
       }
 
@@ -80,7 +67,7 @@ class MajorTomSerializer {
 
 
 
-  static List<MajorTom> readNetworksFromFile(String networkName) {
+  List<MajorTom> readNetworksFromFile(String networkName) {
     Directory logDirectory = new Directory.fromUri(new Uri.file(Directory.current.path + "/db/$networkName"));
     String networksFilePath = logDirectory.path + "/luke.txt";
 
@@ -95,7 +82,7 @@ class MajorTomSerializer {
     return null;
   }
 
-  static void writeNetworksToFile(Iterable<MajorTom> lukes, String networkName) {
+  void writeNetworksToFile(Iterable<MajorTom> lukes, String networkName) {
     Directory logDirectory = new Directory.fromUri(new Uri.file(Directory.current.path + "/db/$networkName"));
     logDirectory.createSync(recursive:true);
     String networksFilePath = logDirectory.path + "/luke.txt";
