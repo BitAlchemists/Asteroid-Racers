@@ -1,0 +1,9 @@
+syntax = "proto2";
+// Ported verbatim from lib/services/chat/shared/chat_message.proto — keep wire-compatible.
+
+package chat_message;
+
+message ChatMessage{
+    optional string from = 1;
+    required string text = 2;
+}

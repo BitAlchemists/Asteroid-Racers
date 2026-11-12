@@ -1,0 +1,9 @@
+syntax = "proto2";
+// Ported verbatim from lib/shared/net/transfer_objects/handshake.proto — keep wire-compatible.
+
+package net_handshake;
+
+message Handshake
+{
+    optional string username = 1;
+}

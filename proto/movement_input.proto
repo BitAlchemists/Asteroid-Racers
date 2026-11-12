@@ -1,0 +1,12 @@
+syntax = "proto2";
+// Ported verbatim from lib/shared/net/transfer_objects/movement_input.proto — keep wire-compatible.
+
+package net_movement_input;
+
+message MovementInput {
+    optional double accelerationFactor = 1;
+    optional double newOrientation = 2;
+    optional double rotationSpeed = 3;
+}
+
+

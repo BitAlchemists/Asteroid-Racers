@@ -1,0 +1,10 @@
+version: v2
+inputs:
+  - directory: proto
+plugins:
+  - local: protoc-gen-es
+    out: packages/shared/src/net/proto/gen
+    opt:
+      - target=ts
+    include_imports: true
+clean: true

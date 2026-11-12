@@ -1,0 +1,17 @@
+syntax = "proto2";
+// Ported verbatim from lib/shared/net/transfer_objects/race.proto — keep wire-compatible.
+
+package net_race;
+
+
+message RaceJoin {
+    required int32 id = 1;
+}
+
+message RaceEvent {
+    required int32 nextActiveCheckpointEntityId = 1;
+}
+
+message RaceLeave {
+
+}

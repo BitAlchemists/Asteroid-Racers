@@ -1,0 +1,13 @@
+{
+  "name": "@ar/server",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Authoritative game server (runs in Node and in the browser)",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@ar/shared": "*"
+  }
+}

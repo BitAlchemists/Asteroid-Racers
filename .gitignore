@@ -1,11 +1,24 @@
-packages/
-packages
-pubspec.lock
-lib/server/logs
-build/
-log/
-.pub
-.DS_Store
-.idea
-.packages
+# Node
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+.vite/
+
+# Runtime data (trained networks, logs)
 db/
+log/
+logs/
+
+# Legacy Dart tooling
+legacy/dart/.packages
+legacy/dart/.pub/
+legacy/dart/packages/
+legacy/dart/pubspec.lock
+legacy/dart/build/
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json

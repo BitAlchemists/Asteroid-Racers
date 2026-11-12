@@ -1,0 +1,18 @@
+{
+  "name": "@ar/node",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Node entry points: HTTP/WebSocket host, bot runner, trainer",
+  "scripts": {
+    "start": "tsx src/main.ts"
+  },
+  "dependencies": {
+    "@ar/shared": "*",
+    "@ar/server": "*",
+    "ws": "^8.23.0"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.18.2"
+  }
+}

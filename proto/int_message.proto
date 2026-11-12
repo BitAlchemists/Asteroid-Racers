@@ -1,0 +1,8 @@
+syntax = "proto2";
+// Ported verbatim from lib/shared/net/transfer_objects/int_message.proto — keep wire-compatible.
+
+package net_int_message;
+
+message IntMessage {
+    required uint32 integer = 1;
+}

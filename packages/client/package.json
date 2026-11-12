@@ -1,0 +1,14 @@
+{
+  "name": "@ar/client",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "PixiJS game client",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@ar/shared": "*",
+    "pixi.js": "^8.23.0"
+  }
+}
