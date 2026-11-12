@@ -65,7 +65,7 @@ Each phase ends with something runnable.
 
 **0. Setup** ✅ — npm workspaces, TS project refs, ESLint + Prettier, Vitest, Vite (multi-page), `proto/` + `buf generate` → `packages/shared/src/net/proto/gen`, wire-format golden test. Dart sources moved to `legacy/dart/` for reference while porting (deleted in phase 6); original tree tagged `dart-legacy`. Port work lives on branch `node-port`.
 
-**1. Shared core** — `Vector2`, `Entity`/`Movable`/`Checkpoint`/`RacePortal` (Dart enums-as-classes → TS enums), `World`, `PhysicsSimulator`, `EntityMarshal` (entity ⇄ protobuf), `Envelope` dispatch. Unit tests for physics & marshalling (golden values from the Dart implementation).
+**1. Shared core** ✅ — `Vector2` (vector_math-style API, float64 instead of float32), `wrapAngle`, `Entity`/`Movable`/`Checkpoint`/`RacePortal` (Dart enums → TS enums with identical wire values), `World`, `PhysicsSimulator` (same Euler order), `EntityMarshal`, typed `payloadSchemas` + `MessageDispatcher` (replaces the string-keyed handler maps), `Connection` interface, hierarchical logger. 43 unit tests; physics expectations are hand-derived from the Dart algorithm since Dart 1.x can no longer be run.
 
 **2. Server (headless)** — `GameServer`, `ClientProxy`, `CollisionDetector`, `RaceController`, `SceneController`, chat server. Fixed-timestep loop. Test with a scripted fake client: handshake → input → entity updates → race join/finish.
 
