@@ -25,6 +25,8 @@ export interface LocalConnectionOptions {
    * for the headless trainer, which steps the server in a tight loop.
    */
   delivery?: "microtask" | "sync";
+  /** False makes the player a ghost: no crashes and no race joining (AI training bots). */
+  canCollide?: boolean;
 }
 
 /** One direction-agnostic end of the in-memory pipe. */
@@ -100,9 +102,9 @@ export class LocalServerConnection implements ServerConnection {
 
   constructor(
     private readonly server: GameServer,
-    { encode = false, delivery = "microtask" }: LocalConnectionOptions = {},
+    { encode = false, delivery = "microtask", canCollide = true }: LocalConnectionOptions = {},
   ) {
-    this.options = { encode, delivery };
+    this.options = { encode, delivery, canCollide };
   }
 
   get connected(): boolean {
@@ -117,7 +119,7 @@ export class LocalServerConnection implements ServerConnection {
     link.client.onDisconnect(() => this.events.emitDisconnect());
 
     log.finest("connect()");
-    const proxy = new ClientProxy(link.server, this.server);
+    const proxy = new ClientProxy(link.server, this.server, this.options.canCollide);
     this.server.connectClient(proxy);
     return Promise.resolve();
   }

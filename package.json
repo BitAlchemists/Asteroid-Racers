@@ -20,7 +20,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "proto": "buf generate",
-    "check": "npm run typecheck && npm run lint && npm run format:check && npm run test"
+    "check": "npm run typecheck && npm run lint && npm run format:check && npm run test",
+    "train": "npm run train -w @ar/node --",
+    "bot": "npm run bot -w @ar/node --"
   },
   "devDependencies": {
     "@bufbuild/buf": "^1.75.0",

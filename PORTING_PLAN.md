@@ -76,16 +76,16 @@ Each phase ends with something runnable.
 - singleplayer: server + client in one page via LocalServerConnection
 - multiplayer: client → WebSocket → Node server
 
-**5. AI (neuro-evolution)** —
+**5. AI (neuro-evolution)** ✅
 
-- `MajorTom` MLP (tanh, bias neuron, weights in [-1, 1]) + relative/absolute mutators, hand-written, no ML library.
-- JSON serializer compatible with the old `db/<name>/` format (so old brains load if they turn up).
-- Bots as clients: `AIGameClient`, `VehicleController`, `TargetVehicleController` (same 4 inputs / 2 outputs), `TargetGenerator`.
-- Scripts: `RaceTargetScript`, `RaceTargetTrainingScript`, `RespawnTargetTrainingScript`.
-- Evaluators: least-distance, sum-distance, quadratic-sum (default), time-to-target.
-- Directors: training (evolution loop, report log) and demo (load nets, race in live world).
-- `npm run train` (headless, max-speed loop, optional `worker_threads` for parallel populations) and `npm run bot`.
-- Ship a freshly trained default brain in the repo so demo bots work out of the box.
+- `MajorTom`: tanh MLP on Float64Array weights (layout 4-10-8-6-4-2), relative/absolute mutators. JSON identical to the Dart `MajorTomSerializer` (bias weight first per neuron). **Bug found:** the Dart bias neuron always output 0, so bias weights never mattered; new brains use 1 and store `bias_output`, old files load with 0 and behave as trained.
+- Bots are real clients (`AIGameClient` over `LocalServerConnection`, or WebSocket via `npm run bot`); `TargetVehicleController` computes the same 4 inputs / 2 outputs.
+- Scripts: `RaceTargetScript` (join race, chase checkpoints after a 5 s delay; timers on game time), `RaceTargetTrainingScript`, `RespawnTargetTrainingScript`. Evaluators: least / sum / quadratic-sum (default) / time. `TargetGenerator`: flux-compensator course, circle, ring track.
+- Directors: `DemoDirector` (latest brain from a `BrainStore`, loops its scripts, backs off on failures) and `TrainingDirector` (winner + 99 mutants fly at once, winner saved, per-run log).
+- Training fixes vs. `master`: training bots are ghosts (`canCollide: false`, as in the collision-free `aahhh` training); the training server sends every bot its own ship each tick (the 2-per-tick throttle starved 100 bots) and delivers messages synchronously so bots react in the same frame. The `aahhh` leak fixes (cancel subscriptions, drop references on disconnect) are covered by the phase 3/4 connection cleanup.
+- `npm run train` (~5 s per 100-brain generation; `db/<name>/luke.txt` + log; Ctrl+C keeps the last winner) and `npm run bot`. The Node server and singleplayer add one racing bot (`BOTS=n`, `?bots=n`); a trained brain in `db/` overrides the bundled one.
+- Bundled brain is **interim**: 48 generations (seed 2026, best score 69.5k → 33.9k, plateaued at brain gen 15). A proper training run is postponed — run `npm run train -- --generations 200 --export packages/server/src/ai/brains/default-brain.json` (~16 min) and commit the result.
+- Not done: `worker_threads` parallelism (not needed at this speed); the `rnn` branch (by decision).
 
 **6. Modernize & clean up** — leak audit (fold in `aahhh` findings: subscriptions not cancelled, clients not destroyed), replace stringly-typed handlers with typed message map, delete `_needs_refactoring`, README with new run instructions, deploy notes (old `gh-pages` branch → static Vite build).
 

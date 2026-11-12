@@ -1,15 +1,24 @@
 import { startGame } from "@ar/client";
-import { ChatServer, GameServer, LocalServerConnection, RealtimeGameLoop } from "@ar/server";
+import {
+  ChatServer,
+  GameServer,
+  LocalServerConnection,
+  RealtimeGameLoop,
+  registerAIRacingService,
+} from "@ar/server";
 
-// Singleplayer: the authoritative server runs right here in the page.
+const params = new URLSearchParams(location.search);
+
+// Singleplayer: the authoritative server runs right here in the page, with a racing bot to beat
+// (`?bots=n` for more or none).
 const server = new GameServer().prepareDemoConfiguration();
 server.registerService(new ChatServer());
-// AI racers join here once the AI service is ported (phase 5).
+const bots = params.has("bots") ? Math.max(0, Number(params.get("bots")) || 0) : 1;
+if (bots > 0) registerAIRacingService(server, undefined, { bots });
 await server.start(new RealtimeGameLoop());
 
-const debug = new URLSearchParams(location.search);
 await startGame({
   // `?encode` round-trips every message through protobuf, like the network would (catches codec bugs).
-  connection: () => new LocalServerConnection(server, { encode: debug.has("encode") }),
-  debugCollisions: debug.has("collisions"),
+  connection: () => new LocalServerConnection(server, { encode: params.has("encode") }),
+  debugCollisions: params.has("collisions"),
 });

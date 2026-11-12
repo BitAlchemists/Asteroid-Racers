@@ -1,8 +1,18 @@
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { getLogger } from "@ar/shared";
-import { ChatServer, ClientProxy, GameServer, RealtimeGameLoop, type GameLoop } from "@ar/server";
+import {
+  bundledBrains,
+  ChatServer,
+  ClientProxy,
+  DEFAULT_BRAIN_NAME,
+  GameServer,
+  RealtimeGameLoop,
+  registerAIRacingService,
+  type GameLoop,
+} from "@ar/server";
 import { WebSocketServer } from "ws";
+import { FileBrainStore } from "./file-brain-store";
 import { createStaticHandler } from "./static-files";
 import { WebSocketClientConnection } from "./web-socket-client-connection";
 
@@ -104,9 +114,25 @@ export async function startHost({
   };
 }
 
-export function createDefaultGameServer(): GameServer {
+export interface DefaultGameServerOptions {
+  /** Racing bots to add (default 1, like the Dart server). */
+  bots?: number;
+  /** Brain directory; a brain trained there wins over the bundled one. */
+  brainDir?: string;
+}
+
+/** The demo world with chat and racing bots. */
+export function createDefaultGameServer({
+  bots = 1,
+  brainDir = "db",
+}: DefaultGameServerOptions = {}): GameServer {
   const server = new GameServer().prepareDemoConfiguration();
   server.registerService(new ChatServer());
-  // The AI racing service is registered here once it is ported (phase 5).
+  if (bots > 0) {
+    const trained = new FileBrainStore(brainDir);
+    const store = trained.load(DEFAULT_BRAIN_NAME) ? trained : bundledBrains();
+    log.info(`racing bots use ${store === trained ? trained.path(DEFAULT_BRAIN_NAME) : "the bundled brain"}`);
+    registerAIRacingService(server, store, { bots });
+  }
   return server;
 }

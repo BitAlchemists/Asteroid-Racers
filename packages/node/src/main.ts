@@ -2,7 +2,7 @@ import { existsSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Level, setLogLevel } from "@ar/shared";
-import { DEFAULT_PORT, startHost } from "./host";
+import { createDefaultGameServer, DEFAULT_PORT, startHost } from "./host";
 
 setLogLevel("", Level.INFO);
 
@@ -17,7 +17,9 @@ if (!existsSync(webDist)) {
   );
 }
 
-const host = await startHost({ port, staticRoots: [webDist] });
+// BOTS=n sets the number of racing bots (default 1, 0 for none).
+const bots = process.env.BOTS === undefined ? 1 : Math.max(0, Number(process.env.BOTS) || 0);
+const host = await startHost({ port, staticRoots: [webDist], gameServer: createDefaultGameServer({ bots }) });
 
 const shutdown = (signal: string) => {
   console.log(`${signal} received, shutting down`);

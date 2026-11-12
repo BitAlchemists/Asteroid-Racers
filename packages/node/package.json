@@ -6,7 +6,9 @@
   "description": "Node entry points: HTTP/WebSocket host, bot runner, trainer",
   "scripts": {
     "start": "tsx src/main.ts",
-    "dev": "tsx watch src/main.ts"
+    "dev": "tsx watch src/main.ts",
+    "train": "tsx src/train.ts",
+    "bot": "tsx src/bot.ts"
   },
   "dependencies": {
     "@ar/shared": "*",

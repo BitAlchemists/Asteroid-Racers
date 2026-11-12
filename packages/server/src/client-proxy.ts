@@ -27,6 +27,8 @@ export class ClientProxy implements IClientProxy {
   constructor(
     private readonly connection: Connection,
     private readonly server: GameServer,
+    /** False for ghosts (AI training bots): no crashes, no race joining. */
+    readonly canCollide = true,
   ) {
     this.subscriptions = [
       connection.onMessage((envelope) => this.onMessage(envelope)),
@@ -76,7 +78,7 @@ export function registerCoreHandlers(server: GameServer): void {
         return;
       }
       const username = handshake.username.trim() || SHIP_NAMES[randomInt(server.random, SHIP_NAMES.length)]!;
-      server.registerPlayer(client, username);
+      server.registerPlayer(client, username, client.canCollide ?? true);
 
       client.send(createEnvelope(MessageType.PLAYER, EntityMarshal.toNet(client.movable!)));
       // TODO(port): queue these so a big world doesn't flood a fresh client (same TODO as the original).

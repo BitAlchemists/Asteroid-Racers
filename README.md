@@ -6,9 +6,11 @@
 > ```
 > npm install
 > npm run dev      # Vite dev server on :5180, proxies /ws to the game server
-> npm run server   # game server on :1337 (serves packages/web/dist after `npm run build`)
+> npm run server   # game server on :1337 with one racing bot (BOTS=n); serves packages/web/dist after `npm run build`
 > npm run check    # typecheck + lint + format check + tests
 > npm run proto    # regenerate TS codecs from proto/*.proto
+> npm run train -- --generations 50              # evolve racing bots headless (db/<name>/luke.txt)
+> npm run bot -- --url ws://localhost:1337/ws    # send a bot to a running server
 > ```
 
 Asteroid Racers is a multiplayer browser game that lets you race against other players with your spaceship in the weightlessness of outer space.

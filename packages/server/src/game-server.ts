@@ -37,6 +37,14 @@ export interface GameServerOptions {
   random?: Random;
   /** Simulation step in seconds. */
   tickSeconds?: number;
+  /** Entity updates broadcast per tick (bandwidth throttle). The headless trainer uses 0. */
+  entityUpdatesPerTick?: number;
+  /**
+   * Additionally send every player their own ship each tick. Off for normal play (the throttled
+   * broadcast is enough for humans); on for training, where 100 bots would otherwise see their own
+   * position about once a second.
+   */
+  sendOwnShipEveryTick?: boolean;
 }
 
 interface Timer {
@@ -70,9 +78,19 @@ export class GameServer implements IGameServer {
   private time = 0;
   private frame = 0;
 
-  constructor({ random = Math.random, tickSeconds = TICK_SECONDS }: GameServerOptions = {}) {
+  private readonly entityUpdatesPerTick: number;
+  private readonly sendOwnShipEveryTick: boolean;
+
+  constructor({
+    random = Math.random,
+    tickSeconds = TICK_SECONDS,
+    entityUpdatesPerTick = MAX_ENTITY_UPDATES_PER_TICK,
+    sendOwnShipEveryTick = false,
+  }: GameServerOptions = {}) {
     this.random = random;
     this.tickSeconds = tickSeconds;
+    this.entityUpdatesPerTick = entityUpdatesPerTick;
+    this.sendOwnShipEveryTick = sendOwnShipEveryTick;
     this.crashDetector.activeEntitiesCanCollide = true;
     registerCoreHandlers(this);
   }
@@ -241,9 +259,16 @@ export class GameServer implements IGameServer {
     changed.sort((a, b) => b.updateRank - a.updateRank);
     for (const entity of changed) entity.updateRank += 1;
 
-    for (const entity of changed.slice(0, MAX_ENTITY_UPDATES_PER_TICK)) {
+    for (const entity of changed.slice(0, this.entityUpdatesPerTick)) {
       entity.updateRank = 0;
       this.broadcastMessage(createEnvelope(MessageType.ENTITY, EntityMarshal.toNet(entity)));
+    }
+
+    if (this.sendOwnShipEveryTick) {
+      for (const client of [...this.clientSet]) {
+        if (client.movable)
+          client.send(createEnvelope(MessageType.ENTITY, EntityMarshal.toNet(client.movable)));
+      }
     }
   }
 

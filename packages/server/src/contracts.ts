@@ -5,6 +5,8 @@ export interface IClientProxy {
   /** The client's ship; undefined until the handshake has been processed. */
   movable: Movable | undefined;
   readonly playerName: string | undefined;
+  /** False for ghost players (AI training bots). Defaults to true. */
+  readonly canCollide?: boolean;
   send(envelope: Envelope): void;
 }
 
