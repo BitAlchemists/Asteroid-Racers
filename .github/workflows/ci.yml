@@ -1,0 +1,24 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      # typecheck + lint + format check + tests
+      - run: npm run check
+      - run: npm run build
+      # A short headless training run proves the trainer still works end to end.
+      - run: npm run train -- --db "$RUNNER_TEMP/brains" --generations 2 --sample 10 --frames 60 --seed 1

@@ -1,6 +1,5 @@
 node_modules
 dist
-legacy
 packages/shared/src/net/proto/gen
 package-lock.json
 doc

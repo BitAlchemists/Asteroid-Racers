@@ -5,7 +5,7 @@ import prettier from "eslint-config-prettier";
 
 export default tseslint.config(
   {
-    ignores: ["**/node_modules/**", "**/dist/**", "legacy/**", "**/src/net/proto/gen/**"],
+    ignores: ["**/node_modules/**", "**/dist/**", "**/src/net/proto/gen/**"],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,

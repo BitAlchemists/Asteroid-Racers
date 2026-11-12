@@ -87,7 +87,23 @@ Each phase ends with something runnable.
 - Bundled brain is **interim**: 48 generations (seed 2026, best score 69.5k → 33.9k, plateaued at brain gen 15). A proper training run is postponed — run `npm run train -- --generations 200 --export packages/server/src/ai/brains/default-brain.json` (~16 min) and commit the result.
 - Not done: `worker_threads` parallelism (not needed at this speed); the `rnn` branch (by decision).
 
-**6. Modernize & clean up** — leak audit (fold in `aahhh` findings: subscriptions not cancelled, clients not destroyed), replace stringly-typed handlers with typed message map, delete `_needs_refactoring`, README with new run instructions, deploy notes (old `gh-pages` branch → static Vite build).
+**6. Modernize & clean up** ✅
+
+- Leak audit: `GameServer.stats()` exposes the server's bookkeeping; soak tests churn 300 in-process clients (crashing, racing, leaving mid-respawn, both delivery modes) and 40 WebSocket clients, and require every count to return to its starting value.
+- Typed message map: done in phases 1–2 (`payloadSchemas` + `MessageDispatcher`).
+- Legacy Dart sources removed from the branch (still on `master` and at the local `dart-legacy` tag), including `_needs_refactoring`.
+- The handshake's "queue the initial world" TODO is closed as not needed: the demo world is 143 entities ≈ 7 KB.
+- Static deploy: Vite builds with relative URLs; verified the build running from a sub-path on a plain static server (singleplayer incl. bot). No Pages deploy workflow was added, because publishing to `gh-pages` is the owner's decision; the README describes it.
+- CI (`.github/workflows/ci.yml`): `npm ci`, `npm run check`, build, and a 2-generation training run.
+- README rewritten (play, controls, AI training, deploy, layout); `doc/CHANGELOG.md` has a v0.7 entry.
+- Dev-only advisory left open: `minimatch` ReDoS in the ESLint toolchain (fix needs a breaking downgrade); production dependencies audit clean.
+
+### Open items after the port
+
+- Train the shipped brain properly (see phase 5).
+- The local ship ignores the server's orientation while it can move, so race-start / respawn headings don't apply locally (Dart behaviour).
+- Touching the race portal is a one-time ticket: after leaving a race you can't rejoin without reconnecting (Dart behaviour).
+- Players and bots share one spawn circle, so they can spawn into each other and explode (Dart behaviour).
 
 ## Risks / things to verify
 

@@ -1,3 +1,16 @@
+v0.7 - Node.js / TypeScript port
+------
+
++ Port the whole game from Dart 1.x to TypeScript on Node.js (npm workspaces: shared, server, client, node, web)
++ PixiJS renderer replaces StageXL; the GUI is an HTML overlay
++ Same protobuf wire protocol, now via @bufbuild/protobuf
++ Node host with WebSocket game traffic and static file serving; singleplayer runs the server in the page
++ Neuro-evolution bots ported, trainer runs headless at ~28x real time with 100 bots at once; bots race in singleplayer and multiplayer
++ Fix: the network bias neuron always output 0
++ Fix: training bots crashed into each other and saw their own ship about once a second
++ Fix: connection listeners are released on disconnect (memory leak), checked by soak tests
++ CI with typecheck, lint, format check, tests, build and a short training run
+
 v0.6 - 
 ------
 

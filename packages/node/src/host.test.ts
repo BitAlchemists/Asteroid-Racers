@@ -200,3 +200,20 @@ describe("upgrade routing", () => {
     expect(response).toMatch(/^HTTP\/1\.1 404/);
   });
 });
+
+describe("soak over WebSocket", () => {
+  it("40 connect/handshake/disconnect cycles leave the server as it was", async () => {
+    const baseline = host.gameServer.stats();
+    for (let i = 0; i < 40; i++) {
+      const { connection, received } = await connectClient();
+      connection.send(createEnvelope(MessageType.HANDSHAKE, { username: `Churn ${i}` }));
+      await until(() => received.some((e) => e.messageType === MessageType.PLAYER), "PLAYER");
+      loop.advance(2);
+      open.splice(open.indexOf(connection), 1);
+      connection.disconnect();
+      await until(() => host.gameServer.clients.size === 0, "disconnect");
+    }
+    loop.advance(100);
+    expect(host.gameServer.stats()).toEqual(baseline);
+  });
+});

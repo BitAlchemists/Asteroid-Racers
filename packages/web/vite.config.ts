@@ -5,6 +5,8 @@ import { defineConfig } from "vite";
 const gameServerPort = Number(process.env.GAME_SERVER_PORT) || 1337;
 
 export default defineConfig({
+  // Relative URLs, so the build works from any sub-path (e.g. GitHub Pages under /Asteroid-Racers/).
+  base: "./",
   server: {
     port: Number(process.env.PORT) || 5180,
     strictPort: true,

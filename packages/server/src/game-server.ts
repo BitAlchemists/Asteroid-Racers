@@ -111,6 +111,20 @@ export class GameServer implements IGameServer {
     return this.race;
   }
 
+  /** Sizes of the server's internal bookkeeping — for leak checks and monitoring. */
+  stats(): Record<string, number> {
+    return {
+      clients: this.clientSet.size,
+      entities: this.world.entities.size,
+      simulated: this.physics.count,
+      crashCandidates: this.crashDetector.activeEntities.length,
+      raceCandidates: this.joinRaceDetector.activeEntities.length,
+      shipOwners: this.entityToClient.size,
+      racers: this.race?.players.length ?? 0,
+      timers: this.timers.length,
+    };
+  }
+
   /** Builds the demo world: scene 2 with its corridor race. */
   prepareDemoConfiguration(): this {
     SceneController.createScene2(this.world, this.random);

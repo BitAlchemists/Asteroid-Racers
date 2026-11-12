@@ -81,7 +81,8 @@ export function registerCoreHandlers(server: GameServer): void {
       server.registerPlayer(client, username, client.canCollide ?? true);
 
       client.send(createEnvelope(MessageType.PLAYER, EntityMarshal.toNet(client.movable!)));
-      // TODO(port): queue these so a big world doesn't flood a fresh client (same TODO as the original).
+      // The whole world in one burst: 143 entities ≈ 7 KB for the demo scene. The Dart code wanted to
+      // queue this; at this size it isn't worth it (the WebSocket host cuts off clients only at 4 MB backlog).
       for (const entity of server.world.entities.values()) {
         client.send(createEnvelope(MessageType.ENTITY, EntityMarshal.toNet(entity)));
       }

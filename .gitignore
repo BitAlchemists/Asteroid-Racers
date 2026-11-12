@@ -10,12 +10,6 @@ db/
 log/
 logs/
 
-# Legacy Dart tooling
-legacy/dart/.packages
-legacy/dart/.pub/
-legacy/dart/packages/
-legacy/dart/pubspec.lock
-legacy/dart/build/
 
 # OS / editors
 .DS_Store
