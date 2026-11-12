@@ -5,8 +5,9 @@ coverage/
 *.tsbuildinfo
 .vite/
 
-# Runtime data (trained networks, logs)
+# Runtime data (trained networks, logs, evo-lab runs)
 db/
+lab/
 log/
 logs/
 

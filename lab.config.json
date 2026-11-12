@@ -1,0 +1,30 @@
+{
+  "name": "asteroid-racers",
+  "binding": [
+    "packages/shared/src/**/*.ts",
+    "packages/server/src/**/*.ts",
+    "packages/node/src/lab-train.ts",
+    "scripts/lab-train.mjs"
+  ],
+  "metrics": {
+    "score": { "direction": "min", "label": "Best score (lower is better)" },
+    "mean": { "direction": "min", "label": "Mean score of the generation" },
+    "worst": { "direction": "min", "label": "Worst score of the generation" }
+  },
+  "limits": { "workers": 6 },
+  "methods": {
+    "train": {
+      "command": ["node", "scripts/lab-train.mjs"],
+      "config": {
+        "sample": 100,
+        "frames": 600,
+        "mutationRate": 0.1,
+        "mutationStrength": 1,
+        "generations": 200
+      },
+      "seeded": true,
+      "defaultSeed": 2026,
+      "resumable": true
+    }
+  }
+}

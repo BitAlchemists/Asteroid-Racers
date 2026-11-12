@@ -84,7 +84,12 @@ export interface TrainingServiceOptions {
   layout?: readonly number[];
   sampleSize?: number;
   framesPerTarget?: number;
+  /** Chance that a single weight mutates (default 0.1). */
+  mutationRate?: number;
+  /** Relative size of a weight mutation (default 1 = up to ±100 %). */
+  mutationStrength?: number;
   maxGenerations?: number;
+  /** Builds the course, then drives mutation. Pass a seeded one for reproducible training. */
   random?: Random;
   onGeneration?: (report: GenerationReport) => void;
 }
@@ -97,6 +102,8 @@ export function registerAITrainingService(
   const random = options.random ?? server.random;
   const course = TargetGenerator.fluxCompensator(server, random);
   const framesPerTarget = options.framesPerTarget ?? AI_TRAINING_FRAMES;
+  const mutationRate = options.mutationRate ?? MUTATION_RATE;
+  const mutationStrength = options.mutationStrength ?? MUTATION_STRENGTH;
   const director = new TrainingDirector({
     store: options.store,
     networkName: options.networkName ?? DEFAULT_BRAIN_NAME,
@@ -106,7 +113,7 @@ export function registerAITrainingService(
     ...(options.maxGenerations === undefined ? {} : { maxGenerations: options.maxGenerations }),
     ...(options.onGeneration === undefined ? {} : { onGeneration: options.onGeneration }),
     mutate: (network: MajorTom, rnd: Random) =>
-      network.mutate(MUTATION_RATE, MUTATION_STRENGTH, mutateRelative, rnd),
+      network.mutate(mutationRate, mutationStrength, mutateRelative, rnd),
     scriptFactory: (network) =>
       new RespawnTargetTrainingScript(network, course, new QuadraticSumOfDistanceToTargetsEvaluator(), {
         spawn: Vector2.zero(),
