@@ -5,7 +5,8 @@
   "type": "module",
   "description": "Node entry points: HTTP/WebSocket host, bot runner, trainer",
   "scripts": {
-    "start": "tsx src/main.ts"
+    "start": "tsx src/main.ts",
+    "dev": "tsx watch src/main.ts"
   },
   "dependencies": {
     "@ar/shared": "*",
@@ -14,5 +15,8 @@
   },
   "devDependencies": {
     "@types/ws": "^8.18.2"
+  },
+  "exports": {
+    ".": "./src/index.ts"
   }
 }

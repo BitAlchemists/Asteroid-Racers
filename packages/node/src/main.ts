@@ -1,9 +1,33 @@
-import { createDemoServer } from "@ar/server";
+import { existsSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { Level, setLogLevel } from "@ar/shared";
+import { DEFAULT_PORT, startHost } from "./host";
 
-// Phase 2 placeholder: builds the demo world. The HTTP + WebSocket host (replacing legacy tcp_server)
-// lands in phase 3.
-const server = createDemoServer();
-console.log(
-  `Asteroid Racers: demo world ready with ${server.world.entities.size} entities ` +
-    `(${server.raceController?.checkpoints.length ?? 0} race checkpoints). Network host arrives in phase 3.`,
-);
+setLogLevel("", Level.INFO);
+
+const here = dirname(fileURLToPath(import.meta.url));
+const webDist = resolve(here, "../../web/dist");
+const port = Number(process.env.PORT) || DEFAULT_PORT;
+
+if (!existsSync(webDist)) {
+  console.warn(
+    `No built web client at ${webDist} — run "npm run build" to serve it here, ` +
+      `or use "npm run dev" (Vite proxies /ws to this server).`,
+  );
+}
+
+const host = await startHost({ port, staticRoots: [webDist] });
+
+const shutdown = (signal: string) => {
+  console.log(`${signal} received, shutting down`);
+  host.close().then(
+    () => process.exit(0),
+    (error: unknown) => {
+      console.error(error);
+      process.exit(1);
+    },
+  );
+};
+process.once("SIGINT", () => shutdown("SIGINT"));
+process.once("SIGTERM", () => shutdown("SIGTERM"));

@@ -5,8 +5,8 @@
 >
 > ```
 > npm install
-> npm run dev      # Vite dev server: index, singleplayer, multiplayer pages
-> npm run server   # Node host (placeholder until phase 3)
+> npm run dev      # Vite dev server on :5180, proxies /ws to the game server
+> npm run server   # game server on :1337 (serves packages/web/dist after `npm run build`)
 > npm run check    # typecheck + lint + format check + tests
 > npm run proto    # regenerate TS codecs from proto/*.proto
 > ```

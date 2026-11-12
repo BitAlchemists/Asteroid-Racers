@@ -7,4 +7,5 @@ export * from "./race-controller";
 export * from "./game-server";
 export * from "./client-proxy";
 export * from "./chat-server";
+export * from "./local-connection";
 export { SHIP_NAMES } from "./ship-names";

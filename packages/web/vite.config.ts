@@ -1,8 +1,17 @@
 import { resolve } from "node:path";
 import { defineConfig } from "vite";
 
+/** Where `npm run server` listens; the dev server forwards WebSocket traffic there. */
+const gameServerPort = Number(process.env.GAME_SERVER_PORT) || 1337;
+
 export default defineConfig({
-  server: { port: Number(process.env.PORT) || 5180, strictPort: true },
+  server: {
+    port: Number(process.env.PORT) || 5180,
+    strictPort: true,
+    proxy: {
+      "/ws": { target: `ws://localhost:${gameServerPort}`, ws: true },
+    },
+  },
   build: {
     rollupOptions: {
       input: {

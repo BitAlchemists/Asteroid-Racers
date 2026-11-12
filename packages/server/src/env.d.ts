@@ -3,3 +3,4 @@
 declare function setTimeout(handler: () => void, ms?: number): unknown;
 declare function clearTimeout(handle: unknown): void;
 declare const performance: { now(): number };
+declare function queueMicrotask(callback: () => void): void;
