@@ -10,5 +10,8 @@
   "dependencies": {
     "@ar/shared": "*",
     "pixi.js": "^8.23.0"
+  },
+  "devDependencies": {
+    "@ar/server": "*"
   }
 }

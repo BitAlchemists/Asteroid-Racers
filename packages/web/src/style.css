@@ -1,3 +1,15 @@
+:root {
+  color-scheme: dark;
+  --panel: rgba(68, 68, 68, 0.67);
+  --text: #f2f2f2;
+  --muted: #b9b9b9;
+  --accent: #8b0000;
+  --accent-hover: #d00000;
+  --accent-active: #00008b;
+  --notice: #9fd3ff;
+  font-family: Arial, "Helvetica Neue", sans-serif;
+}
+
 html,
 body {
   margin: 0;
@@ -5,18 +17,136 @@ body {
   height: 100%;
   overflow: hidden;
   background: #000;
-  font-family: "Open Sans", sans-serif;
+  color: var(--text);
 }
 
-canvas {
+.game-canvas {
   display: block;
+  position: fixed;
+  inset: 0;
 }
+
+/* --- HUD ---------------------------------------------------------------------------- */
+
+.hud {
+  position: fixed;
+  inset: 0;
+  pointer-events: none; /* clicks fall through to the canvas except on panels */
+  font-size: 13px;
+}
+
+.hud-window {
+  position: absolute;
+  pointer-events: auto;
+  background: var(--panel);
+  border-radius: 10px;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+.hud-pilot {
+  top: 10px;
+  left: 10px;
+  width: 170px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hud-pilot label {
+  color: var(--text);
+}
+
+.hud input {
+  font: inherit;
+  padding: 4px 6px;
+  border: 1px solid #222;
+  border-radius: 4px;
+  background: #fff;
+  color: #000;
+  min-width: 0;
+}
+
+.hud-button {
+  font: inherit;
+  height: 36px;
+  border: none;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+}
+
+.hud-button:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.hud-button:active:not(:disabled) {
+  background: var(--accent-active);
+}
+
+.hud-button:disabled {
+  opacity: 0.7;
+  cursor: progress;
+}
+
+.hud-button:focus-visible,
+.hud input:focus-visible {
+  outline: 2px solid var(--notice);
+  outline-offset: 1px;
+}
+
+.hud-debug {
+  margin: 4px 0 0;
+  font:
+    12px/1.35 ui-monospace,
+    Consolas,
+    monospace;
+  white-space: pre;
+  color: var(--text);
+}
+
+.hud-chat {
+  left: 10px;
+  right: 10px;
+  bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hud-chat-log {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  min-height: calc(5 * 1.35em);
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.hud-notice {
+  color: var(--notice);
+}
+
+@media (max-width: 480px) {
+  .hud-pilot {
+    width: calc(100% - 20px);
+  }
+}
+
+/* --- landing page ---------------------------------------------------------------------- */
 
 .menu {
-  color: #eee;
-  padding: 2rem;
+  padding: 2rem 16px;
+  max-width: 40rem;
 }
 
 .menu a {
   color: #8cf;
+}
+
+.menu kbd {
+  border: 1px solid #666;
+  border-radius: 3px;
+  padding: 0 4px;
 }

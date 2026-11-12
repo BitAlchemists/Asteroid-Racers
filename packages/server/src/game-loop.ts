@@ -15,7 +15,8 @@ export interface GameLoop {
  */
 export class RealtimeGameLoop implements GameLoop {
   onUpdate: (dt: number) => void = () => {};
-  private handle: unknown;
+  // Number in browsers, Timeout object in Node — whatever the host's setTimeout returns.
+  private handle: ReturnType<typeof setTimeout> | undefined;
   private last = 0;
   private accumulator = 0;
 

@@ -4,4 +4,5 @@ export * from "./math/vector2";
 export * from "./math/angle";
 export * from "./world/index";
 export * from "./net/index";
+export * from "./client/server-proxy";
 export * from "./logging";

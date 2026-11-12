@@ -1,23 +1,63 @@
-import { Application, Text } from "pixi.js";
+import type { ServerConnection } from "@ar/shared";
+import { Application } from "pixi.js";
+import { GameClient } from "./game/game-client";
+import { bindKeyboard } from "./game/keyboard-input";
+import { PixiGameView, type PixiGameViewOptions } from "./render/pixi-game-view";
+import { HtmlHud } from "./ui/html-hud";
 
-/**
- * Phase 0 placeholder: boots a full-window PixiJS stage. The real GameClient
- * (renderer, controllers, views, GUI) replaces this in phase 4.
- */
-export async function bootStage(mode: string): Promise<Application> {
+export { GameClient } from "./game/game-client";
+export * from "./game/contracts";
+export * from "./game/controllers";
+export { PixiGameView } from "./render/pixi-game-view";
+export { HtmlHud } from "./ui/html-hud";
+
+export interface StartGameOptions extends PixiGameViewOptions {
+  /** Creates a fresh connection for each (re)connect. */
+  connection: () => ServerConnection;
+  /** Where the canvas and HUD go. Defaults to document.body. */
+  parent?: HTMLElement;
+  /** Connect right away (as the Dart client did). */
+  autoConnect?: boolean;
+}
+
+export interface RunningGame {
+  app: Application;
+  client: GameClient;
+  hud: HtmlHud;
+  destroy(): void;
+}
+
+/** Boots the full-window PixiJS client with HUD and keyboard controls. */
+export async function startGame({
+  connection,
+  parent = document.body,
+  autoConnect = true,
+  ...viewOptions
+}: StartGameOptions): Promise<RunningGame> {
   const app = new Application();
   await app.init({ background: "#000000", resizeTo: window, antialias: true });
-  document.body.appendChild(app.canvas);
+  app.canvas.classList.add("game-canvas");
+  parent.append(app.canvas);
 
-  const label = new Text({
-    text: `Asteroid Racers — ${mode}\nEstablishing satellite connection...`,
-    style: { fill: "#ffffff", fontFamily: "Open Sans, sans-serif", fontSize: 24, align: "center" },
-  });
-  label.anchor.set(0.5);
-  const center = () => label.position.set(app.screen.width / 2, app.screen.height / 2);
-  center();
-  app.renderer.on("resize", center);
-  app.stage.addChild(label);
+  const view = new PixiGameView(app, viewOptions);
+  const client = new GameClient(view, connection);
+  const hud = new HtmlHud(parent, client);
+  client.attachHud(hud);
 
-  return app;
+  const unbindKeys = bindKeyboard(window, client, () => hud.toggleVisible());
+  app.ticker.add((ticker) => client.update(ticker.deltaMS / 1000));
+
+  if (autoConnect) void client.connect();
+
+  return {
+    app,
+    client,
+    hud,
+    destroy() {
+      unbindKeys();
+      client.disconnect();
+      hud.root.remove();
+      app.destroy(true, { children: true });
+    },
+  };
 }
