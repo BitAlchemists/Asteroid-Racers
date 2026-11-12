@@ -67,7 +67,7 @@ Each phase ends with something runnable.
 
 **1. Shared core** ✅ — `Vector2` (vector_math-style API, float64 instead of float32), `wrapAngle`, `Entity`/`Movable`/`Checkpoint`/`RacePortal` (Dart enums → TS enums with identical wire values), `World`, `PhysicsSimulator` (same Euler order), `EntityMarshal`, typed `payloadSchemas` + `MessageDispatcher` (replaces the string-keyed handler maps), `Connection` interface, hierarchical logger. 43 unit tests; physics expectations are hand-derived from the Dart algorithm since Dart 1.x can no longer be run.
 
-**2. Server (headless)** — `GameServer`, `ClientProxy`, `CollisionDetector`, `RaceController`, `SceneController`, chat server. Fixed-timestep loop. Test with a scripted fake client: handshake → input → entity updates → race join/finish.
+**2. Server (headless)** ✅ — `GameServer`, `ClientProxy`, `CollisionDetector`, `RaceController`, `SceneController` (all scenes/races), `ChatServer`, `RealtimeGameLoop` + `ManualGameLoop` (fixed 15 ms step). Fixes vs. Dart: respawn timer runs on game time (exact under headless training), seeded RNG option, a ship crashes once per frame even if it touches several rocks, NaN thrust → 0, repeated handshakes ignored, chat needs a ship name and is capped at 500 chars, start/finish checkpoint orientation bug (radius passed as angle). Kept as-is: top-2 entity updates per tick; touching the portal is a one-time ticket (no re-join after RACE_LEAVE). 32 server tests using a scripted `FakeClient`.
 
 **3. Transport + Node host** — `Connection` abstraction, `LocalServerConnection` (in-memory, async queue), `WebSocket` connection (binary frames), Node HTTP/WS server replacing `tcp_server` (port 1337). `npm run server`.
 
