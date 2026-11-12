@@ -89,6 +89,11 @@ describe("evo-lab worker (protocol v1)", () => {
       worst: expect.any(Number),
     });
     expect(ev[0]).toMatchObject({ protocol: 1, method: "train", seed: 7, to: 3, resume: false });
+    expect(ev[0]!.versions).toMatchObject({
+      node: process.version,
+      tsx: expect.stringMatching(/^\d+\.\d+\.\d+/),
+      "@bufbuild/protobuf": expect.stringMatching(/^\d+\.\d+\.\d+/),
+    });
     expect(ev.at(-1)).toMatchObject({ g: 3, result: "result.json" });
 
     const res = JSON.parse(result(dir)) as Record<string, unknown>;

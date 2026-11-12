@@ -11,6 +11,7 @@
     "mean": { "direction": "min", "label": "Mean score of the generation" },
     "worst": { "direction": "min", "label": "Worst score of the generation" }
   },
+  "leaderboard": { "metrics": ["score"] },
   "limits": { "workers": 6 },
   "methods": {
     "train": {
