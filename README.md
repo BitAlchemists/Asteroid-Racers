@@ -4,8 +4,9 @@ Asteroid Racers is a multiplayer browser game: race your spaceship against other
 through an asteroid field, in the weightlessness of outer space.
 
 It started out in Dart (2014–2019) and now runs on Node.js and TypeScript, with PixiJS rendering. The
-Dart version is still on the `master` branch on GitHub; [PORTING_PLAN.md](PORTING_PLAN.md) explains the
-port and what changed.
+last Dart version is commit
+[`8ba7989`](https://github.com/BitAlchemists/Asteroid-Racers/tree/8ba79895fa6ed878d0024dc54f050228363b6772);
+[PORTING_PLAN.md](PORTING_PLAN.md) explains the port and what changed.
 
 ## Quick start
 

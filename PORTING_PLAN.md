@@ -63,7 +63,7 @@ Tooling: Node 22 LTS, TypeScript (project references, `tsc -b`), Vite, `tsx`, `w
 
 Each phase ends with something runnable.
 
-**0. Setup** ✅ — npm workspaces, TS project refs, ESLint + Prettier, Vitest, Vite (multi-page), `proto/` + `buf generate` → `packages/shared/src/net/proto/gen`, wire-format golden test. Dart sources moved to `legacy/dart/` for reference while porting (deleted in phase 6); original tree tagged `dart-legacy`. Port work lives on branch `node-port`.
+**0. Setup** ✅ — npm workspaces, TS project refs, ESLint + Prettier, Vitest, Vite (multi-page), `proto/` + `buf generate` → `packages/shared/src/net/proto/gen`, wire-format golden test. Dart sources moved to `legacy/dart/` for reference while porting (deleted in phase 6); original tree tagged `dart-legacy` (local). The port was developed on `node-port`, then fast-forwarded into `master`, which was renamed `main`.
 
 **1. Shared core** ✅ — `Vector2` (vector_math-style API, float64 instead of float32), `wrapAngle`, `Entity`/`Movable`/`Checkpoint`/`RacePortal` (Dart enums → TS enums with identical wire values), `World`, `PhysicsSimulator` (same Euler order), `EntityMarshal`, typed `payloadSchemas` + `MessageDispatcher` (replaces the string-keyed handler maps), `Connection` interface, hierarchical logger. 43 unit tests; physics expectations are hand-derived from the Dart algorithm since Dart 1.x can no longer be run.
 
@@ -91,7 +91,7 @@ Each phase ends with something runnable.
 
 - Leak audit: `GameServer.stats()` exposes the server's bookkeeping; soak tests churn 300 in-process clients (crashing, racing, leaving mid-respawn, both delivery modes) and 40 WebSocket clients, and require every count to return to its starting value.
 - Typed message map: done in phases 1–2 (`payloadSchemas` + `MessageDispatcher`).
-- Legacy Dart sources removed from the branch (still on `master` and at the local `dart-legacy` tag), including `_needs_refactoring`.
+- Legacy Dart sources removed from the branch (last Dart commit: `8ba7989`), including `_needs_refactoring`.
 - The handshake's "queue the initial world" TODO is closed as not needed: the demo world is 143 entities ≈ 7 KB.
 - Static deploy: Vite builds with relative URLs; verified the build running from a sub-path on a plain static server (singleplayer incl. bot). No Pages deploy workflow was added, because publishing to `gh-pages` is the owner's decision; the README describes it.
 - CI (`.github/workflows/ci.yml`): `npm ci`, `npm run check`, build, and a 2-generation training run.
