@@ -392,3 +392,21 @@ so (`CLAUDE.md`).
   every exam (`skill<Arena>`, `skill<Arena>Crashes`), and `npm run skills` profiles stored models.
   From batch A on, every phase-2 and later report includes the skill profile. It is the main
   evidence for 2.4 (forgetting) and 2.6 (what the tiered curriculum teaches).
+- **2026-11-14, batch A decision** (user decision, by judgement): the new baseline is M4's default
+  setup plus `controller: { kind: "residual", scale: 0.5 }` plus `scoring.progress: 3`.
+  - **By the rule** no arm won: exam checkpoints saturate at 0.89, and 10 seeds detect only effects of
+    0.06–0.19.
+  - **Residual:** exam crashes −36 % (clear); `stop` 0 → 95 %, `corridor` 14 → 38 %, `field`
+    49 → 72 %; spin about 1 → 0.28.
+  - **Progress:** `race-legs` 88 → 99 %; it fixes the multi-target reward trap.
+  - **Dropped:** `scoring.crashes: 1000` and `scoring.success: 3000`. `scoring.rotation: 20` stays an
+    option for the combination check.
+  - **To investigate:** seed 5's residual collapse (train-499, exam checkpoints −0.555).
+  - **After M7:** the combination check (residual + progress, with and without rotation 20, 20 seeds)
+    and batch B both move after M7 ([`M7-benchmark-v2.md`](M7-benchmark-v2.md)) and are judged on
+    exam v3.
+  - **Decision rule from now on:**
+    - 20 seeds for decisions; 10 only for screens;
+    - the primary metric is pre-committed per plan: exam v3's `exam3` score;
+    - crashes veto;
+    - exam checkpoints must not get worse.

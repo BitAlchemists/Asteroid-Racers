@@ -23,8 +23,8 @@ How we work is described in [`CLAUDE.md`](../CLAUDE.md). Each milestone gets its
   - **Skill gaps** that the exam does not show: the default models brake at only 2 % of `stop`
     targets and get round the bend in only 13 % of `corridor` episodes.
   - **Plateau:** training past g150 brings nothing.
-- **Now:** M6. Phase 1 is done: 1.1 re-evaluation showed no clear difference and stays out. Phase 2
-  is next.
+- **Now:** M6 batch A is decided: the user adopted the residual controller and the progress reward.
+  M7 (Benchmark v2) is next, because exam v2 is saturated. After M7, M6 continues on exam v3.
 
 ## Milestones
 
@@ -160,6 +160,20 @@ Only if needed: Q.1 quality diversity (MAP-Elites).
 4. Decision point.
 5. Batch B, the curriculum (2.4, 2.5, 2.6, 2.7), on the new baseline.
 6. Then perception (3.1–3.3), the learner, and readiness.
+
+### M7 — Benchmark v2 🟡
+
+Plan: [`plans/M7-benchmark-v2.md`](plans/M7-benchmark-v2.md), approved by the user 2026-11-14.
+Inserted between M6's batch A and the rest of M6.
+
+- S1: a procedural track generator with corridors, hairpins, gates, rock fields, straights into
+  tight turns, belts and chicanes, in difficulty bands.
+- S2: goal types, in the race controller, as optional game modes and in training: stop at the
+  finish, directional gates, time trials with par times, laps.
+- S3: 7 more hand-made tracks (10 in total), in track format v2.
+- S4: exam v3, with a pre-registered primary score `exam3` that doesn't saturate and a profile per
+  difficulty band, goal type and skill. Exam v2 is kept for comparison.
+- S5: the generator and goal types available to training and the curriculum.
 
 ## Open questions
 

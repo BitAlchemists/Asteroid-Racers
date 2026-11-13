@@ -1607,3 +1607,25 @@ Approved by the user as the rest of M5 after M4 closed. M5 is done.
   - drop the two cost arms;
   - run a combination follow-up (residual + progress, ± rotation 20) at 20 seeds before batch B.
 - **Not signed off:** adoption is the user's call. Report: `experiments/m6-a-rewards-control.report.md`.
+
+## 2026-11-14
+
+### Batch A decided; M7 Benchmark v2 planned
+
+- **`m6-a2-rewards-control` closed:**
+  - **By the rule:** no arm wins; exam checkpoints saturate at 0.89 and the experiment is
+    underpowered.
+  - **The user adopted** the residual controller (scale 0.5) and the progress reward (3) as the new
+    baseline, by judgement:
+    - residual: exam crashes −36 % (clear), `stop` 0 → 95 %, `corridor` 14 → 38 %, `field`
+      49 → 72 %, spin about 1 → 0.28;
+    - progress: `race-legs` 88 → 99 %.
+  - **Dropped:** `scoring.crashes: 1000` and `scoring.success: 3000`. Rotation 20 is kept as an
+    option.
+  - **Open:** seed 5's residual collapse (train-499).
+- **M7 Benchmark v2 planned and approved by the user ("I want it all built"):**
+  - generator, goal types (also as game modes), 7 more hand-made tracks, exam v3 with a pre-registered
+    `exam3` score, training access;
+  - the plan has file ownership for parallel builders.
+- **The M6 plan changes:** the combination check and batch B move after M7 and are judged on exam
+  v3. Decisions from now on use 20 seeds and a pre-committed primary metric.
