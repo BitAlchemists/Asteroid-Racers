@@ -38,7 +38,7 @@ Both together, and each alone, against the E4 baseline, all run to g150 with no 
   "design": "leave-one-out",
   "seeds": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
   "screen": { "gen": 150, "metric": "exam", "k": 2, "noise": "paired-se", "keep": "either" },
-  "final": { "gen": 150 },
+  "final": { "gen": 151 },
   "decision": { "metric": "exam", "gen": 150, "k": 2, "noise": "paired-se", "minWinFraction": 0.8 },
   "minEffect": { "exam": 10000 },
   "gate": { "gen": 5 },
@@ -61,8 +61,10 @@ curriculum screen runs train-98..107; the gate re-runs them to g5 and compares `
 
 Leave-one-out with two switches: baseline, `full` (both), and each switch alone (`-parents` =
 success 0.6 only, `-curriculum.success` = parents 10 only); 4 arms × 10 seeds = 40 runs. The screen
-is set at g150, the final generation, so no arm is stopped early (E3b's and E4's early screens
-dropped arms whose effect shows late). About 15–20 minutes per run, up to 20 in parallel.
+is set at g150, so every arm runs to g150 and the decision reads those runs (`decision.gen` 150).
+Evo Lab requires `final.gen` above `screen.gen`, so `final` is 151: an informative arm continues
+by one generation, which changes nothing in the decision. (E3b's and E4's early screens dropped
+arms whose effect shows late.) About 15–20 minutes per run, up to 20 in parallel.
 
 ## Decision rule
 
