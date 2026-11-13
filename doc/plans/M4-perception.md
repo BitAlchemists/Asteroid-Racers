@@ -197,7 +197,7 @@ per switch, like step 6.
 - With `reevaluate`, level-ups are judged on the re-evaluated success.
 - Source: Narvekar et al. 2020; Gomez & Miikkulainen 1997.
 
-### 9. CMA-ES optimiser (larger build)
+### 9. CMA-ES optimiser (larger build) — moved to M6 (2026-11-13, M4 closing)
 
 - A new optimiser switch, `optimizer: { kind: "cmaes", population: 50, sigma: 0.1 }` (absent = the
   GA), on the same shared scenarios with rank-based weights.
@@ -243,31 +243,36 @@ Each experiment is approved before it runs. **Decision:**
    - **no clear difference for any**;
    - `horizon` and `success 0.6` looked worse at g100 but not at g150;
    - `parents: 10` was best at g100 but stopped by the screen.
-6. **E4b confirmation (leave-one-out)**, running: `parents: 10` and `curriculum.success: 0.6`,
-   together and each alone, to g150. Its result decides the baseline for E5.
-7. **E5 noise floor v3 (measurement):** the E4b-decided baseline plus `reevaluate` (8a), with exam
+6. **E4b confirmation (leave-one-out)** ✅ (closed): `parents: 10` and `curriculum.success: 0.6`,
+   together and each alone, to g150.
+   - No clear difference by the rule: the combination against the baseline at g150 was −14,460
+     (2 × se 18,250), 5 of 10 seeds better. Under IQM: −4,693 [−33,223, +6,764].
+   - The combination has the best means (exam 18,268, 88 % of checkpoints, 84 % of races finished,
+     7 of 10 seeds at level 4), and the user adopted it as the default setup by judgement.
+7. **E5 noise floor v3 (measurement)** — moved to M6: the E4b-decided baseline plus `reevaluate` (8a), with exam
    v2 (8b), seeds 1–10, g150.
    - It re-measures the spread between seeds with IQM and bootstrap CIs, and sets `minEffect`.
    - It answers whether re-evaluation alone stops collapses, by comparing with E3b/E4's baseline
      on the same seeds (re-examined with exam v2 from their snapshots, an exam-only run).
    - About 10 runs + 10 exam-only runs.
-8. **E6 learner, done properly (one-at-a-time)** on the E5 baseline:
+8. **E6 learner, done properly (one-at-a-time)** — moved to M6. On the E5 baseline:
    - standard Gaussian (8c);
    - `hidden: [16]` and `hidden: []` (8d);
    - the progress term (8e);
    - curriculum mixing (8f);
    - `parents: 10` again, if E4b did not settle it.
    - Screen at g100, final at g150; about 60 runs.
-9. **E7 CMA-ES** (after step 9): `optimizer: cmaes` against the E6 winner setup, seeds 1–10, g150
+9. **E7 CMA-ES** — moved to M6. After step 9: `optimizer: cmaes` against the E6 winner setup, seeds 1–10, g150
    (a population of 50 means half the episodes per generation of the GA's 100, so also compare at
    equal episode budgets). About 20 runs.
-10. **E8 sensors again (one-at-a-time)** on the improved setup:
+10. **E8 sensors again (one-at-a-time)** — moved to M6. On the improved setup:
     - `whiskers`, `sectors` and `nearest` (`flag: 1`), each added to `lineCheck`;
     - capacity folded in where a sensor needs it (e.g. that sensor with `hidden: [32]`);
     - optional: a pretrained start (a trained model with the new inputs as zero weights);
     - about 40–60 runs.
-11. **E9 confirmation:** the chosen setup trained to g300, re-examined with exam v2, and watched in
-    the viewer on the crash-loop tracks. Then it is a candidate for the game (your call, per
+11. **E9 confirmation** (the last M4 experiment): the default setup (E3b's config plus
+    `parents: 10` and `curriculum: { success: 0.6 }`) trained to g300, seeds 1–10, with exam v2
+    (102 races every 25 generations), and watched in the viewer on the crash-loop tracks. Then it is a candidate for the game (your call, per
     `CLAUDE.md`).
 
 **Superseded** (2026-11-13, after the research):
@@ -287,6 +292,39 @@ Each experiment is approved before it runs. **Decision:**
 
 Experiments may be added or changed as results come in; each change goes into the history.
 
+## Closing M4 (agreed with the user, 2026-11-13)
+
+**The goal is met.** Models see asteroids and fly around them, measurably better than blind models:
+
+| | Blind models (E1, g150) | Default setup (E4b combination, g150) |
+| --- | --- | --- |
+| Race exam score (17 races, lower is better) | 66,400 | about 18,300 |
+| Exam crashes | 611 | 147 |
+| Races finished | 39 % | 84 % |
+| Passive collapse | – | none |
+
+- **Proven:** `lineCheck` sensing (E2) and the staged curriculum (E3b). The curriculum's win holds
+  under IQM with a paired bootstrap CI: −81,900 [−119,600, −15,200] exam points.
+- **Default setup:** task v2 (`rock-in-line` 16 episodes × 2 rocks, `point-to-point` 8 episodes ×
+  80 asteroids, crash cost 3,000, 6 held-out), `sensors: { lineCheck: {} }`,
+  `curriculum: { success: 0.6 }`, `parents: 10`, encoding v1, hidden 10-8-6-4, relative mutation.
+  `parents: 10` and `success: 0.6` were adopted by judgement (best means, no clear difference by
+  the rule).
+- **Power:** with 10 seeds, `npm run iqm` shows that E4/E4b could detect only about 13,000–36,000
+  exam points; a 10,000-point effect needs 20–66 seeds per arm. Most "no clear difference" results
+  in M4 mean "too few runs to tell", not "no effect".
+
+**What remains in M4:**
+1. Step 8 lands: (b) and (e) are on main (0506788); (a) re-evaluation, (c), (d) and (f) are being
+   built.
+2. E9: the default setup to g300 with exam v2, plus a viewer check.
+3. The default setup and its numbers recorded in `HISTORY.md` and the roadmap, then M4 ✅.
+
+**Moved to M6** as its experiment backlog: E5 (noise floor v3 with re-evaluation), E6 (learner
+fixes: proper Gaussian, `hidden: [16]` and linear, progress term, curriculum mixing), step 9 and E7
+(CMA-ES), E8 (richer sensors again with capacity). They run on M5's content and M6's switches, under
+M6's experiment budget rule.
+
 ## Acceptance
 
 - [x] Steps 1–5 committed with `npm run check` green. (CI: pending; nothing has been pushed yet.)
@@ -299,14 +337,14 @@ Experiments may be added or changed as results come in; each change goes into th
 - [x] Step 7: task v2 checked and recorded.
 - [x] Step 7b: curriculum switch, tested (determinism, resume, level-ups, replay of the right level).
 - [x] E3, E3b and E4 run with approved plans, reports and sign-offs.
-- [ ] E4b signed off; its result sets the baseline for E5.
-- [ ] Step 8: `reevaluate`, exam v2 with the IQM/bootstrap script, the Gaussian `rate: 1` test, the
-      linear-policy worker test, the `progress` scoring term and `curriculum.keepEasy`. Each is
-      absent = byte-identical, with tests (determinism, exact resume, replay where it applies).
-- [ ] Step 9: CMA-ES optimiser with exact resume (tests).
-- [ ] E5–E8 run with approved plans, reports and sign-offs; E9 done.
-- [ ] A chosen setup (sensing, encoding, learner, network size) recorded in `HISTORY.md` and the
-      roadmap, with its exam and crash numbers against the blind baseline.
+- [x] E4b signed off; the user chose the combination as the default setup.
+- [ ] Step 8 landed: `reevaluate`, exam v2 with the IQM/bootstrap script ((b) ✓ 0506788), the
+      Gaussian `rate: 1` test, the linear-policy worker test, the `progress` scoring term ((e) ✓
+      0506788) and `curriculum.keepEasy`. Each is absent = byte-identical, with tests.
+- [ ] E9 done: the default setup to g300 with exam v2, report, viewer check.
+- [ ] The default setup recorded in `HISTORY.md` and the roadmap, with its exam and crash numbers
+      against the blind baseline.
+- Moved to M6: step 9 (CMA-ES) and E5–E8.
 - [ ] CI green after the user asks for a push.
 
 ## Not in M4
@@ -429,3 +467,9 @@ Experiments may be added or changed as results come in; each change goes into th
 - **2026-11-13, after E4b:** the user chose the combination (`parents: 10` + `curriculum.success:
   0.6`) as the baseline for E5 onwards, by judgement: it has the best means, but missed the decision
   rule (5 of 10 seeds better). E5's baseline config is E3b's config plus these two keys.
+- **2026-11-13, closing M4** (agreed with the user): M4 closes after step 8 and one confirmation
+  run (E9). E5–E8 and step 9 (CMA-ES) move to M6 as its experiment backlog.
+  - **Why:** experiments kept spawning experiments, and the milestones stalled. The user asked to
+    stop that. M4's goal (models that see and avoid asteroids, clearly better than blind ones) is
+    met, and the IQM power check shows that 10-seed experiments cannot settle the remaining small
+    tuning questions anyway.

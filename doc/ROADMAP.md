@@ -77,13 +77,11 @@ by experiment, how a model should sense obstacles:
 - a training setup that can learn from sensors (input encoding, mutation, selection, the
   training task), fixed after the E2 review;
 - experiments, done: E1 noise floor, E2 sensors (`lineCheck` wins), E3 noise floor v2, E3b
-  curriculum (wins, ends the passive collapse), E4 learner switches (no clear difference); E4b
-  (10 parents + curriculum at 60 %) running;
-- next, after the best-practice research
-  ([`research/neuroevolution-best-practices.md`](research/neuroevolution-best-practices.md)):
-  re-evaluation of the top children, a 102-race exam with IQM and bootstrap CIs, standard Gaussian
-  mutation, linear and one-layer networks, a progress term in the score, curriculum mixing, then
-  CMA-ES, then the richer sensors again, then a g300 confirmation (E5–E9).
+  curriculum (wins, ends the passive collapse), E4 learner switches and E4b (no clear difference;
+  the user adopted `parents: 10` + `curriculum.success: 0.6` as the default by judgement);
+- **closing** (agreed 2026-11-13): the goal is met (exam about 18,300 vs 66,400 blind, crashes
+  147 vs 611, races finished 84 % vs 39 %). What remains: step 8 lands, and E9 confirms the
+  default setup at g300 with the 102-race exam. E5–E8 and CMA-ES moved to M6.
 
 ### S1 — Training speed ✅ (side track)
 
@@ -119,6 +117,9 @@ Each one is an Evo Lab experiment, compared against a baseline on the race exam:
    to M4.
 4. Quality diversity (novelty search, MAP-Elites), only if hovering or other local optima persist
    after M4.
+6. The backlog moved from M4: noise floor with re-evaluation, the learner fixes (standard Gaussian,
+   one-layer and linear networks, progress term, curriculum mixing), CMA-ES, and the richer sensors
+   again. At most 6 experiments before a decision point, each stating the effect it can detect.
 5. Latency and robustness (delayed inputs, noise).
 
 ## Open questions

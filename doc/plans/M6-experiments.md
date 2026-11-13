@@ -120,6 +120,25 @@ Evo Lab's `baseline.reuse`, stored baseline runs serve as the baseline arm.
 | X6 | (optional) MAP-Elites against the GA | only if traps persist | large |
 | X7 | Confirmation: the combined setup to g300, ≥ 20 seeds | measurement against M4's final model | about 2 h |
 
+### 7b. Backlog moved from M4 (2026-11-13)
+
+M4 closed on its proven setup; its open experiments move here. Each runs on the then-current
+baseline, under the budget rule below.
+
+| # | Question | Design | Notes |
+| --- | --- | --- | --- |
+| B1 | Noise floor v3: how much does re-evaluation of the top children (`reevaluate`) change the spread and stop late collapses? | measurement, seeds 1–10 (or 20), exam v2 | sets `minEffect` from IQM and power |
+| B2 | Learner fixes, done properly: standard Gaussian (`{kind: "gaussian", sigma: 0.03, rate: 1}`), `hidden: [16]` and linear (`hidden: []`), the `progress` scoring term, `curriculum.keepEasy` | one-at-a-time on B1's baseline, no screen before g100 | switches built in M4 step 8 |
+| B3 | CMA-ES against the GA (also at equal episode budgets) | one-at-a-time | needs M4's step 9 build: `optimizer: { kind: "cmaes", population, sigma }`; mean, step size, covariance and evolution paths in the checkpoint and `stateHash`; sampling from the run's seeded generator; a deterministic eigen-decomposition (fixed algorithm); exact kill-and-resume test |
+| B4 | Richer sensors again (`whiskers`, `sectors`, `nearest` with `flag: 1`) next to `lineCheck`, with capacity where a sensor needs it (e.g. `hidden: [32]`); optional pretrained start | one-at-a-time | E2's null result came from a weaker setup |
+
+**Budget rule** (all M6 experiments, X1–X7 and B1–B4):
+- Each experiment plan states the effect it can detect, from `npm run iqm`'s power estimate on the
+  current baseline's spread, and the number of seeds that needs.
+- At most **6 experiments** run before a decision point, where the user decides what is adopted
+  and what is dropped. Then the plan is updated before more experiments start.
+- An experiment that cannot detect the effect worth having at an affordable seed count is not run.
+
 ### 8. Readiness for the game
 
 For the best X7 model, a readiness report the user can decide on:
@@ -142,6 +161,7 @@ so (`CLAUDE.md`).
 - [ ] Step 5 committed after M5's arenas exist.
 - [ ] X1–X5 run with approved plans, reports and sign-offs; X7 done; X6 only if triggered (decision
       recorded either way).
+- [ ] The M4 backlog (B1–B4) run or dropped by a recorded decision, under the budget rule.
 - [ ] A readiness report for the best model, and the user's decision on promotion recorded in
       `HISTORY.md`.
 - [ ] `npm run check` green; nothing pushed without asking.
@@ -179,3 +199,11 @@ so (`CLAUDE.md`).
 | Is MAP-Elites worth it? | Only if traps persist after M4's re-evaluation and progress term. |
 | How many seeds for the final confirmation? | 20, with IQM and bootstrap confidence intervals. |
 | What counts as "ready for the game"? | Exam v2 finish rate ≥ 90 % on random tracks, finishes all hand-made tracks, holds up under X2's latency, and the user's own races. The final call is the user's. |
+
+## Changes to this plan
+
+- **2026-11-13, M4 closing** (agreed with the user): M4's open experiments (E5–E8) and its CMA-ES
+  step move here as backlog B1–B4, and a budget rule caps experiments (stated detectable effect, at
+  most 6 before a decision point).
+  - **Why:** in M4, experiments kept spawning experiments and the milestone stalled. With 10 seeds,
+    effects below about 13,000–36,000 exam points cannot be detected.
