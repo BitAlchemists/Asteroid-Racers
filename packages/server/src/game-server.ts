@@ -142,6 +142,7 @@ export class GameServer implements IGameServer {
     track.build(this.world, race, random);
     this.useRace(race);
     this.crashDetector.passiveEntities.push(...this.world.passiveCollisionEntities);
+    this.crashDetector.invalidate();
     return this;
   }
 
@@ -387,12 +388,14 @@ export class GameServer implements IGameServer {
   addObstacle(entity: Entity): void {
     this.spawnEntity(entity);
     this.crashDetector.passiveEntities.push(entity);
+    this.crashDetector.invalidate();
   }
 
   removeObstacle(entity: Entity): void {
     const list = this.crashDetector.passiveEntities;
     const index = list.indexOf(entity);
     if (index !== -1) list.splice(index, 1);
+    this.crashDetector.invalidate();
     this.despawnEntity(entity);
   }
 
