@@ -54,5 +54,10 @@ items in the plan.
   - `result.json` contains no times, paths or pids.
   - Generations are 1-based, and `--to` is inclusive.
 - When you change the files that training depends on, check the `binding` in `lab.config.json`.
+- Evo Lab's renderer plugin is a build (`dist/lab-plugin/`, from `packages/lab-plugin`). After
+  changing server or client code, rebuild it (`npm run build -w @ar/lab-plugin`), or Evo Lab shows
+  the old behaviour.
+- Model variants are compared as Evo Lab experiments: see `doc/experiments.md`. Plans live in
+  `experiments/` (versioned); switches are config keys that are absent when off.
 - Promote a trained model into the game (`packages/server/src/ai/models/`) only by hand, and only
   after it has been checked in real races.

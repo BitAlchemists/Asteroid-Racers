@@ -1,6 +1,6 @@
 # Experiments
 
-How we compare model variants: as [Evo Lab experiments](../../../../worktrees/claude/evo-lab/next/docs/experiments.md)
+How we compare model variants: as Evo Lab experiments
 (evo-lab's `docs/experiments.md`). This page is the short version for this project.
 
 ## The idea
