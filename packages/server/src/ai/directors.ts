@@ -5,6 +5,7 @@ import { LocalServerConnection, type LocalConnectionOptions } from "../local-con
 import { seededRandom, type Random } from "../random";
 import { AIGameClient } from "./ai-game-client";
 import { ArenaScript, type CrashMode, type PlacedEpisode } from "./arena-script";
+import { sameSpec, type BrainSpec } from "./brain-spec";
 import { deriveSeed, SCENARIO_STREAM, type Arena, type ArenaParams, type Scenario } from "./arenas";
 import type { BrainStore } from "./brain-store";
 import { MajorTom } from "./network";
@@ -156,6 +157,8 @@ export interface TrainingOptions {
   store: BrainStore;
   networkName: string;
   layout: readonly number[];
+  /** Inputs and outputs of new brains; stored parents must have the same spec. */
+  spec: BrainSpec;
   /** Brains per generation, all flown simultaneously. */
   sampleSize: number;
   /** Applied to every offspring of the previous winner. */
@@ -249,11 +252,19 @@ export class TrainingDirector extends AIDirector {
 
   /** Candidates for the next generation: each stored brain plus mutated copies of it. */
   createCandidates(): MajorTom[] {
-    const { store, networkName, layout, sampleSize, mutate, random } = this.options;
+    const { store, networkName, layout, spec, sampleSize, mutate, random } = this.options;
     const parents = store.load(networkName);
     if (!parents || parents.length === 0) {
       trainLog.info(`no networks named ${networkName} yet, starting with ${sampleSize} random ones`);
-      return Array.from({ length: sampleSize }, (_, i) => MajorTom.random(layout, random, `Luke #${i}`));
+      return Array.from({ length: sampleSize }, (_, i) =>
+        MajorTom.random(layout, random, `Luke #${i}`, spec),
+      );
+    }
+    for (const parent of parents) {
+      if (!sameSpec(parent.spec, spec))
+        throw new Error(
+          `stored brain ${networkName} has inputs ${parent.spec.inputs.join(",")}, but training is configured for ${spec.inputs.join(",")}`,
+        );
     }
     const candidates: MajorTom[] = [];
     let index = 0;

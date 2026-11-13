@@ -5,6 +5,7 @@ import { seededRandom, type Random } from "../random";
 import type { CrashMode } from "./arena-script";
 import { arenaByName, legacyArena, type ArenaParams } from "./arenas";
 import { MemoryBrainStore, type BrainStore } from "./brain-store";
+import { DEFAULT_HIDDEN, layoutFor, LEGACY_SPEC, type BrainSpec } from "./brain-spec";
 import defaultBrain from "./brains/default-brain.json";
 import { DemoDirector, TrainingDirector, type GenerationReport } from "./directors";
 import { QuadraticSumOfDistanceToTargetsEvaluator } from "./evaluators";
@@ -18,6 +19,7 @@ export * from "./arena-script";
 export * from "./arenas";
 export * from "./scoring";
 export * from "./brain-store";
+export * from "./brain-spec";
 export * from "./directors";
 export * from "./evaluators";
 export * from "./network";
@@ -94,7 +96,8 @@ export interface ArenaConfig {
 export interface TrainingServiceOptions {
   store: BrainStore;
   networkName?: string;
-  layout?: readonly number[];
+  /** Inputs, hidden layers and outputs of new brains (default: the original 4-10-8-6-4-2 brain). */
+  brain?: { spec?: BrainSpec; hidden?: readonly number[] };
   sampleSize?: number;
   /** Default `frames` param for every arena (frames per target in `legacy`, per episode elsewhere). */
   framesPerTarget?: number;
@@ -131,6 +134,7 @@ export function registerAITrainingService(
   const frames = options.framesPerTarget ?? AI_TRAINING_FRAMES;
   const mutationRate = options.mutationRate ?? MUTATION_RATE;
   const mutationStrength = options.mutationStrength ?? MUTATION_STRENGTH;
+  const spec = options.brain?.spec ?? LEGACY_SPEC;
   const arenas = (options.arenas ?? [{ name: legacyArena.name }]).map((a) => ({
     arena: arenaByName(a.name),
     params: { frames, ...a.params },
@@ -138,7 +142,8 @@ export function registerAITrainingService(
   const director = new TrainingDirector({
     store: options.store,
     networkName: options.networkName ?? DEFAULT_BRAIN_NAME,
-    layout: options.layout ?? DEFAULT_LAYOUT,
+    layout: layoutFor(spec, options.brain?.hidden ?? DEFAULT_HIDDEN),
+    spec,
     sampleSize: options.sampleSize ?? AI_TRAINING_SAMPLE_SIZE,
     random,
     arenas,

@@ -1,4 +1,5 @@
 import type { Random } from "../random";
+import { LEGACY_SPEC, validateSpec, type BrainSpec } from "./brain-spec";
 
 /** Weights are initialised uniformly in [-INITIAL_WEIGHT_RANGE, +INITIAL_WEIGHT_RANGE]. */
 export const INITIAL_WEIGHT_RANGE = 1;
@@ -38,6 +39,8 @@ export interface NetworkJson {
    * they were trained. New networks use 1.
    */
   bias_output?: number;
+  /** What the inputs and outputs mean. Missing in brains from before specs: they use the legacy spec. */
+  spec?: BrainSpec;
 }
 
 /**
@@ -48,6 +51,8 @@ export class MajorTom {
   name: string;
   generation = 0;
   biasOutput: number;
+  /** What the inputs and outputs mean (checked against the layout when the brain flies). */
+  spec: BrainSpec;
   /** Neuron count per layer, input layer first. */
   readonly layout: readonly number[];
   readonly weights: Float64Array[];
@@ -55,7 +60,11 @@ export class MajorTom {
 
   constructor(
     layout: readonly number[],
-    { name = "Major Tom", biasOutput = 1 }: { name?: string; biasOutput?: number } = {},
+    {
+      name = "Major Tom",
+      biasOutput = 1,
+      spec = LEGACY_SPEC,
+    }: { name?: string; biasOutput?: number; spec?: BrainSpec } = {},
   ) {
     if (layout.length < 2 || layout.some((n) => !Number.isInteger(n) || n < 1)) {
       throw new Error(`invalid network layout ${JSON.stringify(layout)}`);
@@ -63,6 +72,7 @@ export class MajorTom {
     this.layout = [...layout];
     this.name = name;
     this.biasOutput = biasOutput;
+    this.spec = { inputs: [...spec.inputs], outputs: spec.outputs };
     this.weights = [];
     this.activations = [new Float64Array(layout[0]!)];
     for (let l = 1; l < layout.length; l++) {
@@ -72,8 +82,11 @@ export class MajorTom {
   }
 
   /** A network with random weights in [-1, 1]. */
-  static random(layout: readonly number[], random: Random, name?: string): MajorTom {
-    const network = new MajorTom(layout, name === undefined ? {} : { name });
+  static random(layout: readonly number[], random: Random, name?: string, spec?: BrainSpec): MajorTom {
+    const network = new MajorTom(layout, {
+      ...(name === undefined ? {} : { name }),
+      ...(spec === undefined ? {} : { spec }),
+    });
     for (const layer of network.weights) {
       for (let i = 0; i < layer.length; i++) layer[i] = INITIAL_WEIGHT_RANGE * (random() * 2 - 1);
     }
@@ -136,12 +149,17 @@ export class MajorTom {
       input_neurons_count: this.inputCount,
       layers,
       bias_output: this.biasOutput,
+      spec: { inputs: [...this.spec.inputs], outputs: this.spec.outputs },
     };
   }
 
   static fromJson(json: NetworkJson): MajorTom {
     const layout = [json.input_neurons_count, ...json.layers.map((layer) => layer.length)];
-    const network = new MajorTom(layout, { biasOutput: json.bias_output ?? 0 });
+    if (json.spec) validateSpec(json.spec, layout);
+    const network = new MajorTom(layout, {
+      biasOutput: json.bias_output ?? 0,
+      spec: json.spec ?? LEGACY_SPEC,
+    });
     network.name = json.name ?? "Major Tom";
     network.generation = json.generation ?? 0;
     json.layers.forEach((layer, l) => {
