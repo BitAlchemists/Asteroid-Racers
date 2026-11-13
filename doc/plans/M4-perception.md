@@ -82,11 +82,10 @@ reproduces the stored baseline results byte for byte (existing fixtures and the 
 | `mutation: { kind: "gaussian", sigma, rate }` | absent = relative | Adds N(0, σ) to a weight with probability `rate`. Unbiased, and signs can flip. Default σ 0.2. |
 | `parents: μ` | absent = 1 | (μ + λ) selection: the best μ of the generation are kept, each gets (sample − μ) / μ children. |
 | `initRange` | absent = 1 | Range of the random starting weights. |
-| Sensor `mode: "time"` | absent = distance | `whiskers`, `sectors` and `lineCheck` report closeness in time to impact (distance ÷ closing speed, capped at `horizon` s, default 2) instead of distance. The value is still 0 for nothing and 1 for touching. |
+| Sensor `horizon: s` | absent = distance | `whiskers`, `sectors` and `lineCheck` report closeness by time to impact: 1 − time ÷ horizon, where time = distance ÷ closing speed. Closing speed counts as at least 100 units/s, so a resting ship still sees nearby rocks. The value is still 0 for nothing and 1 for touching; the default range becomes 2,500. |
 
-- **`nearest` padding:** an empty slot reads (0, 0, 0) with an added "present" flag, so "no rock"
-  differs from "a rock far ahead". This is a format change, so it ships as `nearest: { pad: "flag" }`
-  (absent = today).
+- **`nearest` padding:** with `nearest: { flag: 1 }` every slot gets a leading "present" input, and
+  an empty slot reads all 0, so "no rock" differs from "a rock far ahead" (absent = today).
 - Tests cover each switch: determinism, exact resume, spec round trip, and that the game's bot feeds
   a v2 model the same inputs as the trainer.
 - The viewer and the Evo Lab plugin keep working with v2 models (rebuild the plugin).
@@ -119,10 +118,10 @@ not adopted.
 3. **E3 noise floor v2 (measurement):** the task v2 config with `lineCheck`, seeds 1–10, g150. This
    gives the new baseline, its spread and `minEffect`, and is the gate baseline for E4–E6.
 4. **E4 learner (one-at-a-time):** against E3's baseline, switches `encoding`, `mutation`, `parents`
-   and `lineCheck.mode: "time"`. Screen at g50, final at g150. Winners join the baseline. If two or
+   and `lineCheck.horizon: 2`. Screen at g50, final at g150. Winners join the baseline. If two or
    more win, a confirmation run of them together follows (one arm, 10 seeds).
-5. **E5 sensors again (one-at-a-time):** on the E4 setup, add `whiskers`, `sectors` (both
-   `mode: "time"` if E4 adopted it) and `nearest` (flag padding), one at a time. Does richer sensing
+5. **E5 sensors again (one-at-a-time):** on the E4 setup, add `whiskers`, `sectors` (both with a
+   `horizon` if E4 adopted it) and `nearest` (with `flag: 1`), one at a time. Does richer sensing
    pay off once the learner is fixed?
 6. **E6 capacity (multi-level switch `hidden`):** on the E5 setup, `[16]`, `[32]`, `[16,16]` and
    `[32,32]` against 10-8-6-4. Optional arm: a pretrained start (a trained model with new inputs
@@ -144,7 +143,7 @@ Experiments may be added or changed as results come in; each change goes into th
 - [x] Four sensors, deterministic, drawn in the viewer, exact replay with sensors (tests).
 - [x] `rock-in-line` arena and the in-training exam metric in place (tests).
 - [x] E1 and E2 run through Evo Lab experiments with plans, reports and sign-offs.
-- [ ] Step 6 committed: every setup switch absent = byte-identical baseline; tests per switch.
+- [x] Step 6 committed: every setup switch absent = byte-identical baseline; tests per switch.
 - [ ] Step 7: task v2 checked and recorded.
 - [ ] E3–E6 run with approved plans, reports and sign-offs; E7 done.
 - [ ] A chosen setup (sensing, encoding, learner, network size) recorded in `HISTORY.md` and the
@@ -192,3 +191,6 @@ Experiments may be added or changed as results come in; each change goes into th
   - **Scope:** network size and part of the mutation and selection work moved here from M6. The
     old E3 capacity design (`[16, 12, 8]`, `[24, 16]`) was replaced by E6.
   - **Seeds:** 5 → 10.
+- **2026-11-13, step 6:** sensor switches are numeric parameters, like the existing ones: time mode
+  is `horizon: <seconds>` instead of `mode: "time"`, and nearest padding is `flag: 1` instead of
+  `pad: "flag"`. That keeps Evo Lab switch values and the parser numeric; the meaning is unchanged.

@@ -16,22 +16,30 @@ export interface WhiskersSpec {
   /** Fan width in degrees, centred on the nose (180 = from left to right). */
   spread: number;
   range: number;
+  /** Time mode (seconds): closeness by time to impact instead of distance. Absent = distance. */
+  horizon?: number;
 }
 export interface SectorsSpec {
   type: "sectors";
   /** Number of equal sectors around the ship; sector 0 is centred on the nose. */
   count: number;
   range: number;
+  /** Time mode, as for whiskers. */
+  horizon?: number;
 }
 export interface NearestSpec {
   type: "nearest";
   /** Number of nearest obstacles reported. */
   k: number;
   range: number;
+  /** 1: every slot gets a leading "present" input and empty slots read all 0. Absent = the old padding. */
+  flag?: number;
 }
 export interface LineCheckSpec {
   type: "lineCheck";
   range: number;
+  /** Time mode, as for whiskers (the first value only; the offset stays as it is). */
+  horizon?: number;
 }
 export type SensorSpec = WhiskersSpec | SectorsSpec | NearestSpec | LineCheckSpec;
 export type SensorType = SensorSpec["type"];
@@ -88,6 +96,32 @@ function rayCircle(
   return b - Math.sqrt(disc);
 }
 
+/**
+ * Closing speeds below this count as this, so a slow or resting ship still sees rocks within
+ * `horizon × MIN_CLOSING_SPEED` units.
+ */
+export const MIN_CLOSING_SPEED = 100;
+/** Search range of a time-mode sensor when the config gives no `range`. */
+export const TIME_MODE_RANGE = 2500;
+
+/**
+ * The 0..1 closeness of an obstacle `distance` away in direction (dx, dy): by distance
+ * (1 − distance / range) or, in time mode, by time to impact (1 − time / horizon). 0 = nothing.
+ */
+function closeness(
+  s: { range: number; horizon?: number },
+  ship: Movable,
+  distance: number,
+  dx: number,
+  dy: number,
+): number {
+  if (!(distance < s.range)) return 0;
+  if (s.horizon === undefined) return 1 - distance / s.range;
+  const closing = Math.max(MIN_CLOSING_SPEED, ship.velocity.x * dx + ship.velocity.y * dy);
+  const time = distance / closing;
+  return time < s.horizon ? 1 - time / s.horizon : 0;
+}
+
 const edgeDistance = (ship: Movable, o: Entity) =>
   Math.max(0, ship.position.distanceTo(o.position) - o.radius - ship.radius);
 
@@ -105,35 +139,38 @@ interface SensorKind<S extends SensorSpec> {
 
 const whiskers: SensorKind<WhiskersSpec> = {
   size: (s) => s.count,
-  read(s, { ship, obstacles }, out, offset) {
-    const { x, y } = ship.position;
-    const near = obstacles.near(x, y, s.range);
-    whiskerAngles(s).forEach((a, i) => {
-      const d = direction(ship.orientation, a);
-      let t = Infinity;
-      for (const o of near)
-        t = Math.min(t, rayCircle(x, y, d.x, d.y, o.position.x, o.position.y, o.radius + ship.radius));
-      out[offset + i] = t < s.range ? 1 - t / s.range : 0;
-    });
+  read(s, ctx, out, offset) {
+    whiskerHits(s, ctx).forEach(({ t, d }, i) => (out[offset + i] = closeness(s, ctx.ship, t, d.x, d.y)));
   },
   draw(s, ctx) {
-    const values = new Float64Array(s.count);
-    whiskers.read(s, ctx, values, 0);
     const { x, y } = ctx.ship.position;
-    return whiskerAngles(s).map((a, i) => {
-      const d = direction(ctx.ship.orientation, a);
-      const length = values[i]! > 0 ? (1 - values[i]!) * s.range : s.range;
+    return whiskerHits(s, ctx).map(({ t, d }) => {
+      const lit = closeness(s, ctx.ship, t, d.x, d.y) > 0;
+      const length = lit ? t : s.range;
       return {
         kind: "segment",
         x1: x,
         y1: y,
         x2: x + d.x * length,
         y2: y + d.y * length,
-        lit: values[i]! > 0,
+        lit,
       };
     });
   },
 };
+
+/** Per ray: its world direction and the distance to the first rock it hits (Infinity if none). */
+function whiskerHits(s: WhiskersSpec, { ship, obstacles }: SensorContext): { t: number; d: Vector2 }[] {
+  const { x, y } = ship.position;
+  const near = obstacles.near(x, y, s.range);
+  return whiskerAngles(s).map((a) => {
+    const d = direction(ship.orientation, a);
+    let t = Infinity;
+    for (const o of near)
+      t = Math.min(t, rayCircle(x, y, d.x, d.y, o.position.x, o.position.y, o.radius + ship.radius));
+    return { t, d };
+  });
+}
 
 function sectorOf(s: SectorsSpec, angle: number): number {
   const width = 2 / s.count;
@@ -143,27 +180,41 @@ function sectorOf(s: SectorsSpec, angle: number): number {
 
 const sectors: SensorKind<SectorsSpec> = {
   size: (s) => s.count,
-  read(s, { ship, obstacles }, out, offset) {
-    for (let i = 0; i < s.count; i++) out[offset + i] = 0;
-    const { x, y } = ship.position;
-    for (const o of obstacles.near(x, y, s.range + ship.radius)) {
-      const edge = edgeDistance(ship, o);
-      if (edge >= s.range) continue;
-      const i = offset + sectorOf(s, relative(o.position.x - x, o.position.y - y, ship.orientation));
-      out[i] = Math.max(out[i]!, 1 - edge / s.range);
-    }
+  read(s, ctx, out, offset) {
+    sectorReadings(s, ctx).forEach(({ value }, i) => (out[offset + i] = value));
   },
   draw(s, ctx) {
-    const values = new Float64Array(s.count);
-    sectors.read(s, ctx, values, 0);
     const { x, y } = ctx.ship.position;
-    return Array.from(values, (v, i): SensorPrimitive => {
+    return sectorReadings(s, ctx).map(({ value, edge }, i): SensorPrimitive => {
       const d = direction(ctx.ship.orientation, i * (2 / s.count));
-      const length = v > 0 ? (1 - v) * s.range : s.range;
-      return { kind: "segment", x1: x, y1: y, x2: x + d.x * length, y2: y + d.y * length, lit: v > 0 };
+      const length = value > 0 ? edge : s.range;
+      return { kind: "segment", x1: x, y1: y, x2: x + d.x * length, y2: y + d.y * length, lit: value > 0 };
     });
   },
 };
+
+/** Per sector: the highest closeness of a rock in it, and that rock's edge distance. */
+function sectorReadings(
+  s: SectorsSpec,
+  { ship, obstacles }: SensorContext,
+): { value: number; edge: number }[] {
+  const readings = Array.from({ length: s.count }, () => ({ value: 0, edge: Infinity }));
+  const { x, y } = ship.position;
+  for (const o of obstacles.near(x, y, s.range + ship.radius)) {
+    const edge = edgeDistance(ship, o);
+    if (edge >= s.range) continue;
+    const ox = o.position.x - x;
+    const oy = o.position.y - y;
+    const length = Math.hypot(ox, oy) || 1;
+    const value = closeness(s, ship, edge, ox / length, oy / length);
+    const r = readings[sectorOf(s, relative(ox, oy, ship.orientation))]!;
+    if (value > r.value) {
+      r.value = value;
+      r.edge = edge;
+    }
+  }
+  return readings;
+}
 
 function nearestRocks(s: NearestSpec, { ship, obstacles }: SensorContext): Entity[] {
   return obstacles
@@ -176,12 +227,22 @@ function nearestRocks(s: NearestSpec, { ship, obstacles }: SensorContext): Entit
 }
 
 const nearest: SensorKind<NearestSpec> = {
-  size: (s) => 3 * s.k,
+  size: (s) => (s.flag ? 4 : 3) * s.k,
   read(s, ctx, out, offset) {
     const { ship } = ctx;
     const rocks = nearestRocks(s, ctx);
     for (let i = 0; i < s.k; i++) {
       const o = rocks[i];
+      if (s.flag) {
+        const j = offset + 4 * i;
+        out[j] = o ? 1 : 0;
+        out[j + 1] = o
+          ? relative(o.position.x - ship.position.x, o.position.y - ship.position.y, ship.orientation)
+          : 0;
+        out[j + 2] = o ? edgeDistance(ship, o) / s.range : 0;
+        out[j + 3] = o ? o.radius / 100 : 0;
+        continue;
+      }
       const j = offset + 3 * i;
       if (!o) {
         out[j] = 0;
@@ -232,7 +293,7 @@ const lineCheck: SensorKind<LineCheckSpec> = {
   read(s, ctx, out, offset) {
     const hit = firstOnLine(s, ctx);
     const found = hit && Number.isFinite(hit.along);
-    out[offset] = found ? 1 - hit.along / s.range : 0;
+    out[offset] = found ? closeness(s, ctx.ship, hit.along, hit.dx, hit.dy) : 0;
     out[offset + 1] = found ? hit.offset : 0;
   },
   draw(s, ctx) {
@@ -293,9 +354,19 @@ export const SENSOR_DEFAULTS: { [T in SensorType]: Omit<Extract<SensorSpec, { ty
   lineCheck: { range: 1000 },
 };
 
+/** Optional parameters per sensor: absent = off, so older specs stay exactly as they were. */
+const SENSOR_OPTIONAL: { [T in SensorType]: readonly string[] } = {
+  whiskers: ["horizon"],
+  sectors: ["horizon"],
+  nearest: ["flag"],
+  lineCheck: ["horizon"],
+};
+
 /**
  * The `sensors` section of a training config: `{ whiskers: { count, spread, range }, sectors: {...},
  * nearest: {...}, lineCheck: {...} }`, each optional, `{}` meaning the defaults. Absent = no sensors.
+ * Optional: `horizon` (seconds) switches whiskers, sectors and lineCheck to time to impact, with a
+ * default range of {@link TIME_MODE_RANGE}; `nearest.flag: 1` adds a "present" input per slot.
  */
 export function parseSensors(raw: unknown): SensorSpec[] {
   if (raw === undefined) return [];
@@ -316,13 +387,17 @@ export function parseSensors(raw: unknown): SensorSpec[] {
     const defaults = SENSOR_DEFAULTS[type] as Record<string, number>;
     const spec: Record<string, unknown> = { type, ...defaults };
     for (const [key, value] of Object.entries(params)) {
-      if (!(key in defaults)) throw new Error(`unknown parameter sensors.${type}.${key}`);
+      if (!(key in defaults) && !SENSOR_OPTIONAL[type].includes(key))
+        throw new Error(`unknown parameter sensors.${type}.${key}`);
+      if (key === "flag" && value !== 1) throw new Error(`sensors.${type}.flag must be 1 (or absent)`);
       if (typeof value !== "number" || !Number.isFinite(value) || value <= 0)
         throw new Error(`sensors.${type}.${key} must be a number > 0`);
       if ((key === "count" || key === "k") && !Number.isInteger(value))
         throw new Error(`sensors.${type}.${key} must be an integer`);
       spec[key] = value;
     }
+    // Time mode looks further by default: at 1,000 units/s a 2 s horizon needs 2,000 units.
+    if ("horizon" in params && !("range" in params)) spec.range = TIME_MODE_RANGE;
     specs.push(spec as unknown as SensorSpec);
   }
   return specs;

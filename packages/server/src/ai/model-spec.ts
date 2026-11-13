@@ -46,6 +46,11 @@ export function relativeAngle(dx: number, dy: number, orientation: number): numb
   return wrapUnit(towards - orientation / Math.PI);
 }
 
+/** Encoding v2: the distance at which `targetDistanceSoft` reads 0.5. */
+export const V2_DISTANCE_HALF = 500;
+/** Encoding v2: speeds are divided by this (typical race speeds 200–600 read 0.4–1.2). */
+export const V2_SPEED_SCALE = 500;
+
 /**
  * The input registry. Angles are relative to the ship's nose in half turns, lengths scaled by 1/1000.
  * Adding a sensor means adding an entry here; models name the inputs they use.
@@ -61,6 +66,31 @@ export const INPUTS: Readonly<Record<string, (ctx: InputContext) => number>> = {
   velocityAngle: ({ ship }) => relativeAngle(ship.velocity.x, ship.velocity.y, ship.orientation),
   /** Speed. */
   speed: ({ ship }) => ship.velocity.length * INPUT_SCALE,
+
+  // Encoding v2: smooth angles, velocity in the ship's frame, bounded distance; values about −1..1.
+  /** Sine of the angle to the target: + to one side, − to the other, 0 ahead and behind. */
+  targetSin: (ctx) => Math.sin(Math.PI * INPUTS.targetAngle!(ctx)),
+  /** Cosine of the angle to the target: 1 ahead, −1 behind. No jump anywhere. */
+  targetCos: (ctx) => Math.cos(Math.PI * INPUTS.targetAngle!(ctx)),
+  /** Distance to the target squashed into 0..1: d / (d + 500); 0.5 at 500 units. */
+  targetDistanceSoft: ({ ship, target }) => {
+    const d = Math.hypot(target.x - ship.position.x, target.y - ship.position.y);
+    return d / (d + V2_DISTANCE_HALF);
+  },
+  /** Speed along the nose ÷ 500 (negative when drifting backwards). */
+  forwardSpeed: ({ ship }) =>
+    (ship.velocity.length / V2_SPEED_SCALE) *
+    Math.cos(Math.PI * relativeAngle(ship.velocity.x, ship.velocity.y, ship.orientation)),
+  /** Sideways speed ÷ 500, same sign convention as `targetSin`. */
+  sideSpeed: ({ ship }) =>
+    (ship.velocity.length / V2_SPEED_SCALE) *
+    Math.sin(Math.PI * relativeAngle(ship.velocity.x, ship.velocity.y, ship.orientation)),
+};
+
+/** Named input sets: `v1` is the original four, `v2` the smooth, frame-relative encoding. */
+export const ENCODINGS: Readonly<Record<string, readonly string[]>> = {
+  v1: ["targetAngle", "targetDistance", "velocityAngle", "speed"],
+  v2: ["targetSin", "targetCos", "targetDistanceSoft", "forwardSpeed", "sideSpeed"],
 };
 
 /** Output mappings and how many output neurons each needs. */

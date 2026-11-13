@@ -27,6 +27,17 @@ export const mutateRelative: WeightMutator = (weight, rate, strength, random) =>
   return next;
 };
 
+/**
+ * Gaussian mutation: with probability `rate`, add N(0, strength²). Unbiased (weights do not drift
+ * towards 0) and signs can flip. Draws two numbers per mutated weight (Box–Muller).
+ */
+export const mutateGaussian: WeightMutator = (weight, rate, strength, random) => {
+  if (random() >= rate) return weight;
+  const u1 = 1 - random(); // (0, 1], so the log is finite
+  const u2 = random();
+  return weight + strength * Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+};
+
 /** Absolute mutation: with probability `rate`, add ±strength·U(0,1) and clamp to [-1, 1]. */
 export const mutateAbsolute: WeightMutator = (weight, rate, strength, random) => {
   if (random() >= rate) return weight;
@@ -91,13 +102,19 @@ export class MajorTom {
   }
 
   /** A network with random weights in [-1, 1]. */
-  static random(layout: readonly number[], random: Random, name?: string, spec?: ModelSpec): MajorTom {
+  static random(
+    layout: readonly number[],
+    random: Random,
+    name?: string,
+    spec?: ModelSpec,
+    initRange = INITIAL_WEIGHT_RANGE,
+  ): MajorTom {
     const network = new MajorTom(layout, {
       ...(name === undefined ? {} : { name }),
       ...(spec === undefined ? {} : { spec }),
     });
     for (const layer of network.weights) {
-      for (let i = 0; i < layer.length; i++) layer[i] = INITIAL_WEIGHT_RANGE * (random() * 2 - 1);
+      for (let i = 0; i < layer.length; i++) layer[i] = initRange * (random() * 2 - 1);
     }
     return network;
   }

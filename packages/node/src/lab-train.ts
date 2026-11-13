@@ -27,6 +27,7 @@ import {
   AI_TRAINING_FRAMES,
   AI_TRAINING_SAMPLE_SIZE,
   DEFAULT_MODEL_NAME,
+  ENCODINGS,
   GameServer,
   ManualGameLoop,
   MemoryModelStore,
@@ -85,6 +86,14 @@ export interface TrainConfig {
   sensors?: Record<string, Record<string, number>>;
   /** Switch: hidden layer sizes overriding `model.hidden`. Absent = the model's own. */
   hidden?: number[];
+  /** Switch: a named input set (`v2`: smooth angles, ship-frame velocity) replacing `model.inputs`. */
+  encoding?: string;
+  /** Switch: Gaussian mutation (add N(0, sigma²) with probability `rate`, default `mutationRate`). */
+  mutation?: { kind: "gaussian"; sigma: number; rate?: number };
+  /** Switch: models kept per generation, best first ((μ + λ) selection). Absent = 1. */
+  parents?: number;
+  /** Switch: range of the random starting weights. Absent = 1. */
+  initRange?: number;
   /**
    * Switch: every `every` generations (and at the last), the winner flies the race exam; its
    * metrics go on that generation's `gen` event. The rest is an exam config (defaults filled in).
@@ -98,6 +107,8 @@ interface Checkpoint {
   seed: number;
   config: TrainConfig;
   winner: NetworkJson | null;
+  /** All kept models, best first; only with the `parents` switch (else the winner alone). */
+  parents?: NetworkJson[];
   bestScore: number | null;
   rng: { mutation: number; server: number };
 }
@@ -148,6 +159,20 @@ function parseTrainingExam(raw: unknown): ExamConfig & { every: number } {
   return { every: every as number, ...parseExamConfig(exam) };
 }
 
+function parseMutation(raw: unknown): { kind: "gaussian"; sigma: number; rate?: number } {
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw))
+    throw new Error('config.mutation must be an object ({ kind: "gaussian", sigma, rate? })');
+  const { kind, sigma = 0.2, rate, ...rest } = raw as Record<string, unknown>;
+  if (Object.keys(rest).length > 0)
+    throw new Error(`unknown config.mutation keys ${Object.keys(rest).join(", ")}`);
+  if (kind !== "gaussian") throw new Error('config.mutation.kind must be "gaussian"');
+  if (typeof sigma !== "number" || !(sigma > 0))
+    throw new Error("config.mutation.sigma must be a number > 0");
+  if (rate !== undefined && (typeof rate !== "number" || !(rate > 0 && rate <= 1)))
+    throw new Error("config.mutation.rate must be in (0, 1]");
+  return { kind, sigma, ...(rate === undefined ? {} : { rate }) };
+}
+
 function readConfig(): TrainConfig {
   const file = values.config === undefined ? undefined : resolve(runDir, String(values.config));
   const raw =
@@ -179,7 +204,27 @@ function readConfig(): TrainConfig {
         }),
     ...(raw.hidden === undefined ? {} : { hidden: raw.hidden as number[] }),
     ...(raw.exam === undefined ? {} : { exam: parseTrainingExam(raw.exam) }),
+    ...(raw.encoding === undefined ? {} : { encoding: raw.encoding as string }),
+    ...(raw.mutation === undefined ? {} : { mutation: parseMutation(raw.mutation) }),
+    ...(raw.parents === undefined ? {} : { parents: raw.parents as number }),
+    ...(raw.initRange === undefined ? {} : { initRange: raw.initRange as number }),
   };
+  if (config.encoding !== undefined) {
+    if (typeof config.encoding !== "string" || !(config.encoding in ENCODINGS))
+      throw new Error(`config.encoding must be one of ${Object.keys(ENCODINGS).join(", ")}`);
+    const given = (raw.model as { inputs?: unknown } | undefined)?.inputs;
+    if (given !== undefined) throw new Error("config.encoding and config.model.inputs cannot both be set");
+  }
+  if (
+    config.parents !== undefined &&
+    (!Number.isInteger(config.parents) ||
+      config.parents < 1 ||
+      config.parents >= config.sample ||
+      (config.sample - config.parents) % config.parents !== 0)
+  )
+    throw new Error("config.parents must be an integer ≥ 1 that divides sample − parents");
+  if (config.initRange !== undefined && (typeof config.initRange !== "number" || !(config.initRange > 0)))
+    throw new Error("config.initRange must be a number > 0");
   if (
     config.hidden !== undefined &&
     (!Array.isArray(config.hidden) || !config.hidden.every((n) => Number.isInteger(n) && n >= 1))
@@ -239,12 +284,19 @@ async function main(): Promise<void> {
     sendOwnShipEveryTick: true,
   });
   const store = new MemoryModelStore();
-  if (saved?.winner) store.save(DEFAULT_MODEL_NAME, [MajorTom.fromJson(saved.winner)]);
+  if (saved?.parents)
+    store.save(
+      DEFAULT_MODEL_NAME,
+      saved.parents.map((p) => MajorTom.fromJson(p)),
+    );
+  else if (saved?.winner) store.save(DEFAULT_MODEL_NAME, [MajorTom.fromJson(saved.winner)]);
 
   const startG = saved?.g ?? 0;
   let g = startG;
   let bestScore = saved?.bestScore ?? null;
   let winner: MajorTom | undefined = saved?.winner ? MajorTom.fromJson(saved.winner) : undefined;
+  /** Kept models after the last generation (only tracked with the `parents` switch). */
+  let parents: NetworkJson[] | undefined = saved?.parents;
   let genStartWall = performance.now();
   let genStartCpu = process.cpuUsage();
   const pending: Promise<void>[] = [];
@@ -258,6 +310,7 @@ async function main(): Promise<void> {
     seed,
     config,
     winner: winner ? winner.toJson() : null,
+    ...(parents === undefined ? {} : { parents }),
     bestScore,
     rng: { mutation: mutationRandom.state, server: serverRandom.state },
   });
@@ -270,6 +323,7 @@ async function main(): Promise<void> {
     g = report.generation;
     winner = report.winner;
     bestScore = report.bestScore;
+    if (config.parents !== undefined) parents = report.parents.map((p) => p.toJson());
     const cpu = process.cpuUsage(genStartCpu);
     const wall = (performance.now() - genStartWall) / 1000;
     const cpuSec = (cpu.user + cpu.system) / 1e6;
@@ -303,6 +357,7 @@ async function main(): Promise<void> {
       .update(
         JSON.stringify({
           winner: report.winner.toJson(),
+          ...(parents === undefined ? {} : { parents }),
           bestScore: report.bestScore,
           rng: { mutation: mutationRandom.state, server: serverRandom.state },
         }),
@@ -351,7 +406,7 @@ async function main(): Promise<void> {
       framesPerTarget: config.frames,
       model: {
         spec: {
-          inputs: config.model.inputs,
+          inputs: config.encoding ? [...ENCODINGS[config.encoding]!] : config.model.inputs,
           outputs: config.model.outputs,
           ...(config.sensors ? { sensors: parseSensors(config.sensors) } : {}),
         },
@@ -365,6 +420,9 @@ async function main(): Promise<void> {
       scenarioSeed: seed,
       mutationRate: config.mutationRate,
       mutationStrength: config.mutationStrength,
+      ...(config.mutation ? { mutation: config.mutation } : {}),
+      ...(config.parents === undefined ? {} : { parents: config.parents }),
+      ...(config.initRange === undefined ? {} : { initRange: config.initRange }),
       random: mutationRandom,
       firstGeneration: startG + 1,
       maxGenerations: to - startG,

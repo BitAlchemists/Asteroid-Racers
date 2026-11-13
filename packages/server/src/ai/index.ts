@@ -9,7 +9,7 @@ import { DEFAULT_HIDDEN, layoutFor, LEGACY_SPEC, type ModelSpec } from "./model-
 import defaultModel from "./models/default-model.json";
 import { DemoDirector, TrainingDirector, type GenerationReport } from "./directors";
 import { QuadraticSumOfDistanceToTargetsEvaluator } from "./evaluators";
-import { mutateRelative, type MajorTom, type NetworkJson } from "./network";
+import { mutateGaussian, mutateRelative, type MajorTom, type NetworkJson } from "./network";
 import type { ScoringWeights } from "./scoring";
 import { RaceTargetScript, RespawnTargetTrainingScript } from "./scripts";
 import { TargetGenerator } from "./target-generator";
@@ -104,6 +104,15 @@ export interface TrainingServiceOptions {
   mutationRate?: number;
   /** Relative size of a weight mutation (default 1 = up to ±100 %). */
   mutationStrength?: number;
+  /**
+   * Gaussian mutation instead of the relative one: add N(0, sigma²) with probability `rate`
+   * (default `mutationRate`). Absent = relative mutation.
+   */
+  mutation?: { kind: "gaussian"; sigma: number; rate?: number };
+  /** Models kept per generation, best first (default 1). See {@link TrainingOptions.parents}. */
+  parents?: number;
+  /** Range of the random starting weights (default 1). */
+  initRange?: number;
   maxGenerations?: number;
   /** Number of the first generation (default 1; a resumed run passes g + 1). */
   firstGeneration?: number;
@@ -151,8 +160,13 @@ export function registerAITrainingService(
     ...(options.firstGeneration === undefined ? {} : { firstGeneration: options.firstGeneration }),
     ...(options.maxGenerations === undefined ? {} : { maxGenerations: options.maxGenerations }),
     ...(options.onGeneration === undefined ? {} : { onGeneration: options.onGeneration }),
-    mutate: (network: MajorTom, rnd: Random) =>
-      network.mutate(mutationRate, mutationStrength, mutateRelative, rnd),
+    ...(options.parents === undefined ? {} : { parents: options.parents }),
+    ...(options.initRange === undefined ? {} : { initRange: options.initRange }),
+    mutate: options.mutation
+      ? (network: MajorTom, rnd: Random) =>
+          network.mutate(options.mutation!.rate ?? mutationRate, options.mutation!.sigma, mutateGaussian, rnd)
+      : (network: MajorTom, rnd: Random) =>
+          network.mutate(mutationRate, mutationStrength, mutateRelative, rnd),
   });
   server.registerService(director);
   return director;

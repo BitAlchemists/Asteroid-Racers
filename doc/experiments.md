@@ -13,7 +13,15 @@ An experiment answers one question by comparing **arms** (the baseline config, p
   the stored baseline runs and compares the per-generation `stateHash`. Our switches so far:
   - `sensors`: obstacle sensors, e.g. `{ "whiskers": {} }` or
     `{ "lineCheck": { "range": 800 } }` (see `parseSensors` in `packages/server/src/ai/sensors.ts`);
-  - `hidden`: hidden layer sizes, e.g. `[16, 12, 8]`.
+    Optional sensor parameters: `horizon` (seconds) switches `whiskers`, `sectors` and `lineCheck`
+    to time to impact (default range then 2,500); `nearest: { "flag": 1 }` adds a "present" input
+    per slot;
+  - `hidden`: hidden layer sizes, e.g. `[16, 12, 8]`;
+  - `encoding`: `"v2"` replaces the four classic inputs with `targetSin`, `targetCos`,
+    `targetDistanceSoft`, `forwardSpeed`, `sideSpeed` (about −1..1, no jump behind the ship);
+  - `mutation`: `{ "kind": "gaussian", "sigma": 0.2 }` (optional `rate`, default `mutationRate`);
+  - `parents`: models kept per generation, (μ + λ); `sample − parents` must divide by `parents`;
+  - `initRange`: range of the random starting weights (default 1).
 - A switch key may not appear in the method's default config in `lab.config.json` (that is why the
   `model` block is not there).
 - **The decision metric is `exam`** (the race exam score, lower is better), produced inside training

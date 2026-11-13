@@ -485,3 +485,29 @@ nothing for blind models.
 - **Mistake:** when the user asked about model size, I answered with a proposal and a scheduling
   question instead of a direct recommendation. The user had to ask again. The recommendation is
   yes: change the layers, in E6, after the setup fixes.
+
+### M4 step 6: training setup switches
+
+All switches are absent when off. The stored baseline fixtures (legacy, p2p) still reproduce byte
+for byte, and all earlier tests pass unchanged.
+
+- **`encoding: "v2"`:** the inputs `targetSin`, `targetCos`, `targetDistanceSoft` (d / (d + 500)),
+  `forwardSpeed` and `sideSpeed` (÷ 500), in the input registry (`ENCODINGS` in `model-spec.ts`).
+  The game's bot and the trainer share `TargetVehicleController`, so v2 models play exactly as
+  trained. A test flies a v2 model through the exam and its replay and gets equal results.
+- **`mutation: { kind: "gaussian", sigma, rate? }`** (`mutateGaussian`, Box–Muller). Tested to be
+  unbiased and to flip signs.
+- **`parents: μ`:** (μ + λ) selection in `TrainingDirector`. The checkpoint stores all parents, and
+  the `stateHash` covers them when the switch is on.
+- **`initRange`:** range of the random starting weights.
+- **Sensors:**
+  - `horizon` (time to impact) for whiskers, sectors and lineCheck. Closing speed counts as at least
+    100 units/s, and the default range becomes 2,500.
+  - `nearest.flag: 1`: a "present" input per slot; empty slots read all 0.
+- **Tests:** `setup-switches.test.ts` (new), plus a worker test with all switches on, including a
+  kill-and-resume equal to an uninterrupted run, and seven new config validation cases.
+- **Deviation from the plan:** the sensor options are numeric (`horizon: 2` instead of
+  `mode: "time"`, `flag: 1` instead of `pad: "flag"`), like the other sensor parameters. The plan
+  is updated.
+- The plugin was rebuilt. Not yet done: any training run with the new switches (step 7 starts
+  with a short check run).

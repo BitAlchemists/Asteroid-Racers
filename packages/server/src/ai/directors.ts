@@ -146,6 +146,8 @@ export interface GenerationReport {
   /** Share of held-out targets the winner reached (0..1). */
   heldOutSuccess?: number;
   winner: MajorTom;
+  /** The models kept for the next generation, best first (just the winner unless `parents` > 1). */
+  parents: MajorTom[];
   sampleSize: number;
   gameSeconds: number;
 }
@@ -162,6 +164,13 @@ export interface TrainingOptions {
   mutate: (network: MajorTom, random: Random) => void;
   /** Drives mutation and the first random models. */
   random: Random;
+  /**
+   * Models kept per generation (μ in (μ + λ)): the best `parents` survive, and each gets
+   * (sampleSize − parents) / parents mutated children. Default 1: one winner, sampleSize − 1 children.
+   */
+  parents?: number;
+  /** Range of the random starting weights of the first generation (default 1). */
+  initRange?: number;
   /** Every candidate flies every arena, one arena after the other. */
   arenas: readonly ArenaRun[];
   /** Run seed: scenario seeds are derived from it, the stream, the arena index and the generation. */
@@ -233,7 +242,9 @@ export class TrainingDirector extends AIDirector {
     if (!parents || parents.length === 0) {
       trainLog.info(`no networks named ${networkName} yet, starting with ${sampleSize} random ones`);
       return Array.from({ length: sampleSize }, (_, i) =>
-        MajorTom.random(layout, random, `Luke #${i}`, spec),
+        this.options.initRange === undefined
+          ? MajorTom.random(layout, random, `Luke #${i}`, spec)
+          : MajorTom.random(layout, random, `Luke #${i}`, spec, this.options.initRange),
       );
     }
     for (const parent of parents) {
@@ -243,10 +254,11 @@ export class TrainingDirector extends AIDirector {
         );
     }
     const candidates: MajorTom[] = [];
+    const childrenEach = Math.floor((sampleSize - parents.length) / parents.length);
     let index = 0;
     for (const parent of parents) {
       candidates.push(parent);
-      for (let i = 0; i < sampleSize - 1; i++) {
+      for (let i = 0; i < childrenEach; i++) {
         const child = parent.clone();
         child.name = `Major Tom #${index++}`;
         child.generation = parent.generation + 1;
@@ -315,7 +327,8 @@ export class TrainingDirector extends AIDirector {
       .sort((a, b) => a.score - b.score);
     const best = scored[0]!;
     best.network.name = "Winner from last round";
-    this.options.store.save(this.options.networkName, [best.network]);
+    const parents = scored.slice(0, this.options.parents ?? 1).map((s) => s.network);
+    this.options.store.save(this.options.networkName, parents);
 
     let heldOut: { heldOutScore: number; heldOutSuccess: number } | undefined;
     if (this.heldOutScenarios.length > 0) {
@@ -343,6 +356,7 @@ export class TrainingDirector extends AIDirector {
       ),
       ...heldOut,
       winner: best.network,
+      parents,
       sampleSize: scored.length,
       gameSeconds: (this.server?.gameTime ?? 0) - startedAt,
     };

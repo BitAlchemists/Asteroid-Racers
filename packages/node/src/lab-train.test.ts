@@ -262,6 +262,57 @@ describe("evo-lab worker (protocol v1)", () => {
     expect(res.winner.layers[0]).toHaveLength(6);
   }, 120_000);
 
+  it("setup switches (encoding, mutation, parents, initRange, time-mode sensors): exact resume holds", async () => {
+    const config = {
+      sample: 8,
+      frames: 60,
+      arenas: [{ name: "rock-in-line", params: { episodes: 2 } }],
+      collisions: "obstacles",
+      crashMode: "respawn",
+      encoding: "v2",
+      mutation: { kind: "gaussian", sigma: 0.3 },
+      parents: 2,
+      initRange: 2,
+      sensors: { lineCheck: { horizon: 2 }, nearest: { k: 1, flag: 1 } },
+      hidden: [5],
+    };
+    const straight = newRun(config);
+    expect(await run(straight, ["--to", "4"])).toBe(0);
+    const resumed = newRun(config);
+    expect(await run(resumed, ["--to", "2"])).toBe(0);
+    const ckpt = JSON.parse(readFileSync(join(resumed, "ckpt.json"), "utf8")) as { parents: unknown[] };
+    expect(ckpt.parents).toHaveLength(2);
+    expect(await run(resumed, ["--resume", "--to", "4"])).toBe(0);
+    expect(result(resumed)).toBe(result(straight));
+    const res = JSON.parse(result(straight)) as {
+      config: Record<string, unknown>;
+      winner: { input_neurons_count: number; spec: { inputs: string[]; sensors: unknown[] } };
+    };
+    expect(res.config).toMatchObject({
+      encoding: "v2",
+      mutation: { kind: "gaussian", sigma: 0.3 },
+      parents: 2,
+    });
+    expect(res.winner.spec.inputs).toEqual([
+      "targetSin",
+      "targetCos",
+      "targetDistanceSoft",
+      "forwardSpeed",
+      "sideSpeed",
+    ]);
+    expect(res.winner.spec.sensors).toEqual([
+      { type: "nearest", k: 1, range: 800, flag: 1 },
+      { type: "lineCheck", range: 2500, horizon: 2 },
+    ]);
+    expect(res.winner.input_neurons_count).toBe(5 + 4 + 2);
+    // The stateHash of every generation covers the kept parents too: equal runs, equal hashes.
+    const hashes = (dir: string) =>
+      events(dir)
+        .filter((e) => e.type === "gen")
+        .map((e) => e.stateHash);
+    expect(hashes(resumed)).toEqual(hashes(straight));
+  }, 120_000);
+
   it("exam switch: race metrics on every N-th generation, results and resume unchanged", async () => {
     const exam = { every: 2, tracks: ["short"], randomTracks: 1, timeLimitSeconds: 10 };
     const withExam = newRun({ ...CONFIG, exam });
@@ -325,6 +376,13 @@ describe("evo-lab worker (protocol v1)", () => {
       [{ exam: { every: 0 } }, /exam.every/],
       [{ exam: { tracks: ["moon"] } }, /unknown track/],
       [{ brain: { inputs: ["sonar"] } }, /unknown model inputs/], // old key name still read
+      [{ encoding: "v9" }, /config.encoding/],
+      [{ encoding: "v2", model: { inputs: ["speed"] } }, /cannot both be set/],
+      [{ mutation: { kind: "cauchy" } }, /mutation.kind/],
+      [{ mutation: { kind: "gaussian", sigma: 0 } }, /sigma/],
+      [{ sample: 10, parents: 3 }, /parents/],
+      [{ initRange: -1 }, /initRange/],
+      [{ sensors: { nearest: { horizon: 1 } } }, /unknown parameter/],
     ] as const) {
       const dir = newRun(config);
       expect(await run(dir, ["--to", "1"])).not.toBe(0);
