@@ -328,3 +328,5 @@ Plan: [`plans/M3-visibility.md`](plans/M3-visibility.md), approved by the user (
   - tier-2 baselines are expected to show missing obstacle sensing as a ceiling, which is where
     M5's sensor experiments start.
 - Dropped moving obstacles from the roadmap's tier 3, because the game has none.
+- Pushed to `main` at the user's request; CI passed on `ab90101` (run 43437647970), including the
+  plugin build. M3 is done.

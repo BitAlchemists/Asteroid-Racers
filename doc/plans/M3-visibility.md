@@ -1,6 +1,6 @@
 # M3 — Visibility
 
-Status: 🟡 in progress (approved 2026-11-13). Roadmap: [`../ROADMAP.md`](../ROADMAP.md)
+Status: ✅ done (approved and finished 2026-11-13). Roadmap: [`../ROADMAP.md`](../ROADMAP.md)
 
 ## Goal
 
@@ -111,7 +111,7 @@ Each step ends with `npm run check` green and its own commit.
 
 ## Acceptance
 
-- [x] Steps 1–5 committed, `npm run check` green. CI is still open: it runs only after a push.
+- [x] Steps 1–5 committed, `npm run check` green, CI green (run 43437647970 on `ab90101`).
 - [x] A replayed training winner reproduces the run's recorded best score exactly; a replayed exam
       flight reproduces the exam's flight result exactly (tests).
 - [x] Snapshots with traces leave `result.json` and exact resume unchanged (tests).
