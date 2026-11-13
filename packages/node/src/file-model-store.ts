@@ -1,12 +1,12 @@
 import { appendFileSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { MajorTom, type BrainStore, type NetworkJson } from "@ar/server";
+import { MajorTom, type ModelStore, type NetworkJson } from "@ar/server";
 
 /**
- * Brains on disk in the Dart trainer's layout: `<root>/<name>/luke.txt` holds a JSON array of
+ * Models on disk in the Dart trainer's layout: `<root>/<name>/luke.txt` holds a JSON array of
  * networks, `<root>/<name>/log/<timestamp>.log` the training report. Old Dart files load unchanged.
  */
-export class FileBrainStore implements BrainStore {
+export class FileModelStore implements ModelStore {
   readonly root: string;
 
   constructor(root = "db") {
@@ -27,7 +27,7 @@ export class FileBrainStore implements BrainStore {
   save(name: string, networks: readonly MajorTom[]): void {
     const file = this.path(name);
     mkdirSync(join(this.root, name), { recursive: true });
-    // Write-then-rename so an interrupted save never leaves a truncated brain behind.
+    // Write-then-rename so an interrupted save never leaves a truncated model behind.
     const temp = `${file}.tmp`;
     writeFileSync(temp, JSON.stringify(networks.map((n) => n.toJson())));
     renameSync(temp, file);

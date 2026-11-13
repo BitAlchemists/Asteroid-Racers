@@ -1,9 +1,9 @@
 import type { Entity, Movable, Vector2 } from "@ar/shared";
 import type { AIGameClient, VehicleController } from "./ai-game-client";
-import { INPUTS, LEGACY_SPEC, validateSpec, type InputContext } from "./brain-spec";
+import { INPUTS, LEGACY_SPEC, validateSpec, type InputContext } from "./model-spec";
 import type { MajorTom } from "./network";
 
-export { INPUT_SCALE } from "./brain-spec";
+export { INPUT_SCALE } from "./model-spec";
 
 /** Network output 1 maps to this rotation speed (rad/s), like the human controls. */
 export const MAX_BOT_ROTATION_SPEED = 5;
@@ -19,7 +19,7 @@ export function targetInputs(ship: Movable, target: Vector2): [number, number, n
 }
 
 /**
- * Flies the bot's ship towards `target`: every frame it computes the inputs the brain's spec names,
+ * Flies the bot's ship towards `target`: every frame it computes the inputs the model's spec names,
  * and turns the outputs into thrust and turn rate.
  */
 export class TargetVehicleController implements VehicleController {

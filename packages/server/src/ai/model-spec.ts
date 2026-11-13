@@ -4,10 +4,10 @@ import type { Movable, Vector2 } from "@ar/shared";
 export const INPUT_SCALE = 1 / 1000;
 
 /**
- * What a brain sees and what its outputs mean. Stored with every brain, so the game and the trainer
+ * What a model sees and what its outputs mean. Stored with every model, so the game and the trainer
  * always feed a network the inputs it was trained with.
  */
-export interface BrainSpec {
+export interface ModelSpec {
   /** Names from {@link INPUTS}, in input-neuron order. */
   inputs: string[];
   /** How the outputs drive the ship; see {@link OUTPUTS}. */
@@ -37,7 +37,7 @@ export function relativeAngle(dx: number, dy: number, orientation: number): numb
 
 /**
  * The input registry. Angles are relative to the ship's nose in half turns, lengths scaled by 1/1000.
- * Adding a sensor means adding an entry here; brains name the inputs they use.
+ * Adding a sensor means adding an entry here; models name the inputs they use.
  */
 export const INPUTS: Readonly<Record<string, (ctx: InputContext) => number>> = {
   /** Angle to the current target. */
@@ -57,8 +57,8 @@ export const OUTPUTS: Readonly<Record<string, { count: number; description: stri
   thrustTurn: { count: 2, description: "thrust (tanh −1..1 → 0..1), turn rate (±1 → ±5 rad/s)" },
 };
 
-/** The four inputs and two outputs of every brain trained before brain specs existed. */
-export const LEGACY_SPEC: Readonly<BrainSpec> = Object.freeze({
+/** The four inputs and two outputs of every model trained before model specs existed. */
+export const LEGACY_SPEC: Readonly<ModelSpec> = Object.freeze({
   inputs: ["targetAngle", "targetDistance", "velocityAngle", "speed"],
   outputs: "thrustTurn",
 });
@@ -67,25 +67,25 @@ export const LEGACY_SPEC: Readonly<BrainSpec> = Object.freeze({
 export const DEFAULT_HIDDEN: readonly number[] = [10, 8, 6, 4];
 
 /** Throws unless every input and the output mapping are known and they fit `layout`. */
-export function validateSpec(spec: BrainSpec, layout: readonly number[]): void {
+export function validateSpec(spec: ModelSpec, layout: readonly number[]): void {
   const unknown = spec.inputs.filter((name) => !(name in INPUTS));
   if (unknown.length > 0)
-    throw new Error(`unknown brain inputs ${unknown.join(", ")}; known: ${Object.keys(INPUTS).join(", ")}`);
+    throw new Error(`unknown model inputs ${unknown.join(", ")}; known: ${Object.keys(INPUTS).join(", ")}`);
   const output = OUTPUTS[spec.outputs];
-  if (!output) throw new Error(`unknown brain outputs ${JSON.stringify(spec.outputs)}`);
+  if (!output) throw new Error(`unknown model outputs ${JSON.stringify(spec.outputs)}`);
   if (layout[0] !== spec.inputs.length || layout.at(-1) !== output.count)
     throw new Error(
-      `brain spec needs ${spec.inputs.length} inputs and ${output.count} outputs, network layout is ${JSON.stringify(layout)}`,
+      `model spec needs ${spec.inputs.length} inputs and ${output.count} outputs, network layout is ${JSON.stringify(layout)}`,
     );
 }
 
-export function layoutFor(spec: BrainSpec, hidden: readonly number[]): number[] {
+export function layoutFor(spec: ModelSpec, hidden: readonly number[]): number[] {
   const output = OUTPUTS[spec.outputs];
-  if (!output) throw new Error(`unknown brain outputs ${JSON.stringify(spec.outputs)}`);
+  if (!output) throw new Error(`unknown model outputs ${JSON.stringify(spec.outputs)}`);
   return [spec.inputs.length, ...hidden, output.count];
 }
 
-export function sameSpec(a: BrainSpec, b: BrainSpec): boolean {
+export function sameSpec(a: ModelSpec, b: ModelSpec): boolean {
   return (
     a.outputs === b.outputs &&
     a.inputs.length === b.inputs.length &&
@@ -93,25 +93,25 @@ export function sameSpec(a: BrainSpec, b: BrainSpec): boolean {
   );
 }
 
-/** The `brain` section of a training config: `{ inputs?, hidden?, outputs? }`, defaults = the original brain. */
-export function parseBrainConfig(raw: unknown): { spec: BrainSpec; hidden: number[] } {
+/** The `model` section of a training config: `{ inputs?, hidden?, outputs? }`, defaults = the original model. */
+export function parseModelConfig(raw: unknown): { spec: ModelSpec; hidden: number[] } {
   if (raw === undefined)
     return { spec: { ...LEGACY_SPEC, inputs: [...LEGACY_SPEC.inputs] }, hidden: [...DEFAULT_HIDDEN] };
-  if (typeof raw !== "object" || raw === null) throw new Error("brain must be an object");
+  if (typeof raw !== "object" || raw === null) throw new Error("model must be an object");
   const { inputs, hidden, outputs, ...rest } = raw as Record<string, unknown>;
-  if (Object.keys(rest).length > 0) throw new Error(`unknown brain keys ${Object.keys(rest).join(", ")}`);
+  if (Object.keys(rest).length > 0) throw new Error(`unknown model keys ${Object.keys(rest).join(", ")}`);
   if (
     inputs !== undefined &&
     (!Array.isArray(inputs) || inputs.length === 0 || !inputs.every((i) => typeof i === "string"))
   )
-    throw new Error("brain.inputs must be a non-empty list of input names");
+    throw new Error("model.inputs must be a non-empty list of input names");
   if (
     hidden !== undefined &&
     (!Array.isArray(hidden) || !hidden.every((n) => Number.isInteger(n) && (n as number) >= 1))
   )
-    throw new Error("brain.hidden must be a list of layer sizes ≥ 1");
-  if (outputs !== undefined && typeof outputs !== "string") throw new Error("brain.outputs must be a string");
-  const spec: BrainSpec = {
+    throw new Error("model.hidden must be a list of layer sizes ≥ 1");
+  if (outputs !== undefined && typeof outputs !== "string") throw new Error("model.outputs must be a string");
+  const spec: ModelSpec = {
     inputs: (inputs as string[] | undefined) ?? [...LEGACY_SPEC.inputs],
     outputs: (outputs as string | undefined) ?? LEGACY_SPEC.outputs,
   };

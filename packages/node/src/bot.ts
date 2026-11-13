@@ -3,8 +3,8 @@ import { parseArgs } from "node:util";
 import { Level, setLogLevel, WebSocketServerConnection } from "@ar/shared";
 import {
   AIGameClient,
-  bundledBrains,
-  DEFAULT_BRAIN_NAME,
+  bundledModels,
+  DEFAULT_MODEL_NAME,
   MajorTom,
   RaceTargetScript,
   TICK_SECONDS,
@@ -18,7 +18,7 @@ Usage: npm run bot -- [options]
 
   --url <ws-url>        server (default ws://localhost:1337/ws)
   --name <name>         ship name (default Major Tom)
-  --brain <file>        a network JSON file, or a luke.txt from the trainer (default: bundled brain)
+  --model <file>        a network JSON file, or a luke.txt from the trainer (default: bundled model)
   --delay <seconds>     pause before chasing each new target (default 5)
   -h, --help`;
 
@@ -26,7 +26,8 @@ const { values } = parseArgs({
   options: {
     url: { type: "string", default: "ws://localhost:1337/ws" },
     name: { type: "string", default: "Major Tom" },
-    brain: { type: "string" },
+    model: { type: "string" },
+    brain: { type: "string" }, // old name of --model
     delay: { type: "string", default: "5" },
     help: { type: "boolean", short: "h" },
   },
@@ -37,8 +38,8 @@ if (values.help) {
 }
 setLogLevel("", Level.INFO);
 
-function loadBrain(file: string | undefined): MajorTom {
-  if (!file) return bundledBrains().load(DEFAULT_BRAIN_NAME)![0]!;
+function loadModel(file: string | undefined): MajorTom {
+  if (!file) return bundledModels().load(DEFAULT_MODEL_NAME)![0]!;
   const json = JSON.parse(readFileSync(file, "utf8")) as NetworkJson | NetworkJson[];
   return MajorTom.fromJson(Array.isArray(json) ? json[0]! : json);
 }
@@ -55,7 +56,11 @@ class RemoteHost implements ScriptHost {
   }
 }
 
-const script = new RaceTargetScript(loadBrain(values.brain), Number(values.delay), values.name);
+const script = new RaceTargetScript(
+  loadModel(values.model ?? values.brain),
+  Number(values.delay),
+  values.name,
+);
 script.host = new RemoteHost();
 const control = setInterval(() => script.client?.step(TICK_SECONDS), TICK_SECONDS * 1000);
 process.once("SIGINT", () => script.stop());

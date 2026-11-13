@@ -18,17 +18,17 @@ import { Level, setLogLevel } from "@ar/shared";
 import {
   AI_TRAINING_FRAMES,
   AI_TRAINING_SAMPLE_SIZE,
-  DEFAULT_BRAIN_NAME,
+  DEFAULT_MODEL_NAME,
   GameServer,
   ManualGameLoop,
-  MemoryBrainStore,
+  MemoryModelStore,
   MUTATION_RATE,
   MUTATION_STRENGTH,
   MajorTom,
   registerAITrainingService,
   seededRandom,
   arenaByName,
-  parseBrainConfig,
+  parseModelConfig,
   parseScoring,
   type ArenaConfig,
   type CollisionMode,
@@ -52,8 +52,8 @@ export interface TrainConfig {
   mutationStrength: number;
   /** Used only when the runner gives no --to. */
   generations: number;
-  /** Inputs, hidden layers and outputs of new brains. */
-  brain: { inputs: string[]; hidden: number[]; outputs: string };
+  /** Inputs, hidden layers and outputs of new models. */
+  model: { inputs: string[]; hidden: number[]; outputs: string };
   /** Every candidate flies every arena, in order. */
   arenas: ArenaConfig[];
   scoring: ScoringWeights;
@@ -169,14 +169,15 @@ function readConfig(): TrainConfig {
     file && existsSync(file)
       ? (JSON.parse(readFileSync(file, "utf8")) as Partial<Record<keyof TrainConfig, unknown>>)
       : {};
-  const brain = parseBrainConfig(raw.brain);
+  // `brain` is the key's old name (runs before the rename); `model` wins if both are given.
+  const model = parseModelConfig(raw.model ?? (raw as { brain?: unknown }).brain);
   const config: TrainConfig = {
     sample: (raw.sample as number | undefined) ?? AI_TRAINING_SAMPLE_SIZE,
     frames: (raw.frames as number | undefined) ?? AI_TRAINING_FRAMES,
     mutationRate: (raw.mutationRate as number | undefined) ?? MUTATION_RATE,
     mutationStrength: (raw.mutationStrength as number | undefined) ?? MUTATION_STRENGTH,
     generations: (raw.generations as number | undefined) ?? DEFAULT_GENERATIONS,
-    brain: { inputs: brain.spec.inputs, hidden: brain.hidden, outputs: brain.spec.outputs },
+    model: { inputs: model.spec.inputs, hidden: model.hidden, outputs: model.spec.outputs },
     arenas: parseArenas(raw.arenas),
     scoring: parseScoring(raw.scoring),
     collisions: oneOf(raw.collisions, "collisions", ["none", "obstacles", "all"] as const, "none"),
@@ -239,8 +240,8 @@ async function main(): Promise<void> {
     entityUpdatesPerTick: 0,
     sendOwnShipEveryTick: true,
   });
-  const store = new MemoryBrainStore();
-  if (saved?.winner) store.save(DEFAULT_BRAIN_NAME, [MajorTom.fromJson(saved.winner)]);
+  const store = new MemoryModelStore();
+  if (saved?.winner) store.save(DEFAULT_MODEL_NAME, [MajorTom.fromJson(saved.winner)]);
 
   const startG = saved?.g ?? 0;
   let g = startG;
@@ -297,9 +298,9 @@ async function main(): Promise<void> {
       store,
       sampleSize: config.sample,
       framesPerTarget: config.frames,
-      brain: {
-        spec: { inputs: config.brain.inputs, outputs: config.brain.outputs },
-        hidden: config.brain.hidden,
+      model: {
+        spec: { inputs: config.model.inputs, outputs: config.model.outputs },
+        hidden: config.model.hidden,
       },
       arenas: config.arenas,
       scoring: config.scoring,
@@ -340,11 +341,11 @@ async function main(): Promise<void> {
     generations: g,
     config,
     bestScore,
-    brainGeneration: winner.generation,
+    modelGeneration: winner.generation,
     winner: winner.toJson(),
   };
   await atomicWrite(join(runDir, "result.json"), `${JSON.stringify(result, null, 2)}\n`);
-  // The trainer's own format too, so `npm run bot -- --brain RUN_DIR/luke.txt` works.
+  // The trainer's own format too, so `npm run bot -- --model RUN_DIR/luke.txt` works.
   await atomicWrite(join(runDir, "luke.txt"), JSON.stringify([winner.toJson()]));
   emit("done", { g, result: "result.json", metrics: { score: bestScore } });
 }

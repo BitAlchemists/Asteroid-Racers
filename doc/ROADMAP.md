@@ -12,10 +12,10 @@ How we work is described in [`CLAUDE.md`](../CLAUDE.md). Each milestone gets its
 - The Dart → Node.js/TypeScript port is finished ([plan](plans/PORTING_PLAN.md), all phases ✅).
 - Evo Lab runs training through `lab.config.json` → `scripts/lab-train.mjs`, with protocol v1 and
   exact resume.
-- **train-1** (200 generations, seed 2026) reached a best score of 19,050. The bundled interim brain
+- **train-1** (200 generations, seed 2026) reached a best score of 19,050. The bundled interim model
   scores 33,937. The improvement does not carry over to the game:
   - On 5 unseen courses: 34,853 vs 36,015.
-  - In real races, neither brain reaches a single checkpoint.
+  - In real races, neither model reaches a single checkpoint.
 - **Why:** the training course covers only ~1,000 units and has no obstacles, while race legs are
   1,200–2,400 units apart with asteroids in between. The bots learn the one course they are trained
   on, not how to race.
@@ -33,7 +33,7 @@ Make the trainer generic enough that new courses, inputs and scoring are config 
 
 - Fix the stale first frame on teleport (the cause of the score wobble within a run).
 - **Arena** interface: seeded scenarios that change every generation, plus a held-out set.
-- A **brain spec** stored with every brain: which inputs, the layout, and the output mapping.
+- A **model spec** stored with every model: which inputs, the layout, and the output mapping.
 - Collision groups: bots hit asteroids but not each other.
 - A scoring library (success, time, crashes) with configurable weights.
 - Everything selectable from the Evo Lab config.
@@ -43,14 +43,14 @@ second arena (point-to-point) runs from config alone.
 
 ### M2 — Measurement ⬜
 
-- **Race exam:** an Evo Lab evaluate-only method. It flies a brain through the real race tracks and
+- **Race exam:** an Evo Lab evaluate-only method. It flies a model through the real race tracks and
   reports checkpoints reached, finish time and crashes.
-- Brain snapshots at each generation (or every K generations), so the exam can be scored along a run.
+- Model snapshots at each generation (or every K generations), so the exam can be scored along a run.
 - Held-out scores shown next to training scores, so overfitting is visible.
 
 ### M3 — Visibility ⬜
 
-- **Watch page:** an in-game spectator mode. Pick a brain (bundled, file or Evo Lab run snapshot) and
+- **Watch page:** an in-game spectator mode. Pick a model (bundled, file or Evo Lab run snapshot) and
   an arena or track, then watch it fly with a free or follow camera.
 - An Evo Lab renderer plugin, so a run's snapshots can be replayed from the Evo Lab UI.
 
@@ -77,8 +77,8 @@ Each question below has a default we work with until it is answered.
 | Question                                                        | Working assumption                                                  |
 | --------------------------------------------------------------- | ------------------------------------------------------------------- |
 | What counts as "good"? Finishing, lap time, or beating humans?  | Finish the race tracks reliably first, then lap time.               |
-| Neuro-evolution only, or other algorithms too (e.g. RL)?        | Neuro-evolution only; keep the brain interface algorithm-neutral.   |
-| Are extra sensors (whiskers) fair, given human players lack them? | Allowed for experiments; decide before shipping a brain into the game. |
+| Neuro-evolution only, or other algorithms too (e.g. RL)?        | Neuro-evolution only; keep the model interface algorithm-neutral.   |
+| Are extra sensors (whiskers) fair, given human players lack them? | Allowed for experiments; decide before shipping a model into the game. |
 | Who designs the tracks? Is there a track picker for players?    | Hand-designed by us in M4; a simple picker in the game.             |
-| Are trained brains promoted into the game automatically?        | Manually, after the race exam.                                      |
+| Are trained models promoted into the game automatically?        | Manually, after the race exam.                                      |
 | When do local commits get pushed?                               | Only when the user asks.                                            |

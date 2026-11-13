@@ -59,20 +59,20 @@ collision circles, `?encode` (singleplayer) sends every message through the bina
 ## AI racers
 
 The bots are small neural networks ("Major Tom", 4 inputs → 2 outputs: thrust and turn rate) that are
-**evolved**, not trained by backpropagation: each generation, the best brain so far and 99 mutated
+**evolved**, not trained by backpropagation: each generation, the best model so far and 99 mutated
 copies of it fly a 16-target course at once, and the one that stays closest to its targets wins.
 
 ```bash
 npm run train -- --generations 200
 ```
 
-Training runs headless at about 28× real time with all 100 brains flying at once (about 5 s per generation). The winner is
+Training runs headless at about 28× real time with all 100 models flying at once (about 5 s per generation). The winner is
 saved to `db/<name>/luke.txt` (the same format the Dart trainer used) with a log next to it, and a new
 run continues where the last one stopped; Ctrl+C keeps the last finished generation. When a trained
-brain exists in `db/`, `npm run server` uses it instead of the bundled one. To ship a new default brain:
+model exists in `db/`, `npm run server` uses it instead of the bundled one. To ship a new default model:
 
 ```bash
-npm run train -- --generations 200 --export packages/server/src/ai/brains/default-brain.json
+npm run train -- --generations 200 --export packages/server/src/ai/models/default-model.json
 ```
 
 Other knobs: `BOTS=3 npm run server` for more bots on the server, and
@@ -83,7 +83,7 @@ npm run bot -- --url ws://localhost:1337/ws --name "Luke"
 
 sends a bot to any running server over the network. `npm run train -- --help` lists all options.
 
-> The bundled brain is an interim one (48 generations); a longer training run is still to do.
+> The bundled model is an interim one (48 generations); a longer training run is still to do.
 
 ## Deploying
 

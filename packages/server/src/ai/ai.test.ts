@@ -4,7 +4,7 @@ import { GameServer } from "../game-server";
 import { LocalServerConnection } from "../local-connection";
 import { seededRandom } from "../random";
 import { AIGameClient } from "./ai-game-client";
-import { MemoryBrainStore } from "./brain-store";
+import { MemoryModelStore } from "./model-store";
 import { DemoDirector } from "./directors";
 import {
   LeastDistanceToTargetsEvaluator,
@@ -13,9 +13,9 @@ import {
   TimeToTargetEvaluator,
 } from "./evaluators";
 import {
-  bundledBrains,
+  bundledModels,
   createTrainingServer,
-  DEFAULT_BRAIN_NAME,
+  DEFAULT_MODEL_NAME,
   DEFAULT_LAYOUT,
   registerAIRacingService,
   registerAITrainingService,
@@ -50,7 +50,7 @@ describe("MajorTom network", () => {
     expect(net.activate([0.3, 0.1])[0]).toBeCloseTo(Math.tanh(-0.1 + 2 * h0 + h1), 12);
   });
 
-  it("loads Dart-era brains with the bias switched off, exactly as they were trained", () => {
+  it("loads Dart-era models with the bias switched off, exactly as they were trained", () => {
     const dart: NetworkJson = { generation: 7, name: "Luke", input_neurons_count: 1, layers: [[[5, 1]]] };
     const net = MajorTom.fromJson(dart);
     expect(net.biasOutput).toBe(0);
@@ -94,8 +94,8 @@ describe("MajorTom network", () => {
     expect(mutateAbsolute(0, 1, 0.5, sequence(0, 0))).toBe(-0.5);
   });
 
-  it("the bundled brain loads and steers", () => {
-    const net = bundledBrains().load(DEFAULT_BRAIN_NAME)![0]!;
+  it("the bundled model loads and steers", () => {
+    const net = bundledModels().load(DEFAULT_MODEL_NAME)![0]!;
     expect(net.layout).toEqual(DEFAULT_LAYOUT);
     const [thrust, turn] = net.activate([0, 0.5, 0, 0]);
     expect(Math.abs(thrust!)).toBeLessThanOrEqual(1);
@@ -223,9 +223,9 @@ describe("TargetGenerator", () => {
 });
 
 describe("TrainingDirector", () => {
-  async function train(store: MemoryBrainStore, generations: number, seed = 1) {
+  async function train(store: MemoryModelStore, generations: number, seed = 1) {
     const server = createTrainingServer(seed);
-    const reports: { generation: number; best: number; brainGeneration: number; sampleSize: number }[] = [];
+    const reports: { generation: number; best: number; modelGeneration: number; sampleSize: number }[] = [];
     const director = registerAITrainingService(server, {
       store,
       sampleSize: 6,
@@ -236,7 +236,7 @@ describe("TrainingDirector", () => {
         reports.push({
           generation: r.generation,
           best: r.bestScore,
-          brainGeneration: r.brainGeneration,
+          modelGeneration: r.modelGeneration,
           sampleSize: r.sampleSize,
         }),
     });
@@ -251,15 +251,15 @@ describe("TrainingDirector", () => {
     return { server, director, reports };
   }
 
-  it("evolves generations, saving each winner, and continues from the stored brain", async () => {
-    const store = new MemoryBrainStore();
+  it("evolves generations, saving each winner, and continues from the stored model", async () => {
+    const store = new MemoryModelStore();
     const first = await train(store, 2);
     expect(first.reports.map((r) => r.generation)).toEqual([1, 2]);
     expect(first.reports.every((r) => r.sampleSize === 6)).toBe(true);
     expect(first.director.botCount).toBe(0); // every bot disconnected after its flight
     expect(first.server.clients.size).toBe(0);
 
-    const saved = store.load(DEFAULT_BRAIN_NAME)!;
+    const saved = store.load(DEFAULT_MODEL_NAME)!;
     expect(saved).toHaveLength(1);
     expect(saved[0]!.name).toBe("Winner from last round");
 
@@ -267,12 +267,12 @@ describe("TrainingDirector", () => {
     expect(first.reports[1]!.best).toBeLessThanOrEqual(first.reports[0]!.best + 1e-9);
 
     const second = await train(store, 1, 1);
-    expect(second.reports[0]!.brainGeneration).toBeGreaterThanOrEqual(saved[0]!.generation);
+    expect(second.reports[0]!.modelGeneration).toBeGreaterThanOrEqual(saved[0]!.generation);
   });
 
-  it("an unchanged brain scores exactly the same in every generation (no stale first frame)", async () => {
-    const store = new MemoryBrainStore();
-    store.save(DEFAULT_BRAIN_NAME, [MajorTom.random(DEFAULT_LAYOUT, seededRandom(9), "Fixed")]);
+  it("an unchanged model scores exactly the same in every generation (no stale first frame)", async () => {
+    const store = new MemoryModelStore();
+    store.save(DEFAULT_MODEL_NAME, [MajorTom.random(DEFAULT_LAYOUT, seededRandom(9), "Fixed")]);
     const server = createTrainingServer(3);
     const scores: number[] = [];
     const director = registerAITrainingService(server, {
@@ -298,8 +298,8 @@ describe("TrainingDirector", () => {
   it("candidates are the stored parent plus mutated, renamed children", () => {
     const parent = MajorTom.random(DEFAULT_LAYOUT, seededRandom(4), "Parent");
     parent.generation = 3;
-    const store = new MemoryBrainStore();
-    store.save(DEFAULT_BRAIN_NAME, [parent]);
+    const store = new MemoryModelStore();
+    store.save(DEFAULT_MODEL_NAME, [parent]);
     const director = registerAITrainingService(createTrainingServer(1), { store, sampleSize: 5 });
     const candidates = director.createCandidates();
     expect(candidates).toHaveLength(5);
@@ -316,7 +316,7 @@ describe("TrainingDirector", () => {
 describe("racing bots", () => {
   it("a racing bot targets the portal, joins the race and chases the announced checkpoint", async () => {
     const server = new GameServer({ random: seededRandom(1) }).prepareDemoConfiguration();
-    const director = registerAIRacingService(server, bundledBrains(), { delaySeconds: 0.5 });
+    const director = registerAIRacingService(server, bundledModels(), { delaySeconds: 0.5 });
     await server.start();
     const flush = () => new Promise<void>((r) => setTimeout(r, 0));
     await flush(); // bot connects and handshakes (microtask delivery)
@@ -344,9 +344,9 @@ describe("racing bots", () => {
     expect(server.clients.size).toBe(0);
   });
 
-  it("without a brain the demo director shows nothing", async () => {
+  it("without a model the demo director shows nothing", async () => {
     const server = new GameServer();
-    const director = new DemoDirector("missing", new MemoryBrainStore());
+    const director = new DemoDirector("missing", new MemoryModelStore());
     director.scriptFactories.push((n) => new RaceTargetScript(n));
     server.registerService(director);
     await server.start();

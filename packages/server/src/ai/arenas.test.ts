@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { GameServer } from "../game-server";
 import { seededRandom } from "../random";
 import { arenaByName, deriveSeed, legacyArena, pointToPointArena, type Scenario } from "./arenas";
-import { MemoryBrainStore } from "./brain-store";
+import { MemoryModelStore } from "./model-store";
 import type { GenerationReport, TrainingDirector } from "./directors";
 import {
   createTrainingServer,
@@ -25,7 +25,7 @@ async function drive(server: GameServer, director: TrainingDirector): Promise<vo
   expect(done).toBe(true);
 }
 
-/** Runs `fly` for one scenario with a fixed brain and returns its records. */
+/** Runs `fly` for one scenario with a fixed model and returns its records. */
 async function flyOnce(
   scenario: Scenario,
   options: Partial<TrainingServiceOptions> = {},
@@ -33,7 +33,7 @@ async function flyOnce(
 ): Promise<EpisodeRecord[]> {
   const server = createTrainingServer(1);
   const director = registerAITrainingService(server, {
-    store: new MemoryBrainStore(),
+    store: new MemoryModelStore(),
     maxGenerations: 0,
     ...options,
   });
@@ -168,7 +168,7 @@ describe("TrainingDirector with arenas", () => {
     const server = createTrainingServer(seed);
     const reports: GenerationReport[] = [];
     const director = registerAITrainingService(server, {
-      store: new MemoryBrainStore(),
+      store: new MemoryModelStore(),
       sampleSize: 4,
       maxGenerations: 2,
       random: seededRandom(seed + 1),

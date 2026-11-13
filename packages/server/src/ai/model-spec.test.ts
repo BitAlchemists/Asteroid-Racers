@@ -1,13 +1,13 @@
 import { Movable, Vector2 } from "@ar/shared";
 import { describe, expect, it } from "vitest";
 import { seededRandom } from "../random";
-import { INPUTS, LEGACY_SPEC, parseBrainConfig, validateSpec } from "./brain-spec";
-import { MemoryBrainStore } from "./brain-store";
-import { bundledBrains, createTrainingServer, DEFAULT_BRAIN_NAME, registerAITrainingService } from "./index";
+import { INPUTS, LEGACY_SPEC, parseModelConfig, validateSpec } from "./model-spec";
+import { MemoryModelStore } from "./model-store";
+import { bundledModels, createTrainingServer, DEFAULT_MODEL_NAME, registerAITrainingService } from "./index";
 import { MajorTom, type NetworkJson } from "./network";
 import { targetInputs } from "./target-vehicle-controller";
 
-describe("brain spec", () => {
+describe("model spec", () => {
   it("the legacy inputs from the registry equal targetInputs", () => {
     const random = seededRandom(2);
     for (let i = 0; i < 50; i++) {
@@ -23,7 +23,7 @@ describe("brain spec", () => {
     }
   });
 
-  it("is saved with a brain; brains without one (Dart, bundled) load with the legacy spec", () => {
+  it("is saved with a model; models without one (Dart, bundled) load with the legacy spec", () => {
     const net = MajorTom.random([2, 3, 2], seededRandom(1), "Two", {
       inputs: ["targetAngle", "speed"],
       outputs: "thrustTurn",
@@ -34,16 +34,16 @@ describe("brain spec", () => {
 
     const { spec: _, ...old } = json;
     expect(MajorTom.fromJson({ ...old, input_neurons_count: 2 } as NetworkJson).spec).toEqual(LEGACY_SPEC);
-    expect(bundledBrains().load(DEFAULT_BRAIN_NAME)![0]!.spec).toEqual(LEGACY_SPEC);
+    expect(bundledModels().load(DEFAULT_MODEL_NAME)![0]!.spec).toEqual(LEGACY_SPEC);
   });
 
   it("rejects specs that do not fit the network or name unknown inputs", () => {
     expect(() => validateSpec(LEGACY_SPEC, [3, 2])).toThrow(/4 inputs/);
     expect(() => validateSpec({ inputs: ["nope"], outputs: "thrustTurn" }, [1, 2])).toThrow(
-      /unknown brain inputs nope/,
+      /unknown model inputs nope/,
     );
     expect(() => validateSpec({ inputs: ["speed"], outputs: "fly" }, [1, 2])).toThrow(
-      /unknown brain outputs/,
+      /unknown model outputs/,
     );
     const json = MajorTom.random([4, 2], seededRandom(1)).toJson();
     expect(() => MajorTom.fromJson({ ...json, spec: { inputs: ["speed"], outputs: "thrustTurn" } })).toThrow(
@@ -51,21 +51,21 @@ describe("brain spec", () => {
     );
   });
 
-  it("parses the brain config with the original brain as default", () => {
-    expect(parseBrainConfig(undefined)).toEqual({ spec: LEGACY_SPEC, hidden: [10, 8, 6, 4] });
-    expect(parseBrainConfig({ inputs: ["targetAngle", "targetDistance"], hidden: [6] })).toEqual({
+  it("parses the model config with the original model as default", () => {
+    expect(parseModelConfig(undefined)).toEqual({ spec: LEGACY_SPEC, hidden: [10, 8, 6, 4] });
+    expect(parseModelConfig({ inputs: ["targetAngle", "targetDistance"], hidden: [6] })).toEqual({
       spec: { inputs: ["targetAngle", "targetDistance"], outputs: "thrustTurn" },
       hidden: [6],
     });
-    expect(() => parseBrainConfig({ inputs: [] })).toThrow(/non-empty/);
-    expect(() => parseBrainConfig({ hidden: [0] })).toThrow(/hidden/);
-    expect(() => parseBrainConfig({ layers: [3] })).toThrow(/unknown brain keys layers/);
-    expect(() => parseBrainConfig({ inputs: ["whiskers"] })).toThrow(/unknown brain inputs/);
+    expect(() => parseModelConfig({ inputs: [] })).toThrow(/non-empty/);
+    expect(() => parseModelConfig({ hidden: [0] })).toThrow(/hidden/);
+    expect(() => parseModelConfig({ layers: [3] })).toThrow(/unknown model keys layers/);
+    expect(() => parseModelConfig({ inputs: ["whiskers"] })).toThrow(/unknown model inputs/);
   });
 });
 
-describe("training with a brain spec", () => {
-  async function train(store: MemoryBrainStore) {
+describe("training with a model spec", () => {
+  async function train(store: MemoryModelStore) {
     const server = createTrainingServer(1);
     const director = registerAITrainingService(server, {
       store,
@@ -73,7 +73,7 @@ describe("training with a brain spec", () => {
       framesPerTarget: 20,
       maxGenerations: 1,
       random: seededRandom(2),
-      brain: { spec: { inputs: ["targetAngle", "targetDistance"], outputs: "thrustTurn" }, hidden: [3] },
+      model: { spec: { inputs: ["targetAngle", "targetDistance"], outputs: "thrustTurn" }, hidden: [3] },
     });
     await server.start();
     let done = false;
@@ -89,16 +89,16 @@ describe("training with a brain spec", () => {
     if (failure) throw failure;
   }
 
-  it("evolves brains with the configured inputs and layout", async () => {
-    const store = new MemoryBrainStore();
+  it("evolves models with the configured inputs and layout", async () => {
+    const store = new MemoryModelStore();
     await train(store);
-    const winner = store.load(DEFAULT_BRAIN_NAME)![0]!;
+    const winner = store.load(DEFAULT_MODEL_NAME)![0]!;
     expect(winner.layout).toEqual([2, 3, 2]);
     expect(winner.spec.inputs).toEqual(["targetAngle", "targetDistance"]);
   });
 
-  it("refuses to continue from a stored brain with a different spec", async () => {
-    const store = bundledBrains(); // legacy spec
-    await expect(train(store)).rejects.toThrow(/stored brain .* has inputs/);
+  it("refuses to continue from a stored model with a different spec", async () => {
+    const store = bundledModels(); // legacy spec
+    await expect(train(store)).rejects.toThrow(/stored model .* has inputs/);
   });
 });

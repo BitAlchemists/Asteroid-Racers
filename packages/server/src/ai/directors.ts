@@ -5,9 +5,9 @@ import { LocalServerConnection, type LocalConnectionOptions } from "../local-con
 import { seededRandom, type Random } from "../random";
 import { AIGameClient } from "./ai-game-client";
 import { ArenaScript, type CrashMode, type PlacedEpisode } from "./arena-script";
-import { sameSpec, type BrainSpec } from "./brain-spec";
+import { sameSpec, type ModelSpec } from "./model-spec";
 import { deriveSeed, SCENARIO_STREAM, type Arena, type ArenaParams, type Scenario } from "./arenas";
-import type { BrainStore } from "./brain-store";
+import type { ModelStore } from "./model-store";
 import { MajorTom } from "./network";
 import {
   LEGACY_SCORING,
@@ -86,7 +86,7 @@ const MIN_HEALTHY_RUN_SECONDS = 1;
 const RETRY_DELAY_SECONDS = 5;
 
 /**
- * Shows off the latest brain: each script factory runs in a loop with the newest network from the
+ * Shows off the latest model: each script factory runs in a loop with the newest network from the
  * store, so a demo picks up improvements while training continues elsewhere.
  */
 export class DemoDirector extends AIDirector {
@@ -95,7 +95,7 @@ export class DemoDirector extends AIDirector {
 
   constructor(
     readonly networkName: string,
-    private readonly store: BrainStore,
+    private readonly store: ModelStore,
     connectionOptions: LocalConnectionOptions = {},
   ) {
     super(connectionOptions);
@@ -131,8 +131,8 @@ const trainLog = getLogger("services.ai.TrainingDirector");
 export interface GenerationReport {
   /** 1-based number of this generation within the run (continues after a resume). */
   generation: number;
-  /** Generation number stored in the winning brain (continues across runs). */
-  brainGeneration: number;
+  /** Generation number stored in the winning model (continues across runs). */
+  modelGeneration: number;
   bestScore: number;
   meanScore: number;
   worstScore: number;
@@ -154,16 +154,16 @@ export interface ArenaRun {
 }
 
 export interface TrainingOptions {
-  store: BrainStore;
+  store: ModelStore;
   networkName: string;
   layout: readonly number[];
-  /** Inputs and outputs of new brains; stored parents must have the same spec. */
-  spec: BrainSpec;
-  /** Brains per generation, all flown simultaneously. */
+  /** Inputs and outputs of new models; stored parents must have the same spec. */
+  spec: ModelSpec;
+  /** Models per generation, all flown simultaneously. */
   sampleSize: number;
   /** Applied to every offspring of the previous winner. */
   mutate: (network: MajorTom, random: Random) => void;
-  /** Drives mutation and the first random brains. */
+  /** Drives mutation and the first random models. */
   random: Random;
   /** Every candidate flies every arena, one arena after the other. */
   arenas: readonly ArenaRun[];
@@ -188,7 +188,7 @@ interface PlacedScenario {
 }
 
 /**
- * Neuro-evolution: each generation the best brain from the store (or random ones, the first time) is
+ * Neuro-evolution: each generation the best model from the store (or random ones, the first time) is
  * cloned and mutated into `sampleSize` candidates. All candidates fly each arena's scenario at once,
  * one arena after the other; the lowest total score wins and is saved for the next generation.
  */
@@ -250,7 +250,7 @@ export class TrainingDirector extends AIDirector {
     }
   }
 
-  /** Candidates for the next generation: each stored brain plus mutated copies of it. */
+  /** Candidates for the next generation: each stored model plus mutated copies of it. */
   createCandidates(): MajorTom[] {
     const { store, networkName, layout, spec, sampleSize, mutate, random } = this.options;
     const parents = store.load(networkName);
@@ -263,7 +263,7 @@ export class TrainingDirector extends AIDirector {
     for (const parent of parents) {
       if (!sameSpec(parent.spec, spec))
         throw new Error(
-          `stored brain ${networkName} has inputs ${parent.spec.inputs.join(",")}, but training is configured for ${spec.inputs.join(",")}`,
+          `stored model ${networkName} has inputs ${parent.spec.inputs.join(",")}, but training is configured for ${spec.inputs.join(",")}`,
         );
     }
     const candidates: MajorTom[] = [];
@@ -363,7 +363,7 @@ export class TrainingDirector extends AIDirector {
     this.generation = g;
     const report: GenerationReport = {
       generation: g,
-      brainGeneration: best.network.generation,
+      modelGeneration: best.network.generation,
       bestScore: best.score,
       meanScore: scored.reduce((sum, s) => sum + s.score, 0) / scored.length,
       worstScore: scored.at(-1)!.score,
@@ -374,7 +374,7 @@ export class TrainingDirector extends AIDirector {
       gameSeconds: (this.server?.gameTime ?? 0) - startedAt,
     };
     trainLog.info(
-      `generation ${report.generation} (brain gen ${report.brainGeneration}): best ${report.bestScore.toFixed(0)}, ` +
+      `generation ${report.generation} (model gen ${report.modelGeneration}): best ${report.bestScore.toFixed(0)}, ` +
         `mean ${report.meanScore.toFixed(0)} over ${report.sampleSize}`,
     );
     this.options.onGeneration?.(report);

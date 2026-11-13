@@ -3,28 +3,28 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { MajorTom, seededRandom } from "@ar/server";
 import { afterEach, describe, expect, it } from "vitest";
-import { FileBrainStore } from "./file-brain-store";
+import { FileModelStore } from "./file-model-store";
 
 let root: string;
 afterEach(() => rmSync(root, { recursive: true, force: true }));
 
-describe("FileBrainStore", () => {
+describe("FileModelStore", () => {
   it("reads a luke.txt written by the Dart trainer (no bias field → bias off)", () => {
-    root = mkdtempSync(join(tmpdir(), "ar-brains-"));
+    root = mkdtempSync(join(tmpdir(), "ar-models-"));
     mkdirSync(join(root, "Old"));
     const dart = [
       { generation: 42, name: "Winner from last round", input_neurons_count: 1, layers: [[[0.3, -0.7]]] },
     ];
     writeFileSync(join(root, "Old", "luke.txt"), JSON.stringify(dart));
 
-    const [brain] = new FileBrainStore(root).load("Old")!;
-    expect(brain).toMatchObject({ generation: 42, biasOutput: 0 });
-    expect(brain!.activate([1])[0]).toBeCloseTo(Math.tanh(-0.7), 12);
+    const [model] = new FileModelStore(root).load("Old")!;
+    expect(model).toMatchObject({ generation: 42, biasOutput: 0 });
+    expect(model!.activate([1])[0]).toBeCloseTo(Math.tanh(-0.7), 12);
   });
 
   it("saves atomically in the same layout and loads it back", () => {
-    root = mkdtempSync(join(tmpdir(), "ar-brains-"));
-    const store = new FileBrainStore(root);
+    root = mkdtempSync(join(tmpdir(), "ar-models-"));
+    const store = new FileModelStore(root);
     expect(store.load("New")).toBeUndefined();
     const net = MajorTom.random([4, 3, 2], seededRandom(1), "Luke");
     store.save("New", [net]);
@@ -39,8 +39,8 @@ describe("FileBrainStore", () => {
   });
 
   it("appends training reports to a per-run log", () => {
-    root = mkdtempSync(join(tmpdir(), "ar-brains-"));
-    const log = new FileBrainStore(root).createLog("Run");
+    root = mkdtempSync(join(tmpdir(), "ar-models-"));
+    const log = new FileModelStore(root).createLog("Run");
     log("gen 1");
     log("gen 2");
     expect(existsSync(join(root, "Run", "log"))).toBe(true);

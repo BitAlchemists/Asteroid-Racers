@@ -6,21 +6,21 @@ import {
   AI_TRAINING_FRAMES,
   AI_TRAINING_SAMPLE_SIZE,
   createTrainingServer,
-  DEFAULT_BRAIN_NAME,
+  DEFAULT_MODEL_NAME,
   ManualGameLoop,
   registerAITrainingService,
   seededRandom,
 } from "@ar/server";
-import { FileBrainStore } from "./file-brain-store";
+import { FileModelStore } from "./file-model-store";
 
 const HELP = `Evolve racing bots headless, as fast as the CPU allows (port of bin/train_bots.dart).
 
 Usage: npm run train -- [options]
 
-  --name <name>         brain name (default ${DEFAULT_BRAIN_NAME})
-  --db <dir>            brain directory (default db) — continues from <db>/<name>/luke.txt if present
+  --name <name>         model name (default ${DEFAULT_MODEL_NAME})
+  --db <dir>            model directory (default db) — continues from <db>/<name>/luke.txt if present
   --generations <n>     stop after n generations (default: run until Ctrl+C)
-  --sample <n>          brains per generation (default ${AI_TRAINING_SAMPLE_SIZE})
+  --sample <n>          models per generation (default ${AI_TRAINING_SAMPLE_SIZE})
   --frames <n>          frames per target (default ${AI_TRAINING_FRAMES} = 9 s)
   --seed <n>            seed for the course and mutations (default: random)
   --export <file>       after each generation, also write the winner as a single JSON network
@@ -28,7 +28,7 @@ Usage: npm run train -- [options]
 
 const { values } = parseArgs({
   options: {
-    name: { type: "string", default: DEFAULT_BRAIN_NAME },
+    name: { type: "string", default: DEFAULT_MODEL_NAME },
     db: { type: "string", default: "db" },
     generations: { type: "string" },
     sample: { type: "string", default: String(AI_TRAINING_SAMPLE_SIZE) },
@@ -58,7 +58,7 @@ setLogLevel("", Level.WARNING);
 setLogLevel("services.ai.TrainingDirector", Level.WARNING);
 
 const seed = positiveInt(values.seed, "seed") ?? Math.floor(Math.random() * 2 ** 31);
-const store = new FileBrainStore(values.db);
+const store = new FileModelStore(values.db);
 const log = store.createLog(values.name);
 const server = createTrainingServer(seed);
 const loop = new ManualGameLoop();
@@ -76,7 +76,7 @@ const director = registerAITrainingService(server, {
   onGeneration: (report) => {
     const now = performance.now();
     const line =
-      `${new Date().toISOString()} gen ${report.generation} (brain gen ${report.brainGeneration}) ` +
+      `${new Date().toISOString()} gen ${report.generation} (model gen ${report.modelGeneration}) ` +
       `best ${report.bestScore.toFixed(0)} mean ${report.meanScore.toFixed(0)} worst ${report.worstScore.toFixed(0)} ` +
       `| ${report.gameSeconds.toFixed(0)} s game time in ${((now - lastReport) / 1000).toFixed(1)} s`;
     lastReport = now;
@@ -87,7 +87,7 @@ const director = registerAITrainingService(server, {
 });
 
 console.log(
-  `Training "${values.name}" in ${store.root} — seed ${seed}, ${values.sample} brains per generation` +
+  `Training "${values.name}" in ${store.root} — seed ${seed}, ${values.sample} models per generation` +
     (maxGenerations ? `, ${maxGenerations} generations` : ", Ctrl+C to stop"),
 );
 

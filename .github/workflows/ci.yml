@@ -21,4 +21,4 @@ jobs:
       - run: npm run check
       - run: npm run build
       # A short headless training run proves the trainer still works end to end.
-      - run: npm run train -- --db "$RUNNER_TEMP/brains" --generations 2 --sample 10 --frames 60 --seed 1
+      - run: npm run train -- --db "$RUNNER_TEMP/models" --generations 2 --sample 10 --frames 60 --seed 1

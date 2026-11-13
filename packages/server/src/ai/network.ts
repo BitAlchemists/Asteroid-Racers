@@ -1,5 +1,5 @@
 import type { Random } from "../random";
-import { LEGACY_SPEC, validateSpec, type BrainSpec } from "./brain-spec";
+import { LEGACY_SPEC, validateSpec, type ModelSpec } from "./model-spec";
 
 /** Weights are initialised uniformly in [-INITIAL_WEIGHT_RANGE, +INITIAL_WEIGHT_RANGE]. */
 export const INITIAL_WEIGHT_RANGE = 1;
@@ -39,8 +39,8 @@ export interface NetworkJson {
    * they were trained. New networks use 1.
    */
   bias_output?: number;
-  /** What the inputs and outputs mean. Missing in brains from before specs: they use the legacy spec. */
-  spec?: BrainSpec;
+  /** What the inputs and outputs mean. Missing in models from before specs: they use the legacy spec. */
+  spec?: ModelSpec;
 }
 
 /**
@@ -51,8 +51,8 @@ export class MajorTom {
   name: string;
   generation = 0;
   biasOutput: number;
-  /** What the inputs and outputs mean (checked against the layout when the brain flies). */
-  spec: BrainSpec;
+  /** What the inputs and outputs mean (checked against the layout when the model flies). */
+  spec: ModelSpec;
   /** Neuron count per layer, input layer first. */
   readonly layout: readonly number[];
   readonly weights: Float64Array[];
@@ -64,7 +64,7 @@ export class MajorTom {
       name = "Major Tom",
       biasOutput = 1,
       spec = LEGACY_SPEC,
-    }: { name?: string; biasOutput?: number; spec?: BrainSpec } = {},
+    }: { name?: string; biasOutput?: number; spec?: ModelSpec } = {},
   ) {
     if (layout.length < 2 || layout.some((n) => !Number.isInteger(n) || n < 1)) {
       throw new Error(`invalid network layout ${JSON.stringify(layout)}`);
@@ -82,7 +82,7 @@ export class MajorTom {
   }
 
   /** A network with random weights in [-1, 1]. */
-  static random(layout: readonly number[], random: Random, name?: string, spec?: BrainSpec): MajorTom {
+  static random(layout: readonly number[], random: Random, name?: string, spec?: ModelSpec): MajorTom {
     const network = new MajorTom(layout, {
       ...(name === undefined ? {} : { name }),
       ...(spec === undefined ? {} : { spec }),

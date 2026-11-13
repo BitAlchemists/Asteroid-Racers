@@ -4,9 +4,9 @@ import { GameServer } from "../game-server";
 import { seededRandom, type Random } from "../random";
 import type { CrashMode } from "./arena-script";
 import { arenaByName, legacyArena, type ArenaParams } from "./arenas";
-import { MemoryBrainStore, type BrainStore } from "./brain-store";
-import { DEFAULT_HIDDEN, layoutFor, LEGACY_SPEC, type BrainSpec } from "./brain-spec";
-import defaultBrain from "./brains/default-brain.json";
+import { MemoryModelStore, type ModelStore } from "./model-store";
+import { DEFAULT_HIDDEN, layoutFor, LEGACY_SPEC, type ModelSpec } from "./model-spec";
+import defaultModel from "./models/default-model.json";
 import { DemoDirector, TrainingDirector, type GenerationReport } from "./directors";
 import { QuadraticSumOfDistanceToTargetsEvaluator } from "./evaluators";
 import { mutateRelative, type MajorTom, type NetworkJson } from "./network";
@@ -18,8 +18,8 @@ export * from "./ai-game-client";
 export * from "./arena-script";
 export * from "./arenas";
 export * from "./scoring";
-export * from "./brain-store";
-export * from "./brain-spec";
+export * from "./model-store";
+export * from "./model-spec";
 export * from "./directors";
 export * from "./evaluators";
 export * from "./network";
@@ -27,8 +27,8 @@ export * from "./scripts";
 export * from "./target-generator";
 export * from "./target-vehicle-controller";
 
-/** Name the Dart trainer used for its default brain (kept so old `db/` folders still match). */
-export const DEFAULT_BRAIN_NAME = "QuadraticSumOfDistanceToTargets_4_10_8_6_4_2";
+/** Name the Dart trainer used for its default model (kept so old `db/` folders still match). */
+export const DEFAULT_MODEL_NAME = "QuadraticSumOfDistanceToTargets_4_10_8_6_4_2";
 /** inputs: target angle, target distance, velocity angle, speed → outputs: thrust, turn rate */
 export const DEFAULT_LAYOUT = [4, 10, 8, 6, 4, 2] as const;
 
@@ -39,16 +39,16 @@ export const AI_TRAINING_FRAMES = Math.trunc(9000 / 15);
 export const MUTATION_RATE = 0.1;
 export const MUTATION_STRENGTH = 1;
 
-/** The brain that ships with the game, so racing bots work without training first. */
-export function bundledBrains(): MemoryBrainStore {
-  return new MemoryBrainStore({ [DEFAULT_BRAIN_NAME]: [defaultBrain as NetworkJson] });
+/** The model that ships with the game, so racing bots work without training first. */
+export function bundledModels(): MemoryModelStore {
+  return new MemoryModelStore({ [DEFAULT_MODEL_NAME]: [defaultModel as NetworkJson] });
 }
 
 /** Racing bots in a live server (what the Dart tcp_server registered). */
 export function registerAIRacingService(
   server: GameServer,
-  store: BrainStore = bundledBrains(),
-  { networkName = DEFAULT_BRAIN_NAME, bots = 1, delaySeconds = 5 } = {},
+  store: ModelStore = bundledModels(),
+  { networkName = DEFAULT_MODEL_NAME, bots = 1, delaySeconds = 5 } = {},
 ): DemoDirector {
   const director = new DemoDirector(networkName, store);
   for (let i = 0; i < bots; i++) {
@@ -62,8 +62,8 @@ export function registerAIRacingService(
 /** Demo of the training course and a ring track placed into a live world (Dart registerAIDemoService). */
 export function registerAIDemoService(
   server: GameServer,
-  store: BrainStore = bundledBrains(),
-  networkName = DEFAULT_BRAIN_NAME,
+  store: ModelStore = bundledModels(),
+  networkName = DEFAULT_MODEL_NAME,
 ): DemoDirector {
   const director = new DemoDirector(networkName, store);
   const center = new Vector2(-300, -600);
@@ -94,10 +94,10 @@ export interface ArenaConfig {
 }
 
 export interface TrainingServiceOptions {
-  store: BrainStore;
+  store: ModelStore;
   networkName?: string;
-  /** Inputs, hidden layers and outputs of new brains (default: the original 4-10-8-6-4-2 brain). */
-  brain?: { spec?: BrainSpec; hidden?: readonly number[] };
+  /** Inputs, hidden layers and outputs of new models (default: the original 4-10-8-6-4-2 model). */
+  model?: { spec?: ModelSpec; hidden?: readonly number[] };
   sampleSize?: number;
   /** Default `frames` param for every arena (frames per target in `legacy`, per episode elsewhere). */
   framesPerTarget?: number;
@@ -108,7 +108,7 @@ export interface TrainingServiceOptions {
   maxGenerations?: number;
   /** Number of the first generation (default 1; a resumed run passes g + 1). */
   firstGeneration?: number;
-  /** Drives mutation and the first random brains. Pass a seeded one for reproducible training. */
+  /** Drives mutation and the first random models. Pass a seeded one for reproducible training. */
   random?: Random;
   /** Default: the original course only. */
   arenas?: readonly ArenaConfig[];
@@ -125,7 +125,7 @@ export interface TrainingServiceOptions {
   onGeneration?: (report: GenerationReport) => void;
 }
 
-/** Evolves brains on the given arenas (by default the original course, like Dart registerAITrainingService). */
+/** Evolves models on the given arenas (by default the original course, like Dart registerAITrainingService). */
 export function registerAITrainingService(
   server: GameServer,
   options: TrainingServiceOptions,
@@ -134,15 +134,15 @@ export function registerAITrainingService(
   const frames = options.framesPerTarget ?? AI_TRAINING_FRAMES;
   const mutationRate = options.mutationRate ?? MUTATION_RATE;
   const mutationStrength = options.mutationStrength ?? MUTATION_STRENGTH;
-  const spec = options.brain?.spec ?? LEGACY_SPEC;
+  const spec = options.model?.spec ?? LEGACY_SPEC;
   const arenas = (options.arenas ?? [{ name: legacyArena.name }]).map((a) => ({
     arena: arenaByName(a.name),
     params: { frames, ...a.params },
   }));
   const director = new TrainingDirector({
     store: options.store,
-    networkName: options.networkName ?? DEFAULT_BRAIN_NAME,
-    layout: layoutFor(spec, options.brain?.hidden ?? DEFAULT_HIDDEN),
+    networkName: options.networkName ?? DEFAULT_MODEL_NAME,
+    layout: layoutFor(spec, options.model?.hidden ?? DEFAULT_HIDDEN),
     spec,
     sampleSize: options.sampleSize ?? AI_TRAINING_SAMPLE_SIZE,
     random,

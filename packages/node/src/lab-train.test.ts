@@ -170,7 +170,7 @@ describe("evo-lab worker (protocol v1)", () => {
       collisions: "obstacles",
       scoring: { distance: 1, success: 500, crashes: 100 },
       heldOut: 1,
-      brain: { inputs: ["targetAngle", "targetDistance", "speed"], hidden: [5] },
+      model: { inputs: ["targetAngle", "targetDistance", "speed"], hidden: [5] },
     };
     const straight = newRun(config);
     expect(await run(straight, ["--to", "4"])).toBe(0);
@@ -197,7 +197,8 @@ describe("evo-lab worker (protocol v1)", () => {
       [{ arenas: [{ name: "moon" }] }, /unknown arena/],
       [{ collisions: "some" }, /collisions/],
       [{ scoring: { speed: 1 } }, /unknown scoring term/],
-      [{ brain: { inputs: ["sonar"] } }, /unknown brain inputs/],
+      [{ model: { inputs: ["sonar"] } }, /unknown model inputs/],
+      [{ brain: { inputs: ["sonar"] } }, /unknown model inputs/], // old key name still read
     ] as const) {
       const dir = newRun(config);
       expect(await run(dir, ["--to", "1"])).not.toBe(0);
