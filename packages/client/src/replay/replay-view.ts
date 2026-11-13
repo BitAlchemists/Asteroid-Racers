@@ -7,7 +7,6 @@ import {
   createArrows,
   createFinishCircle,
   drawAsteroid,
-  drawCircleOutline,
   drawSpaceship,
 } from "../render/shapes";
 
@@ -46,6 +45,10 @@ export class ReplayView {
   private readonly stars = new StarField(4000, 4000);
   private readonly nodes = new Map<number, Node>();
   private readonly trail = new Graphics();
+  /** A screen-size dot on the ship, so it stays visible when the camera is far out. */
+  private readonly shipMarker = new Graphics();
+  /** World scale the checkpoint rings were last drawn for (their line width stays ~2 px on screen). */
+  private ringScale = 0;
   private readonly trailPoints: number[] = [];
   private lastShip: { x: number; y: number } | undefined;
   zoom = 0.6;
@@ -74,6 +77,9 @@ export class ReplayView {
         this.nodes.delete(id);
       }
     }
+    const scale = this.world.scale.x || 1;
+    const rescale = Math.abs(Math.log(scale / (this.ringScale || 1))) > 0.15;
+    if (rescale) this.ringScale = scale;
     const target = replay.target;
     const race = replay.server.raceController;
     const targetIndex = target && race ? race.checkpoints.indexOf(target as never) : -1;
@@ -93,10 +99,10 @@ export class ReplayView {
           const index = race.checkpoints.indexOf(entity as never);
           color = index >= 0 && index < targetIndex ? Color.Green : Color.Red;
         }
-        if (color !== node.color) {
+        if (color !== node.color || rescale) {
           node.color = color;
           node.ring.clear();
-          drawCircleOutline(node.ring, entity.radius, color);
+          node.ring.circle(0, 0, entity.radius).stroke({ color, width: Math.max(1, 2 / this.ringScale) });
           node.ring.alpha = race || entity === target ? 1 : 0.35;
         }
       }
@@ -105,6 +111,14 @@ export class ReplayView {
     }
     this.updateTrail(replay.ship);
     this.updateCamera(replay);
+    const ship = replay.ship;
+    this.shipMarker.clear();
+    if (ship && this.world.scale.x < 0.4) {
+      this.shipMarker
+        .circle(ship.position.x, ship.position.y, 6 / this.world.scale.x)
+        .stroke({ color: Color.LightGreen, width: 2 / this.world.scale.x });
+    }
+    this.world.addChild(this.shipMarker); // keep it on top
   }
 
   private createNode(entity: Entity): Node {

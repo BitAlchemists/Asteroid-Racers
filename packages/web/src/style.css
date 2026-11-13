@@ -150,3 +150,36 @@ body {
   border-radius: 3px;
   padding: 0 4px;
 }
+
+/* Watch page */
+body.watch {
+  margin: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #000;
+  color: #cfe;
+  font:
+    14px system-ui,
+    sans-serif;
+}
+.watch-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  padding: 8px 12px;
+  background: #0a1420;
+}
+.watch-bar a {
+  color: #8cf;
+  font-weight: bold;
+  text-decoration: none;
+}
+.watch-bar input[type="number"] {
+  width: 5em;
+}
+.watch-viewer {
+  flex: 1;
+  min-height: 0;
+}

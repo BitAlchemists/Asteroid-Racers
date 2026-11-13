@@ -20,6 +20,7 @@ export default defineConfig({
         index: resolve(import.meta.dirname, "index.html"),
         singleplayer: resolve(import.meta.dirname, "singleplayer.html"),
         multiplayer: resolve(import.meta.dirname, "multiplayer.html"),
+        watch: resolve(import.meta.dirname, "watch.html"),
       },
     },
   },

@@ -174,3 +174,20 @@ export class MajorTom {
     return network;
   }
 }
+
+/**
+ * The model in a parsed JSON file: a network, a trainer `luke.txt` list (the first is used), an
+ * evo-lab snapshot (`{ model }`) or a training result (`{ winner }`).
+ */
+export function modelFromJson(json: unknown, source = "the file"): MajorTom {
+  const candidate = Array.isArray(json)
+    ? json[0]
+    : typeof json === "object" && json !== null && "model" in json
+      ? json.model
+      : typeof json === "object" && json !== null && "winner" in json
+        ? json.winner
+        : json;
+  if (typeof candidate !== "object" || candidate === null || !("layers" in candidate))
+    throw new Error(`${source} holds no model (expected a network, a luke.txt, a snapshot or a result.json)`);
+  return MajorTom.fromJson(candidate as NetworkJson);
+}

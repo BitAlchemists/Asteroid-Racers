@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Asteroid Racers · Watch</title>
+    <link rel="icon" type="image/png" href="logo.png" />
+    <link rel="stylesheet" href="./src/style.css" />
+  </head>
+  <body class="watch">
+    <form class="watch-bar" id="form">
+      <a href="index.html" title="Back to the menu">Asteroid Racers</a>
+      <label
+        >Model
+        <select id="model">
+          <option value="bundled">Bundled model</option>
+          <option value="file">From a file…</option>
+        </select></label
+      >
+      <input type="file" id="file" accept=".json,.txt" hidden />
+      <label>Exam seed <input type="number" id="seed" min="0" step="1" value="1" /></label>
+      <label>Time limit <input type="number" id="time" min="5" step="5" value="180" /> s</label>
+      <span id="status"></span>
+    </form>
+    <div id="viewer" class="watch-viewer"></div>
+    <script type="module" src="./src/watch.ts"></script>
+  </body>
+</html>
