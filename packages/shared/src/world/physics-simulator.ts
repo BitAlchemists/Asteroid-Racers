@@ -6,6 +6,8 @@ import type { Movable } from "./movable";
  */
 export class PhysicsSimulator {
   private readonly movables: Movable[] = [];
+  /** Movable-steps translated so far (one per moving movable per frame): a work counter for speed metrics. */
+  steps = 0;
 
   addMovable(movable: Movable): void {
     this.movables.push(movable);
@@ -39,6 +41,7 @@ export class PhysicsSimulator {
       movable.velocity = movable.velocity.plus(movable.acceleration.times(dt));
       movable.position = movable.position.plus(movable.velocity.times(dt));
       movable.updateRank += 1;
+      this.steps++;
     }
   }
 }

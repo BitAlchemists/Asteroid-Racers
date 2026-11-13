@@ -88,6 +88,14 @@
     "ticks": {
       "direction": "min",
       "label": "Speed: game ticks simulated in the generation (timing only)"
+    },
+    "shipStepsPerSec": {
+      "direction": "max",
+      "label": "Speed: ship-steps per second (moving ships × frames; the real simulation work; timing only)"
+    },
+    "shipSteps": {
+      "direction": "min",
+      "label": "Speed: ship-steps simulated in the generation (timing only)"
     }
   },
   "leaderboard": {

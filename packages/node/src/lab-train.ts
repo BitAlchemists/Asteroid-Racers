@@ -423,6 +423,7 @@ async function main(): Promise<void> {
   let genStartWall = performance.now();
   let genStartCpu = process.cpuUsage();
   let genStartFrame = 0;
+  let genStartShipSteps = 0;
   const pending: Promise<void>[] = [];
   /** Exams, gen events and checkpoint writes happen in generation order, after the generation. */
   let chain: Promise<void> = Promise.resolve();
@@ -457,6 +458,8 @@ async function main(): Promise<void> {
     const cpuSec = (cpu.user + cpu.system) / 1e6;
     // Game ticks of this generation (candidates and held-out; the exam runs its own server).
     const ticks = server.frameCount - genStartFrame;
+    // Ship-steps (moving ships × frames): unlike ticks, a 100-ship training frame counts 100× a 1-ship held-out frame.
+    const shipSteps = server.shipSteps - genStartShipSteps;
     let snapshot: string | undefined;
     if (g === to || (config.snapshotEvery > 0 && g % config.snapshotEvery === 0)) {
       snapshot = `gens/g${String(g).padStart(4, "0")}.json`;
@@ -497,6 +500,8 @@ async function main(): Promise<void> {
       // Speed (timing data: never in result.json or stateHash).
       ticks,
       tps: wall > 0 ? Math.round(ticks / wall) : undefined,
+      shipSteps,
+      shipStepsPerSec: wall > 0 ? Math.round(shipSteps / wall) : undefined,
     };
     // The full training state after this generation: the winner (exact doubles in JSON), its score and
     // both generators. Equal hashes per generation = the same run (evo-lab's baseline gate).
@@ -555,6 +560,7 @@ async function main(): Promise<void> {
     genStartWall = performance.now();
     genStartCpu = process.cpuUsage();
     genStartFrame = server.frameCount;
+    genStartShipSteps = server.shipSteps;
   };
 
   if (startG < to) {

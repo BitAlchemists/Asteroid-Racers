@@ -108,6 +108,11 @@ export class GameServer implements IGameServer {
     return this.frame;
   }
 
+  /** Ship-steps simulated so far (moving movables × frames): the real simulation work, for speed metrics. */
+  get shipSteps(): number {
+    return this.physics.steps;
+  }
+
   get raceController(): RaceController | undefined {
     return this.race;
   }
