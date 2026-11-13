@@ -254,6 +254,58 @@ describe("evo-lab worker (protocol v1)", () => {
     expect(res.winner.layers[0]).toHaveLength(6);
   }, 120_000);
 
+  it("exam switch: race metrics on every N-th generation, results and resume unchanged", async () => {
+    const exam = { every: 2, tracks: ["short"], randomTracks: 1, timeLimitSeconds: 10 };
+    const withExam = newRun({ ...CONFIG, exam });
+    expect(await run(withExam, ["--to", "5"])).toBe(0);
+    const ev = events(withExam);
+    const gens = ev.filter((e) => e.type === "gen");
+    const examined = gens
+      .filter((e) => (e.metrics as Record<string, unknown>).exam !== undefined)
+      .map((e) => e.g);
+    expect(examined).toEqual([2, 4, 5]);
+    expect(gens[1]!.metrics).toMatchObject({
+      exam: expect.any(Number),
+      examCheckpoints: expect.any(Number),
+      examFinished: expect.any(Number),
+      examCrashes: expect.any(Number),
+    });
+    // Every gen event comes before its checkpoint, in generation order.
+    const order = ev.filter((e) => e.type === "gen" || e.type === "checkpoint").map((e) => `${e.type}${e.g}`);
+    expect(order).toEqual([
+      "gen1",
+      "checkpoint1",
+      "gen2",
+      "checkpoint2",
+      "gen3",
+      "checkpoint3",
+      "gen4",
+      "checkpoint4",
+      "gen5",
+      "checkpoint5",
+    ]);
+
+    const plain = newRun(CONFIG);
+    expect(await run(plain, ["--to", "5"])).toBe(0);
+    const strip = (dir: string) => {
+      const { config: _c, ...rest } = JSON.parse(result(dir)) as Record<string, unknown>;
+      return rest;
+    };
+    expect(strip(withExam)).toEqual(strip(plain));
+
+    const resumed = newRun({ ...CONFIG, exam });
+    expect(await run(resumed, ["--to", "3"])).toBe(0);
+    expect(await run(resumed, ["--resume", "--to", "5"])).toBe(0);
+    expect(result(resumed)).toBe(result(withExam));
+    const examOf = (dir: string, g: number) =>
+      (
+        events(dir)
+          .filter((e) => e.type === "gen" && e.g === g)
+          .at(-1)!.metrics as Record<string, unknown>
+      ).exam;
+    expect(examOf(resumed, 4)).toBe(examOf(withExam, 4));
+  }, 180_000);
+
   it("rejects unknown arenas and bad config values before running", async () => {
     for (const [config, message] of [
       [{ arenas: [{ name: "moon" }] }, /unknown arena/],
@@ -262,6 +314,8 @@ describe("evo-lab worker (protocol v1)", () => {
       [{ model: { inputs: ["sonar"] } }, /unknown model inputs/],
       [{ sensors: { sonar: {} } }, /unknown sensor/],
       [{ hidden: [0] }, /hidden/],
+      [{ exam: { every: 0 } }, /exam.every/],
+      [{ exam: { tracks: ["moon"] } }, /unknown track/],
       [{ brain: { inputs: ["sonar"] } }, /unknown model inputs/], // old key name still read
     ] as const) {
       const dir = newRun(config);

@@ -37,6 +37,9 @@ import {
   parseArenas,
   parseModelConfig,
   parseSensors,
+  parseExamConfig,
+  runExam,
+  type ExamConfig,
   parseScoring,
   type ArenaConfig,
   type CollisionMode,
@@ -79,6 +82,11 @@ export interface TrainConfig {
   sensors?: Record<string, Record<string, number>>;
   /** Switch: hidden layer sizes overriding `model.hidden`. Absent = the model's own. */
   hidden?: number[];
+  /**
+   * Switch: every `every` generations (and at the last), the winner flies the race exam; its
+   * metrics go on that generation's `gen` event. The rest is an exam config (defaults filled in).
+   */
+  exam?: ExamConfig & { every: number };
 }
 
 interface Checkpoint {
@@ -128,6 +136,15 @@ function oneOf<T extends string>(value: unknown, name: string, allowed: readonly
   return value as T;
 }
 
+function parseTrainingExam(raw: unknown): ExamConfig & { every: number } {
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw))
+    throw new Error("config.exam must be an object ({ every, ...exam config })");
+  const { every = 10, ...exam } = raw as Record<string, unknown>;
+  if (!Number.isInteger(every) || (every as number) < 1)
+    throw new Error("config.exam.every must be an integer ≥ 1");
+  return { every: every as number, ...parseExamConfig(exam) };
+}
+
 function readConfig(): TrainConfig {
   const file = values.config === undefined ? undefined : resolve(runDir, String(values.config));
   const raw =
@@ -158,6 +175,7 @@ function readConfig(): TrainConfig {
           ),
         }),
     ...(raw.hidden === undefined ? {} : { hidden: raw.hidden as number[] }),
+    ...(raw.exam === undefined ? {} : { exam: parseTrainingExam(raw.exam) }),
   };
   if (
     config.hidden !== undefined &&
@@ -227,19 +245,22 @@ async function main(): Promise<void> {
   let genStartWall = performance.now();
   let genStartCpu = process.cpuUsage();
   const pending: Promise<void>[] = [];
+  /** Exams, gen events and checkpoint writes happen in generation order, after the generation. */
+  let chain: Promise<void> = Promise.resolve();
 
-  const writeCheckpoint = async (): Promise<void> => {
-    const ckpt: Checkpoint = {
-      format: CHECKPOINT_FORMAT,
-      g,
-      seed,
-      config,
-      winner: winner ? winner.toJson() : null,
-      bestScore,
-      rng: { mutation: mutationRandom.state, server: serverRandom.state },
-    };
+  /** The checkpoint content, taken at once: both generators are where the next generation starts. */
+  const checkpointNow = (): Checkpoint => ({
+    format: CHECKPOINT_FORMAT,
+    g,
+    seed,
+    config,
+    winner: winner ? winner.toJson() : null,
+    bestScore,
+    rng: { mutation: mutationRandom.state, server: serverRandom.state },
+  });
+  const writeCheckpoint = async (ckpt: Checkpoint): Promise<void> => {
     await atomicWrite(join(runDir, CHECKPOINT), JSON.stringify(ckpt));
-    emit("checkpoint", { g });
+    emit("checkpoint", { g: ckpt.g });
   };
 
   const onGeneration = (report: GenerationReport): void => {
@@ -264,24 +285,45 @@ async function main(): Promise<void> {
         }),
       );
     }
-    emit("gen", {
+    const metrics: Record<string, number | undefined> = {
+      score: report.bestScore,
+      mean: report.meanScore,
+      worst: report.worstScore,
+      success: report.success,
+      ...(report.heldOutScore === undefined
+        ? {}
+        : { heldOut: report.heldOutScore, heldOutSuccess: report.heldOutSuccess }),
+    };
+    const genEvent = {
       g,
-      metrics: {
-        score: report.bestScore,
-        mean: report.meanScore,
-        worst: report.worstScore,
-        success: report.success,
-        ...(report.heldOutScore === undefined
-          ? {}
-          : { heldOut: report.heldOutScore, heldOutSuccess: report.heldOutSuccess }),
-      },
-      phases: { simulate: { wall, cpu: cpuSec } },
+      metrics,
+      phases: { simulate: { wall, cpu: cpuSec } } as Record<string, { wall: number; cpu: number }>,
       cpuSec,
       rssMiB: Math.round(process.memoryUsage().rss / 2 ** 20),
       ...(snapshot === undefined ? {} : { snapshot }),
+    };
+    const ckpt = g % every === 0 || g === to ? checkpointNow() : undefined;
+    const exam = config.exam;
+    const examModel = exam && (g % exam.every === 0 || g === to) ? report.winner.clone() : undefined;
+    chain = chain.then(async () => {
+      if (exam && examModel) {
+        const startWall = performance.now();
+        const startCpu = process.cpuUsage();
+        const result = await runExam(examModel, exam);
+        const examCpu = process.cpuUsage(startCpu);
+        metrics.exam = result.score;
+        metrics.examCheckpoints = result.checkpoints;
+        metrics.examFinished = result.finished;
+        metrics.examCrashes = result.crashes;
+        genEvent.phases.exam = {
+          wall: (performance.now() - startWall) / 1000,
+          cpu: (examCpu.user + examCpu.system) / 1e6,
+        };
+      }
+      emit("gen", genEvent);
+      if (ckpt) await writeCheckpoint(ckpt);
     });
-    // Called between generations: both generators are exactly where the next generation starts.
-    if (g % every === 0 || g === to) pending.push(writeCheckpoint());
+    pending.push(chain);
     genStartWall = performance.now();
     genStartCpu = process.cpuUsage();
   };
