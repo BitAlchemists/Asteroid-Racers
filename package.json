@@ -11,7 +11,7 @@
   ],
   "scripts": {
     "dev": "npm run dev -w @ar/web",
-    "build": "npm run build -w @ar/web",
+    "build": "npm run build -w @ar/web && npm run build -w @ar/lab-plugin",
     "server": "npm run start -w @ar/node",
     "typecheck": "tsc -b",
     "lint": "eslint .",

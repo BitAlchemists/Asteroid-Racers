@@ -105,5 +105,10 @@
       "seeded": false,
       "resumable": false
     }
+  },
+  "ui": {
+    "apiVersion": 1,
+    "renderer": "dist/lab-plugin/render.js",
+    "static": ["dist/lab-plugin"]
   }
 }
