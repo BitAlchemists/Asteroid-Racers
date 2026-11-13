@@ -243,3 +243,61 @@ snapshots every 10. exam-5 examined all 15 snapshots.
   no simulation.
 - Also from the Evo Lab session: `js/lablib.mjs`, a ready-made helper for Node workers. We keep our
   own workers for now and look at it again in M5 (for `--import`).
+
+## 2026-11-13 — M3: visibility (replay viewer, Evo Lab plugin, watch page)
+
+Plan: [`plans/M3-visibility.md`](plans/M3-visibility.md), approved by the user ("Start M3").
+
+| Commit    | What                                                                                     |
+| --------- | ---------------------------------------------------------------------------------------- |
+| `af79f72` | M3.1: replay core (`ArenaReplay`, `ExamReplay`); arena config, scenarios and placement shared with the trainer |
+| `e06a3f9` | M3.2: flight paths in training snapshots (`trace`) and exam snapshots (`exam-snapshot/v1`) |
+| `1d17e52` | M3.3: replay viewer (controller, Pixi view, DOM shell), replay sources                   |
+| `c4a7e8f` | M3.5: watch page (`watch.html`), `modelFromJson` shared by node and browser              |
+| `c526b96` | Format fix for `c4a7e8f` (see mistakes below)                                            |
+| `a6f99fa` | M3.4: Evo Lab renderer plugin (`packages/lab-plugin`, built into `dist/lab-plugin/`)     |
+| `a863f66` | Thumbnail sizing fix; `snapshotEvery` default 1; plugin opens on the overview camera     |
+
+- **Exactness holds:** replaying a generation's winner alone reproduces the best score recorded
+  while 100 candidates flew at once, to the last digit, for point-to-point with asteroids (crashes
+  ending or respawning) and for legacy. The replayed paths equal the recorded traces. An exam
+  replay ends with exactly the exam's flight result (the exam itself now runs through the replay).
+- **Order changed:** step 5 (watch page) was built before step 4 (plugin), as the simplest place to
+  see the viewer.
+- **Changes beyond the plan:**
+  - `snapshotEvery` now defaults to 1 instead of 10 (about 10 KB per generation), so every
+    filmstrip slot gets a thumbnail and every generation can be watched. The cost: examining all
+    snapshots of a 200-generation run takes about 5 minutes instead of 30 s (`inputGens` can pick
+    fewer).
+  - Evo Lab draws the leader card and the run-detail view with the same mode and size, so the
+    plugin cannot tell them apart. Both get the full viewer; only compare is compact. The plan's
+    "autoplay at 2× with muted controls" for the leader card is dropped.
+- **Checked in the browser** (pane hidden, so no animation):
+  - the watch page renders and its controls work;
+  - in Evo Lab, train-5 (a new 30-generation run) shows the viewer and path thumbnails, and exam-6
+    shows the exam flights with the model fetched from train-5;
+  - stepping through 10 generations leaves exactly one viewer and one canvas on the page, so
+    cleanup works.
+  - Bug found and fixed: Evo Lab passes 0 as the thumbnail height.
+- **Mistake:** `c4a7e8f` was committed although `npm run check` failed (formatting), because I
+  chained the commit with `;` instead of gating it on the exit code: the same slip as in Phase 5.
+  Fixed in `c526b96`. Since then every commit command checks `$?` of `npm run check` itself.
+
+### Findings (step 6)
+
+- **The "two random tracks where every model stalls" are crash loops.** On both tracks an asteroid
+  lies on the straight line between two checkpoints:
+  - the model flies straight at the next checkpoint, hits the rock, and respawns at the last
+    checkpoint (game rule);
+  - then it flies the same line into the same rock again: 35 to 68 crashes per flight, oscillating
+    in place until time runs out.
+  - The models cannot avoid it: their inputs are target angle, target distance, velocity angle and
+    speed. Nothing senses asteroids.
+- **train-4 g80 vs g110:** g80 is caught in three such loops (66, 66 and 59 crashes), g110 in one.
+  Most of the difference in their exam scores is which rocks happen to lie on a checkpoint line, not
+  better flying. g110's lead is partly luck.
+- **Consequences for M4/M5:**
+  - Obstacle sensors ("whiskers") are the most direct next experiment.
+  - Arenas with rocks on the direct line would force avoidance.
+  - The exam needs more random tracks, so one trap weighs less.
+  - Promoting g110 into the game should wait until a model can avoid rocks.

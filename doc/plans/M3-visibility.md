@@ -111,15 +111,15 @@ Each step ends with `npm run check` green and its own commit.
 
 ## Acceptance
 
-- [ ] Steps 1–5 committed, `npm run check` green, CI green.
-- [ ] A replayed training winner reproduces the run's recorded best score exactly; a replayed exam
+- [x] Steps 1–5 committed, `npm run check` green. CI is still open: it runs only after a push.
+- [x] A replayed training winner reproduces the run's recorded best score exactly; a replayed exam
       flight reproduces the exam's flight result exactly (tests).
-- [ ] Snapshots with traces leave `result.json` and exact resume unchanged (tests).
+- [x] Snapshots with traces leave `result.json` and exact resume unchanged (tests).
 - [ ] In Evo Lab, a new training run's generations and an exam's flights can be watched, the
       filmstrip shows path thumbnails, and leaving the page leaks nothing (checked in the browser).
 - [ ] The watch page flies the bundled model and a snapshot file on every track (checked in the
       browser).
-- [ ] Findings from step 6 recorded in `HISTORY.md`.
+- [x] Findings from step 6 recorded in `HISTORY.md`.
 
 ## Not in M3
 
