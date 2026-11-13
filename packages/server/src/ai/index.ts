@@ -21,6 +21,7 @@ export * from "./scoring";
 export * from "./model-store";
 export * from "./model-spec";
 export * from "./directors";
+export * from "./exam";
 export * from "./evaluators";
 export * from "./network";
 export * from "./scripts";

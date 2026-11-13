@@ -28,6 +28,8 @@ export class RaceController {
   private finishEntity: Entity | undefined;
   /** Racer → index of the last checkpoint they touched. Insertion order = join order. */
   private readonly progress = new Map<IClientProxy, number>();
+  /** Called when a racer touches their next checkpoint (index into `checkpoints`); the last one is the finish. */
+  onCheckpoint: ((client: IClientProxy, index: number) => void) | undefined;
 
   constructor(
     private readonly server: IGameServer,
@@ -94,6 +96,7 @@ export class RaceController {
       if (!movable || !next || CollisionDetector.penetration(movable, next) <= 0) continue;
 
       this.progress.set(client, lastTouched + 1);
+      this.onCheckpoint?.(client, lastTouched + 1);
       sendCheckpointUpdate(client, next, CheckpointState.CLEARED);
 
       const afterNext = this.checkpoints[lastTouched + 2];
@@ -102,6 +105,11 @@ export class RaceController {
     }
 
     for (const client of finished) this.playerReachedFinish(client);
+  }
+
+  /** Index of the last checkpoint the racer touched (0 = the portal), or undefined when not racing. */
+  progressOf(client: IClientProxy): number | undefined {
+    return this.progress.get(client);
   }
 
   isClientInRace(client: IClientProxy): boolean {
