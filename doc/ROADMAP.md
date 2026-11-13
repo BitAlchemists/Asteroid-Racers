@@ -103,10 +103,11 @@ picker) started 2026-11-13 with the user's OK; the training side waits for M4.
   tier 3 `race-legs`. Moving obstacles are dropped: the game has none.
 - ~~Race exam v2~~: moved to M4 (step 8).
 
-### M6 — Experiments ⬜
+### M6 — Experiments 🟡
 
 Plan: [`plans/M6-experiments.md`](plans/M6-experiments.md), approved 2026-11-13. Switch code (steps
-1–4) is being built; experiments start once M4 is closed.
+1–4) is built (lookahead, input delay and noise with a robustness exam, crossover, mutation
+schedules); experiments start once M4 is closed.
 
 Five phases, each ending in a decision point (at most 6 experiments per phase):
 

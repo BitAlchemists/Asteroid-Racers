@@ -9,7 +9,14 @@ import { DEFAULT_HIDDEN, layoutFor, LEGACY_SPEC, type ModelSpec } from "./model-
 import defaultModel from "./models/default-model.json";
 import { DemoDirector, TrainingDirector, type GenerationReport } from "./directors";
 import { QuadraticSumOfDistanceToTargetsEvaluator } from "./evaluators";
-import { mutateGaussian, mutateRelative, type MajorTom, type NetworkJson } from "./network";
+import {
+  mutateGaussian,
+  mutateRelative,
+  mutateScheduled,
+  type GaussianMutation,
+  type MajorTom,
+  type NetworkJson,
+} from "./network";
 import type { ScoringWeights } from "./scoring";
 import { RaceTargetScript, RespawnTargetTrainingScript } from "./scripts";
 import { TargetGenerator } from "./target-generator";
@@ -109,7 +116,7 @@ export interface TrainingServiceOptions {
    * Gaussian mutation instead of the relative one: add N(0, sigma²) with probability `rate`
    * (default `mutationRate`). Absent = relative mutation.
    */
-  mutation?: { kind: "gaussian"; sigma: number; rate?: number };
+  mutation?: GaussianMutation;
   /** Models kept per generation, best first (default 1). See {@link TrainingOptions.parents}. */
   parents?: number;
   /** Range of the random starting weights (default 1). */
@@ -194,11 +201,21 @@ export function registerAITrainingService(
           },
         }
       : {}),
-    mutate: options.mutation
-      ? (network: MajorTom, rnd: Random) =>
-          network.mutate(options.mutation!.rate ?? mutationRate, options.mutation!.sigma, mutateGaussian, rnd)
-      : (network: MajorTom, rnd: Random) =>
-          network.mutate(mutationRate, mutationStrength, mutateRelative, rnd),
+    ...(options.mutation?.selfAdapt ? { initialSigma: options.mutation.sigma } : {}),
+    mutate:
+      options.mutation?.anneal || options.mutation?.selfAdapt
+        ? (network: MajorTom, rnd: Random, g: number) =>
+            mutateScheduled(network, options.mutation!, options.mutation!.rate ?? mutationRate, g, rnd)
+        : options.mutation
+          ? (network: MajorTom, rnd: Random) =>
+              network.mutate(
+                options.mutation!.rate ?? mutationRate,
+                options.mutation!.sigma,
+                mutateGaussian,
+                rnd,
+              )
+          : (network: MajorTom, rnd: Random) =>
+              network.mutate(mutationRate, mutationStrength, mutateRelative, rnd),
   });
   server.registerService(director);
   return director;

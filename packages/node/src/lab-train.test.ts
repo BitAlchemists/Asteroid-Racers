@@ -739,6 +739,44 @@ describe("evo-lab worker (protocol v1)", () => {
     expect(strip(crossed)).not.toEqual(strip(plain));
   }, 240_000);
 
+  it("mutation schedules (anneal, selfAdapt): kill-and-resume, σ in checkpoint, stateHash and metrics, replay", async () => {
+    const base = {
+      sample: 8,
+      frames: 60,
+      arenas: [{ name: "point-to-point", params: { episodes: 2, asteroids: 5 } }],
+      collisions: "obstacles",
+      parents: 2,
+    };
+    const annealed = {
+      ...base,
+      mutation: { kind: "gaussian", sigma: 0.2, anneal: { to: 0.02, over: 4, shape: "geometric" } },
+    };
+    const dir = await killResume(annealed);
+    const sigmas = events(dir)
+      .filter((e) => e.type === "gen")
+      .map((e) => (e.metrics as Record<string, number>).sigma);
+    expect(sigmas[0]).toBeCloseTo(0.2, 12);
+    expect(sigmas[4]).toBeCloseTo(0.02, 12);
+    const adaptive = {
+      ...base,
+      crossover: { kind: "uniform", rate: 0.5 },
+      mutation: { kind: "gaussian", sigma: 0.2, selfAdapt: true },
+    };
+    const adir = await killResume(adaptive);
+    const res = JSON.parse(result(adir)) as { winner: { sigma: number } };
+    expect(res.winner.sigma).toEqual(expect.any(Number));
+    const ckpt = JSON.parse(readFileSync(join(adir, "ckpt.json"), "utf8")) as {
+      parents: { sigma: number }[];
+    };
+    expect(ckpt.parents.map((p) => typeof p.sigma)).toEqual(["number", "number"]);
+    const last = events(adir)
+      .filter((e) => e.type === "gen")
+      .at(-1)!;
+    expect((last.metrics as Record<string, number>).sigma).toBe(res.winner.sigma);
+    const { replayed, traced } = await replayEpisodes(adir, 6, 0, adaptive);
+    expect(replayed).toEqual(traced);
+  }, 240_000);
+
   it("exam switch: race metrics on every N-th generation, results and resume unchanged", async () => {
     const exam = { every: 2, tracks: ["short"], randomTracks: 1, timeLimitSeconds: 10 };
     const withExam = newRun({ ...CONFIG, exam });
@@ -829,6 +867,14 @@ describe("evo-lab worker (protocol v1)", () => {
       [{ sample: 10, parents: 2, crossover: { kind: "blend" } }, /crossover.kind/],
       [{ sample: 10, parents: 2, crossover: { kind: "layer", rate: 2 } }, /crossover.rate/],
       [{ sample: 10, parents: 2, crossover: { kind: "layer", mix: 1 } }, /unknown config.crossover keys/],
+      [{ mutation: { kind: "gaussian", anneal: { to: 0, over: 5 } } }, /anneal.to/],
+      [{ mutation: { kind: "gaussian", anneal: { to: 0.1, over: 0 } } }, /anneal.over/],
+      [{ mutation: { kind: "gaussian", anneal: { to: 0.1, over: 5, shape: "cubic" } } }, /anneal.shape/],
+      [{ mutation: { kind: "gaussian", selfAdapt: "yes" } }, /selfAdapt/],
+      [
+        { mutation: { kind: "gaussian", selfAdapt: true, anneal: { to: 0.1, over: 5 } } },
+        /cannot both be set/,
+      ],
     ] as const) {
       const dir = newRun(config);
       expect(await run(dir, ["--to", "1"])).not.toBe(0);

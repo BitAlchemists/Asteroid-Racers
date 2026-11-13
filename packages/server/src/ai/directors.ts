@@ -179,8 +179,10 @@ export interface TrainingOptions {
   spec: ModelSpec;
   /** Models per generation, all flown simultaneously. */
   sampleSize: number;
-  /** Applied to every offspring of the previous winner. */
-  mutate: (network: MajorTom, random: Random) => void;
+  /** Applied to every offspring of the previous winner; `g` is the generation the child flies in. */
+  mutate: (network: MajorTom, random: Random, g: number) => void;
+  /** Self-adaptive mutation: the σ the first random models start with (absent = they carry none). */
+  initialSigma?: number;
   /** Drives mutation and the first random models. */
   random: Random;
   /**
@@ -319,11 +321,14 @@ export class TrainingDirector extends AIDirector {
     this.lastParents = parents ?? [];
     if (!parents || parents.length === 0) {
       trainLog.info(`no networks named ${networkName} yet, starting with ${sampleSize} random ones`);
-      return Array.from({ length: sampleSize }, (_, i) =>
-        this.options.initRange === undefined
-          ? MajorTom.random(layout, random, `Luke #${i}`, spec)
-          : MajorTom.random(layout, random, `Luke #${i}`, spec, this.options.initRange),
-      );
+      return Array.from({ length: sampleSize }, (_, i) => {
+        const network =
+          this.options.initRange === undefined
+            ? MajorTom.random(layout, random, `Luke #${i}`, spec)
+            : MajorTom.random(layout, random, `Luke #${i}`, spec, this.options.initRange);
+        if (this.options.initialSigma !== undefined) network.sigma = this.options.initialSigma;
+        return network;
+      });
     }
     for (const parent of parents) {
       if (!sameSpec(parent.spec, spec))
@@ -347,7 +352,7 @@ export class TrainingDirector extends AIDirector {
         }
         child.name = `Major Tom #${index++}`;
         child.generation = parent.generation + 1;
-        mutate(child, random);
+        mutate(child, random, this.generation + 1);
         candidates.push(child);
       }
     }

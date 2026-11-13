@@ -1097,3 +1097,44 @@ and all earlier tests pass unchanged.
 - **The user agreed the rewritten roadmap** ("okay, great lets commit to that experiment plan",
   2026-11-13). Order: 1 Measurement → 2 Rewards & metrics + Curriculum → 3 Perception (incl. network
   size) → 4 Learner (CMA-ES optional, last) → 5 Robustness & readiness; MAP-Elites only if needed.
+
+## 2026-11-13 — M6: switch code (steps 1–4)
+
+The user approved the M6 plan and asked to build steps 1–4 now; no experiments were run (they wait
+for M4's close). Built in a worktree, each step rebased onto `main`, checked and fast-forwarded.
+
+- **Commits:**
+  - 63e1985 step 1: lookahead inputs (`lookahead: 1 | 2`);
+  - 0f16e26 step 2: `inputDelay`, `inputNoise`, robustness exam (`examRobust*`);
+  - 5cc0b2f step 3: `crossover: { kind: "uniform" | "layer", rate }`;
+  - step 4 (this entry's commit): `mutation.anneal`, `mutation.selfAdapt`.
+- **Semantics** (details in `doc/experiments.md`):
+  - lookahead: per leg after the current target, `next{k+1}Present`, `…Sin`, `…Cos`,
+    `…DistanceSoft`, appended to the inputs; 0 with `Present` 0 when there is no such target. The
+    arena script feeds the episode's targets, the race bot the checkpoint chain (ids rise in race
+    order), so the game, the exam and training share one controller;
+  - `inputDelay: k`: the network sees the inputs of k steps ago (ring buffer, reset per episode);
+    `inputNoise: σ`: Gaussian noise per input from a stream seeded by (seed, round, generation,
+    scenario), the same for every candidate. `exam: { inputDelay, inputNoise }` flies the exam a
+    second time perturbed (noise fixed per race) and reports `examRobust*`;
+  - crossover: with probability `rate` a child is its parent crossed with another parent (per
+    weight or per layer), then mutated; draws from the checkpointed mutation generator;
+  - anneal: σ(g) at f = min(1, (g − 1) / over), linear or geometric; selfAdapt: each model's σ in
+    its JSON (checkpoint, `stateHash`, result), σ' = σ · exp(N(0, 1)/√n), clamped to [1e-4, 10].
+- **Tests:** per switch, absent (and 0 / rate 0 / flat anneal) = identical, the two baseline
+  fixtures unchanged, determinism, kill-and-resume with equal per-generation `stateHash`, snapshot
+  replay matches the trace, config validation (15 new rejected-config cases in the worker test). Lookahead is tested on M5's `chain`
+  arena (85c9577 landed mid-session) and on the `demo` race through the game's bot. `npm run check`
+  green at each commit.
+- **Decisions and deviations:**
+  - lookahead encodes legs, not ship-to-target lines (recorded in the plan's changes);
+  - `actionRepeat` (optional) not built;
+  - self-adaptive σ is ES-style, not the 1/5 rule;
+  - `lab.config.json` gained the `examRobust*` and `sigma` metric labels (no binding change needed:
+    all changed files are under `packages/server/src` or `packages/node/src/lab-*.ts`).
+- **Mistakes:** none that reached `main`. Two test fixes before the first commit: the `short` track
+  has only 3 checkpoints (the race lookahead test uses `demo`), and a test network layout did not
+  match the legacy spec.
+- **Ready once M4 closes:** 3.1 lookahead (on `chain` / tiered arenas), 4.2 crossover (with
+  `parents` ≥ 2), 4.3 σ annealing and self-adaptive σ, 5.1 latency and noise (training switches plus
+  the robustness exam on every run).

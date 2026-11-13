@@ -53,6 +53,8 @@ import {
   type CollisionMode,
   type CrashMode,
   type GenerationReport,
+  type GaussianMutation,
+  scheduledSigma,
   type NetworkJson,
   type ScoringWeights,
 } from "@ar/server";
@@ -109,8 +111,12 @@ export interface TrainConfig {
    * stream per (seed, round, generation, scenario), the same for every candidate. Absent or 0 = none.
    */
   inputNoise?: number;
-  /** Switch: Gaussian mutation (add N(0, sigma²) with probability `rate`, default `mutationRate`). */
-  mutation?: { kind: "gaussian"; sigma: number; rate?: number };
+  /**
+   * Switch: Gaussian mutation (add N(0, sigma²) with probability `rate`, default `mutationRate`).
+   * Optional M6 schedules: `anneal: { to, over, shape? }` (σ falls from `sigma` to `to` over `over`
+   * generations, linear or geometric) or `selfAdapt: true` (each model carries its own σ).
+   */
+  mutation?: GaussianMutation;
   /** Switch: models kept per generation, best first ((μ + λ) selection). Absent = 1. */
   parents?: number;
   /**
@@ -202,10 +208,26 @@ function parseTrainingExam(raw: unknown): ExamConfig & { every: number } {
   return { every: every as number, ...parseExamConfig(exam) };
 }
 
-function parseMutation(raw: unknown): { kind: "gaussian"; sigma: number; rate?: number } {
+function parseAnneal(raw: unknown): NonNullable<GaussianMutation["anneal"]> {
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw))
+    throw new Error(
+      'config.mutation.anneal must be an object ({ to, over, shape?: "linear" | "geometric" })',
+    );
+  const { to, over, shape, ...rest } = raw as Record<string, unknown>;
+  if (Object.keys(rest).length > 0)
+    throw new Error(`unknown config.mutation.anneal keys ${Object.keys(rest).join(", ")}`);
+  if (typeof to !== "number" || !(to > 0)) throw new Error("config.mutation.anneal.to must be a number > 0");
+  if (!Number.isInteger(over) || (over as number) < 1)
+    throw new Error("config.mutation.anneal.over must be an integer ≥ 1");
+  if (shape !== undefined && shape !== "linear" && shape !== "geometric")
+    throw new Error('config.mutation.anneal.shape must be "linear" or "geometric"');
+  return { to, over: over as number, ...(shape === undefined ? {} : { shape }) };
+}
+
+function parseMutation(raw: unknown): GaussianMutation {
   if (typeof raw !== "object" || raw === null || Array.isArray(raw))
     throw new Error('config.mutation must be an object ({ kind: "gaussian", sigma, rate? })');
-  const { kind, sigma = 0.2, rate, ...rest } = raw as Record<string, unknown>;
+  const { kind, sigma = 0.2, rate, anneal, selfAdapt, ...rest } = raw as Record<string, unknown>;
   if (Object.keys(rest).length > 0)
     throw new Error(`unknown config.mutation keys ${Object.keys(rest).join(", ")}`);
   if (kind !== "gaussian") throw new Error('config.mutation.kind must be "gaussian"');
@@ -213,7 +235,17 @@ function parseMutation(raw: unknown): { kind: "gaussian"; sigma: number; rate?: 
     throw new Error("config.mutation.sigma must be a number > 0");
   if (rate !== undefined && (typeof rate !== "number" || !(rate > 0 && rate <= 1)))
     throw new Error("config.mutation.rate must be in (0, 1]");
-  return { kind, sigma, ...(rate === undefined ? {} : { rate }) };
+  if (selfAdapt !== undefined && selfAdapt !== true)
+    throw new Error("config.mutation.selfAdapt must be true (or absent)");
+  if (selfAdapt && anneal !== undefined)
+    throw new Error("config.mutation.anneal and config.mutation.selfAdapt cannot both be set");
+  return {
+    kind,
+    sigma,
+    ...(rate === undefined ? {} : { rate }),
+    ...(anneal === undefined ? {} : { anneal: parseAnneal(anneal) }),
+    ...(selfAdapt === undefined ? {} : { selfAdapt }),
+  };
 }
 
 function parseCrossover(raw: unknown): { kind: "uniform" | "layer"; rate: number } {
@@ -459,6 +491,9 @@ async function main(): Promise<void> {
       ...(report.reevaluation === undefined
         ? {}
         : { reevalScore: report.reevaluation.score, reevalSuccess: report.reevaluation.success }),
+      // Mutation schedules: the winner's own σ (selfAdapt), or the σ this generation's children got.
+      ...(config.mutation?.selfAdapt ? { sigma: report.winner.sigma } : {}),
+      ...(config.mutation?.anneal ? { sigma: scheduledSigma(config.mutation, g) } : {}),
       // Speed (timing data: never in result.json or stateHash).
       ticks,
       tps: wall > 0 ? Math.round(ticks / wall) : undefined,

@@ -58,6 +58,8 @@ step 5 (it needs M5's arenas).
   with a "present" input, like `nearest.flag`.
 - Exam: races already have checkpoint chains, so lookahead works there without changes.
 - Tests: input values, absence = identical, the game bot feeds lookahead models the same inputs.
+- ✅ **Built 2026-11-13** (63e1985): `lookahead: 1 | 2`; inputs `next{2,3}Present/Sin/Cos/DistanceSoft`
+  describe the legs after the current target (see "Changes to this plan"); trained on M5's `chain`.
 
 ### 2. Latency and robustness switches
 
@@ -69,6 +71,8 @@ step 5 (it needs M5's arenas).
 - **A robustness exam variant**: the same races with delay and noise, `exam: { inputDelay,
   inputNoise }`, reported as extra metrics (`examRobust*`), so every run shows both.
 - Tests: determinism, exact resume, delay 0 or noise 0 = identical to absent.
+- ✅ **Built 2026-11-13** (0f16e26): `inputDelay`, `inputNoise`, `exam: { inputDelay, inputNoise }` →
+  `examRobust*`. `actionRepeat` not built (optional; deferred until X2/5.1 asks for it).
 
 ### 3. Crossover (needs `parents: μ` > 1)
 
@@ -77,6 +81,7 @@ step 5 (it needs M5's arenas).
 - Deterministic parent pairing from the mutation stream; children per parent stay
   (sample − μ) / μ.
 - Tests: determinism, resume, rate 0 = identical.
+- ✅ **Built 2026-11-13** (5cc0b2f): `crossover: { kind, rate }` (rate default 0.5).
 
 ### 4. Mutation schedules
 
@@ -84,6 +89,8 @@ step 5 (it needs M5's arenas).
   `over` generations.
 - `mutation.selfAdapt: true`: each model carries its own σ, mutated log-normally (the 1/5 rule or
   ES-style). It is stored in the model JSON but ignored by the game.
+- ✅ **Built 2026-11-13** (step 4 commit): `mutation.anneal: { to, over, shape? }` and
+  `mutation.selfAdapt: true` (ES-style, τ = 1/√n), not combinable; gen metric `sigma`.
 - Only relevant if M4 adopts Gaussian mutation. If M4 adopts CMA-ES, this step shrinks to "CMA-ES
   step-size settings".
 
@@ -225,7 +232,7 @@ so (`CLAUDE.md`).
 
 ## Acceptance
 
-- [ ] Steps 1–4 committed; every switch absent = byte-identical (fixtures, resume, gate); tests per
+- [x] Steps 1–4 committed; every switch absent = byte-identical (fixtures, resume, gate); tests per
       switch.
 - [ ] Step 5 committed after M5's arenas exist.
 - [ ] Phases 1–5 run under the budget rule, each closed by a decision point recorded in
@@ -291,3 +298,15 @@ so (`CLAUDE.md`).
     2.5 level-up thresholds, 2.7 level-aware held-out.
   - **Names:** `<phase>.<number> <plain name>`, Evo Lab ids `m6-<phase>-<number>-<name>`; the old ids
     map to the new numbers in a table.
+- **2026-11-13, steps 1–4 built** (switch code only, no experiments run):
+  - **Lookahead encodes legs, not ship-to-target lines.** `next2*` describe the leg from the current
+    target to the next one (direction relative to the nose, length), `next3*` the leg after that.
+    **Why:** while the current target is far away, the ship-to-next-target angle is almost the
+    ship-to-current-target angle and carries little new information; the leg says how sharp the
+    turn at the current target will be. A `Present` input per leg replaces "read 0" ambiguity.
+  - **In races** the bot reads the checkpoint chain from the checkpoints it knows (their ids rise in
+    race order), so the game, the exam and training use one controller.
+  - **`actionRepeat` deferred** (it was optional).
+  - **Self-adaptive σ is ES-style** (one global log-normal step size, τ = 1/√n, bounds [1e-4, 10]),
+    not the 1/5 rule: the 1/5 rule needs success statistics per lineage, which (μ + λ) selection
+    does not track.

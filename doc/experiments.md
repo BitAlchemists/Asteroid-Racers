@@ -55,6 +55,15 @@ An experiment answers one question by comparing **arms** (the baseline config, p
     `layer`: each whole layer from the mate with probability ½), then mutated as usual. All draws
     come from the mutation generator (saved in the checkpoint); children per parent stay
     (sample − parents) / parents. Rate 0 = absent.
+  - `mutation.anneal` (M6): `{ "to": 0.02, "over": 100, "shape": "linear" | "geometric" }` inside a
+    Gaussian `mutation`. Children flown in generation g mutate with σ at f = min(1, (g − 1) / over):
+    linear σ + (to − σ)·f, geometric σ·(to/σ)^f. Gen metric `sigma`. `to` = `sigma` is the same as
+    no schedule.
+  - `mutation.selfAdapt` (M6): `true` inside a Gaussian `mutation`. Every model carries its own σ
+    (the first random models start at `sigma`): a child first sets σ' = σ_parent · exp(τ·N(0, 1)),
+    τ = 1/√(number of weights), clamped to [1e-4, 10], then mutates its weights with σ'. σ is
+    stored in the model JSON (`sigma`, so in checkpoints, `stateHash` and `result.json`); the game
+    ignores it. Gen metric `sigma` = the winner's σ. Not combinable with `anneal`.
 - A switch key may not appear in the method's default config in `lab.config.json` (that is why the
   `model` block is not there).
 - **The decision metric is `exam`** (the race exam score, lower is better), produced inside training

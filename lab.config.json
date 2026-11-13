@@ -64,6 +64,10 @@
     "examRobustCrashes": {
       "direction": "min",
       "label": "Robustness exam: crashes"
+    },
+    "sigma": {
+      "direction": "min",
+      "label": "Mutation σ (annealed schedule, or the winner's self-adaptive σ)"
     }
   },
   "leaderboard": {
