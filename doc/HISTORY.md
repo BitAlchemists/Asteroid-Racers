@@ -610,3 +610,35 @@ Runs: screen train-57..66, final train-67..76 (seeds 1–10). Task v2 with lineC
   screen and continuation run is fresh and owned by the experiment), but it doubles a one-switch
   experiment on a busy machine. Suggested: an opt-in reuse of stored runs after a full,
   bit-identical gate.
+
+### Replay viewer: model inputs panel, curriculum level, "Reload plugin" fixed
+
+- **Asked by the user**, built in worktree `ar-viewer` (branch `viewer`) because other agents work in
+  main. Commit 228a740 (code), fast-forwarded into main; plugin rebuilt in the main checkout.
+- **Model inputs panel** (button "Inputs", key `i`; on by default, off in compact mode): one row per
+  input neuron with its name, a bar over −1..1 and the value (values outside the range are clipped
+  and shown orange), then thrust 0..1 and turn −1..1.
+  - Names: the spec's inputs, then `whiskers[i]`, `sectors[i]`, `nearest[i].present/angle/dist/radius`,
+    `lineCheck.near/offset` (`inputNames` in model-spec.ts).
+  - `Replay.inputs?()` (ArenaReplay, ExamReplay) reads `TargetVehicleController.lastActivation()`:
+    references to the controller's input buffer and the network's output array; names built on the
+    first call. The hot path only stores one reference: no allocation, no extra random numbers, same
+    order of computation. A test flies two identical replays, one watched, and checks the positions
+    are equal every frame and that re-activating the shown inputs gives the shown outputs.
+  - Note: these files are in the `binding`, so the binding hash changed with no change to training.
+- **Curriculum level**: the caption says "level i/n" and thumbnails get an "Li/n" badge. The level
+  comes from matching the snapshot's `arenas` against `applyLevel` of each configured level, with the
+  gen's `level` metric as fallback. Old snapshots and runs without the switch show nothing.
+- **"Reload plugin"** failed with "Extension type application already has a handler". Cause:
+  render.js contained PixiJS modules whose top-level code registers extensions, and Evo Lab re-imports
+  only render.js (cache-busting query) while the chunks it imports stay cached, so the registrations
+  ran again against the cached registry. Fix: the plugin build puts every node_modules module into
+  one `vendor-<hash>.js` chunk (rolldown `codeSplitting.groups`), so render.js has no PixiJS code.
+- **Checked in Evo Lab** (built-in browser):
+  - train-64: the panel shows 6 inputs live, `targetDistance` 1.01 clipped in orange. Clicking
+    "Reload plugin" twice gave no error and no console errors, and the replay kept playing;
+  - train-98 (curriculum): caption "train-98 · g23 · level 2/5" (the metric says level 1, 0-based).
+    Thumbnails show L1/5 up to g17 and L2/5 from g19;
+  - exam-6: the panel works for exam flights (4 inputs);
+  - key `i` toggles the panel.
+- `npm run check` green (231 tests).
