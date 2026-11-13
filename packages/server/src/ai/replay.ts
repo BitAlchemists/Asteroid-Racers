@@ -167,3 +167,54 @@ export class ArenaReplay implements Replay {
     this.server.stop();
   }
 }
+
+/**
+ * What a viewer can watch: a list of segments (training episodes or exam flights), each opened as
+ * a fresh replay. For a training arena all episodes run in one replay, so `open(i)` may return a
+ * replay stepped to the start of episode i that later moves on to i + 1 by itself.
+ */
+export interface ReplaySource {
+  /** One label per segment, e.g. "point-to-point · episode 3". */
+  readonly segments: readonly string[];
+  /** A replay positioned at the start of segment `index`. */
+  open(index: number): Promise<Replay>;
+  /** Length of segment `index` in frames (its time limit), for a time slider. */
+  segmentFrames(index: number): number;
+  /** Which segment `replay` is in now. */
+  segmentOf?(replay: Replay): number;
+}
+
+/** Every episode of every arena of generation `g`, one segment each. */
+export function arenaReplaySource(o: Omit<ArenaReplayOptions, "arenaIndex">): ReplaySource {
+  const runs = resolveArenas(o.arenas, o.frames);
+  const scenarios = trainingScenarios(runs, o.seed, o.g);
+  const segments: { arena: number; episode: number; label: string; frames: number }[] = [];
+  scenarios.forEach((scenario, arena) =>
+    scenario.episodes.forEach((spec, episode) =>
+      segments.push({
+        arena,
+        episode,
+        label: `${runs[arena]!.arena.name} · episode ${episode + 1}/${scenario.episodes.length}`,
+        frames: spec.timeLimitFrames + 1,
+      }),
+    ),
+  );
+  const offsets = scenarios.map((_, arena) => segments.findIndex((s) => s.arena === arena));
+  const arenaOf = new WeakMap<Replay, number>();
+  return {
+    segments: segments.map((s) => s.label),
+    async open(index) {
+      const segment = segments[index];
+      if (!segment) throw new Error(`no episode ${index}`);
+      const replay = await ArenaReplay.create({ ...o, arenaIndex: segment.arena });
+      replay.skipToEpisode(segment.episode);
+      arenaOf.set(replay, segment.arena);
+      return replay;
+    },
+    segmentFrames: (index) => segments[index]?.frames ?? 0,
+    segmentOf(replay) {
+      const arena = arenaOf.get(replay) ?? 0;
+      return (offsets[arena] ?? 0) + replay.status().index;
+    },
+  };
+}

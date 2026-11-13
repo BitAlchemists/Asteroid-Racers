@@ -61,3 +61,7 @@ export async function startGame({
     },
   };
 }
+
+export { ReplayController, SPEEDS } from "./replay/replay-controller";
+export { ReplayView, type CameraMode } from "./replay/replay-view";
+export { mountReplayViewer, type ReplayViewer, type ReplayViewerOptions } from "./replay/replay-viewer";

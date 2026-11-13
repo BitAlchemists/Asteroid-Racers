@@ -6,7 +6,7 @@ import { trackByName } from "../tracks";
 import { deriveSeed } from "./arenas";
 import { AIDirector } from "./directors";
 import type { MajorTom } from "./network";
-import { startScript, type Replay, type ReplayStatus } from "./replay";
+import { startScript, type Replay, type ReplaySource, type ReplayStatus } from "./replay";
 import { RaceTargetScript } from "./scripts";
 import { addPathPoint, PATH_EVERY } from "./trace";
 
@@ -316,4 +316,23 @@ export function parseExamConfig(raw: unknown): ExamConfig {
       throw new Error(`exam.weights.${k} must be a known weight ≥ 0`);
   if (!Number.isInteger(config.seed) || config.seed < 0) throw new Error("exam.seed must be an integer ≥ 0");
   return config;
+}
+
+/** The flights of an exam as replay segments (one ExamReplay each). */
+export function examReplaySource(
+  model: MajorTom,
+  flights: readonly { track: string; seed: number }[],
+  timeLimitSeconds: number,
+  tickSeconds = 0.015,
+): ReplaySource {
+  let random = 0;
+  return {
+    segments: flights.map((f) => (f.track === "random" ? `random #${++random}` : f.track)),
+    open(index) {
+      const flight = flights[index];
+      if (!flight) throw new Error(`no flight ${index}`);
+      return ExamReplay.create(model, flight.track, flight.seed, timeLimitSeconds);
+    },
+    segmentFrames: () => Math.round(timeLimitSeconds / tickSeconds),
+  };
 }
