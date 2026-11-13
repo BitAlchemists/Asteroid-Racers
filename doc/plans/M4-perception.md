@@ -155,9 +155,11 @@ not adopted.
    `curriculum: {}`, seeds 1–10. E3's runs are the stored baseline (the gate re-runs them to g5).
    Screen at g50, final at g150, decision on `exam` as usual. If the curriculum wins, it becomes
    part of the baseline for E4.
-5. **E4 learner (one-at-a-time):** against the E3 or E3b baseline, switches `encoding`, `mutation`, `parents`,
-   `lineCheck.horizon: 2` and `crashLimit: 3`. Screen at g50, final at g150. Winners join the baseline. If two or
-   more win, a confirmation run of them together follows (one arm, 10 seeds).
+5. **E4 learner (one-at-a-time):** against the E3b winner (task v2 + `curriculum: {}`), six switches:
+   `encoding`, `mutation`, `parents`, `lineCheck.horizon: 2`, `crashLimit: 3` and
+   `curriculum.success: 0.6`. Screen at g100 (E3b's g50 screen nearly dropped a late winner), final
+   at g150. Winners join the baseline. If two or more win, a confirmation run of them together
+   follows (one arm, 10 seeds).
 6. **E5 sensors again (one-at-a-time):** on the E4 setup, add `whiskers`, `sectors` (both with a
    `horizon` if E4 adopted it) and `nearest` (with `flag: 1`), one at a time. Does richer sensing
    pay off once the learner is fixed?
