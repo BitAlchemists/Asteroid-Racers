@@ -55,6 +55,9 @@ fileInput.addEventListener("change", async () => {
   try {
     model = modelFromJson(JSON.parse(await file.text()) as unknown, file.name);
     model.name = `${model.name} (${file.name})`;
+    const option = modelSelect.querySelector<HTMLOptionElement>('option[value="file"]')!;
+    option.textContent = file.name;
+    modelSelect.value = "file";
     void show();
   } catch (error) {
     status.textContent = String(error instanceof Error ? error.message : error);

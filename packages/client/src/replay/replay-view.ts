@@ -46,6 +46,8 @@ export class ReplayView {
   private ringScale = 0;
   private readonly trailPoints: number[] = [];
   private lastShip: { x: number; y: number } | undefined;
+  /** The replay the nodes were built for: entity ids restart in every replay's world. */
+  private shown: Replay | undefined;
   zoom = 0.6;
   camera: CameraMode = "follow";
 
@@ -65,6 +67,11 @@ export class ReplayView {
   render(replay: Replay | undefined, dt: number): void {
     this.stars.update(dt);
     if (!replay) return;
+    if (replay !== this.shown) {
+      for (const node of this.nodes.values()) node.root.destroy({ children: true });
+      this.nodes.clear();
+      this.shown = replay;
+    }
     const entities = replay.server.world.entities;
     for (const [id, node] of this.nodes) {
       if (!entities.has(id)) {
@@ -75,9 +82,17 @@ export class ReplayView {
     const scale = this.world.scale.x || 1;
     const rescale = Math.abs(Math.log(scale / (this.ringScale || 1))) > 0.15;
     if (rescale) this.ringScale = scale;
-    const target = replay.target;
     const race = replay.server.raceController;
-    const targetIndex = target && race ? race.checkpoints.indexOf(target as never) : -1;
+    const status = replay.status();
+    const finished = status.done && status.reached >= status.total;
+    const target = finished ? undefined : replay.target;
+    // After the finish every race checkpoint counts as cleared.
+    const targetIndex =
+      race && finished
+        ? race.checkpoints.length
+        : target && race
+          ? race.checkpoints.indexOf(target as never)
+          : -1;
     for (const entity of entities.values()) {
       let node = this.nodes.get(entity.id);
       if (!node) {
