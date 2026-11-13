@@ -140,8 +140,10 @@ not adopted.
 1. **E1 noise floor** ✅ (blind, task v1).
 2. **E2 sensors** ✅ (task v1, 5 seeds): `lineCheck` better early and fewer crashes; the others not
    at today's size.
-3. **E3 noise floor v2 (measurement):** the task v2 config with `lineCheck`, seeds 1–10, g150. This
-   gives the new baseline, its spread and `minEffect`, and is the gate baseline for E4–E6.
+3. **E3 noise floor v2 (measurement)** ✅: the task v2 config with `lineCheck`, seeds 1–10, g150.
+   - Exam mean 42,160 (sd 27,440) at g100, but 96,360 (sd 49,030) at g150.
+   - 5 of 10 seeds collapsed after g100 into passive hovering (see HISTORY).
+   - Its runs are the gate baseline for E3b and E4.
 4. **E3b curriculum (one-at-a-time):** the E3 baseline against the same config plus
    `curriculum: {}`, seeds 1–10. E3's runs are the stored baseline (the gate re-runs them to g5).
    Screen at g50, final at g150, decision on `exam` as usual. If the curriculum wins, it becomes
@@ -235,3 +237,22 @@ Experiments may be added or changed as results come in; each change goes into th
   - **Why:** at g50, 5 of 10 seeds reached almost no training targets on the v2 task. The user asked
     for a smoother difficulty curve: first a clear line of sight, then more rocks in the way.
   - **Scope:** this moves a first curriculum forward from M6.
+- **2026-11-13, after E3 — PROPOSED, for the user to decide** (not adopted, not implemented):
+  - **What E3 showed:** after g100, 5 of 10 seeds collapsed from racing into passive hovering:
+    0–1 training targets, short paths, few crashes.
+  - **Cause, measured on seed 7:**
+    - the g127 winner (12 of 24 targets) flew g128's freshly drawn scenarios with 47 crashes in
+      respawn loops: score 260,875;
+    - a passive child (0 targets, 2 crashes) scored 204,469 and replaced it;
+    - with one parent, the racer was gone.
+    - On g129 and g130's scenarios the same racer would have scored 206,453 and 195,666, about
+      the passive level. So with crash cost 3,000 and unlimited respawns, racer against passive is
+      close to a coin flip each generation.
+  - **Proposed:**
+    1. **A crash cap** (new switch, e.g. `crashLimit: 3`): an episode ends after N crashes (the
+       rest charged at the crash distance, as `crashMode: "end"` does). One crash-loop draw then
+       costs at most N × 3,000 per episode instead of 47 × 3,000. Test it as a fifth switch in E4.
+    2. **`parents: 10` as the likely default.** It is already an E4 switch; if it wins, it joins
+       the baseline for E5 and E6.
+    3. **Read the g100 column too.** Experiment reports already show it. A setup that wins at
+       g100 but collapses by g150 is not adopted on its g150 number alone.

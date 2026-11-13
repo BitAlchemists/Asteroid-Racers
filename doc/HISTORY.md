@@ -567,3 +567,46 @@ for byte, and all earlier tests pass unchanged.
   baseline bench, which needs the machine to itself.
 - Also answered: the viewer shows only lineCheck because E3's models have only that sensor;
   whiskers, sectors and nearest were E2 arms and return in E5.
+
+### E3 result (m4-e3-noise-floor-v2, closed) and the generation-150 collapse
+
+Report: [`experiments/m4-e3-noise-floor-v2.report.md`](../experiments/m4-e3-noise-floor-v2.report.md).
+Runs: screen train-57..66, final train-67..76 (seeds 1–10). Task v2 with lineCheck, today's learner.
+
+| metric | g50 | g100 | g150 |
+| --- | --- | --- | --- |
+| exam (mean ± sd) | 68,710 ± 41,490 | 42,160 ± 27,440 | 96,360 ± 49,030 |
+| exam crashes | 146 ± 84 | 162 ± 46 | 190 ± 113 |
+| exam checkpoints | 54 % | 72 % | 35 % |
+| exam races finished | 42 % | 59 % | 25 % |
+| training success | 13 % | 28 % | 14 % |
+
+- **At g100** the v2 task looked like a clear step up: exam 42,160 against E1's blind 66,420 (at
+  g150), and crashes 162 against 611.
+- **After g100, 5 of 10 seeds collapsed:**
+  - exam checkpoints at g150 fell to 0–8 % (seeds 5–9);
+  - seed 7 dropped from 93 % at g120 to 1 % at g130;
+  - seed 5 dropped from 87 % at g80 to 0 % at g150.
+  - The collapsed g150 winners reach 0–1 of 24 training targets, crash 1–8 times and fly
+    450–1,000 units per 9 s episode. The good seeds (1, 2) reach 10–14 targets and fly
+    1,150–1,280. The collapsed models hover: passive, not crashing.
+- **Cause, measured** with a temporary replay script (deleted):
+  - seed 7's g127 winner (12 of 24 targets, 5 crashes, score 149,449) flew g128's new scenarios
+    with 47 crashes in respawn loops: score 260,875 (distance 108,875 + 11 × 1,000 +
+    47 × 3,000);
+  - the passive g128 winner scored 204,469 on them (0 targets, 2 crashes);
+  - on g129 and g130's scenarios the racer would have scored 206,453 and 195,666: about the
+    passive level.
+  - With crash cost 3,000, unlimited respawns and one parent re-scored on fresh scenarios, one
+    crash-loop draw lets a passive child win, and the racer is lost for good.
+  - Training score alone hid this: good and collapsed winners all score 184,000–212,000.
+- **Signed off** with that reason. The proposed plan amendment (crash cap switch, `parents: 10` as
+  the likely default, reading g100 as well) is in the M4 plan, marked PROPOSED, for the user.
+- **E4 drafted:** `experiments/m4-e4-learner.md` (encoding v2, Gaussian mutation, parents 10,
+  lineCheck horizon 2). Not created in Evo Lab; its baseline waits for E3b's result.
+- **Evo Lab friction (reported to the Evo Lab session):** E3b declared E3's runs as
+  `baseline.runs`. The gate re-ran them to g5 (train-77..86, passed), and then the experiment
+  started 10 new baseline runs (train-88..97). That is by design (`docs/experiments.md`: every
+  screen and continuation run is fresh and owned by the experiment), but it doubles a one-switch
+  experiment on a busy machine. Suggested: an opt-in reuse of stored runs after a full,
+  bit-identical gate.
