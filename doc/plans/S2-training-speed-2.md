@@ -1,6 +1,6 @@
 # S2 — Training speed, round 2
 
-Status: 🟡 in progress (approved by the user 2026-11-13: "go ahead and do the optimizations").
+Status: ✅ done 2026-11-13 (approved by the user 2026-11-13: "go ahead and do the optimizations").
 Roadmap: [`../ROADMAP.md`](../ROADMAP.md). Based on
 [`../research/training-performance.md`](../research/training-performance.md).
 
@@ -49,12 +49,28 @@ Each step is one commit with `npm run check` green. No step may change a result.
 
 ## Acceptance
 
-- [ ] `shipSteps` and `shipStepsPerSec` on every gen event; `result.json` unchanged.
-- [ ] Steps 1–5 landed, each with `npm run check` green (fixtures, resume tests).
-- [ ] Evo Lab gate: baseline (main before step 1) against candidate (main after S2), class
+- [x] `shipSteps` and `shipStepsPerSec` on every gen event; `result.json` unchanged.
+- [x] Steps 1–5 landed, each with `npm run check` green (fixtures, resume tests). Step 4 measured
+      and skipped (see the history below).
+- [x] Evo Lab gate: baseline (main before step 1) against candidate (main after S2), class
       bit-identical.
-- [ ] Paired A/B speed (alternating, same load, load noted) at 1 and 10 parallel runs, plus exam speed.
-- [ ] CPU profile before and after, in `HISTORY.md`.
+- [x] Paired A/B speed (alternating, same load, load noted) at 1 and 10 parallel runs, plus exam speed.
+- [x] CPU profile before and after, in `HISTORY.md`.
+
+## Plan history
+
+- **Step 2 changed (2026-11-13):** the corridor-cell query was 1.5–3.5× slower than the old query in
+  a micro-benchmark, because the corridor's bounding square already holds few cells. Instead,
+  `nearUnsorted` returns the same candidates without sorting or allocating. `lineCheck` breaks ties
+  in `along` by the smaller id, which is the rock the id-sorted scan picked.
+- **Step 4 skipped (2026-11-13):** `Math.tanh` is about 65 % of a forward pass and must stay for
+  bit-identity. Batching across networks shares no weights, so it saves only call overhead: about
+  5 % per pass, about 1 % of a run, under the 3 % bar. The cheap part, hoisting the lookups out of
+  the loops, went into step 5.
+- **Step 6 design (2026-11-13):** held-out flights draw spawn points from the server's generator, so
+  skipping them would shift training. With the switch set, held-out flights use their own generator,
+  derived from the seed and g. Training is then exactly the run with `heldOut: 0`, for any N.
+  Absent = today, byte for byte.
 
 ## Not in S2
 

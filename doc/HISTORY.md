@@ -1354,3 +1354,76 @@ no tool. Measured:
 - **Tuning note:** the controller's dodge direction and cruise speed (450) were picked on 2
   generations of the same scenarios, so it is a fair but not optimised baseline. Its avoidance only
   sees the corridor to the target (`lineCheck`).
+
+### 2026-11-13 — S2: training speed, round 2 (done)
+
+Built as a worker fork in worktree `ar-s2` (branch `s2-speed`). Each step was rebased onto main
+(curriculum v2, phase 2, CMA-ES and rotation cost landed in parallel), checked and fast-forwarded.
+
+- **Commits:**
+  - aad3b8f plan and roadmap;
+  - 00b59dc S2.0 `shipSteps` and `shipStepsPerSec` metrics;
+  - 1477841 S2.1 training fast path (direct input and own-ship updates on training links only);
+  - 0bfb0a1 S2.2 unsorted, allocation-free grid query for lineCheck, whiskers and nearest;
+  - c63efcb S2.3 collision grid for passive entities (same pairs, same order);
+  - 3958285 S2.5 fewer hot-path allocations;
+  - e531fca S2.6 `heldOutEvery` switch.
+- **Bit-identity:**
+  - Every step gave the same `result.json` and state hashes on train-327 resumed from g300
+    (41e09c46 / 05fc0d0e / 93986f21 / 4fd49a07 / 46a81ab3).
+  - Exam metrics were identical too (exam 74950.9766, crashes 695).
+  - Evo Lab gate `train-default/gate-273b9003cd5e-vs-343956e25fc6.json`: class **bit-identical**
+    (equal stateHash sequence, score and success deltas 0). Candidate bench runs train-391 to
+    train-424.
+- **Speed:**
+  - Paired A/B: A = 87c3331 (main before S2.1), B = main after S2. Alternating, train-327 resumed
+    from g300. The machine was loaded: 77–89 other node processes (other agents' Evo Lab runs) on
+    24 logical cores. Median ship-steps/s per run:
+
+    | parallel runs | A | B | gain |
+    | --- | --- | --- | --- |
+    | 1 (15 gens) | 396k | 615k | **1.55×** |
+    | 10 (60 gens) | 220k | 365k | **1.66×** |
+
+  - Exam (102 races):
+    - one run: 4.40 s → 2.95 s, **1.49×**;
+    - 10 runs in parallel: no change (6.5 s), because the saturated machine dominates.
+  - Evo Lab bench of the candidate: 2.84 s/gen at concurrency 1, 5.08 s/gen at 10. The baseline
+    record has no speed section, so the A/B above is the comparison.
+- **Per step** (A/B pairs while building, loaded machine, so ±10 %):
+
+  | step | gain |
+  | --- | --- |
+  | S2.1 fast path | about 1.25× |
+  | S2.2 grid query | about +10 % |
+  | S2.3 collision grid | about +9 % in training; exam 8.0 s → 5.2 s |
+  | S2.5 allocations | about +8 % |
+
+- **CPU profile** (one run, 4 gens, exam off; `experiments/bench/hotspots-s2.txt`): total 4.09 →
+  2.46 s/gen (×0.60). Self time:
+
+  | function | before | after |
+  | --- | --- | --- |
+  | `activate` | 0.67 s | 0.86 s |
+  | grid query | 0.70 s | 0.49 s |
+  | `preUpdate` | 0.40 s | 0.01 s |
+  | `detectCollisions` | 0.23 s | 0.05 s |
+  | message path (`receive`, `create`, `emitMessage`, `movePlayer`) | about 0.6 s | about 0 s |
+  | GC | 0.13 s | 0.06 s |
+
+  - After S2, `activate` is 35 % of the samples and `nearUnsorted` plus `firstOnLine` 28 %.
+  - `activate` grows while `preUpdate` shrinks: probably inlining moving the attribution. The micro-
+    benchmark and the S2.5 A/B both say the forward pass got faster, not slower.
+- **Decisions:**
+  - S2.4 (batched forward) skipped: `Math.tanh` is about 65 % of a pass, so batching gains about 1 %
+    of a run, under the 3 % bar.
+  - `heldOutEvery: N` flies held-out only when g % N === 0, on its own generator; training then
+    equals `heldOut: 0`. Absent = today.
+- **Deviations from the plan:**
+  - Step 2 uses an unsorted query instead of the corridor cells (the corridor version was slower).
+  - Step 4 skipped.
+- **Mistakes:**
+  - The first corridor query's comparison test failed because test rocks all had id −1 (the
+    `Entity` constructor ignores `id`). Reverted; the tests now assign unique ids.
+  - The first `heldOutEvery` version skipped flights on the server's generator, which changed
+    training from g1 on. The worker test caught it, and held-out flights got their own generator.
