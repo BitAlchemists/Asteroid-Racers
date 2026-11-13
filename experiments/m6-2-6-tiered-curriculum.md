@@ -2,7 +2,24 @@
 
 Status: DRAFT — curriculum-v2 code is in (87c3331); not created in Evo Lab. M6, phase 2, experiment 2.6 (tiered arenas).
 
-Levels made of M5's tiered arenas (stop, turn-and-go → chain, corridor → field, race-legs → the race task) instead of levels that only add rocks. Levels: stop, turn-and-go, chain, corridor, field, race-legs, then the v2 task (rock-in-line 2 rocks + point-to-point 80 asteroids, as in the baseline). Order is M5's tier order (tier 1 stop/turn-and-go, tier 2 chain/corridor/field, tier 3 race-legs); M5 baseline results (`m5-base-*`) were not final when this was drafted (no `experiments/m5-*.report.md`; race-legs and corridor still running), so they did not inform the order. Episodes per level follow the M5 baselines. The baseline's `success: 0.6` and default `streak` apply to every level.
+Levels built from M5's arenas, ordered by **M5's measured difficulty** (the `m5-base-*` baselines,
+5 seeds each, signed off 2026-11-13), instead of M4's levels that only add rocks.
+
+| Level | Arenas | Why here | Expected climb (from the M5 baselines and E3b/E4b) |
+| --- | --- | --- | --- |
+| 0 | `stop` + `turn-and-go` (8 + 8 episodes) | easy: every seed reaches 60 % success at g3–11 on each | ~10–15 generations (incl. the 3-generation streak) |
+| 1 | `chain` + `race-legs` (6 + 8) | easy / medium: chain 60 % at g5–9; race-legs at g1–4 on its base params | ~5–10 → race task levels from about g15–25 |
+| 2 | `rock-in-line` 1 rock + `point-to-point` 20 rocks | M4 curriculum level 2 | |
+| 3 | `rock-in-line` 2 rocks + `point-to-point` 40 rocks | M4 curriculum level 3 | levels 2–4 took M4's curriculum about 50–100 generations (E3b, E4b: 7 of 10 seeds at level 4 by g150) |
+| 4 | the v2 task (2 rocks + 80 rocks), as the baseline's last level | target task | most seeds expected here by about g70–125 |
+
+`corridor` and `field` are left out: as gates they are too hard for today's setup (M5: 4 of 5 and
+2 of 5 seeds leave their level 0, at g22–109; success 0.28 and 0.11 at g150). Seven levels (the
+earlier draft) would have needed at least 7 × (climb + 3-generation streak) before the race task.
+
+Risk: at the observed rates some seeds reach level 4 only late, so the exam at g150 may understate
+the curriculum; the report includes g300 (the baseline runs go to g300) and `level` per seed. The
+baseline's `success: 0.6` and default streak apply to every level.
 
 ```json experiment
 {
@@ -73,17 +90,13 @@ Levels made of M5's tiered arenas (stop, turn-and-go → chain, corridor → fie
             {
               "name": "stop",
               "params": {
-                "episodes": 16
+                "episodes": 8
               }
-            }
-          ]
-        },
-        {
-          "arenas": [
+            },
             {
               "name": "turn-and-go",
               "params": {
-                "episodes": 16
+                "episodes": 8
               }
             }
           ]
@@ -95,35 +108,47 @@ Levels made of M5's tiered arenas (stop, turn-and-go → chain, corridor → fie
               "params": {
                 "episodes": 6
               }
-            }
-          ]
-        },
-        {
-          "arenas": [
-            {
-              "name": "corridor",
-              "params": {
-                "episodes": 8
-              }
-            }
-          ]
-        },
-        {
-          "arenas": [
-            {
-              "name": "field",
-              "params": {
-                "episodes": 6
-              }
-            }
-          ]
-        },
-        {
-          "arenas": [
+            },
             {
               "name": "race-legs",
               "params": {
                 "episodes": 8
+              }
+            }
+          ]
+        },
+        {
+          "arenas": [
+            {
+              "name": "rock-in-line",
+              "params": {
+                "episodes": 16,
+                "rocks": 1
+              }
+            },
+            {
+              "name": "point-to-point",
+              "params": {
+                "episodes": 8,
+                "asteroids": 20
+              }
+            }
+          ]
+        },
+        {
+          "arenas": [
+            {
+              "name": "rock-in-line",
+              "params": {
+                "episodes": 16,
+                "rocks": 2
+              }
+            },
+            {
+              "name": "point-to-point",
+              "params": {
+                "episodes": 8,
+                "asteroids": 40
               }
             }
           ]
@@ -147,7 +172,7 @@ Levels made of M5's tiered arenas (stop, turn-and-go → chain, corridor → fie
           ]
         }
       ],
-      "note": "7 tiered levels, easy to hard (M5 tier order), the last is the v2 task as in the baseline"
+      "note": "5 tiered levels ordered by M5's measured difficulty: stop + turn-and-go → chain + race-legs → 1 rock + 20 scattered → 2 rocks + 40 → the v2 task; corridor and field left out (too hard as gates)"
     }
   ],
   "design": "one-at-a-time",
@@ -189,7 +214,8 @@ Levels made of M5's tiered arenas (stop, turn-and-go → chain, corridor → fie
   "report": {
     "gens": [
       100,
-      150
+      150,
+      300
     ]
   }
 }

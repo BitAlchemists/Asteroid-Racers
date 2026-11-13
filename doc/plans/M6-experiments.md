@@ -159,8 +159,16 @@ came from (the scoring). Two parts, in this order.
 | --- | --- | --- | --- | --- |
 | 2.4 | Mixing easy episodes | Does keeping about 25 % of episodes from earlier levels (`curriculum.keepEasy: 0.25`) prevent forgetting and help more seeds reach the full task? | one-at-a-time | built (M4 step 8f) |
 | 2.5 | Level-up thresholds | Which level-up rule works best: 0.6, 0.8, or an adaptive threshold aimed at 50–70 % success? Judged on re-evaluated scores if 1.1 adopted them. | one-at-a-time, 2–3 arms | 0.6 / 0.8 are config; adaptive needs small code |
-| 2.6 | Tiered arenas | Do levels built from M5's arenas (tier 1 `stop`, `turn-and-go`, `chain`; tier 2 `corridor`, `field`; tier 3 `race-legs`) beat levels that only add rocks? | one-at-a-time | M5 arenas (in progress); level definitions as config |
+| 2.6 | Tiered arenas | Do levels built from M5's arenas beat levels that only add rocks? Five levels ordered by M5's measured difficulty: `stop` + `turn-and-go` → `chain` + `race-legs` → 1 rock + 20 scattered → 2 rocks + 40 → the v2 task (`corridor`, `field` left out: too hard as gates) | one-at-a-time; report g100, g150 and g300 with `level` per seed | built; levels as config (`experiments/m6-2-6-tiered-curriculum.md`); expected race task by about g70–125 for most seeds |
+| 2.8 | Rotation cost | Does a cost per radian turned (`scoring.rotation` 20 / 50) stop the "spin and pulse" controllers (the new `spin` metric drops well below 1) without costing exam checkpoints? | one-at-a-time, 2 levels; adopt if checkpoints drop ≤ 0.03 and spin clearly drops | built (3120894): `scoring.rotation`, `spin` metric |
 | 2.7 | Level-aware held-out | Should held-out scenarios follow the current level as well as the last one, so progress is visible early? | measurement / reporting change, not a selection change | small code (extra held-out metric) |
+
+**Notes for phase 2 (2026-11-13):**
+- 2.2 and 2.3 change keys the baseline already sets (`scoring.crashes`, `scoring.success`,
+  `scoring.time`). They become normal one-switch experiments once Evo Lab's value switches land
+  (ordered, being built); until then they run as separate measurements paired with `npm run iqm`.
+- Phase 2's baseline is M4's default setup, plus `reevaluate` if 1.1 shows that it clearly helps
+  (decided at decision point 1; 1.1 is running).
 
 **Decision point 2:** the scoring weights, the curriculum rules and the level definitions. If more
 than 6 experiments are needed, 2a and 2b each get their own decision point.
@@ -334,3 +342,9 @@ so (`CLAUDE.md`).
   tuned target band and keeps `success` numeric; tiered levels are `{ "arenas": [...] }` entries in
   `curriculum.levels`; level-aware held-out is `curriculum.heldOutCurrent: true` (extra metrics, the
   last-level `heldOut` stays comparable).
+- **2026-11-13, after M5 closed** (user agreed: "Yes, do both"):
+  - 2.6 re-ordered by M5's measured difficulty and cut from 7 to 5 levels; `corridor` and `field`
+    left out.
+  - New 2.8 rotation cost against "spin and pulse" (switch and `spin` metric built, 3120894).
+  - 2.2 and 2.3 wait for value switches.
+  - Phase 2's baseline is decided at decision point 1.

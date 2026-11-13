@@ -100,7 +100,7 @@ The ranked speed-ups from the performance analysis: a training fast path for bot
 `lineCheck` query, a collision grid, batched network passes. Goal ≥ 1.4× training ship-steps/s and
 about 1.6× faster exams, bit-identical.
 
-### M5 — Content 🟡 (game side)
+### M5 — Content ✅
 
 Plan: [`plans/M5-content.md`](plans/M5-content.md). Game side (track files, three tracks, track
 picker) started 2026-11-13 with the user's OK; the training side waits for M4.
