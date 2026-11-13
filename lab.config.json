@@ -62,11 +62,6 @@
         "mutationRate": 0.1,
         "mutationStrength": 1,
         "generations": 200,
-        "model": {
-          "inputs": ["targetAngle", "targetDistance", "velocityAngle", "speed"],
-          "hidden": [10, 8, 6, 4],
-          "outputs": "thrustTurn"
-        },
         "arenas": [
           {
             "name": "legacy",

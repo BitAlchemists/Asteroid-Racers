@@ -9,6 +9,8 @@ import { MajorTom, type NetworkJson } from "./network";
 import { ArenaReplay } from "./replay";
 import { scoreEpisodes, type ScoringWeights } from "./scoring";
 import type { ArenaTrace } from "./trace";
+import { LEGACY_SPEC } from "./model-spec";
+import { parseSensors, type SensorSpec } from "./sensors";
 import type { CollisionMode } from "../contracts";
 
 interface Setup {
@@ -17,6 +19,7 @@ interface Setup {
   collisions: CollisionMode;
   crashMode: CrashMode;
   scoring: ScoringWeights;
+  sensors?: SensorSpec[];
 }
 
 /** Trains a few generations in-process and returns each generation's winner and best score. */
@@ -34,6 +37,14 @@ async function train(setup: Setup, seed: number, generations: number) {
     collisions: setup.collisions,
     crashMode: setup.crashMode,
     scoring: setup.scoring,
+    ...(setup.sensors
+      ? {
+          model: {
+            spec: { ...LEGACY_SPEC, inputs: [...LEGACY_SPEC.inputs], sensors: setup.sensors },
+            hidden: [8],
+          },
+        }
+      : {}),
     onGeneration: (r) =>
       winners.push({ g: r.generation, model: r.winner.toJson(), best: r.bestScore, trace: r.trace }),
   });
@@ -49,7 +60,8 @@ async function train(setup: Setup, seed: number, generations: number) {
 }
 
 async function replayFlight(setup: Setup, seed: number, g: number, model: NetworkJson) {
-  const replay = await ArenaReplay.create({ model: MajorTom.fromJson(model), seed, g, ...setup });
+  const { sensors: _sensors, ...options } = setup;
+  const replay = await ArenaReplay.create({ model: MajorTom.fromJson(model), seed, g, ...options });
   while (!replay.done) replay.step(50);
   const score = scoreEpisodes(replay.records, setup.scoring, replay.server.tickSeconds);
   const paths = replay.script.paths;
@@ -77,6 +89,17 @@ describe("ArenaReplay", () => {
         collisions: "obstacles",
         crashMode: "respawn",
         scoring: { distance: 1, success: 500, time: 1, crashes: 100 },
+      },
+    ],
+    [
+      "point-to-point with asteroids, a model with whiskers, sectors, nearest and lineCheck",
+      {
+        arenas: [{ name: "point-to-point", params: { episodes: 2, asteroids: 25 } }],
+        frames: 100,
+        collisions: "obstacles",
+        crashMode: "respawn",
+        scoring: { distance: 1, success: 1000, time: 0, crashes: 500 },
+        sensors: parseSensors({ whiskers: {}, sectors: {}, nearest: {}, lineCheck: {} }),
       },
     ],
     [

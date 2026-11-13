@@ -226,12 +226,42 @@ describe("evo-lab worker (protocol v1)", () => {
     expect(res.winner.input_neurons_count).toBe(3);
   }, 120_000);
 
+  it("sensors and hidden are switches: the winner carries them, and exact resume holds", async () => {
+    const config = {
+      sample: 6,
+      frames: 60,
+      arenas: [{ name: "point-to-point", params: { episodes: 2, asteroids: 15 } }],
+      collisions: "obstacles",
+      sensors: { whiskers: { count: 5 }, lineCheck: {} },
+      hidden: [6],
+    };
+    const straight = newRun(config);
+    expect(await run(straight, ["--to", "4"])).toBe(0);
+    const resumed = newRun(config);
+    expect(await run(resumed, ["--to", "2"])).toBe(0);
+    expect(await run(resumed, ["--resume", "--to", "4"])).toBe(0);
+    expect(result(resumed)).toBe(result(straight));
+    const res = JSON.parse(result(straight)) as {
+      config: Record<string, unknown>;
+      winner: { input_neurons_count: number; layers: unknown[][]; spec: { sensors: { type: string }[] } };
+    };
+    expect(res.config.sensors).toEqual({
+      whiskers: { count: 5, spread: 180, range: 600 },
+      lineCheck: { range: 1000 },
+    });
+    expect(res.winner.spec.sensors.map((s) => s.type)).toEqual(["whiskers", "lineCheck"]);
+    expect(res.winner.input_neurons_count).toBe(4 + 5 + 2);
+    expect(res.winner.layers[0]).toHaveLength(6);
+  }, 120_000);
+
   it("rejects unknown arenas and bad config values before running", async () => {
     for (const [config, message] of [
       [{ arenas: [{ name: "moon" }] }, /unknown arena/],
       [{ collisions: "some" }, /collisions/],
       [{ scoring: { speed: 1 } }, /unknown scoring term/],
       [{ model: { inputs: ["sonar"] } }, /unknown model inputs/],
+      [{ sensors: { sonar: {} } }, /unknown sensor/],
+      [{ hidden: [0] }, /hidden/],
       [{ brain: { inputs: ["sonar"] } }, /unknown model inputs/], // old key name still read
     ] as const) {
       const dir = newRun(config);

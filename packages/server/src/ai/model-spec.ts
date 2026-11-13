@@ -1,5 +1,6 @@
 import type { Movable, Vector2 } from "@ar/shared";
 import type { ObstacleGrid } from "./obstacle-grid";
+import { sensorSize, type SensorSpec } from "./sensors";
 
 /** Scales distances and speeds into a range the network handles well. */
 export const INPUT_SCALE = 1 / 1000;
@@ -13,6 +14,13 @@ export interface ModelSpec {
   inputs: string[];
   /** How the outputs drive the ship; see {@link OUTPUTS}. */
   outputs: string;
+  /** Obstacle sensors, whose inputs follow `inputs` (absent = none). */
+  sensors?: SensorSpec[];
+}
+
+/** Number of input neurons a spec needs: its named inputs plus every sensor's inputs. */
+export function inputCount(spec: ModelSpec): number {
+  return spec.inputs.length + (spec.sensors ?? []).reduce((n, s) => n + sensorSize(s), 0);
 }
 
 /** What an input function may look at. */
@@ -76,23 +84,24 @@ export function validateSpec(spec: ModelSpec, layout: readonly number[]): void {
     throw new Error(`unknown model inputs ${unknown.join(", ")}; known: ${Object.keys(INPUTS).join(", ")}`);
   const output = OUTPUTS[spec.outputs];
   if (!output) throw new Error(`unknown model outputs ${JSON.stringify(spec.outputs)}`);
-  if (layout[0] !== spec.inputs.length || layout.at(-1) !== output.count)
+  if (layout[0] !== inputCount(spec) || layout.at(-1) !== output.count)
     throw new Error(
-      `model spec needs ${spec.inputs.length} inputs and ${output.count} outputs, network layout is ${JSON.stringify(layout)}`,
+      `model spec needs ${inputCount(spec)} inputs and ${output.count} outputs, network layout is ${JSON.stringify(layout)}`,
     );
 }
 
 export function layoutFor(spec: ModelSpec, hidden: readonly number[]): number[] {
   const output = OUTPUTS[spec.outputs];
   if (!output) throw new Error(`unknown model outputs ${JSON.stringify(spec.outputs)}`);
-  return [spec.inputs.length, ...hidden, output.count];
+  return [inputCount(spec), ...hidden, output.count];
 }
 
 export function sameSpec(a: ModelSpec, b: ModelSpec): boolean {
   return (
     a.outputs === b.outputs &&
     a.inputs.length === b.inputs.length &&
-    a.inputs.every((x, i) => x === b.inputs[i])
+    a.inputs.every((x, i) => x === b.inputs[i]) &&
+    JSON.stringify(a.sensors ?? []) === JSON.stringify(b.sensors ?? [])
   );
 }
 

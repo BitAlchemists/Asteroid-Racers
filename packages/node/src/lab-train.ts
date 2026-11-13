@@ -36,6 +36,7 @@ import {
   seededRandom,
   parseArenas,
   parseModelConfig,
+  parseSensors,
   parseScoring,
   type ArenaConfig,
   type CollisionMode,
@@ -71,6 +72,13 @@ export interface TrainConfig {
   heldOut: number;
   /** Save the winner as RUN_DIR/gens/gNNNN.json every this many generations (and always the last). 0 = only the last. */
   snapshotEvery: number;
+  /**
+   * Switch: obstacle sensors appended to the model's inputs (`{ whiskers: { count, spread, range },
+   * sectors, nearest, lineCheck }`, with defaults filled in). Absent = none.
+   */
+  sensors?: Record<string, Record<string, number>>;
+  /** Switch: hidden layer sizes overriding `model.hidden`. Absent = the model's own. */
+  hidden?: number[];
 }
 
 interface Checkpoint {
@@ -141,7 +149,21 @@ function readConfig(): TrainConfig {
     crashMode: oneOf(raw.crashMode, "crashMode", ["end", "respawn"] as const, "end"),
     heldOut: (raw.heldOut as number | undefined) ?? 0,
     snapshotEvery: (raw.snapshotEvery as number | undefined) ?? 1,
+    // Switches: present only when set, so a config without them is exactly the baseline's.
+    ...(raw.sensors === undefined
+      ? {}
+      : {
+          sensors: Object.fromEntries(
+            parseSensors(raw.sensors).map(({ type, ...params }) => [type, params as Record<string, number>]),
+          ),
+        }),
+    ...(raw.hidden === undefined ? {} : { hidden: raw.hidden as number[] }),
   };
+  if (
+    config.hidden !== undefined &&
+    (!Array.isArray(config.hidden) || !config.hidden.every((n) => Number.isInteger(n) && n >= 1))
+  )
+    throw new Error("config.hidden must be a list of layer sizes ≥ 1");
   if (!Number.isInteger(config.heldOut) || config.heldOut < 0)
     throw new Error("config.heldOut must be an integer ≥ 0");
   if (!Number.isInteger(config.snapshotEvery) || config.snapshotEvery < 0)
@@ -270,8 +292,12 @@ async function main(): Promise<void> {
       sampleSize: config.sample,
       framesPerTarget: config.frames,
       model: {
-        spec: { inputs: config.model.inputs, outputs: config.model.outputs },
-        hidden: config.model.hidden,
+        spec: {
+          inputs: config.model.inputs,
+          outputs: config.model.outputs,
+          ...(config.sensors ? { sensors: parseSensors(config.sensors) } : {}),
+        },
+        hidden: config.hidden ?? config.model.hidden,
       },
       arenas: config.arenas,
       scoring: config.scoring,

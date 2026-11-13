@@ -1,6 +1,7 @@
 import type { Entity, Movable, Vector2 } from "@ar/shared";
 import type { AIGameClient, VehicleController } from "./ai-game-client";
-import { INPUTS, LEGACY_SPEC, validateSpec, type InputContext } from "./model-spec";
+import { INPUTS, inputCount, LEGACY_SPEC, validateSpec, type InputContext } from "./model-spec";
+import { drawSensors, readSensors, type SensorPrimitive } from "./sensors";
 import type { MajorTom } from "./network";
 
 export { INPUT_SCALE } from "./model-spec";
@@ -33,7 +34,15 @@ export class TargetVehicleController implements VehicleController {
   ) {
     validateSpec(network.spec, network.layout);
     this.inputs = network.spec.inputs.map((name) => INPUTS[name]!);
-    this.buffer = new Float64Array(this.inputs.length);
+    this.buffer = new Float64Array(inputCount(network.spec));
+  }
+
+  /** What the sensors see now, for drawing (empty without sensors or a target). */
+  sensorPrimitives(): SensorPrimitive[] {
+    const ship = this.client.ship;
+    const sensors = this.network.spec.sensors;
+    if (!ship || !this.target || !sensors?.length) return [];
+    return drawSensors(sensors, { ship, target: this.target.position, obstacles: this.client.obstacles });
   }
 
   step(_dt: number): void {
@@ -42,6 +51,14 @@ export class TargetVehicleController implements VehicleController {
 
     const ctx: InputContext = { ship, target: this.target.position };
     for (let i = 0; i < this.inputs.length; i++) this.buffer[i] = this.inputs[i]!(ctx);
+    const sensors = this.network.spec.sensors;
+    if (sensors?.length)
+      readSensors(
+        sensors,
+        { ship, target: ctx.target, obstacles: this.client.obstacles },
+        this.buffer,
+        this.inputs.length,
+      );
     const [thrust, turn] = this.network.activate(this.buffer);
     this.client.proxy.movePlayer({
       accelerationFactor: (thrust! + 1) / 2, // tanh −1..1 → 0..1

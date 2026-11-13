@@ -1,6 +1,15 @@
 import type { Random } from "../random";
 import { LEGACY_SPEC, validateSpec, type ModelSpec } from "./model-spec";
 
+/** A deep copy; `sensors` only when the spec has some (so specs without sensors serialize as before). */
+function copySpec(spec: ModelSpec): ModelSpec {
+  return {
+    inputs: [...spec.inputs],
+    outputs: spec.outputs,
+    ...(spec.sensors && spec.sensors.length > 0 ? { sensors: spec.sensors.map((s) => ({ ...s })) } : {}),
+  };
+}
+
 /** Weights are initialised uniformly in [-INITIAL_WEIGHT_RANGE, +INITIAL_WEIGHT_RANGE]. */
 export const INITIAL_WEIGHT_RANGE = 1;
 
@@ -72,7 +81,7 @@ export class MajorTom {
     this.layout = [...layout];
     this.name = name;
     this.biasOutput = biasOutput;
-    this.spec = { inputs: [...spec.inputs], outputs: spec.outputs };
+    this.spec = copySpec(spec);
     this.weights = [];
     this.activations = [new Float64Array(layout[0]!)];
     for (let l = 1; l < layout.length; l++) {
@@ -149,7 +158,7 @@ export class MajorTom {
       input_neurons_count: this.inputCount,
       layers,
       bias_output: this.biasOutput,
-      spec: { inputs: [...this.spec.inputs], outputs: this.spec.outputs },
+      spec: copySpec(this.spec),
     };
   }
 
