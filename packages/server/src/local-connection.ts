@@ -75,12 +75,13 @@ class LocalLink {
 
   deliver(to: LocalEndpoint, envelope: Envelope): void {
     const message = this.options.encode ? encodeEnvelope(envelope) : envelope;
-    const receive = () => {
-      if (!this.open) return; // dropped: the link closed while the message was in flight
-      to.events.emitMessage(message instanceof Uint8Array ? decodeEnvelope(message) : message);
-    };
-    if (this.options.delivery === "sync") receive();
-    else queueMicrotask(receive);
+    if (this.options.delivery === "sync") this.receive(to, message);
+    else queueMicrotask(() => this.receive(to, message));
+  }
+
+  private receive(to: LocalEndpoint, message: Envelope | Uint8Array): void {
+    if (!this.open) return; // dropped: the link closed while the message was in flight
+    to.events.emitMessage(message instanceof Uint8Array ? decodeEnvelope(message) : message);
   }
 
   close(): void {

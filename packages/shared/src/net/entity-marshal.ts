@@ -4,6 +4,7 @@ import { CheckpointState, Entity, EntityType, isCheckpointState, isEntityType } 
 import { Checkpoint } from "../world/checkpoint";
 import { Movable, type MovementInput } from "../world/movable";
 import { RacePortal } from "../world/race-portal";
+import { attachedValue, createEnvelope, createLazyEnvelope } from "./messages";
 import * as pb from "./proto/index";
 
 /** Converts between world objects and their protobuf transfer objects. */
@@ -95,6 +96,25 @@ export const EntityMarshal = {
     return input;
   },
 };
+
+/**
+ * An ENTITY message for `entity`. For a ship, in-process receivers get a snapshot taken now instead
+ * of decoding `toNet` (the protobuf payload is built only if needed): `fromNet(toNet(ship))` is a
+ * Movable with exactly the snapshot's fields, since every field travels as a double, int, bool or
+ * string.
+ */
+export function createEntityEnvelope(entity: Entity): pb.Envelope {
+  if (!(entity instanceof Movable) || entity.type !== EntityType.SHIP)
+    return createEnvelope(pb.MessageType.ENTITY, EntityMarshal.toNet(entity));
+  const snapshot = entity.clone();
+  return createLazyEnvelope(pb.MessageType.ENTITY, () => EntityMarshal.toNet(snapshot), snapshot);
+}
+
+/** The ship snapshot of an envelope made by {@link createEntityEnvelope} (receivers copy it). */
+export function attachedShip(envelope: pb.Envelope): Movable | undefined {
+  const value = attachedValue(envelope);
+  return value instanceof Movable ? value : undefined;
+}
 
 export function vector2ToNet(v: Vector2): pb.Vector2 {
   return create(pb.Vector2Schema, { x: v.x, y: v.y });

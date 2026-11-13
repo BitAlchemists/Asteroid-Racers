@@ -35,7 +35,13 @@ export class CollisionDetector {
     }
 
     for (const passive of this.passiveEntities) {
+      const px = passive.position.x;
+      const py = passive.position.y;
       for (const entity of active) {
+        // Exact shortcut: hypot(dx, dy) ≥ max(|dx|, |dy|), so a pair that is further apart than the
+        // radii on one axis cannot overlap. Every other pair gets the full computation.
+        const reach = passive.radius + entity.radius;
+        if (Math.abs(px - entity.position.x) > reach || Math.abs(py - entity.position.y) > reach) continue;
         const penetration = CollisionDetector.penetration(passive, entity);
         if (penetration > 0) collisions.push([entity, passive, penetration]);
       }

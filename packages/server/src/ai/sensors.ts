@@ -269,11 +269,14 @@ function firstOnLine(s: LineCheckSpec, { ship, target, obstacles }: SensorContex
   const { x, y } = ship.position;
   const tx = target.x - x;
   const ty = target.y - y;
-  const length = Math.min(Math.hypot(tx, ty), s.range);
+  const distance = Math.hypot(tx, ty);
+  const length = Math.min(distance, s.range);
   if (length === 0) return undefined;
-  const dx = tx / Math.hypot(tx, ty);
-  const dy = ty / Math.hypot(tx, ty);
-  let best: { along: number; offset: number; rock: Entity } | undefined;
+  const dx = tx / distance;
+  const dy = ty / distance;
+  let bestAlong = Infinity;
+  let bestOffset = 0;
+  let bestRock: Entity | undefined;
   for (const o of obstacles.near(x + (dx * length) / 2, y + (dy * length) / 2, length / 2 + ship.radius)) {
     const ox = o.position.x - x;
     const oy = o.position.y - y;
@@ -283,9 +286,15 @@ function firstOnLine(s: LineCheckSpec, { ship, target, obstacles }: SensorContex
     if (t < -reach || t > length + reach || Math.abs(lateral) >= reach) continue;
     const along = Math.max(0, t - Math.sqrt(reach * reach - lateral * lateral));
     if (along > length) continue;
-    if (!best || along < best.along) best = { along, offset: lateral / reach, rock: o };
+    if (!bestRock || along < bestAlong) {
+      bestAlong = along;
+      bestOffset = lateral / reach;
+      bestRock = o;
+    }
   }
-  return best ? { ...best, dx, dy, length } : { along: Infinity, offset: 0, rock: undefined, dx, dy, length };
+  return bestRock
+    ? { along: bestAlong, offset: bestOffset, rock: bestRock, dx, dy, length }
+    : { along: Infinity, offset: 0, rock: undefined, dx, dy, length };
 }
 
 const lineCheck: SensorKind<LineCheckSpec> = {

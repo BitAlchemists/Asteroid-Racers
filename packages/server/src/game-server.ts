@@ -1,4 +1,5 @@
 import {
+  createEntityEnvelope,
   createEnvelope,
   Entity,
   EntityMarshal,
@@ -276,19 +277,22 @@ export class GameServer implements IGameServer {
 
   /** Sends the highest-ranked changed entities to everyone; the rest age and win a later frame. */
   private broadcastUpdates(): void {
-    const changed = [...this.world.entities.values()].filter((e) => e.updateRank > 0);
-    changed.sort((a, b) => b.updateRank - a.updateRank);
-    for (const entity of changed) entity.updateRank += 1;
-
-    for (const entity of changed.slice(0, this.entityUpdatesPerTick)) {
-      entity.updateRank = 0;
-      this.broadcastMessage(createEnvelope(MessageType.ENTITY, EntityMarshal.toNet(entity)));
+    if (this.entityUpdatesPerTick !== 0) {
+      const changed = [...this.world.entities.values()].filter((e) => e.updateRank > 0);
+      changed.sort((a, b) => b.updateRank - a.updateRank);
+      for (const entity of changed) entity.updateRank += 1;
+      for (const entity of changed.slice(0, this.entityUpdatesPerTick)) {
+        entity.updateRank = 0;
+        this.broadcastMessage(createEnvelope(MessageType.ENTITY, EntityMarshal.toNet(entity)));
+      }
+    } else {
+      // Nothing is broadcast (the trainer): only age the ranks, as the sorted path would.
+      for (const entity of this.world.entities.values()) if (entity.updateRank > 0) entity.updateRank += 1;
     }
 
     if (this.sendOwnShipEveryTick) {
       for (const client of [...this.clientSet]) {
-        if (client.movable)
-          client.send(createEnvelope(MessageType.ENTITY, EntityMarshal.toNet(client.movable)));
+        if (client.movable) client.send(createEntityEnvelope(client.movable));
       }
     }
   }
@@ -336,7 +340,7 @@ export class GameServer implements IGameServer {
     movable.rotationSpeed = 0;
     movable.updateRank += 1;
     if ((client.collisions ?? "all") !== "none") this.crashDetector.activate(movable);
-    if (notifyOwner) client.send(createEnvelope(MessageType.ENTITY, EntityMarshal.toNet(movable)));
+    if (notifyOwner) client.send(createEntityEnvelope(movable));
   }
 
   /**

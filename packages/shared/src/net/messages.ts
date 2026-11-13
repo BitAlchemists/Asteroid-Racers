@@ -1,8 +1,10 @@
 import {
   create,
   fromBinary,
+  isFieldSet,
   toBinary,
   type DescMessage,
+  type Message,
   type MessageInitShape,
   type MessageShape,
 } from "@bufbuild/protobuf";
@@ -53,6 +55,27 @@ export type PayloadArgs<T extends MessageType> = PayloadSchemas[T] extends DescM
   ? [PayloadInit<T>]
   : [];
 
+/**
+ * Payload messages of envelopes built by {@link createEnvelope}. In-process receivers read the message
+ * itself; the bytes are only produced when the envelope is encoded for the wire ({@link encodeEnvelope}).
+ * Skipping the protobuf round trip changes nothing: every payload field is a double, an int that
+ * fits its wire type, a bool or a string, so encoding and decoding returns the same values.
+ * Receivers must treat payloads as read-only (a broadcast shares one message between clients).
+ */
+const PAYLOAD = Symbol("payload");
+/** A domain object the sender attached for in-process receivers (see {@link createLazyEnvelope}). */
+const ATTACHED = Symbol("attached");
+type WithPayload = Envelope & { [PAYLOAD]?: Message | (() => Message); [ATTACHED]?: unknown };
+
+/** The payload message (built now if the sender left it to a factory), or undefined. */
+function payloadOf(envelope: Envelope): Message | undefined {
+  const payload = (envelope as WithPayload)[PAYLOAD];
+  if (typeof payload !== "function") return payload;
+  const message = payload();
+  (envelope as WithPayload)[PAYLOAD] = message;
+  return message;
+}
+
 /** Wraps a payload in an envelope. */
 export function createEnvelope<T extends MessageType>(type: T, ...args: PayloadArgs<T>): Envelope {
   const schema: DescMessage | null = payloadSchemas[type];
@@ -60,18 +83,59 @@ export function createEnvelope<T extends MessageType>(type: T, ...args: PayloadA
   if (schema) {
     // The schema map guarantees args[0] matches `schema`; TS can't follow that through the generic.
     const init = args[0] as MessageInitShape<DescMessage>;
-    envelope.payload = toBinary(schema, create(schema, init));
+    (envelope as WithPayload)[PAYLOAD] = create(schema, init);
   }
   return envelope;
+}
+
+/**
+ * An envelope whose payload is built only when someone reads it or the envelope goes on the wire,
+ * carrying `attached` for in-process receivers that can use it directly. The sender guarantees that
+ * `attached` describes exactly what the payload would decode to.
+ */
+export function createLazyEnvelope<T extends MessageType>(
+  type: T,
+  makePayload: () => PayloadArgs<T>[0],
+  attached: unknown,
+): Envelope {
+  const schema = payloadSchemas[type] as DescMessage;
+  const envelope = create(EnvelopeSchema, { messageType: type });
+  (envelope as WithPayload)[PAYLOAD] = () => create(schema, makePayload() as MessageInitShape<DescMessage>);
+  (envelope as WithPayload)[ATTACHED] = attached;
+  return envelope;
+}
+
+/** What the sender attached with {@link createLazyEnvelope} (undefined for other envelopes). */
+export function attachedValue(envelope: Envelope): unknown {
+  return (envelope as WithPayload)[ATTACHED];
+}
+
+/** Writes the payload bytes of an envelope built by {@link createEnvelope} (no-op once written). */
+function materialize(envelope: Envelope): void {
+  if (isFieldSet(envelope, EnvelopeSchema.field.payload)) return;
+  const payload = payloadOf(envelope);
+  if (payload === undefined) return;
+  const schema = payloadSchemas[envelope.messageType] as DescMessage;
+  envelope.payload = toBinary(schema, payload);
 }
 
 /** Decodes the payload of an envelope whose type is already known. */
 export function readPayload<T extends MessageType>(type: T, envelope: Envelope): Payload<T> {
   const schema: DescMessage | null = payloadSchemas[type];
-  return (schema ? fromBinary(schema, envelope.payload) : undefined) as Payload<T>;
+  if (!schema) return undefined as Payload<T>;
+  const payload = payloadOf(envelope);
+  if (payload !== undefined && payload.$typeName === schema.typeName) return payload as Payload<T>;
+  return fromBinary(schema, envelope.payload) as Payload<T>;
+}
+
+/** The envelope's payload bytes (encoded on demand for envelopes built by {@link createEnvelope}). */
+export function payloadBytes(envelope: Envelope): Uint8Array {
+  materialize(envelope);
+  return envelope.payload;
 }
 
 export function encodeEnvelope(envelope: Envelope): Uint8Array {
+  materialize(envelope);
   return toBinary(EnvelopeSchema, envelope);
 }
 
@@ -105,6 +169,11 @@ export class MessageDispatcher<Ctx = void> {
   off(type: MessageType): this {
     this.handlers.delete(type);
     return this;
+  }
+
+  /** The handler registered for `type`, if any. */
+  handler(type: MessageType): MessageHandler<MessageType, Ctx> | undefined {
+    return this.handlers.get(type);
   }
 
   has(type: MessageType): boolean {

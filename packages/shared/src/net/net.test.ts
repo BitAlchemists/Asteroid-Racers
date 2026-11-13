@@ -1,13 +1,14 @@
 import { describe, expect, it, vi } from "vitest";
 import { Vector2 } from "../math/vector2";
 import { Checkpoint, CheckpointState, Entity, EntityType, Movable, RacePortal } from "../world/index";
-import { EntityMarshal } from "./entity-marshal";
+import { attachedShip, createEntityEnvelope, EntityMarshal } from "./entity-marshal";
 import {
   createEnvelope,
   decodeEnvelope,
   encodeEnvelope,
   encodeMessage,
   MessageDispatcher,
+  payloadBytes,
   readPayload,
 } from "./messages";
 import { create, EntitySchema, fromBinary, MessageType, MovementInputSchema, toBinary } from "./proto/index";
@@ -146,5 +147,37 @@ describe("messages", () => {
     expect(dispatcher.dispatch(createEnvelope(MessageType.CHAT, { text: "x" }), "client-1")).toBe(false);
     dispatcher.off(MessageType.INPUT);
     expect(dispatcher.has(MessageType.INPUT)).toBe(false);
+  });
+});
+
+describe("in-process payloads (S1)", () => {
+  it("an in-process receiver reads what the wire would deliver", () => {
+    const ship = new Movable({ position: new Vector2(1.25, -3.5), radius: 20, displayName: "Luke" });
+    ship.id = 4;
+    const envelope = createEnvelope(MessageType.ENTITY, EntityMarshal.toNet(ship));
+    const wire = decodeEnvelope(encodeEnvelope(envelope));
+    expect(readPayload(MessageType.ENTITY, envelope)).toEqual(readPayload(MessageType.ENTITY, wire));
+    expect(hex(payloadBytes(envelope))).toBe(hex(wire.payload));
+  });
+
+  it("a ship envelope carries a snapshot equal to the decoded payload, and encodes the same bytes", () => {
+    const ship = new Movable({ position: new Vector2(0.1, -0), radius: 20 });
+    ship.id = 9;
+    ship.orientation = -Math.PI;
+    ship.canMove = true;
+    ship.rotationSpeed = -0.30000000000000004;
+    ship.velocity = new Vector2(1e-300, -123.456);
+    ship.acceleration = new Vector2(-0, 400);
+    const envelope = createEntityEnvelope(ship);
+    const eager = createEnvelope(MessageType.ENTITY, EntityMarshal.toNet(ship));
+    ship.position.x = 99; // later changes must not reach the snapshot
+    const snapshot = attachedShip(envelope)!;
+    const decoded = EntityMarshal.fromNet(
+      readPayload(MessageType.ENTITY, decodeEnvelope(encodeEnvelope(eager))),
+    );
+    expect(snapshot.clone()).toStrictEqual(decoded);
+    expect(Object.is(snapshot.position.y, -0)).toBe(true);
+    expect(hex(encodeEnvelope(envelope))).toBe(hex(encodeEnvelope(eager)));
+    expect(attachedShip(eager)).toBeUndefined();
   });
 });

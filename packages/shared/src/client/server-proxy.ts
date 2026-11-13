@@ -1,7 +1,7 @@
 import { getLogger } from "../logging";
 import type { ServerConnection, Unsubscribe } from "../net/connection";
-import { EntityMarshal } from "../net/entity-marshal";
-import { createEnvelope, MessageDispatcher } from "../net/messages";
+import { attachedShip, EntityMarshal } from "../net/entity-marshal";
+import { createEnvelope, MessageDispatcher, type Payload } from "../net/messages";
 import { MessageType, type Envelope } from "../net/proto/index";
 import type { Entity } from "../world/entity";
 import { Movable, type MovementInput } from "../world/movable";
@@ -42,10 +42,12 @@ export class ServerProxy {
   private connectionState = ConnectionState.DISCONNECTED;
   private readonly startTime = Date.now();
   private averagePing: number | undefined;
+  private readonly onEntity = (net: Payload<MessageType.ENTITY>) =>
+    this.client.updateEntity(EntityMarshal.fromNet(net));
 
   constructor(private readonly client: IGameClient) {
     this.dispatcher
-      .on(MessageType.ENTITY, (net) => client.updateEntity(EntityMarshal.fromNet(net)))
+      .on(MessageType.ENTITY, this.onEntity)
       .on(MessageType.ENTITY_REMOVE, ({ integer }) => client.removeEntity(integer))
       .on(MessageType.PLAYER, (net) => {
         const ship = EntityMarshal.fromNet(net);
@@ -135,6 +137,18 @@ export class ServerProxy {
       log.fine(() => `receiving message type ${MessageType[envelope.messageType]}`);
     }
     try {
+      // A ship sent in process: copy its snapshot instead of building and decoding the payload
+      // (same result as the ENTITY handler, which still runs if someone replaced it).
+      if (
+        envelope.messageType === MessageType.ENTITY &&
+        (this.dispatcher.handler(MessageType.ENTITY) as unknown) === this.onEntity
+      ) {
+        const ship = attachedShip(envelope);
+        if (ship) {
+          this.client.updateEntity(ship.clone());
+          return;
+        }
+      }
       if (!this.dispatcher.dispatch(envelope, undefined)) {
         log.warning(`no message handler for message type ${MessageType[envelope.messageType]}`);
       }
