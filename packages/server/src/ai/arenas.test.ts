@@ -222,3 +222,37 @@ describe("TrainingDirector with arenas", () => {
     expect(resumed.reports[0]!.generation).toBe(3);
   });
 });
+
+describe("rock-in-line arena", () => {
+  it("puts a rock across the direct line of every episode, clear of the start and the targets", () => {
+    const scenario = arenaByName("rock-in-line").generate(seededRandom(5), {
+      episodes: 6,
+      rocks: 1,
+      offset: 20,
+    });
+    expect(scenario.episodes).toHaveLength(6);
+    for (const episode of scenario.episodes) {
+      const target = episode.targets[0]!.position;
+      const dir = target.normalized();
+      // Some rock blocks the ship-wide corridor (ship radius 20) to this target.
+      const blocking = scenario.obstacles.some((o) => {
+        const t = o.position.x * dir.x + o.position.y * dir.y;
+        const lateral = Math.abs(o.position.x * dir.y - o.position.y * dir.x);
+        return t > 0 && t < target.length && lateral < o.radius + 20;
+      });
+      expect(blocking).toBe(true);
+    }
+    for (const o of scenario.obstacles) {
+      expect(o.position.length).toBeGreaterThan(120 + o.radius - 1e-9);
+      for (const e of scenario.episodes)
+        expect(o.position.distanceTo(e.targets[0]!.position)).toBeGreaterThan(50 + 60 + o.radius - 1e-9);
+    }
+  });
+
+  it("is deterministic per seed and takes extra scattered asteroids", () => {
+    const a = arenaByName("rock-in-line").generate(seededRandom(9), { asteroids: 10 });
+    const b = arenaByName("rock-in-line").generate(seededRandom(9), { asteroids: 10 });
+    expect(JSON.stringify(a)).toBe(JSON.stringify(b));
+    expect(a.obstacles.length).toBeGreaterThanOrEqual(8 + 10 - 2); // nearly every rock placed
+  });
+});

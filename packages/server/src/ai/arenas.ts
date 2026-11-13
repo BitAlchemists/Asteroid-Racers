@@ -138,9 +138,78 @@ export const pointToPointArena: Arena = {
   },
 };
 
+/**
+ * Rock in line: like point to point, but every episode puts `rocks` asteroids across the direct line
+ * to its target (between 35 % and 75 % of the way, shifted sideways by up to `offset` units), so
+ * flying straight crashes. Rocks keep clear of the start and of every target. Optional scattered
+ * `asteroids` as in point-to-point.
+ * Params: `episodes`, `distance` [min, max], `radius`, `frames`, `rocks`, `rockRadius` [min, max],
+ * `offset`, `asteroids`.
+ */
+export const rockInLineArena: Arena = {
+  name: "rock-in-line",
+  description: "Point to point with rocks across the direct line: flying straight crashes",
+  generate(random, params) {
+    const episodes = numberParam(params, "episodes", 8, 1);
+    const distance = rangeParam(params, "distance", [600, 1400]);
+    const radius = numberParam(params, "radius", 50, 1);
+    const frames = numberParam(params, "frames", 600, 1);
+    const rocks = numberParam(params, "rocks", 1, 0);
+    const rockRadius = rangeParam(params, "rockRadius", [30, 70]);
+    const offset = numberParam(params, "offset", 30, 0);
+    const scattered = numberParam(params, "asteroids", 0, 0);
+
+    const specs: EpisodeSpec[] = [];
+    const lines: { angle: number; d: number }[] = [];
+    for (let i = 0; i < episodes; i++) {
+      const angle = random() * Math.PI * 2;
+      const d = between(random, distance);
+      lines.push({ angle, d });
+      specs.push({
+        start: { position: Vector2.zero(), orientation: random() * Math.PI * 2 },
+        targets: [{ position: new Vector2(Math.cos(angle) * d, Math.sin(angle) * d), radius }],
+        timeLimitFrames: frames,
+      });
+    }
+    const keepClear = [
+      { position: Vector2.zero(), radius: 120 },
+      ...specs.map((e) => ({ position: e.targets[0]!.position, radius: radius + 60 })),
+    ];
+    const clear = (position: Vector2, r: number, placed: ObstacleSpec[]) =>
+      !keepClear.some((c) => c.position.distanceTo(position) < c.radius + r) &&
+      !placed.some((o) => o.position.distanceTo(position) < o.radius + r);
+
+    const obstacles: ObstacleSpec[] = [];
+    for (const { angle, d } of lines) {
+      const along = new Vector2(Math.cos(angle), Math.sin(angle));
+      const side = new Vector2(-along.y, along.x);
+      for (let k = 0; k < rocks; k++) {
+        for (let attempt = 0; attempt < 20; attempt++) {
+          const r = between(random, rockRadius);
+          const t = 0.35 + random() * 0.4;
+          const position = along.scale(t * d).plus(side.scale((random() * 2 - 1) * offset));
+          if (!clear(position, r, obstacles)) continue;
+          obstacles.push({ position, radius: r });
+          break;
+        }
+      }
+    }
+    const reach = distance[1];
+    for (let placed = 0, attempts = 0; placed < scattered && attempts < scattered * 50; attempts++) {
+      const position = new Vector2(random() * 2 - 1, random() * 2 - 1).scale(reach);
+      const r = between(random, rockRadius);
+      if (!clear(position, r, obstacles)) continue;
+      obstacles.push({ position, radius: r });
+      placed++;
+    }
+    return { obstacles, episodes: specs };
+  },
+};
+
 export const ARENAS: Readonly<Record<string, Arena>> = {
   [legacyArena.name]: legacyArena,
   [pointToPointArena.name]: pointToPointArena,
+  [rockInLineArena.name]: rockInLineArena,
 };
 
 export function arenaByName(name: string): Arena {
