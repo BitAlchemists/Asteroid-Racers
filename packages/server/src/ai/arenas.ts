@@ -1,5 +1,5 @@
 import { Vector2 } from "@ar/shared";
-import type { Random } from "../random";
+import { seededRandom, type Random } from "../random";
 
 /** One place the ship has to fly to. */
 export interface TargetSpec {
@@ -174,4 +174,55 @@ export function deriveSeed(...parts: number[]): number {
   h = Math.imul(h, 0xc2b2ae35);
   h ^= h >>> 16;
   return h >>> 0;
+}
+
+/** An arena by name, as it appears in a training config. */
+export interface ArenaConfig {
+  name: string;
+  params?: ArenaParams;
+}
+
+/** One arena of the training set, with its params. */
+export interface ArenaRun {
+  arena: Arena;
+  params: ArenaParams;
+}
+
+/** The `arenas` list of a training config (default: the original course). */
+export function parseArenas(value: unknown): ArenaConfig[] {
+  if (value === undefined) return [{ name: "legacy", params: {} }];
+  if (!Array.isArray(value) || value.length === 0)
+    throw new Error("config.arenas must be a non-empty list of { name, params }");
+  return value.map((entry: unknown, i) => {
+    const { name, params = {} } = (entry ?? {}) as { name?: unknown; params?: unknown };
+    if (typeof name !== "string") throw new Error(`config.arenas[${i}].name must be a string`);
+    if (typeof params !== "object" || params === null || Array.isArray(params))
+      throw new Error(`config.arenas[${i}].params must be an object`);
+    arenaByName(name); // unknown names fail here, before the run starts
+    return { name, params: params as ArenaParams };
+  });
+}
+
+/** Arena configs → runs; `frames` is the default `frames` param of every arena. */
+export function resolveArenas(configs: readonly ArenaConfig[], frames: number): ArenaRun[] {
+  return configs.map((a) => ({ arena: arenaByName(a.name), params: { frames, ...a.params } }));
+}
+
+/** The training scenarios of generation `g` (1-based), one per arena; fixed arenas ignore `g`. */
+export function trainingScenarios(runs: readonly ArenaRun[], seed: number, g: number): Scenario[] {
+  return runs.map((run, a) =>
+    run.arena.generate(
+      seededRandom(deriveSeed(seed, SCENARIO_STREAM.training, a, run.arena.fixed ? 0 : g)),
+      run.params,
+    ),
+  );
+}
+
+/** `count` held-out scenarios per arena: the same for the whole run. */
+export function heldOutScenarios(runs: readonly ArenaRun[], seed: number, count: number): Scenario[] {
+  return runs.flatMap((run, a) =>
+    Array.from({ length: count }, (_, k) =>
+      run.arena.generate(seededRandom(deriveSeed(seed, SCENARIO_STREAM.heldOut, a, k)), run.params),
+    ),
+  );
 }

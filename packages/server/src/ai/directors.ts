@@ -2,11 +2,11 @@ import { Checkpoint, CheckpointState, Entity, EntityType, getLogger } from "@ar/
 import type { CollisionMode, IGameServer, IServerService } from "../contracts";
 import { GameServer } from "../game-server";
 import { LocalServerConnection, type LocalConnectionOptions } from "../local-connection";
-import { seededRandom, type Random } from "../random";
+import type { Random } from "../random";
 import { AIGameClient } from "./ai-game-client";
 import { ArenaScript, type CrashMode, type PlacedEpisode } from "./arena-script";
 import { sameSpec, type ModelSpec } from "./model-spec";
-import { deriveSeed, SCENARIO_STREAM, type Arena, type ArenaParams, type Scenario } from "./arenas";
+import { heldOutScenarios, trainingScenarios, type ArenaRun, type Scenario } from "./arenas";
 import type { ModelStore } from "./model-store";
 import { MajorTom } from "./network";
 import {
@@ -147,12 +147,6 @@ export interface GenerationReport {
   gameSeconds: number;
 }
 
-/** One arena of the training set, with its params. */
-export interface ArenaRun {
-  arena: Arena;
-  params: ArenaParams;
-}
-
 export interface TrainingOptions {
   store: ModelStore;
   networkName: string;
@@ -181,12 +175,6 @@ export interface TrainingOptions {
   onGeneration?: (report: GenerationReport) => void;
 }
 
-/** A scenario placed in the world: its obstacles and checkpoints exist until `remove()`. */
-interface PlacedScenario {
-  episodes: PlacedEpisode[];
-  remove(): void;
-}
-
 /**
  * Neuro-evolution: each generation the best model from the store (or random ones, the first time) is
  * cloned and mutated into `sampleSize` candidates. All candidates fly each arena's scenario at once,
@@ -206,15 +194,7 @@ export class TrainingDirector extends AIDirector {
     if (options.arenas.length === 0) throw new Error("training needs at least one arena");
     this.generation = (options.firstGeneration ?? 1) - 1;
     this.scoring = options.scoring ?? { ...LEGACY_SCORING };
-    const heldOut = options.heldOut ?? 0;
-    this.heldOutScenarios = options.arenas.flatMap((run, a) =>
-      Array.from({ length: heldOut }, (_, k) =>
-        run.arena.generate(
-          seededRandom(deriveSeed(options.scenarioSeed, SCENARIO_STREAM.heldOut, a, k)),
-          run.params,
-        ),
-      ),
-    );
+    this.heldOutScenarios = heldOutScenarios(options.arenas, options.scenarioSeed, options.heldOut ?? 0);
   }
 
   start(): void {
@@ -233,14 +213,7 @@ export class TrainingDirector extends AIDirector {
 
   /** The training scenarios of generation `g` (1-based), one per arena. */
   scenariosFor(g: number): Scenario[] {
-    return this.options.arenas.map((run, a) =>
-      run.arena.generate(
-        seededRandom(
-          deriveSeed(this.options.scenarioSeed, SCENARIO_STREAM.training, a, run.arena.fixed ? 0 : g),
-        ),
-        run.params,
-      ),
-    );
+    return trainingScenarios(this.options.arenas, this.options.scenarioSeed, g);
   }
 
   private async trainLoop(): Promise<void> {
@@ -305,31 +278,8 @@ export class TrainingDirector extends AIDirector {
   }
 
   private place(scenario: Scenario): PlacedScenario {
-    const server = this.server;
-    if (!server) throw new Error("director is not attached to a server");
-    const obstacles = scenario.obstacles.map((o) => {
-      const rock = new Entity({ type: EntityType.ASTEROID, position: o.position.clone(), radius: o.radius });
-      server.addObstacle(rock);
-      return rock;
-    });
-    const checkpoints: Checkpoint[] = [];
-    const episodes = scenario.episodes.map((spec) => ({
-      spec,
-      targets: spec.targets.map((t) => {
-        const checkpoint = new Checkpoint({ position: t.position.clone(), radius: t.radius });
-        checkpoint.state = CheckpointState.FUTURE;
-        server.spawnEntity(checkpoint);
-        checkpoints.push(checkpoint);
-        return checkpoint;
-      }),
-    }));
-    return {
-      episodes,
-      remove: () => {
-        for (const rock of obstacles) server.removeObstacle(rock);
-        for (const checkpoint of checkpoints) server.despawnEntity(checkpoint);
-      },
-    };
+    if (!this.server) throw new Error("director is not attached to a server");
+    return placeScenario(this.server, scenario);
   }
 
   private async runGeneration(): Promise<void> {
@@ -379,4 +329,37 @@ export class TrainingDirector extends AIDirector {
     );
     this.options.onGeneration?.(report);
   }
+}
+
+/** A scenario placed in the world: its obstacles and checkpoints exist until `remove()`. */
+export interface PlacedScenario {
+  episodes: PlacedEpisode[];
+  remove(): void;
+}
+
+/** Spawns a scenario's obstacles and target checkpoints into `server`; `remove()` takes them out again. */
+export function placeScenario(server: GameServer, scenario: Scenario): PlacedScenario {
+  const obstacles = scenario.obstacles.map((o) => {
+    const rock = new Entity({ type: EntityType.ASTEROID, position: o.position.clone(), radius: o.radius });
+    server.addObstacle(rock);
+    return rock;
+  });
+  const checkpoints: Checkpoint[] = [];
+  const episodes = scenario.episodes.map((spec) => ({
+    spec,
+    targets: spec.targets.map((t) => {
+      const checkpoint = new Checkpoint({ position: t.position.clone(), radius: t.radius });
+      checkpoint.state = CheckpointState.FUTURE;
+      server.spawnEntity(checkpoint);
+      checkpoints.push(checkpoint);
+      return checkpoint;
+    }),
+  }));
+  return {
+    episodes,
+    remove: () => {
+      for (const rock of obstacles) server.removeObstacle(rock);
+      for (const checkpoint of checkpoints) server.despawnEntity(checkpoint);
+    },
+  };
 }

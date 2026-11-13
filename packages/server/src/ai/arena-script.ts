@@ -21,7 +21,7 @@ export interface PlacedEpisode {
  */
 export class ArenaScript extends Script {
   readonly records: EpisodeRecord[] = [];
-  private episodeIndex = -1;
+  private episode = -1;
   private targetIndex = 0;
   private frames = 0;
   private crashed = false;
@@ -37,7 +37,17 @@ export class ArenaScript extends Script {
   }
 
   get currentTarget(): Checkpoint | undefined {
-    return this.episodes[this.episodeIndex]?.targets[this.targetIndex];
+    return this.episodes[this.episode]?.targets[this.targetIndex];
+  }
+
+  /** Index of the episode being flown (episodes.length once all are done). */
+  get episodeIndex(): number {
+    return Math.max(0, this.episode);
+  }
+
+  /** The record of the episode being flown, if any. */
+  get currentRecord(): Readonly<EpisodeRecord> | undefined {
+    return this.record;
   }
 
   protected override botName(): string {
@@ -57,7 +67,7 @@ export class ArenaScript extends Script {
     const ship = this.client?.ship;
     const target = this.currentTarget;
     const record = this.record;
-    const episode = this.episodes[this.episodeIndex];
+    const episode = this.episodes[this.episode];
     if (!ship || !target || !record || !episode) return;
 
     const distance = ship.position.distanceTo(target.position);
@@ -92,8 +102,8 @@ export class ArenaScript extends Script {
   private nextEpisode(): void {
     if (this.record) this.records.push(this.record);
     this.record = undefined;
-    this.episodeIndex++;
-    const episode = this.episodes[this.episodeIndex];
+    this.episode++;
+    const episode = this.episodes[this.episode];
     if (!episode) {
       this.finish();
       return;

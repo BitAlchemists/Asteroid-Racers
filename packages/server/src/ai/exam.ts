@@ -1,3 +1,4 @@
+import type { Entity, Movable } from "@ar/shared";
 import type { IClientProxy } from "../contracts";
 import { GameServer } from "../game-server";
 import { seededRandom } from "../random";
@@ -5,7 +6,8 @@ import { trackByName } from "../tracks";
 import { deriveSeed } from "./arenas";
 import { AIDirector } from "./directors";
 import type { MajorTom } from "./network";
-import { RaceTargetScript, ScriptState } from "./scripts";
+import { startScript, type Replay, type ReplayStatus } from "./replay";
+import { RaceTargetScript } from "./scripts";
 
 /** Weights of the exam score (lower is better). */
 export interface ExamWeights {
@@ -80,8 +82,120 @@ export function flightScore(f: Omit<FlightResult, "score">, w: ExamWeights): num
 /**
  * One model, one track, the game's own rules: crashes into asteroids, respawn after 1 s at the last
  * checkpoint touched, the real racing bot (with no start delay). The ship starts on the race portal
- * and so joins the race at once. Ends at the finish or the time limit.
+ * and so joins the race at once. Ends at the finish or the time limit. As a {@link Replay} it can be
+ * stepped frame by frame for watching; {@link examFlight} runs it to the end.
  */
+export class ExamReplay implements Replay {
+  frame = 0;
+  crashes = 0;
+  finishedAt: number | undefined;
+  readonly maxFrames: number;
+
+  private constructor(
+    readonly server: GameServer,
+    readonly track: string,
+    readonly seed: number,
+    readonly script: RaceTargetScript,
+    private readonly proxy: IClientProxy,
+    private readonly running: Promise<void>,
+    timeLimitSeconds: number,
+  ) {
+    this.maxFrames = Math.round(timeLimitSeconds / server.tickSeconds);
+  }
+
+  static async create(
+    model: MajorTom,
+    trackName: string,
+    seed: number,
+    timeLimitSeconds: number,
+  ): Promise<ExamReplay> {
+    const server = new GameServer({ random: seededRandom(seed) }).loadTrack(trackByName(trackName));
+    const race = server.raceController!;
+    const director = new ExamDirector();
+    server.registerService(director);
+    await server.start();
+
+    const script = new RaceTargetScript(model, 0, model.name);
+    const { running, proxy } = await startScript(director, script);
+    const replay = new ExamReplay(server, trackName, seed, script, proxy, running, timeLimitSeconds);
+    script.client!.onCrash = () => replay.crashes++;
+    race.onCheckpoint = (racer: IClientProxy, index: number) => {
+      if (racer === proxy && index === race.checkpoints.length - 1) replay.finishedAt ??= server.gameTime;
+    };
+    server.teleportPlayerTo(proxy, race.start!.position, race.start!.orientation);
+    return replay;
+  }
+
+  get done(): boolean {
+    return this.finishedAt !== undefined || this.frame >= this.maxFrames;
+  }
+
+  get ship(): Movable | undefined {
+    return this.proxy.movable;
+  }
+
+  /** The next race checkpoint (the finish last). */
+  get target(): Entity | undefined {
+    const race = this.server.raceController!;
+    return race.checkpoints[(race.progressOf(this.proxy) ?? 0) + 1];
+  }
+
+  /** Checkpoints touched so far, the finish included. */
+  get reached(): number {
+    const race = this.server.raceController!;
+    return this.finishedAt !== undefined ? race.checkpoints.length - 1 : (race.progressOf(this.proxy) ?? 0);
+  }
+
+  status(): ReplayStatus {
+    return {
+      kind: "flight",
+      index: 0,
+      count: 1,
+      reached: this.reached,
+      total: this.server.raceController!.checkpoints.length - 1, // checkpoint 0 is the portal
+      crashes: this.crashes,
+      seconds: this.frame * this.server.tickSeconds,
+      done: this.done,
+    };
+  }
+
+  step(frames = 1): void {
+    for (let i = 0; i < frames && !this.done; i++) {
+      this.server.tick();
+      this.frame++;
+    }
+  }
+
+  result(weights: ExamWeights): FlightResult {
+    const race = this.server.raceController!;
+    const totalCheckpoints = race.checkpoints.length - 1;
+    const finished = this.finishedAt !== undefined;
+    const reached = this.reached;
+    const next = race.checkpoints[reached + 1];
+    const movable = this.proxy.movable;
+    const result: Omit<FlightResult, "score"> = {
+      track: this.track,
+      seed: this.seed,
+      checkpoints: reached,
+      totalCheckpoints,
+      finished,
+      seconds: finished
+        ? this.finishedAt! + this.server.tickSeconds
+        : this.maxFrames * this.server.tickSeconds,
+      crashes: this.crashes,
+      distanceLeft: finished || !next || !movable ? 0 : movable.position.distanceTo(next.position),
+    };
+    return { ...result, score: flightScore(result, weights) };
+  }
+
+  dispose(): void {
+    this.script.stop();
+    void this.running;
+    this.server.stop();
+  }
+}
+
+/** Flies one exam flight to the end and returns its result. */
 export async function examFlight(
   model: MajorTom,
   trackName: string,
@@ -89,51 +203,11 @@ export async function examFlight(
   timeLimitSeconds: number,
   weights: ExamWeights,
 ): Promise<FlightResult> {
-  const server = new GameServer({ random: seededRandom(seed) }).loadTrack(trackByName(trackName));
-  const race = server.raceController!;
-  const director = new ExamDirector();
-  server.registerService(director);
-  await server.start();
-
-  const script = new RaceTargetScript(model, 0, model.name);
-  const running = director.runScript(script);
-  for (let i = 0; i < 100 && script.state === ScriptState.READY; i++) await Promise.resolve();
-  const client = script.client;
-  const ship = client?.ship;
-  const proxy = [...server.clients].find((c) => c.movable?.id === ship?.id);
-  if (!client || !ship || !proxy) throw new Error("the exam bot could not connect");
-
-  let crashes = 0;
-  let finishedAt: number | undefined;
-  client.onCrash = () => crashes++;
-  race.onCheckpoint = (racer: IClientProxy, index: number) => {
-    if (racer === proxy && index === race.checkpoints.length - 1) finishedAt ??= server.gameTime;
-  };
-  server.teleportPlayerTo(proxy, race.start!.position, race.start!.orientation);
-
-  const maxFrames = Math.round(timeLimitSeconds / server.tickSeconds);
-  for (let frame = 0; frame < maxFrames && finishedAt === undefined; frame++) server.tick();
-
-  const totalCheckpoints = race.checkpoints.length - 1; // checkpoint 0 is the portal
-  const finished = finishedAt !== undefined;
-  const reached = finished ? totalCheckpoints : (race.progressOf(proxy) ?? 0);
-  const next = race.checkpoints[reached + 1];
-  const movable = proxy.movable;
-  const result: Omit<FlightResult, "score"> = {
-    track: trackName,
-    seed,
-    checkpoints: reached,
-    totalCheckpoints,
-    finished,
-    seconds: finished ? finishedAt! + server.tickSeconds : maxFrames * server.tickSeconds,
-    crashes,
-    distanceLeft: finished || !next || !movable ? 0 : movable.position.distanceTo(next.position),
-  };
-
-  script.stop();
-  await running;
-  server.stop();
-  return { ...result, score: flightScore(result, weights) };
+  const replay = await ExamReplay.create(model, trackName, seed, timeLimitSeconds);
+  while (!replay.done) replay.step();
+  const result = replay.result(weights);
+  replay.dispose();
+  return result;
 }
 
 /** The flights of an exam: each named track once, then `randomTracks` random tracks. */

@@ -3,7 +3,7 @@ import type { CollisionMode } from "../contracts";
 import { GameServer } from "../game-server";
 import { seededRandom, type Random } from "../random";
 import type { CrashMode } from "./arena-script";
-import { arenaByName, legacyArena, type ArenaParams } from "./arenas";
+import { legacyArena, resolveArenas, type ArenaConfig } from "./arenas";
 import { MemoryModelStore, type ModelStore } from "./model-store";
 import { DEFAULT_HIDDEN, layoutFor, LEGACY_SPEC, type ModelSpec } from "./model-spec";
 import defaultModel from "./models/default-model.json";
@@ -22,6 +22,7 @@ export * from "./model-store";
 export * from "./model-spec";
 export * from "./directors";
 export * from "./exam";
+export * from "./replay";
 export * from "./evaluators";
 export * from "./network";
 export * from "./scripts";
@@ -88,12 +89,6 @@ export function createTrainingServer(seed = 1): GameServer {
   return new GameServer({ random: seededRandom(seed), entityUpdatesPerTick: 0, sendOwnShipEveryTick: true });
 }
 
-/** An arena by name, as it appears in a training config. */
-export interface ArenaConfig {
-  name: string;
-  params?: ArenaParams;
-}
-
 export interface TrainingServiceOptions {
   store: ModelStore;
   networkName?: string;
@@ -136,10 +131,7 @@ export function registerAITrainingService(
   const mutationRate = options.mutationRate ?? MUTATION_RATE;
   const mutationStrength = options.mutationStrength ?? MUTATION_STRENGTH;
   const spec = options.model?.spec ?? LEGACY_SPEC;
-  const arenas = (options.arenas ?? [{ name: legacyArena.name }]).map((a) => ({
-    arena: arenaByName(a.name),
-    params: { frames, ...a.params },
-  }));
+  const arenas = resolveArenas(options.arenas ?? [{ name: legacyArena.name }], frames);
   const director = new TrainingDirector({
     store: options.store,
     networkName: options.networkName ?? DEFAULT_MODEL_NAME,

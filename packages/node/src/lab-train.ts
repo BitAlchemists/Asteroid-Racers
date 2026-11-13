@@ -34,7 +34,7 @@ import {
   MajorTom,
   registerAITrainingService,
   seededRandom,
-  arenaByName,
+  parseArenas,
   parseModelConfig,
   parseScoring,
   type ArenaConfig,
@@ -118,20 +118,6 @@ function oneOf<T extends string>(value: unknown, name: string, allowed: readonly
   if (!allowed.includes(value as T))
     throw new Error(`config.${name} must be one of ${allowed.join(", ")}, got ${JSON.stringify(value)}`);
   return value as T;
-}
-
-function parseArenas(value: unknown): ArenaConfig[] {
-  if (value === undefined) return [{ name: "legacy", params: {} }];
-  if (!Array.isArray(value) || value.length === 0)
-    throw new Error("config.arenas must be a non-empty list of { name, params }");
-  return value.map((entry: unknown, i) => {
-    const { name, params = {} } = (entry ?? {}) as { name?: unknown; params?: unknown };
-    if (typeof name !== "string") throw new Error(`config.arenas[${i}].name must be a string`);
-    if (typeof params !== "object" || params === null || Array.isArray(params))
-      throw new Error(`config.arenas[${i}].params must be an object`);
-    arenaByName(name); // unknown names fail here, before the run starts
-    return { name, params: params as Record<string, unknown> };
-  });
 }
 
 function readConfig(): TrainConfig {
