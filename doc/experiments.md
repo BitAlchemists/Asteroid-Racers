@@ -184,12 +184,56 @@ episode, between a miss (1,000) and a crash (3,000). It cannot be an Evo Lab swi
 
 ## Metrics and the leaderboard
 
-Every metric in `lab.config.json` has a label; the three headline metrics (exam checkpoints, races
-finished, held-out share) are marked ★ and form the leaderboard. The training `score` changes its
-scenarios every generation and is not a progress measure.
+Every metric in `lab.config.json` has a short label (2-5 words) and a `description` (the long
+explanation, shown as a tooltip). Further display keys (Evo Lab `next` 4085e4b, contract A12):
 
-## Switches on keys that are already set
+- `unit`: shown after values and on chart axes (`share 0-1`, `s`, `count`, `ticks/s`, `ship-steps/s`);
+- `headline: true`: listed first. Ours: exam checkpoints, exam races finished, held-out targets reached;
+- `group`: sections on run pages and charts: Training, Held-out, Exam, Robustness exam, Curriculum, Speed;
+- `sparse: true`: reported only in some generations (the exam metrics, every `exam.every` gens).
+  Charts add a dashed best-so-far line, and sparse metrics are not in the default leaderboard.
 
-Evo Lab refuses a switch on a key present in the baseline config or in the method's default config
-(for example `scoring.crashes`, `scoring.time`, `curriculum.success` when the baseline sets it).
-Compare such values as separate configurations on the same seeds with `npm run iqm -- --base … --arm …`.
+The leaderboard ranks the three headline metrics (`leaderboard.metrics`; list sparse ones there
+explicitly, as we do for the exam metrics). The training `score` changes its scenarios every
+generation and is not a progress measure. The train method also declares
+`"throughput": {"unit": "ship-steps", "metric": "shipSteps"}`, so `lab analyze` and `lab scaling`
+report ship-steps/s next to gens/min.
+
+## Value switches (switches on keys that are already set)
+
+A switch may name a key the baseline or the method's default config already sets, as a dotted path.
+Off is the baseline's value; on is `"on": value`, or one value per level
+(`"levels": [...]`, `"labels": [...]`). An on value equal to the baseline's is refused. They work in
+one-at-a-time, leave-one-out and factorial designs, and can be mixed with absent-key switches:
+
+```json
+"switches": [
+  { "key": "scoring.crashes", "levels": [1000, 6000], "labels": ["c1k", "c6k"] },
+  { "key": "scoring.success", "on": 3000 },
+  { "key": "scoring.time", "on": 300 }
+]
+```
+
+Used by `m6-2-2-costs` and `m6-2-3-time-to-target`. The gate still compares the switches-off
+config (the baseline). The old workaround (separate configurations compared with `npm run iqm`)
+still works as a second opinion. A measurement plan can ask for `"report": {"aggregate": "iqm",
+"ci": "bootstrap"}` to get the IQM and a bootstrap CI per metric and generation.
+
+## Looking at speed (Evo Lab profiling tools)
+
+Details in evo-lab's `docs/profiling.md`.
+
+- `lab analyze <run> --lifecycle`: queue, spawn to hello, first generation, steady s/gen, exams,
+  exit. `--advice`: how many runs at once (knee against the worker budget), CPU against wall,
+  runs against threads. `--sweep exp:<id>` gives medians over several runs.
+- `lab hotspots <file.cpuprofile | run>`: hot functions (self and total time at file:line);
+  two files give before/after; `--group-by file-pattern=<regex>` groups by subsystem.
+- `lab scaling --from-run <run> --gen G --gens N`: throughput against parallel runs, resuming copies
+  of the run's checkpoint. Do not run other load meanwhile.
+- Profile a run when enqueuing it: `profile: "cpuprofile:gA-B"` (several ranges
+  `cpuprofile:g10-20,g80-82`, `:interval=200` in microseconds) writes
+  `profiles/cpuprofile-*.cpuprofile` for those generations. **This works through Evo Lab's
+  `js/lablib.mjs` 0.2.0, which our own worker (`lab-train.ts`) does not use** (it is not vendored
+  here), so it has no effect for us today. Whole-process alternative: `--cpu-prof
+  --cpu-prof-dir=profiles` as node flags in the method `command`; `lab hotspots` reads the result.
+- `lab machine reload --yes`: restart the machine runner on new Evo Lab code without stopping runs.

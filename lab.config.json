@@ -11,95 +11,165 @@
   "metrics": {
     "examCheckpoints": {
       "direction": "max",
-      "label": "★ Race exam: share of checkpoints reached"
+      "label": "Exam checkpoints",
+      "description": "Share of checkpoints reached in the race exam (all races together). Higher is better.",
+      "unit": "share 0-1",
+      "headline": true,
+      "group": "Exam",
+      "sparse": true
     },
     "examFinished": {
       "direction": "max",
-      "label": "★ Race exam: share of races finished"
+      "label": "Exam races finished",
+      "description": "Share of races finished in the race exam.",
+      "unit": "share 0-1",
+      "headline": true,
+      "group": "Exam",
+      "sparse": true
     },
     "heldOutSuccess": {
       "direction": "max",
-      "label": "★ Held-out (fixed scenarios, hardest level): share of targets reached"
+      "label": "Held-out targets reached",
+      "description": "Fixed held-out scenarios at the hardest curriculum level: share of targets reached by the winner.",
+      "unit": "share 0-1",
+      "headline": true,
+      "group": "Held-out"
     },
     "exam": {
       "direction": "min",
-      "label": "Race exam score: 1000 per missed checkpoint + seconds + distance left (lower is better; sums over races, compare equal exam sizes only)"
+      "label": "Exam score",
+      "description": "Race exam score: 1000 per missed checkpoint + seconds + distance left (lower is better). Sums over races, so compare equal exam sizes only.",
+      "group": "Exam",
+      "sparse": true
     },
     "examCrashes": {
       "direction": "min",
-      "label": "Race exam: crashes (all races together)"
+      "label": "Exam crashes",
+      "description": "Crashes in the race exam, all races together.",
+      "unit": "count",
+      "group": "Exam",
+      "sparse": true
     },
     "heldOut": {
       "direction": "min",
-      "label": "Held-out score (fixed scenarios, hardest level; lower is better)"
+      "label": "Held-out score",
+      "description": "Score on the fixed held-out scenarios at the hardest level (lower is better).",
+      "group": "Held-out"
     },
     "success": {
       "direction": "max",
-      "label": "Training: share of targets the winner reached (this generation's scenarios and level)"
+      "label": "Training success",
+      "description": "Share of targets the winner reached in this generation's scenarios and level.",
+      "unit": "share 0-1",
+      "group": "Training"
     },
     "score": {
       "direction": "min",
-      "label": "Training: winner's score (scenarios change every generation; not a progress measure)"
+      "label": "Training winner score",
+      "description": "The winner's score. Scenarios change every generation, so this is not a progress measure.",
+      "group": "Training"
     },
     "mean": {
       "direction": "min",
-      "label": "Training: mean score of the generation"
+      "label": "Training mean score",
+      "description": "Mean score of the generation.",
+      "group": "Training"
     },
     "worst": {
       "direction": "min",
-      "label": "Training: worst score of the generation"
+      "label": "Training worst score",
+      "description": "Worst score of the generation.",
+      "group": "Training"
     },
     "reevalScore": {
       "direction": "min",
-      "label": "Re-evaluation: winner's score on the extra scenarios"
+      "label": "Re-eval score",
+      "description": "Re-evaluation: the winner's score on the extra scenarios.",
+      "group": "Training"
     },
     "reevalSuccess": {
       "direction": "max",
-      "label": "Re-evaluation: winner's share of targets on the extra scenarios"
+      "label": "Re-eval success",
+      "description": "Re-evaluation: the winner's share of targets on the extra scenarios.",
+      "unit": "share 0-1",
+      "group": "Training"
     },
     "level": {
       "direction": "max",
-      "label": "Curriculum level flown (0 = easiest)"
+      "label": "Curriculum level",
+      "description": "Curriculum level flown in the generation (0 = easiest).",
+      "group": "Curriculum"
     },
     "examRobust": {
       "direction": "min",
-      "label": "Robustness exam score (input delay and noise; lower is better)"
+      "label": "Robust exam score",
+      "description": "Robustness exam score: the same races with input delay and noise (lower is better).",
+      "group": "Robustness exam",
+      "sparse": true
     },
     "examRobustCheckpoints": {
       "direction": "max",
-      "label": "Robustness exam: share of checkpoints reached"
+      "label": "Robust exam checkpoints",
+      "description": "Robustness exam: share of checkpoints reached.",
+      "unit": "share 0-1",
+      "group": "Robustness exam",
+      "sparse": true
     },
     "examRobustFinished": {
       "direction": "max",
-      "label": "Robustness exam: share of races finished"
+      "label": "Robust exam finished",
+      "description": "Robustness exam: share of races finished.",
+      "unit": "share 0-1",
+      "group": "Robustness exam",
+      "sparse": true
     },
     "examRobustCrashes": {
       "direction": "min",
-      "label": "Robustness exam: crashes"
+      "label": "Robust exam crashes",
+      "description": "Robustness exam: crashes, all races together.",
+      "unit": "count",
+      "group": "Robustness exam",
+      "sparse": true
     },
     "sigma": {
       "direction": "min",
-      "label": "Mutation σ (scheduled, or the winner's self-adaptive σ)"
+      "label": "Mutation sigma",
+      "description": "Mutation sigma: scheduled, or the winner's self-adaptive sigma.",
+      "group": "Training"
     },
     "tps": {
       "direction": "max",
-      "label": "Speed: game ticks per second (timing only, not a result)"
+      "label": "Ticks per second",
+      "description": "Game ticks simulated per second. Timing only, not a result.",
+      "unit": "ticks/s",
+      "group": "Speed"
     },
     "ticks": {
       "direction": "min",
-      "label": "Speed: game ticks simulated in the generation (timing only)"
+      "label": "Ticks per generation",
+      "description": "Game ticks simulated in the generation. Timing only.",
+      "unit": "ticks",
+      "group": "Speed"
     },
     "shipStepsPerSec": {
       "direction": "max",
-      "label": "Speed: ship-steps per second (moving ships × frames; the real simulation work; timing only)"
+      "label": "Ship-steps per second",
+      "description": "Moving ships x frames per second: the real simulation work. Timing only.",
+      "unit": "ship-steps/s",
+      "group": "Speed"
     },
     "shipSteps": {
       "direction": "min",
-      "label": "Speed: ship-steps simulated in the generation (timing only)"
+      "label": "Ship-steps per generation",
+      "description": "Ship-steps simulated in the generation. Timing only.",
+      "unit": "ship-steps",
+      "group": "Speed"
     },
     "spin": {
-      "label": "Spin: mean |turn output| of the winner (1 = always turning at full rate)",
-      "direction": "min"
+      "direction": "min",
+      "label": "Winner spin",
+      "description": "Mean |turn output| of the winner (1 = always turning at full rate).",
+      "group": "Training"
     }
   },
   "leaderboard": {
@@ -133,7 +203,11 @@
       },
       "seeded": true,
       "defaultSeed": 2026,
-      "resumable": true
+      "resumable": true,
+      "throughput": {
+        "unit": "ship-steps",
+        "metric": "shipSteps"
+      }
     },
     "exam": {
       "command": ["node", "scripts/lab-exam.mjs"],

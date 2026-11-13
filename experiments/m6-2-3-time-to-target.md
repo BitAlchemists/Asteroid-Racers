@@ -2,13 +2,13 @@
 
 Status: DRAFT — not created in Evo Lab. M6, phase 2, experiment 2.3 (time to target).
 
-Does a score for how fast targets are reached make faster racers? No new code: `scoring.time` already is time to target — an episode's clock stops when its last target is reached, and a missed target is charged the full time limit (tested in arenas.test.ts). The baseline has `time: 0`.
+Does a score for how fast targets are reached make faster racers? No new code: `scoring.time` already is time to target — an episode's clock stops when its last target is reached, and a missed target is charged the full time limit (tested in arenas.test.ts). The baseline has `time: 0`; the switch is a value switch (Evo Lab `next`, 4085e4b).
 
 ```json experiment
 {
   "id": "m6-2-3-time-to-target",
   "question": "Does a time-to-target term (scoring.time 300 per second) improve the IQM of exam checkpoints at g150, and the races finished, compared with M4's default setup?",
-  "design": "measurement",
+  "hypothesis": "Yes for speed (races finished, exam seconds), neutral or slightly worse for checkpoints if models take more risks.",
   "method": "train",
   "baseline": {
     "config": {
@@ -34,7 +34,7 @@ Does a score for how fast targets are reached make faster racers? No new code: `
       "scoring": {
         "distance": 1,
         "success": 1000,
-        "time": 300,
+        "time": 0,
         "crashes": 3000
       },
       "heldOut": 6,
@@ -49,8 +49,28 @@ Does a score for how fast targets are reached make faster racers? No new code: `
         "success": 0.6
       },
       "parents": 10
-    }
+    },
+    "runs": [
+      "train-310",
+      "train-311",
+      "train-312",
+      "train-313",
+      "train-314",
+      "train-315",
+      "train-316",
+      "train-317",
+      "train-318",
+      "train-319"
+    ],
+    "reuse": true
   },
+  "switches": [
+    {
+      "key": "scoring.time",
+      "on": 300
+    }
+  ],
+  "design": "one-at-a-time",
   "seeds": [
     1,
     2,
@@ -64,20 +84,28 @@ Does a score for how fast targets are reached make faster racers? No new code: `
     10
   ],
   "screen": {
-    "gen": 150
+    "gen": 150,
+    "metric": "examCheckpoints",
+    "aggregate": "iqm",
+    "keep": "either"
   },
   "final": {
     "gen": 151
   },
-  "metrics": [
-    "examCheckpoints",
-    "examFinished",
-    "examCrashes",
-    "exam",
-    "heldOutSuccess",
-    "success",
-    "level"
-  ],
+  "decision": {
+    "metric": "examCheckpoints",
+    "gen": 150,
+    "aggregate": "iqm",
+    "ci": "bootstrap",
+    "ciLevel": 0.95,
+    "resamples": 10000
+  },
+  "minEffect": {
+    "examCheckpoints": 0.03
+  },
+  "gate": {
+    "gen": 5
+  },
   "report": {
     "gens": [
       100,
@@ -97,14 +125,12 @@ M4's default setup, exactly E9's config (`m4-e9-confirm`): task v2 (rock-in-line
 
 ## Runs
 
-10 runs per configuration (seeds 1–10) to g150, about 25–35 minutes each.
+10 runs per arm (seeds 1–10) to g150; at today's speed about 25–35 minutes of wall time with the baseline reused.
 
 ## Decision rule
 
-Not decided by Evo Lab (see the note above): compared with the baseline per seed with `npm run iqm -- --base train-310,...,train-319 --arm <run ids> --metric examCheckpoints --gen 150`, using the same rule as the managed experiments: IQM effect with a paired bootstrap 95 % CI excluding 0 and at least 0.03, crashes veto.
+Decision at g150 on the IQM of exam checkpoints (102-race exam): an arm wins if the paired bootstrap 95 % CI of its IQM effect excludes 0 in its favour and the effect is at least `minEffect` (0.03). Exam crashes and races finished are reported; clearly more crashes (CI of the crash effect above 0) veto adoption. g100 is read as well (late effects, see E3b). Screen and final: Evo Lab needs final > screen, so the screen is at g150 (every arm continues) and final at g151; the decision reads g150.
 
 Power (budget rule; estimated from E9 at g150, 102-race exam, seeds 1–10): exam checkpoints have sd 0.071 over seeds, 0.022 without the one outlier seed (s10). For a paired comparison at 10 seeds the detectable effect (α 0.05, power 0.8) is about **0.03 of checkpoints with the IQM** (outliers trimmed) and about 0.09 with the mean. `minEffect` 0.03. Re-check with `npm run iqm -- <id> --metric examCheckpoints --gen 150` after the run; if the CI half-width exceeds 0.03, the result is underpowered and is reported as such (20 seeds would bring the mean-based figure to about 0.06).
-
-**Why this is not a managed one-at-a-time experiment:** Evo Lab refuses a switch on a key that is present in the baseline config or in the method's default config (`scoring.*` is in both). So each variant is its own measurement experiment on the same seeds, compared with the baseline by `npm run iqm`. A feature request for value switches (off = the baseline's value) is open with Evo Lab; once available, this becomes one managed experiment with a multi-level switch.
 
 Scale: an episode lasts at most 9 s (600 frames), so `time: 300` adds up to 2,700 per episode — between a missed target (1,000) and a crash (3,000), next to the distance term's 5,000–8,000.
