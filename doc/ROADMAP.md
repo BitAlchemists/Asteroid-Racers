@@ -7,18 +7,24 @@ new inputs, network sizes, curricula and mutation strategies.
 How we work is described in [`CLAUDE.md`](../CLAUDE.md). Each milestone gets its own plan in
 [`doc/plans/`](plans/) before work starts. What actually happened goes in [`HISTORY.md`](HISTORY.md).
 
-## Where we stand (2026-11-13)
+## Where we stand (2026-11-13, evening)
 
-- The Dart → Node.js/TypeScript port is finished ([plan](plans/PORTING_PLAN.md), all phases ✅).
-- Evo Lab runs training through `lab.config.json` → `scripts/lab-train.mjs`, with protocol v1 and
-  exact resume.
-- **train-1** (200 generations, seed 2026) reached a best score of 19,050. The bundled interim model
-  scores 33,937. The improvement does not carry over to the game:
-  - On 5 unseen courses: 34,853 vs 36,015.
-  - In real races, neither model reaches a single checkpoint.
-- **Why:** the training course covers only ~1,000 units and has no obstacles, while race legs are
-  1,200–2,400 units apart with asteroids in between. The bots learn the one course they are trained
-  on, not how to race.
+- **Done:** M1–M5, plus the speed side tracks S1 and S2. Training is about 6–7× faster than this
+  morning, bit-identical.
+- **Best setup** (M4 default: task v2, `lineCheck`, curriculum at 60 %, 10 parents). On the 102-race
+  exam: about 86–89 % of checkpoints and 82–86 % of races finished. Blind models finished 39 % on
+  the old exam. Best model: train-327 g300, 94.5 % of checkpoints. It is not in the game; the user
+  decides that.
+- **Known problems:**
+  - **"Spin and pulse":** models spin at full rate instead of steering. The scripted baseline shows
+    this is a local optimum, not a scoring problem: steering scores about 44 % better on clean
+    episodes, but the spinners avoid rocks far better.
+  - **Reward trap on multi-target tasks:** models circle a checkpoint instead of taking it.
+  - **Skill gaps** that the exam does not show: the default models brake at only 2 % of `stop`
+    targets and get round the bend in only 13 % of `corridor` episodes.
+  - **Plateau:** training past g150 brings nothing.
+- **Now:** M6. Phase 1 is done: 1.1 re-evaluation showed no clear difference and stays out. Phase 2
+  is next.
 
 ## Milestones
 
@@ -118,23 +124,42 @@ picker) and training side (six tiered arenas, the watch page's arena mode, basel
 
 ### M6 — Experiments 🟡
 
-Plan: [`plans/M6-experiments.md`](plans/M6-experiments.md), approved 2026-11-13. Switch code (steps
-1–4) is built (lookahead, input delay and noise with a robustness exam, crossover, mutation
-schedules); experiments start once M4 is closed.
+Plan: [`plans/M6-experiments.md`](plans/M6-experiments.md), approved 2026-11-13. All switch code for
+phases 1–5 is built, except 3.4's `controller` switch. Optional MAP-Elites is not built either.
 
-Five phases, each ending in a decision point (at most 6 experiments per phase):
+Five phases, each ending in a decision point where the user decides what is adopted:
 
-1. **Measurement:** 1.1 noise floor with re-evaluation.
-2. **Rewards, metrics and curriculum** (the most important phase): 2.0 headline metrics, 2.1 progress
-   reward, 2.2 crash and miss costs, 2.3 time to target (optional), 2.4 mixing easy episodes, 2.5
-   level-up thresholds, 2.6 tiered arenas (from M5), 2.7 level-aware held-out.
-3. **Perception and capacity:** 3.1 lookahead, 3.2 richer sensors, 3.3 network size.
-4. **The learner:** 4.1 standard Gaussian mutation, 4.2 crossover, 4.3 mutation schedules, 4.4 CMA-ES
-   (optional, last).
-5. **Robustness and readiness:** 5.1 latency and noise, 5.2 final confirmation at g300, then the
-   readiness report for the game (the user decides on promotion).
+1. **Measurement ✅:** 1.1 re-evaluation, no clear difference, stays out. The yardstick: the IQM of
+   exam checkpoints at g150, 10 seeds; it can detect about 3 points.
+2. **Rewards, metrics and curriculum:**
+   - 2.0 headline metrics ✅;
+   - 2.1 progress reward (fixes the reward trap; a prerequisite for 2.6 and 3.1);
+   - 2.2 crash and miss costs;
+   - 2.3 time to target (lower priority: speed already pays);
+   - 2.4 mixing easy episodes;
+   - 2.5 plateau rule;
+   - 2.6 tiered curriculum (5 levels from M5's arenas);
+   - 2.7 level-aware held-out;
+   - 2.8 rotation cost (against spinning).
+3. **Perception and control:**
+   - 3.1 lookahead (nose and corner frames);
+   - 3.2 richer sensors;
+   - 3.3 network size;
+   - 3.4 residual policy / heading output (the scripted controller steers, the network corrects).
+4. **The learner:** 4.1 standard mutation, 4.2 crossover, 4.3 mutation schedules, 4.4 CMA-ES.
+5. **Robustness and readiness:** 5.1 latency and noise, 5.2 final confirmation, then the readiness
+   report for the game (the user decides on promotion).
 
 Only if needed: Q.1 quality diversity (MAP-Elites).
+
+**Proposed next** (waiting for the user's OK):
+1. Build a skills exam: per-arena success for every model, every 25 generations.
+2. Build 3.4's `controller` switch.
+3. Run batch A in parallel as one Evo Lab experiment: 2.1 progress, 2.2 costs, 2.8 rotation cost,
+   3.4 residual.
+4. Decision point.
+5. Batch B, the curriculum (2.4, 2.5, 2.6, 2.7), on the new baseline.
+6. Then perception (3.1–3.3), the learner, and readiness.
 
 ## Open questions
 
