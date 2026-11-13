@@ -127,25 +127,40 @@ describe("evo-lab worker (protocol v1)", () => {
     expect(hellos.map((e) => e.resume)).toEqual([false, true]);
   }, 120_000);
 
-  it("exact resume after being killed mid-run (pause = tree kill)", async () => {
-    const config = { sample: 12, frames: 150 };
-    const straight = newRun(config);
-    expect(await run(straight, ["--to", "8"])).toBe(0);
+  it.each([
+    ["legacy", { sample: 12, frames: 150 }],
+    [
+      "point-to-point with asteroids",
+      {
+        sample: 12,
+        frames: 150,
+        arenas: [{ name: "point-to-point", params: { episodes: 3, asteroids: 10 } }],
+        collisions: "obstacles",
+        heldOut: 1,
+      },
+    ],
+  ])(
+    "exact resume after being killed mid-run (pause = tree kill): %s",
+    async (_name, config) => {
+      const straight = newRun(config);
+      expect(await run(straight, ["--to", "8"])).toBe(0);
 
-    const killed = newRun(config);
-    const worker = start(killed, ["--to", "8"]);
-    const deadline = Date.now() + 30_000;
-    while (!events(killed).some((e) => e.type === "checkpoint" && (e.g ?? 0) >= 2)) {
-      if (Date.now() > deadline) throw new Error("no checkpoint");
-      await new Promise((r) => setTimeout(r, 10));
-    }
-    worker.child.kill("SIGKILL");
-    await worker.exited;
-    expect(events(killed).some((e) => e.type === "done")).toBe(false);
+      const killed = newRun(config);
+      const worker = start(killed, ["--to", "8"]);
+      const deadline = Date.now() + 30_000;
+      while (!events(killed).some((e) => e.type === "checkpoint" && (e.g ?? 0) >= 2)) {
+        if (Date.now() > deadline) throw new Error("no checkpoint");
+        await new Promise((r) => setTimeout(r, 10));
+      }
+      worker.child.kill("SIGKILL");
+      await worker.exited;
+      expect(events(killed).some((e) => e.type === "done")).toBe(false);
 
-    expect(await run(killed, ["--resume", "--to", "8"])).toBe(0);
-    expect(result(killed)).toBe(result(straight));
-  }, 120_000);
+      expect(await run(killed, ["--resume", "--to", "8"])).toBe(0);
+      expect(result(killed)).toBe(result(straight));
+    },
+    120_000,
+  );
 
   it("exact resume with point-to-point arenas, obstacles and held-out scenarios", async () => {
     const config = {
