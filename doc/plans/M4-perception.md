@@ -426,3 +426,6 @@ Experiments may be added or changed as results come in; each change goes into th
     - E9 is the confirmation (the old E7).
   - **Scope:** re-evaluation and CMA-ES move into M4. Novelty search and MAP-Elites are listed as
     "later, only if hovering persists".
+- **2026-11-13, after E4b:** the user chose the combination (`parents: 10` + `curriculum.success:
+  0.6`) as the baseline for E5 onwards, by judgement: it has the best means, but missed the decision
+  rule (5 of 10 seeds better). E5's baseline config is E3b's config plus these two keys.

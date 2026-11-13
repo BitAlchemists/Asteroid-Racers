@@ -931,3 +931,14 @@ train-87 2,670–4,959 tps (20 busy slots), train-109 11,544–12,892 tps.
 - **Mistake:** I committed the small plan fix (`final.gen` 151) before running `npm run check`.
   The check run right after passed (doc-only change), but the order broke the rule.
 - **Not signed off:** adoption is the user's decision.
+
+### E4b signed off; E5 baseline chosen by the user
+
+- **E4b closed.** By the rule: no clear difference (the combination against the baseline at g150:
+  −14,460 vs 2 × se 18,250, 5 of 10 seeds better).
+- **The user chose the combination** (`parents: 10` + `curriculum: { success: 0.6 }`) as the baseline
+  for E5 and later, **by judgement, not by the decision rule**. Reasons: best means of any setup
+  (exam 18,268, 88 % of checkpoints, 84 % of races finished, 7 of 10 seeds at level 4), equal crashes,
+  no collapse. Step 8's IQM and bootstrap statistics will re-check it.
+- **Correction:** the E4b agent reported commits aa6a2a8 and a19c230 as coming from "another
+  session". They were mine, from the parent session.
