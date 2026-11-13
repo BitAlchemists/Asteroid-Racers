@@ -144,7 +144,7 @@ Experiments may be added or changed as results come in; each change goes into th
 - [x] `rock-in-line` arena and the in-training exam metric in place (tests).
 - [x] E1 and E2 run through Evo Lab experiments with plans, reports and sign-offs.
 - [x] Step 6 committed: every setup switch absent = byte-identical baseline; tests per switch.
-- [ ] Step 7: task v2 checked and recorded.
+- [x] Step 7: task v2 checked and recorded.
 - [ ] E3–E6 run with approved plans, reports and sign-offs; E7 done.
 - [ ] A chosen setup (sensing, encoding, learner, network size) recorded in `HISTORY.md` and the
       roadmap, with its exam and crash numbers against the blind baseline.
@@ -172,8 +172,9 @@ Experiments may be added or changed as results come in; each change goes into th
   breaks the gate. Caught by the fixtures and the gate before experiments run.
 - **The game must feed v2 models correctly**: the encoding lives in the model spec, and a test
   compares the game bot's inputs with the trainer's.
-- **Cost doubles** with the v2 task. If a run takes much longer than 20 minutes, episodes go back
-  to 12 + 6, noted in the history.
+- **Cost doubles** with the v2 task. The check run measured 12–20 s per generation (about 2.5× the
+  old task), so 45–60 minutes per run. The episodes stay at 16 + 8, because the machine runs 20
+  workers in parallel, not the 5 the budget assumed (see "Changes to this plan").
 - **Too many changes at once:** the task (step 7) changes by decision, the learner (E4) by
   experiment. E3 re-measures the baseline, so later effects are not confused with the task change.
 - **No sensor or size wins clearly.** A null result is recorded as such; `lineCheck` stays the
@@ -194,3 +195,7 @@ Experiments may be added or changed as results come in; each change goes into th
 - **2026-11-13, step 6:** sensor switches are numeric parameters, like the existing ones: time mode
   is `horizon: <seconds>` instead of `mode: "time"`, and nearest padding is `flag: 1` instead of
   `pad: "flag"`. That keeps Evo Lab switch values and the parser numeric; the meaning is unchanged.
+- **2026-11-13, step 7:**
+  - **Episodes kept at 16 + 8**, even though a run takes 45–60 minutes instead of about 20. The
+    20-minute rule came from a budget that assumed 5 parallel slots. The machine has 24 threads and
+    Evo Lab allows 20 workers, so total wall time stays close to the planned ~12 hours.

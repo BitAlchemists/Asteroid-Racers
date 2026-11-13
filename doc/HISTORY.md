@@ -511,3 +511,21 @@ for byte, and all earlier tests pass unchanged.
   is updated.
 - The plugin was rebuilt. Not yet done: any training run with the new switches (step 7 starts
   with a short check run).
+
+### M4 step 7: task v2 checked; E3 started
+
+- **Check run** (5 generations, seed 1, task v2 with lineCheck):
+  - 12–20 s per generation, rising as models survive longer, plus 6.4 s per exam. The old task took
+    6–8 s (train-47, train-52 with 5 runs in parallel). So a run takes 45–60 minutes.
+  - Rock placement works: every generation has 24 rocks in line (12 episodes × 2) and 80 scattered
+    rocks.
+  - Crash cost against detour: a detour costs a few hundred unit-seconds of distance. A crash
+    respawns at the episode start (re-flying ≥ 3,000 unit-seconds) plus 3,000. Crashing no longer
+    pays.
+- **Decision:** episodes stay at 16 + 8. The plan's 20-minute rule assumed 5 slots; with 20 worker
+  slots and 24 threads the wall-time budget still holds. The plan is updated.
+- **Mistake:** I ran the check run directly in this session instead of through Evo Lab. It was
+  invisible in the UI, blocked the session for 90 s, and timed generations on an idle machine. The
+  user asked why. Check runs go through the lab from now on.
+- **E3 `m4-e3-noise-floor-v2`:** plan in `experiments/`, approved (the user approved step 7 and then
+  E3). 10 runs to g50, train-57..66, running.
