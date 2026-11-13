@@ -12,6 +12,8 @@ export class CollisionDetector {
   activeEntitiesCanCollide = false;
   readonly passiveEntities: Entity[] = [];
   readonly activeEntities: Entity[] = [];
+  /** Active entities that collide only with passive ones, never with other active entities. */
+  readonly passiveOnly = new Set<Entity>();
 
   detectCollisions(handler: CollisionHandler): void {
     const collisions: [Entity, Entity, number][] = [];
@@ -20,8 +22,10 @@ export class CollisionDetector {
     if (this.activeEntitiesCanCollide) {
       for (let i = 0; i < active.length; i++) {
         const a = active[i]!;
+        if (this.passiveOnly.has(a)) continue;
         for (let j = i + 1; j < active.length; j++) {
           const b = active[j]!;
+          if (this.passiveOnly.has(b)) continue;
           const penetration = CollisionDetector.penetration(a, b);
           if (penetration > 0) {
             collisions.push([a, b, penetration], [b, a, penetration]);

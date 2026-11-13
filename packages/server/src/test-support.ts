@@ -13,6 +13,7 @@ import {
   type Unsubscribe,
 } from "@ar/shared";
 import { ClientProxy } from "./client-proxy";
+import type { CollisionMode } from "./contracts";
 import type { GameServer } from "./game-server";
 
 /**
@@ -27,8 +28,11 @@ export class FakeClient implements Connection {
   private messageListeners: ((envelope: Envelope) => void)[] = [];
   private disconnectListeners: (() => void)[] = [];
 
-  constructor(readonly server: GameServer) {
-    this.proxy = new ClientProxy(this, server);
+  constructor(
+    readonly server: GameServer,
+    { collisions = "all", autoRespawn = true }: { collisions?: CollisionMode; autoRespawn?: boolean } = {},
+  ) {
+    this.proxy = new ClientProxy(this, server, collisions, autoRespawn);
     server.connectClient(this.proxy);
   }
 

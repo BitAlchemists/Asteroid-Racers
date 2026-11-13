@@ -9,6 +9,7 @@ import {
   type Unsubscribe,
 } from "@ar/shared";
 import { ClientProxy } from "./client-proxy";
+import type { CollisionMode } from "./contracts";
 import type { GameServer } from "./game-server";
 
 const log = getLogger("services.net.LocalServerConnection");
@@ -25,8 +26,10 @@ export interface LocalConnectionOptions {
    * for the headless trainer, which steps the server in a tight loop.
    */
   delivery?: "microtask" | "sync";
-  /** False makes the player a ghost: no crashes and no race joining (AI training bots). */
-  canCollide?: boolean;
+  /** What the player's ship collides with (default `all`); see {@link CollisionMode}. */
+  collisions?: CollisionMode;
+  /** Respawn automatically after a crash (default true). */
+  autoRespawn?: boolean;
 }
 
 /** One direction-agnostic end of the in-memory pipe. */
@@ -102,9 +105,14 @@ export class LocalServerConnection implements ServerConnection {
 
   constructor(
     private readonly server: GameServer,
-    { encode = false, delivery = "microtask", canCollide = true }: LocalConnectionOptions = {},
+    {
+      encode = false,
+      delivery = "microtask",
+      collisions = "all",
+      autoRespawn = true,
+    }: LocalConnectionOptions = {},
   ) {
-    this.options = { encode, delivery, canCollide };
+    this.options = { encode, delivery, collisions, autoRespawn };
   }
 
   get connected(): boolean {
@@ -119,7 +127,12 @@ export class LocalServerConnection implements ServerConnection {
     link.client.onDisconnect(() => this.events.emitDisconnect());
 
     log.finest("connect()");
-    const proxy = new ClientProxy(link.server, this.server, this.options.canCollide);
+    const proxy = new ClientProxy(
+      link.server,
+      this.server,
+      this.options.collisions,
+      this.options.autoRespawn,
+    );
     this.server.connectClient(proxy);
     return Promise.resolve();
   }

@@ -1,4 +1,4 @@
-import { CheckpointState, Checkpoint, EntityType, MessageType, Movable, Vector2 } from "@ar/shared";
+import { CheckpointState, Checkpoint, Entity, EntityType, MessageType, Movable, Vector2 } from "@ar/shared";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ChatServer } from "./chat-server";
 import { CollisionDetector } from "./collision-detector";
@@ -206,6 +206,78 @@ describe("GameServer — crashes", () => {
         .map((m) => m.integer)
         .sort(),
     ).toEqual([shipOf(a).id, shipOf(b).id].sort());
+  });
+
+  it("collisions 'obstacles': ships pass through each other but crash into asteroids", () => {
+    const server = demoServer();
+    const a = new FakeClient(server, { collisions: "obstacles" });
+    a.handshake("A");
+    const b = new FakeClient(server, { collisions: "obstacles" });
+    b.handshake("B");
+    server.teleportPlayerTo(a.proxy, SAFE_SPOT, 0);
+    server.teleportPlayerTo(b.proxy, SAFE_SPOT.plus(new Vector2(10, 0)), 0);
+    server.tick();
+    expect(shipOf(a).canMove).toBe(true);
+    expect(shipOf(b).canMove).toBe(true);
+    expect(server.raceController!.players).toHaveLength(0);
+
+    server.teleportPlayerTo(a.proxy, server.world.passiveCollisionEntities[0]!.position, 0);
+    server.tick();
+    expect(shipOf(a).canMove).toBe(false);
+    expect(shipOf(b).canMove).toBe(true);
+  });
+
+  it("collisions 'none': a ghost crashes into nothing and never joins a race", () => {
+    const server = demoServer();
+    const ghost = new FakeClient(server, { collisions: "none" });
+    ghost.handshake("Ghost");
+    server.teleportPlayerTo(ghost.proxy, server.world.passiveCollisionEntities[0]!.position, 0);
+    server.tick();
+    expect(shipOf(ghost).canMove).toBe(true);
+    server.teleportPlayerTo(ghost.proxy, server.raceController!.start!.position, 0);
+    server.tick();
+    expect(server.raceController!.players).toHaveLength(0);
+  });
+
+  it("autoRespawn false: a crashed ship stays down until it is teleported, which re-arms it", () => {
+    const server = demoServer();
+    const loop = new ManualGameLoop();
+    void server.start(loop);
+    const bot = new FakeClient(server, { collisions: "obstacles", autoRespawn: false });
+    bot.handshake("Bot");
+    const asteroid = server.world.passiveCollisionEntities[0]!;
+    server.teleportPlayerTo(bot.proxy, asteroid.position, 0);
+    loop.advance(1);
+    expect(shipOf(bot).canMove).toBe(false);
+    loop.advanceSeconds(RESPAWN_DELAY_SECONDS * 3);
+    expect(shipOf(bot).canMove).toBe(false);
+    expect(server.stats().timers).toBe(0);
+
+    server.teleportPlayerTo(bot.proxy, SAFE_SPOT, 0, new Vector2(0, 50));
+    expect(shipOf(bot).velocity).toEqual(new Vector2(0, 50));
+    loop.advance(1);
+    expect(shipOf(bot).canMove).toBe(true);
+    server.teleportPlayerTo(bot.proxy, asteroid.position, 0); // armed again: crashes again
+    loop.advance(1);
+    expect(shipOf(bot).canMove).toBe(false);
+  });
+
+  it("obstacles can be added and removed at run time", () => {
+    const server = new GameServer({ random: seededRandom(1) });
+    const bot = new FakeClient(server);
+    bot.handshake("Bot");
+    const rock = new Entity({ type: EntityType.ASTEROID, position: new Vector2(1000, 0), radius: 50 });
+    server.addObstacle(rock);
+    expect(server.world.entities.has(rock.id)).toBe(true);
+    server.teleportPlayerTo(bot.proxy, new Vector2(1000, 0), 0);
+    server.tick();
+    expect(shipOf(bot).canMove).toBe(false);
+
+    server.removeObstacle(rock);
+    expect(server.world.entities.has(rock.id)).toBe(false);
+    server.teleportPlayerTo(bot.proxy, new Vector2(1000, 0), 0);
+    server.tick();
+    expect(shipOf(bot).canMove).toBe(true);
   });
 
   it("does not respawn a ship whose client left meanwhile", () => {

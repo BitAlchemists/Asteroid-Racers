@@ -158,7 +158,7 @@ export class TrainingDirector extends AIDirector {
   constructor(readonly options: TrainingOptions) {
     // Training bots are ghosts (no crashes) and get their messages synchronously so they react in the
     // same frame even when the server runs flat out.
-    super({ delivery: "sync", canCollide: false });
+    super({ delivery: "sync", collisions: "none" });
   }
 
   start(): void {

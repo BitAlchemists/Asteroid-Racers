@@ -168,7 +168,7 @@ describe("AIGameClient", () => {
 
   it("ghost bots fly through asteroids", async () => {
     const server = new GameServer({ random: seededRandom(1) }).prepareDemoConfiguration();
-    const bot = new AIGameClient(new LocalServerConnection(server, { delivery: "sync", canCollide: false }));
+    const bot = new AIGameClient(new LocalServerConnection(server, { delivery: "sync", collisions: "none" }));
     await bot.connect();
     const proxy = [...server.clients][0]!;
     server.teleportPlayerTo(proxy, server.world.passiveCollisionEntities[0]!.position, 0);

@@ -183,23 +183,26 @@ export class GameServer implements IGameServer {
     }
     this.physics.removeMovable(movable);
     this.crashDetector.deactivate(movable);
+    this.crashDetector.passiveOnly.delete(movable);
     this.joinRaceDetector.deactivate(movable);
     this.clientLeavesRace(client);
     this.entityToClient.delete(movable);
     this.despawnEntity(movable);
   }
 
-  /** Creates the client's ship and spawns it. Bots that must not crash or join races pass `canCollide = false`. */
-  registerPlayer(client: IClientProxy, desiredUsername: string, canCollide = true): void {
+  /** Creates the client's ship and spawns it; what it collides with comes from `client.collisions`. */
+  registerPlayer(client: IClientProxy, desiredUsername: string): void {
     const player = new Movable({ radius: SHIP_RADIUS, displayName: desiredUsername });
     this.spawnEntity(player);
     this.entityToClient.set(player, client);
     client.movable = player;
 
-    if (canCollide) this.joinRaceDetector.activate(player);
+    const mode = client.collisions ?? "all";
+    if (mode === "all") this.joinRaceDetector.activate(player);
+    else if (mode === "obstacles") this.crashDetector.passiveOnly.add(player);
     this.physics.addMovable(player);
     // No own-ship update yet: the handshake sends PLAYER first.
-    this.spawnPlayer(client, canCollide, false);
+    this.spawnPlayer(client, false);
   }
 
   // --- frame ------------------------------------------------------------------
@@ -252,6 +255,7 @@ export class GameServer implements IGameServer {
     ship.canMove = false;
     this.broadcastMessage(createEnvelope(MessageType.COLLISION, { integer: ship.id }));
 
+    if (this.entityToClient.get(ship)?.autoRespawn === false) return;
     this.schedule(RESPAWN_DELAY_SECONDS, () => {
       const client = this.entityToClient.get(ship);
       if (client && this.world.entities.has(ship.id)) this.spawnPlayer(client);
@@ -290,18 +294,18 @@ export class GameServer implements IGameServer {
   // --- players & entities -------------------------------------------------------
 
   /** Puts the ship at a random point of its spawn area (race checkpoint or the world spawn). */
-  spawnPlayer(client: IClientProxy, canCollide = true, notifyOwner = true): void {
+  spawnPlayer(client: IClientProxy, notifyOwner = true): void {
     const movable = client.movable;
     if (!movable) return;
 
     const spawn = this.race?.isClientInRace(client) ? this.race.spawnEntityForPlayer(client) : this.spawn;
     const offset = this.randomPointInUnitCircle().scale(Math.max(0, spawn.radius - movable.radius));
-    if (canCollide) this.crashDetector.activate(movable);
     this.placePlayer(client, spawn.position.plus(offset), spawn.orientation, Vector2.zero(), notifyOwner);
   }
 
   /**
-   * Moves the ship and sends its owner the new state right away, so the owner's next input is based
+   * Moves the ship, makes it able to move and crash again (a teleported ship is a fresh ship), and
+   * sends its owner the new state right away, so the owner's next input is based
    * on where the ship is now (not on the last broadcast from before the jump).
    */
   teleportPlayerTo(
@@ -329,6 +333,7 @@ export class GameServer implements IGameServer {
     movable.acceleration = Vector2.zero();
     movable.rotationSpeed = 0;
     movable.updateRank += 1;
+    if ((client.collisions ?? "all") !== "none") this.crashDetector.activate(movable);
     if (notifyOwner) client.send(createEnvelope(MessageType.ENTITY, EntityMarshal.toNet(movable)));
   }
 
@@ -366,6 +371,18 @@ export class GameServer implements IGameServer {
   spawnEntity(entity: Entity): void {
     this.world.addEntity(entity);
     entity.updateRank += 1;
+  }
+
+  addObstacle(entity: Entity): void {
+    this.spawnEntity(entity);
+    this.crashDetector.passiveEntities.push(entity);
+  }
+
+  removeObstacle(entity: Entity): void {
+    const list = this.crashDetector.passiveEntities;
+    const index = list.indexOf(entity);
+    if (index !== -1) list.splice(index, 1);
+    this.despawnEntity(entity);
   }
 
   despawnEntity(entity: Entity): void {

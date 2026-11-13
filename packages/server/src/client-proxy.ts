@@ -8,7 +8,7 @@ import {
   type Movable,
   type Unsubscribe,
 } from "@ar/shared";
-import type { IClientProxy } from "./contracts";
+import type { CollisionMode, IClientProxy } from "./contracts";
 import type { GameServer } from "./game-server";
 import { randomInt } from "./random";
 import { SHIP_NAMES } from "./ship-names";
@@ -27,8 +27,8 @@ export class ClientProxy implements IClientProxy {
   constructor(
     private readonly connection: Connection,
     private readonly server: GameServer,
-    /** False for ghosts (AI training bots): no crashes, no race joining. */
-    readonly canCollide = true,
+    readonly collisions: CollisionMode = "all",
+    readonly autoRespawn = true,
   ) {
     this.subscriptions = [
       connection.onMessage((envelope) => this.onMessage(envelope)),
@@ -78,7 +78,7 @@ export function registerCoreHandlers(server: GameServer): void {
         return;
       }
       const username = handshake.username.trim() || SHIP_NAMES[randomInt(server.random, SHIP_NAMES.length)]!;
-      server.registerPlayer(client, username, client.canCollide ?? true);
+      server.registerPlayer(client, username);
 
       client.send(createEnvelope(MessageType.PLAYER, EntityMarshal.toNet(client.movable!)));
       // The whole world in one burst: 143 entities ≈ 7 KB for the demo scene. The Dart code wanted to
