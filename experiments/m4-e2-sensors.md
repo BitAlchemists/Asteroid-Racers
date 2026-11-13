@@ -23,7 +23,7 @@ seeds, by the race exam score at generation 150.
       "heldOut": 2,
       "exam": { "every": 10, "randomTracks": 15 }
     },
-    "runs": ["TODO: E1's final runs"]
+    "runs": ["train-6", "train-7", "train-8", "train-9", "train-10"]
   },
   "switches": [
     { "key": "sensors.whiskers", "on": {}, "note": "7 rays over 180°, range 600" },
@@ -36,7 +36,7 @@ seeds, by the race exam score at generation 150.
   "screen": { "gen": 50, "metric": "exam", "k": 2, "noise": "paired-se", "keep": "either" },
   "final": { "gen": 150 },
   "decision": { "metric": "exam", "gen": 150, "k": 2, "noise": "paired-se", "minWinFraction": 0.8 },
-  "minEffect": { "exam": 0 },
+  "minEffect": { "exam": 10000 },
   "gate": { "gen": 5 },
   "report": { "gens": [50, 100, 150] }
 }
@@ -50,8 +50,10 @@ and `sectors` see more of the surroundings; `nearest` is precise but jumpy.
 
 ## Baseline
 
-E1's runs: the standard M4 baseline (blind models), seeds 1-5, to generation 150. The gate re-runs
-them to generation 5 with the new code and compares the per-generation `stateHash`.
+E1's runs (m4-e1-noise-floor): the standard M4 baseline (blind models), seeds 1-5; the stored runs
+are E1's first-look runs train-6..train-10 (to generation 50), which carry the per-generation
+`stateHash`. The gate re-runs them to generation 5 with the new code and compares the hashes.
+E1 measured the blind exam score at generation 150: mean 66,420, sd 28,180.
 
 ## Runs
 
@@ -62,5 +64,7 @@ One-at-a-time over four switches: baseline + four sensor arms, 5 seeds each, to 
 
 At generation 150, a sensor counts as better if its paired exam effect (sensor − blind, per seed) is
 negative beyond 2 × the paired standard error and beyond `minEffect` (set from E1's spread), with at
-least 4 of 5 seeds improving. Exam crashes are reported alongside. If several win, E3 continues with
+least 4 of 5 seeds improving. `minEffect` is 10,000 (10 more race checkpoints over the exam), not
+one sd of E1 (28,000) as E1's plan suggested: on top of the 2 × paired-SE test, a full sd would hide
+real improvements. Exam crashes are reported alongside. If several win, E3 continues with
 the best one (lowest mean exam score); ties are broken by fewer exam crashes.

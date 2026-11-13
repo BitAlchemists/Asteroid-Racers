@@ -348,3 +348,64 @@ Plan: [`plans/M3-visibility.md`](plans/M3-visibility.md), approved by the user (
   - training runs get an optional in-run exam, so decisions can be about racing.
 - Design point found while planning: the bot drops asteroid messages today, so sensors need it to
   keep them first.
+
+## 2026-11-13 — M4: perception (in progress)
+
+Plan: [`plans/M4-perception.md`](plans/M4-perception.md), approved by the user ("Start M4").
+
+| Commit    | What                                                                                       |
+| --------- | ------------------------------------------------------------------------------------------ |
+| `b569a25` | M4.1: the bot keeps asteroids; obstacle grid; stored baseline fixtures guard byte-identity |
+| `800f258` | M4.2: four sensors as switches (`sensors`, `hidden`); `model` block out of the method defaults |
+| `b1224ec` | M4.2b: the viewer draws what sensors see (built by a subagent, reviewed)                   |
+| `72267a2` | M4.3: `rock-in-line` arena                                                                 |
+| `8213463` | M4.4: race exam inside training runs (`exam` switch)                                       |
+| `ea848ea` | M4.5: harness: `stateHash` per generation, `npm run experiment -- draft`, `doc/experiments.md` |
+| `3b5080d` | E1 and E2 plans; `CLAUDE.md` notes                                                         |
+
+- **The subagent** (the user allowed them) built the viewer's sensor drawing while I built the arena
+  and the in-run exam in other files.
+- **A stale plugin build** showed an error for sensor models in Evo Lab, because `dist/lab-plugin`
+  had been built before sensors existed. Rebuilt; `CLAUDE.md` now says to rebuild after code changes.
+- **Experiments are approved by me** ("Claude, per the M4 plan the user approved"), since the user
+  approved the plan that specifies E1 to E4.
+
+### E1 noise floor (m4-e1-noise-floor, closed)
+
+Blind models on the standard M4 setup, seeds 1 to 5, 150 generations (runs train-6..10 to g50,
+continued as train-12..16). Report: [`experiments/m4-e1-noise-floor.report.md`](../experiments/m4-e1-noise-floor.report.md).
+
+| at g150 | mean | sd | range |
+| --- | --- | --- | --- |
+| exam score | 66,420 | 28,180 | 44,070 – 107,100 |
+| exam crashes (17 flights) | 611 | 108 | 515 – 766 |
+| race checkpoints reached | 55 % | 19 % | 27 % – 71 % |
+| races finished | 39 % | 20 % | 12 % – 59 % |
+
+- The exam is very noisy between seeds, and barely improves during training (75k → 70k → 66k).
+- **Deviation:** E2's `minEffect` is 10,000 (10 more race checkpoints), not one sd (28,000) as
+  E1's plan said. On top of the 2 × paired-SE test, a full sd would hide real improvements.
+
+### Model size (the user's question)
+
+- The user asked whether the network is big enough for more inputs, and whether there is
+  established science on choosing its size (the 4-10-8-6-4-2 layers were a guess).
+- Literature check:
+  - no formula exists; fixed-topology neuroevolution treats the hidden size as trial and error;
+  - NEAT evolves the size instead (mixed evidence against well-chosen fixed networks);
+  - in RL, control-network width must be tuned per task, small widths (16–32) are often best, and
+    bigger is not always better;
+  - our deep, narrow shape (down to 4 neurons) is unusual and may be a bottleneck with 30 inputs;
+  - with a fixed per-weight mutation rate, bigger networks also get more mutations per child.
+- Proposed to the user (waiting for an answer):
+  - a capacity experiment in parallel with E2, on the model with all four sensors, comparing one and
+    two hidden layers of 16 or 32 neurons, plus a variant with the mutation rate scaled to network
+    size;
+  - no sensor is dropped just for losing at today's size.
+- The Evo Lab session is adding multi-level switches (`levels`) for that.
+
+### E2 sensor comparison (m4-e2-sensors, running)
+
+One-at-a-time: blind baseline vs `whiskers`, `sectors`, `nearest`, `lineCheck`; seeds 1 to 5; screen
+at 50, final at 150; decision on `exam` (2 × paired SE, `minEffect` 10,000, 4 of 5 seeds). The gate
+uses E1's first-look runs.
