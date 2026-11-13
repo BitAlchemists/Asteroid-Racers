@@ -41,10 +41,10 @@ Make the trainer generic enough that new courses, inputs and scoring are config 
 **Done when** the legacy course runs as an arena with results that match train-1 within noise, and a
 second arena (point-to-point) runs from config alone.
 
-### M2 — Measurement 🟡
+### M2 — Measurement ✅
 
-Plan: [`plans/M2-measurement.md`](plans/M2-measurement.md), approved 2026-11-13. All steps are done
-and the acceptance items are ticked, except CI, which runs only after a push.
+Plan: [`plans/M2-measurement.md`](plans/M2-measurement.md), approved 2026-11-13. Done 2026-11-13;
+CI green on `13d7240`. Best racer so far: train-4 g110 (exam 3,579, finishes 6 of 7 races).
 
 - **Race exam:** an Evo Lab evaluate-only method. It flies a model through the real race tracks and
   reports checkpoints reached, finish time and crashes.

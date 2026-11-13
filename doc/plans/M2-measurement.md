@@ -1,6 +1,6 @@
 # M2 — Measurement
 
-Status: 🟡 in progress (approved 2026-11-13). Roadmap: [`../ROADMAP.md`](../ROADMAP.md)
+Status: ✅ done (approved and finished 2026-11-13). Roadmap: [`../ROADMAP.md`](../ROADMAP.md)
 
 ## Goal
 
@@ -108,7 +108,7 @@ Each step ends with `npm run check` green and its own commit.
 
 ## Acceptance
 
-- [x] Steps 1–5 committed, `npm run check` green. CI is still open: it runs only after a push.
+- [x] Steps 1–5 committed, `npm run check` green, CI green (run 43412565833 on `13d7240`).
 - [x] Same model, config and seed give the same exam result twice, byte for byte. (Exact resume
       dropped: the exam method is not resumable; see step 4.)
 - [x] Training runs write snapshots; `result.json` and exact resume are unchanged by them (tested).

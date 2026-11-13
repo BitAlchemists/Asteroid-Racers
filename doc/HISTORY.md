@@ -224,4 +224,5 @@ snapshots every 10. exam-5 examined all 15 snapshots.
   for starting runs from a model, never for swapping models between running runs). It pointed out
   that `imports` at enqueue can already hand a run a starting model; useful for M5 curriculum runs.
   Our training worker does not read `--import` yet.
-- Nothing pushed. CI has not run on the M2 commits.
+- Pushed to `main` at the user's request; CI passed on `13d7240` (run 43412565833), including the
+  new exam step. M2 is done.
