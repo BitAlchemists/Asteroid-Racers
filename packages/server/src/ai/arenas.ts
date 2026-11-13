@@ -9,6 +9,8 @@ export interface TargetSpec {
   radius: number;
   /** When set, the target counts only if the ship is at most this fast inside it ("stop here"). */
   maxSpeed?: number;
+  /** Ship orientation when it respawns here (episodes with `respawn: "last-target"`; default: the start's). */
+  orientation?: number;
 }
 
 /** One flight: the ship is placed at `start` and has `timeLimitFrames` to reach the targets in order. */
@@ -16,6 +18,11 @@ export interface EpisodeSpec {
   start: { position: Vector2; orientation: number; velocity?: Vector2 };
   targets: TargetSpec[];
   timeLimitFrames: number;
+  /**
+   * Where a crash respawns the ship (with `crashMode: "respawn"`): `"last-target"` = at the last target
+   * reached, at rest, as in a race (the start until the first one). Absent = always at the start.
+   */
+  respawn?: "last-target";
 }
 
 export interface ObstacleSpec {

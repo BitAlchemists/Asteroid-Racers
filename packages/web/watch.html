@@ -22,10 +22,26 @@
         >Track
         <select id="track">
           <option value="">Race exam</option>
+          <optgroup label="Tracks" id="tracks"></optgroup>
+          <optgroup label="Training arenas" id="arenas"></optgroup></select
+      ></label>
+      <label>Seed <input type="number" id="seed" min="0" step="1" value="1" /></label>
+      <label class="race-only"
+        >Time limit <input type="number" id="time" min="5" step="5" value="180" /> s</label
+      >
+      <label class="arena-only" hidden
+        >Generation <input type="number" id="generation" min="1" step="1" value="1"
+      /></label>
+      <label class="arena-only" hidden
+        >Params <input type="text" id="params" class="watch-params" value="{}" spellcheck="false"
+      /></label>
+      <label class="arena-only" hidden
+        >Crashes
+        <select id="crash">
+          <option value="respawn">respawn</option>
+          <option value="end">end the episode</option>
         </select></label
       >
-      <label>Seed <input type="number" id="seed" min="0" step="1" value="1" /></label>
-      <label>Time limit <input type="number" id="time" min="5" step="5" value="180" /> s</label>
       <span id="status"></span>
     </form>
     <div id="viewer" class="watch-viewer"></div>

@@ -6,7 +6,10 @@ import type { EpisodeRecord } from "./scoring";
 import { Script, ScriptState } from "./scripts";
 import { addPathPoint, PATH_EVERY } from "./trace";
 
-/** What to do when the ship crashes: `end` the episode (the rest of it is charged), or `respawn` at its start. */
+/**
+ * What to do when the ship crashes: `end` the episode (the rest of it is charged), or `respawn` at its
+ * start (or at the last target reached, for episodes with `respawn: "last-target"`).
+ */
 export type CrashMode = "end" | "respawn";
 
 /** An episode whose targets exist in the world as checkpoints (shared by all candidates). */
@@ -158,7 +161,10 @@ export class ArenaScript extends Script {
     const ship = this.client?.ship;
     if (!server || !ship) return;
     const proxy = [...server.clients].find((c) => c.movable?.id === ship.id);
-    if (proxy)
-      server.teleportPlayerTo(proxy, spec.start.position, spec.start.orientation, spec.start.velocity);
+    if (!proxy) return;
+    // `respawn: "last-target"` (race rules): after a crash, back at the last target reached, at rest.
+    const last = spec.respawn === "last-target" ? spec.targets[this.targetIndex - 1] : undefined;
+    if (last) server.teleportPlayerTo(proxy, last.position, last.orientation ?? spec.start.orientation);
+    else server.teleportPlayerTo(proxy, spec.start.position, spec.start.orientation, spec.start.velocity);
   }
 }

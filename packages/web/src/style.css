@@ -179,6 +179,13 @@ body.watch {
 .watch-bar input[type="number"] {
   width: 5em;
 }
+.watch-bar .watch-params {
+  width: 22em;
+  font-family: ui-monospace, monospace;
+}
+.watch-bar .watch-params.invalid {
+  outline: 2px solid #e44;
+}
 .watch-viewer {
   flex: 1;
   min-height: 0;
