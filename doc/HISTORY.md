@@ -130,3 +130,19 @@ Plan: [`plans/M1-training-foundations.md`](plans/M1-training-foundations.md), ap
 - Pushed to `main` at the user's request; CI passed on `b45baa7` (run 43399450644). M1 is done.
   GitHub reports one moderate Dependabot alert (`minimatch`); its automatic update PR failed. Not
   looked at yet.
+
+## 2026-11-13 — Rename brain to model; M2 plan
+
+| Commit    | What                                                                                          |
+| --------- | --------------------------------------------------------------------------------------------- |
+| `d309cae` | M1 marked done                                                                                |
+| `24d13f1` | Rename "brain" to "model" (user's request): files, types, the training config key `model`, the bot flag `--model` |
+
+- The old config key `brain` and the flag `--brain` are still accepted, so runs from before the
+  rename (train-2, train-3) can be continued. Their Evo Lab configs still say `brain`.
+- `result.json` now says `modelGeneration` instead of `brainGeneration`.
+- Earlier history entries and finished plans keep the old word on purpose (append-only).
+- Wrote [`plans/M2-measurement.md`](plans/M2-measurement.md), waiting for the user's OK. It moves the
+  "held-out next to training" roadmap item to done (shipped in M1).
+- The Evo Lab session reported that experiments (plan, approve, screen, report, sign-off) and the
+  leaderboard are live. Experiments fit M5; nothing to change now.

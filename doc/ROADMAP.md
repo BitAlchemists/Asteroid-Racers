@@ -43,10 +43,13 @@ second arena (point-to-point) runs from config alone.
 
 ### M2 — Measurement ⬜
 
+Plan: [`plans/M2-measurement.md`](plans/M2-measurement.md) (waiting for approval)
+
 - **Race exam:** an Evo Lab evaluate-only method. It flies a model through the real race tracks and
   reports checkpoints reached, finish time and crashes.
 - Model snapshots at each generation (or every K generations), so the exam can be scored along a run.
-- Held-out scores shown next to training scores, so overfitting is visible.
+- ~~Held-out scores shown next to training scores, so overfitting is visible.~~ Done in M1
+  (`heldOut`, `heldOutSuccess` metrics).
 
 ### M3 — Visibility ⬜
 
