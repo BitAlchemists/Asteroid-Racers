@@ -887,3 +887,14 @@ train-87 2,670–4,959 tps (20 busy slots), train-109 11,544–12,892 tps.
   - `hidden: []` passes the config check, and `MajorTom` builds and activates a [4, 2] network;
   - 17 exam races take about 1.6 s on the S1 code (train-250), so 102 races take about 10 s;
   - Evo Lab's reports have no IQM or bootstrap CIs.
+
+### M6 plan written; M5 game side started
+
+- **M6 plan** written (`doc/plans/M6-experiments.md`, commit 453b714), waiting for approval:
+  - lookahead (needs a `chain` arena), latency and robustness, crossover, mutation schedules,
+    curriculum v2 (needs M5), MAP-Elites (optional);
+  - experiments X1–X7;
+  - a readiness report before any model goes into the game.
+  - Switch code for steps 1–4 can be built before M4 ends.
+- **M5 game side started** (user approved): track format, three tracks, track picker. It works in
+  its own worktree, and the exam, existing tracks and training arenas stay unchanged.

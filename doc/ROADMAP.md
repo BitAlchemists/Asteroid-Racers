@@ -106,6 +106,8 @@ Plan: [`plans/M5-content.md`](plans/M5-content.md) (liked by the user; final OK 
 
 ### M6 — Experiments ⬜
 
+Plan: [`plans/M6-experiments.md`](plans/M6-experiments.md), waiting for approval. Switch code for lookahead, robustness, crossover and mutation schedules may be built before M4 ends; experiments wait for M4's final baseline.
+
 Each one is an Evo Lab experiment, compared against a baseline on the race exam:
 
 1. Curriculum (tiered arenas) vs the current single course. A first staged curriculum (clear line
