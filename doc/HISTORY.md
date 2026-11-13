@@ -1584,3 +1584,26 @@ Approved by the user as the rest of M5 after M4 closed. M5 is done.
 
   The models never brake (0 % on stop), rarely get round the bend in corridors, and crash a lot in
   dense fields.
+
+### M6 batch A (m6-a2-rewards-control): rewards and the residual controller
+
+- **Experiment:** one experiment, 6 arms, against M4's default setup; the baseline reused E9's runs
+  train-310..319 (gate: identical).
+  - Arms: progress 3, crash cost 1000, miss cost 3000, rotation 20 and 50, residual controller 0.5.
+  - The first version, `m6-a-rewards-control`, was closed before any run: it added `exam.skills` to
+    the config, which no longer matched the stored runs, so the gate refused them. The skill
+    profiles were computed afterwards with `npm run skills`.
+- **Decision metric** (IQM of exam checkpoints at g150): no arm wins. All arms are underpowered
+  (detectable effect 0.06–0.19 at 10 seeds).
+- **Exam crashes:** the residual controller is clearly better, −415 [−705, −106], 8/10 seeds.
+- **Secondary data:**
+  - **Residual 0.5:** Stop 95 % (every other arm 0–6 %), Corridor 38 % (baseline 14 %), Field 72 %
+    (49 %), spin 0.28. Seed 5's exam collapsed (−0.555).
+  - **Progress 3:** fixes the reward trap: RaceLegs 99 % (88 %), Chain 91 % (76 %); exam unchanged.
+  - **Rotation 20/50:** spin 0.45 / 0.30; the exam is about equal at 20, slightly worse at 50.
+  - **Crash cost 1000:** the worst arm. **Miss cost 3000:** neutral.
+- **Recommendation**, for the user at the decision point:
+  - adopt residual 0.5 and progress 3, by judgement;
+  - drop the two cost arms;
+  - run a combination follow-up (residual + progress, ± rotation 20) at 20 seeds before batch B.
+- **Not signed off:** adoption is the user's call. Report: `experiments/m6-a-rewards-control.report.md`.
