@@ -276,7 +276,10 @@ so (`CLAUDE.md`).
   most 6 before a decision point).
   - **Why:** in M4, experiments kept spawning experiments and the milestone stalled. With 10 seeds,
     effects below about 13,000–36,000 exam points cannot be detected.
-- **2026-11-13, experiment roadmap rewritten** (user request): the experiments are grouped into
+- **2026-11-13, experiment roadmap rewritten and AGREED with the user** ("okay, great lets commit to
+  that experiment plan"). Order: 1 Measurement → 2 Rewards & metrics + Curriculum → 3 Perception
+  (incl. network size) → 4 Learner (CMA-ES optional, last) → 5 Robustness & readiness; MAP-Elites
+  only if needed. The experiments are grouped into
   five phases by what they change: measurement, rewards/metrics/curriculum, perception and
   capacity, the learner, robustness and readiness. Each phase ends in a decision point.
   - **Why:** the user wanted clearer groups and names, and stressed that the curriculum (old X5)

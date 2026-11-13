@@ -1082,7 +1082,7 @@ and all earlier tests pass unchanged.
   changes the run; levels 0, 1, 2, 2 with mixing; the snapshot arenas), plus four config validation
   cases.
 
-### M6 experiment roadmap rewritten (user request)
+### M6 experiment roadmap rewritten (user request, agreed)
 
 - Grouped into five phases by what they change, each with a decision point:
   1. measurement;
@@ -1094,3 +1094,6 @@ and all earlier tests pass unchanged.
   the old ids X1–X7 and B1–B4 to the new numbers.
 - New items: headline metrics (2.0), crash and miss costs (2.2), time to target (2.3, optional),
   level-up thresholds (2.5), level-aware held-out (2.7).
+- **The user agreed the rewritten roadmap** ("okay, great lets commit to that experiment plan",
+  2026-11-13). Order: 1 Measurement → 2 Rewards & metrics + Curriculum → 3 Perception (incl. network
+  size) → 4 Learner (CMA-ES optional, last) → 5 Robustness & readiness; MAP-Elites only if needed.
