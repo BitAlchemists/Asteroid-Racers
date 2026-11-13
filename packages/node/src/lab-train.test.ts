@@ -240,6 +240,25 @@ describe("evo-lab worker (protocol v1)", () => {
     }
   }, 60_000);
 
+  it.each(["legacy", "p2p"])(
+    "with no new switches, reproduces the stored %s baseline result byte for byte",
+    async (name) => {
+      const fixtures = join(ROOT, "packages", "node", "src", "fixtures");
+      const config = JSON.parse(
+        readFileSync(join(fixtures, `baseline-${name}.config.json`), "utf8"),
+      ) as object;
+      const dir = newRun(config);
+      const child = spawn(
+        process.execPath,
+        [ENTRY, "--config", "config.json", "--seed", "3", "--out", dir, "--root", ROOT, "--to", "4"],
+        { cwd: dir, stdio: "ignore" },
+      );
+      expect(await new Promise((r) => child.on("exit", r))).toBe(0);
+      expect(result(dir)).toBe(readFileSync(join(fixtures, `baseline-${name}.result.json`), "utf8"));
+    },
+    60_000,
+  );
+
   it("reports bad input with an error event and a non-zero exit", async () => {
     const dir = newRun({ sample: 1 });
     expect(await run(dir, ["--to", "2"])).not.toBe(0);

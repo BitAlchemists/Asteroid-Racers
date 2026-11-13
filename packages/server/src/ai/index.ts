@@ -26,6 +26,7 @@ export * from "./exam";
 export * from "./replay";
 export * from "./evaluators";
 export * from "./network";
+export * from "./obstacle-grid";
 export * from "./scripts";
 export * from "./target-generator";
 export * from "./target-vehicle-controller";

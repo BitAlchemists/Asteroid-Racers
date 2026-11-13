@@ -9,6 +9,8 @@ import {
   type ServerConnection,
 } from "@ar/shared";
 
+import { ObstacleGrid } from "./obstacle-grid";
+
 const log = getLogger("services.ai.AIGameClient");
 
 /** Steers a bot's ship once per server frame. */
@@ -16,8 +18,9 @@ export interface VehicleController {
   step(dt: number): void;
 }
 
-/** Entity types a bot remembers (it doesn't care about asteroids or arrows). */
+/** Entity types a bot remembers (asteroids for its sensors; not arrows). */
 const REMEMBERED = new Set([
+  EntityType.ASTEROID,
   EntityType.SHIP,
   EntityType.LAUNCH_PLATFORM,
   EntityType.CHECKPOINT,
@@ -42,6 +45,9 @@ export class AIGameClient implements IGameClient {
   onNextCheckpoint: ((checkpoint: Entity | undefined) => void) | undefined;
   /** The bot's own ship crashed. */
   onCrash: (() => void) | undefined;
+
+  private obstacleVersion = 0;
+  private grid: { version: number; grid: ObstacleGrid } | undefined;
 
   private pendingConnect: { resolve: () => void; reject: (error: Error) => void } | undefined;
 
@@ -77,6 +83,15 @@ export class AIGameClient implements IGameClient {
     return ready;
   }
 
+  /** The asteroids this bot knows of, in a spatial grid (rebuilt when they change). */
+  get obstacles(): ObstacleGrid {
+    if (this.grid?.version !== this.obstacleVersion) {
+      const rocks = [...this.entities.values()].filter((e) => e.type === EntityType.ASTEROID);
+      this.grid = { version: this.obstacleVersion, grid: new ObstacleGrid(rocks) };
+    }
+    return this.grid.grid;
+  }
+
   disconnect(): void {
     this.proxy.disconnect();
   }
@@ -104,6 +119,7 @@ export class AIGameClient implements IGameClient {
     if (!REMEMBERED.has(update.type)) return;
     this.entities.set(update.id, update);
     if (update.type === EntityType.SHIP) this.otherShips.add(update);
+    if (update.type === EntityType.ASTEROID) this.obstacleVersion++;
   }
 
   removeEntity(entityId: number): void {
@@ -111,6 +127,7 @@ export class AIGameClient implements IGameClient {
     if (!entity) return;
     this.entities.delete(entityId);
     this.otherShips.delete(entity);
+    if (entity.type === EntityType.ASTEROID) this.obstacleVersion++;
   }
 
   handleCollision(entityId: number): void {

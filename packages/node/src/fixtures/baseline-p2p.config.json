@@ -1,0 +1,1 @@
+{"sample":6,"frames":80,"arenas":[{"name":"point-to-point","params":{"episodes":3,"asteroids":15}}],"collisions":"obstacles","crashMode":"respawn","scoring":{"distance":1,"success":1000,"crashes":500}}

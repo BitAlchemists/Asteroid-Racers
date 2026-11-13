@@ -1,4 +1,5 @@
 import type { Movable, Vector2 } from "@ar/shared";
+import type { ObstacleGrid } from "./obstacle-grid";
 
 /** Scales distances and speeds into a range the network handles well. */
 export const INPUT_SCALE = 1 / 1000;
@@ -19,6 +20,8 @@ export interface InputContext {
   ship: Movable;
   /** Position of the current target. */
   target: Vector2;
+  /** The asteroids the bot knows of (what a player sees on screen); empty when not needed. */
+  obstacles?: ObstacleGrid;
 }
 
 /** Wraps a half-turn-normalised angle (1 = π) into [-1, 1]. */

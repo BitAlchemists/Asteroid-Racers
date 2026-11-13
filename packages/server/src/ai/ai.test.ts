@@ -141,13 +141,13 @@ describe("targetInputs", () => {
 });
 
 describe("AIGameClient", () => {
-  it("connects like a real client and keeps track of ships, checkpoints and its own ship", async () => {
+  it("connects like a real client and keeps track of ships, checkpoints, asteroids and its own ship", async () => {
     const server = new GameServer({ random: seededRandom(1) }).prepareDemoConfiguration();
     const bot = new AIGameClient(new LocalServerConnection(server, { delivery: "sync" }), "Bot");
     await bot.connect();
     expect(bot.ship?.displayName).toBe("Bot");
     expect([...bot.entities.values()].some((e) => e.type === EntityType.CHECKPOINT)).toBe(true);
-    expect([...bot.entities.values()].some((e) => e.type === EntityType.ASTEROID)).toBe(false);
+    expect([...bot.entities.values()].some((e) => e.type === EntityType.ASTEROID)).toBe(true); // for its sensors
 
     const human = new AIGameClient(new LocalServerConnection(server, { delivery: "sync" }), "Human");
     await human.connect();

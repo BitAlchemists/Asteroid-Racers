@@ -4,3 +4,4 @@ packages/shared/src/net/proto/gen
 package-lock.json
 doc
 packages/server/src/ai/models
+packages/node/src/fixtures
