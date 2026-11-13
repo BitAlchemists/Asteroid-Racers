@@ -148,10 +148,10 @@ came from (the scoring). Two parts, in this order.
 
 | # | Name | Question | Design | Needs |
 | --- | --- | --- | --- | --- |
-| 2.0 | Headline metrics | Which metrics show progress, and do they read clearly in Evo Lab? | not an experiment: rename and describe metrics in `lab.config.json` (e.g. "Exam: races finished" first), mark exam and held-out as headline metrics, add a best-so-far view if Evo Lab supports it; else a feature request to the Evo Lab session | config and docs; possibly an Evo Lab feature |
+| 2.0 | Headline metrics | Which metrics show progress, and do they read clearly in Evo Lab? | not an experiment: rename and describe metrics in `lab.config.json` (e.g. "Exam: races finished" first), mark exam and held-out as headline metrics, add a best-so-far view if Evo Lab supports it; else a feature request to the Evo Lab session | **built** (2026-11-13): labels for every metric, ★ on the three headline metrics, leaderboard = exam checkpoints, races finished, held-out share; missing Evo Lab features ordered |
 | 2.1 | Progress reward | Does rewarding each frame's drop in distance to the target (`scoring.progress`, weights 3 and 5) make better racers and remove the pull towards hovering? | one-at-a-time, 2 arms | built (M4 step 8e) |
 | 2.2 | Crash and miss costs | Are 3,000 per crash and 1,000 per missed target the right balance? | one-at-a-time over `scoring.crashes` (1,500 / 6,000) and `scoring.success` (2,000) | config only |
-| 2.3 | Time to target (optional) | Does a time-based score beat the distance integral? | one-at-a-time, only if 2.1 does not settle it | small code (a `time` scoring term exists; check whether it fits) |
+| 2.3 | Time to target (optional) | Does a time-based score beat the distance integral? | one-at-a-time, only if 2.1 does not settle it | **no code needed**: `scoring.time` already is time to target (the clock stops at the last target; a miss is charged the full limit; tested). It can't be a switch (key in the baseline and default config), so it runs as a separate configuration |
 
 **2b. Curriculum: how the task gets harder**
 
@@ -310,3 +310,12 @@ so (`CLAUDE.md`).
   - **Self-adaptive σ is ES-style** (one global log-normal step size, τ = 1/√n, bounds [1e-4, 10]),
     not the 1/5 rule: the 1/5 rule needs success statistics per lineage, which (μ + λ) selection
     does not track.
+- **2026-11-13, phase 2 preparation:**
+  - 2.0 built: metric labels, headline marks and leaderboard in `lab.config.json`.
+  - 2.3 needs no code: `scoring.time` is time to target.
+  - Drafts written for 1.1 and 2.1–2.7 (`experiments/m6-*.md`): baseline = E9's config with
+    `reuse: true`, decision on the IQM of exam checkpoints at g150 with a paired bootstrap CI,
+    `minEffect` 0.03.
+  - 2.2 and 2.3 are separate configurations compared with `npm run iqm`, because Evo Lab refuses
+    switches on keys already in the baseline or default config.
+  - 2.5–2.7 wait for the curriculum-v2 code.

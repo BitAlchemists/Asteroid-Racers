@@ -149,3 +149,23 @@ npm run iqm -- --base train-1,train-2,... --arm train-11,train-12,... [--metric 
   length (600–1,400 units in rock-in-line). The distance term is about 5,000–8,000 unit-seconds per
   9-second episode. So `progress: 1` is worth about one missed target (1,000) per fully flown leg,
   and `progress: 3`–`5` makes it a real share of the score.
+
+## Time to target: `scoring.time`
+
+`scoring.time` (weight per second flown) already is a time-to-target term: an episode's clock stops
+when its last target is reached, a missed target runs (or, after an episode-ending crash, is
+charged) to the full time limit. An episode lasts at most 9 s, so `time: 300` adds up to 2,700 per
+episode, between a miss (1,000) and a crash (3,000). It cannot be an Evo Lab switch, because
+`scoring.time` is in the default config.
+
+## Metrics and the leaderboard
+
+Every metric in `lab.config.json` has a label; the three headline metrics (exam checkpoints, races
+finished, held-out share) are marked ★ and form the leaderboard. The training `score` changes its
+scenarios every generation and is not a progress measure.
+
+## Switches on keys that are already set
+
+Evo Lab refuses a switch on a key present in the baseline config or in the method's default config
+(for example `scoring.crashes`, `scoring.time`, `curriculum.success` when the baseline sets it).
+Compare such values as separate configurations on the same seeds with `npm run iqm -- --base … --arm …`.

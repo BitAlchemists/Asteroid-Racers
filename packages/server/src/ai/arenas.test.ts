@@ -133,6 +133,22 @@ describe("scoring", () => {
     expect(successRate(records)).toBeCloseTo(1 / 3);
   });
 
+  it("time is time to target: a reached target stops the clock, a missed one is charged the full limit", async () => {
+    // Episode 1: the ship starts inside the target (reached on the first frame); episode 2: a target
+    // 50,000 units away cannot be reached in 100 frames.
+    const records = await flyOnce({
+      obstacles: [],
+      episodes: [episode(new Vector2(0, 0), 50, 100), episode(new Vector2(0, 50_000), 50, 100)],
+    });
+    expect(records.map((r) => [r.reached, r.frames])).toEqual([
+      [1, 1],
+      [0, 101],
+    ]);
+    const tick = 0.015;
+    const timeOnly = { distance: 0, success: 0, time: 1, crashes: 0 };
+    expect(scoreEpisodes(records, timeOnly, tick)).toBeCloseTo((1 + 101) * tick, 9);
+  });
+
   it("progress is a reward: subtracted per unit flown towards the target; absent or 0 changes nothing", () => {
     const base = { distance: 1, success: 0, time: 0, crashes: 0 };
     expect(scoreEpisodes(records, { ...base, progress: 2 }, 0.015)).toBe(350 - 2 * 380);

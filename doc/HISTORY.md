@@ -1209,3 +1209,24 @@ no tool. Measured:
 - **Finding for M6:** the best models are "spin and pulse" controllers. The turn output is pinned at
   −1 (full-rate spin), and thrust pulses when roughly facing the target; they don't steer. This is a
   reward/behaviour question for M6 phase 2, e.g. a rotation cost or a smoothness term.
+### M6 phase 2 preparation: time to target, headline metrics, experiment drafts
+
+- **2.3 time to target:** no new code. `scoring.time` already charges seconds to the last target,
+  and the full limit for misses. A new test in `arenas.test.ts` proves it: reached at frame 1 →
+  frames 1; missed → frames 101 of 100.
+- **2.0 headline metrics:** all 20 metrics in `lab.config.json` relabelled and declared (`level`,
+  `tps`, `ticks`, `reevalScore` and `reevalSuccess` were undeclared).
+  - The three headline metrics are marked ★.
+  - The leaderboard switched from the training `score` (not a progress measure) to exam
+    checkpoints, races finished and held-out share.
+  - Fixed a broken "σ" in the sigma label.
+  - The missing Evo Lab features (descriptions, a headline flag, groups, best-so-far, value
+    switches) go to the Evo Lab session as an order.
+- **Drafts:** eight experiment plans in `experiments/m6-*.md` (1.1, 2.1–2.7).
+  - Baseline: E9's config with `reuse: true`. Decision: IQM of exam checkpoints at g150 with a
+    paired bootstrap CI and `minEffect` 0.03.
+  - Detectable effect estimated from E9's spread: about 0.03 of checkpoints (IQM) at 10 seeds.
+  - 2.2 and 2.3 run as separate configurations, because Evo Lab refuses switches on keys already
+    set.
+  - 2.5–2.7 wait for the curriculum-v2 code.
+- **Commit:** see `git log` ("M6 phase 2 prep").
