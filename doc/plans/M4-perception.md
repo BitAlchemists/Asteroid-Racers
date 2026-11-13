@@ -145,7 +145,13 @@ not adopted.
    - Exam mean 42,160 (sd 27,440) at g100, but 96,360 (sd 49,030) at g150.
    - 5 of 10 seeds collapsed after g100 into passive hovering (see HISTORY).
    - Its runs are the gate baseline for E3b and E4.
-4. **E3b curriculum (one-at-a-time):** the E3 baseline against the same config plus
+4. **E3b curriculum (one-at-a-time)** ✅ **the curriculum wins**:
+   - at g150: exam 96,360 → 32,730 (paired −63,630, 2 × se 44,420, 8/10 seeds better); crashes
+     190 → 147; no seed collapses (E3: 5);
+   - the screen at g50 showed no clear difference, and the runs were continued to g150 by the
+     user's decision;
+   - `curriculum: {}` joins E4's baseline.
+   Original plan: the E3 baseline against the same config plus
    `curriculum: {}`, seeds 1–10. E3's runs are the stored baseline (the gate re-runs them to g5).
    Screen at g50, final at g150, decision on `exam` as usual. If the curriculum wins, it becomes
    part of the baseline for E4.
@@ -260,3 +266,10 @@ Experiments may be added or changed as results come in; each change goes into th
        the baseline for E5 and E6.
     3. **Read the g100 column too.** Experiment reports already show it. A setup that wins at
        g100 but collapses by g150 is not adopted on its g150 number alone.
+- **2026-11-13, after E3b — PROPOSED, for the user to decide** (not adopted, not implemented):
+  lower the curriculum's level-up `success` from 0.8 to about 0.6.
+  - **Why:** 3 of 10 seeds (1, 6, 10) stayed on level 1 for all 150 generations, and only 4 reached
+    the v2 task (at g65–g130).
+  - **What is left as it is:** the streak of 3 generations stays.
+  - **How to test it:** in E4 as a further one-at-a-time arm (`curriculum: { success: 0.6 }`), or as
+    the new default.

@@ -762,3 +762,50 @@ train-87 2,670–4,959 tps (20 busy slots), train-109 11,544–12,892 tps.
   no way to run them at a lower priority or outside the slots.
 - `lab status` warns that the runner runs other evo-lab code than the client (7115b68d21c2 vs
   a1c2ec48e999).
+
+### E3b result: the curriculum wins at g150 (m4-e3b-curriculum, closed)
+
+- **Screen at g50:**
+  - exam effect −10,390 against 2 × se 18,120, 6/10 seeds better: no clear difference, so Evo Lab
+    continued no runs;
+  - every curriculum run was still on level 1 (one rock in line, no scattered rocks);
+  - the baseline arm (train-88..97) reproduced E3's g50 numbers exactly.
+- **Continued to g150 anyway** (the user decided): `lab continue` from the g50 checkpoints,
+  train-110..119, compared with E3's g150 runs train-67..76 on the same seeds.
+
+  | seed | E3 exam | curriculum exam | E3 exam checkpoints | curriculum exam checkpoints | level at g150 (first gen at level 4) |
+  |---|---|---|---|---|---|
+  | 1 | 23,582 | 92,146 | 0.85 | 0.38 | 1 |
+  | 2 | 26,918 | 19,006 | 0.88 | 0.87 | 4 (g65) |
+  | 3 | 83,687 | 15,909 | 0.45 | 0.90 | 4 (g130) |
+  | 4 | 72,840 | 9,931 | 0.51 | 0.94 | 4 (g78) |
+  | 5 | 146,129 | 9,955 | 0.00 | 0.94 | 2 |
+  | 6 | 139,131 | 44,369 | 0.05 | 0.71 | 1 |
+  | 7 | 134,161 | 9,844 | 0.08 | 0.94 | 4 (g100) |
+  | 8 | 142,159 | 9,083 | 0.03 | 0.94 | 3 |
+  | 9 | 136,004 | 34,409 | 0.07 | 0.77 | 2 |
+  | 10 | 59,000 | 82,620 | 0.60 | 0.44 | 1 |
+
+- **g150, paired:**
+  - exam 96,360 → 32,730 (effect −63,630, 2 × se 44,420, 8/10 better);
+  - exam crashes 190 → 147;
+  - races finished 25 % → 71 %;
+  - training success 14 % → 68 %;
+  - held-out success on the v2 task 12 % → 49 %.
+  - **The decision rule is met, crashes are lower: the curriculum wins.**
+  - At g100 it fell just short (−16,690 against 16,920, 7/10).
+- **Collapse:** E3 had 5 seeds collapse (exam checkpoints < 10 % at g150 after ≥ 50 % earlier). The
+  curriculum had none. Seed 1 fell from 0.71 to 0.38, the only notable decline.
+- **New best exam scores**, about 9,000–10,000: seeds 4, 5, 7 and 8 reach 94 % of exam checkpoints,
+  and 88–94 % of races finished. The previous best was 19,170 (train-54).
+- **Levels:**
+  - 4 seeds reached the v2 task (level 4), at g65, g78, g100 and g130;
+  - one reached level 3, two reached level 2;
+  - three stayed on level 1 for all 150 generations (seeds 1, 6, 10).
+  - The level-up rule (80 % success, 3 generations in a row) looks too strict for level 1. Proposed
+    in the M4 plan: lower `success` to about 0.6, for the user to decide.
+- **Speed (S1 code):** the continued runs did median 19,610 ticks/s (12,467–32,143); their first
+  50 generations on the old code did median 3,591. The machine load differed between the two.
+- **Decision:** the curriculum (`curriculum: {}`) joins the baseline for E4.
+- **Evo Lab:** E3b closed with the reason above. The screen rule stopped an arm whose effect only
+  shows after its levels progress. For curriculum-style switches, a screen at g50 is too early.
