@@ -11,10 +11,25 @@
     <main class="menu">
       <h1>Asteroid Racers</h1>
       <p>Race your spaceship against other players in the weightlessness of outer space.</p>
+      <p>
+        <label
+          >Track
+          <select id="track"></select>
+        </label>
+        <span id="track-description"></span>
+      </p>
       <ul>
-        <li><a href="singleplayer.html">Singleplayer</a> — the server runs in your browser</li>
-        <li><a href="multiplayer.html">Multiplayer</a> — connects to the game server</li>
-        <li><a href="watch.html">Watch the AI</a> — a trained model flies the race exam</li>
+        <li>
+          <a href="singleplayer.html" id="singleplayer">Singleplayer</a> — the server runs in your browser
+        </li>
+        <li>
+          <a href="multiplayer.html">Multiplayer</a> — connects to the game server (its track is set by
+          <code>TRACK=&lt;name&gt;</code> when it starts)
+        </li>
+        <li>
+          <a href="watch.html" id="watch">Watch the AI</a> — a trained model flies the race exam, or the
+          chosen track
+        </li>
       </ul>
       <h2>Controls</h2>
       <p>
@@ -23,5 +38,6 @@
         race”) to leave.
       </p>
     </main>
+    <script type="module" src="./src/menu.ts"></script>
   </body>
 </html>

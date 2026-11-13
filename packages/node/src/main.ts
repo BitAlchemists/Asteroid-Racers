@@ -19,7 +19,13 @@ if (!existsSync(webDist)) {
 
 // BOTS=n sets the number of racing bots (default 1, 0 for none).
 const bots = process.env.BOTS === undefined ? 1 : Math.max(0, Number(process.env.BOTS) || 0);
-const host = await startHost({ port, staticRoots: [webDist], gameServer: createDefaultGameServer({ bots }) });
+// TRACK=<name> picks the track (default demo; see the track registry in @ar/server).
+const track = process.env.TRACK || "demo";
+const host = await startHost({
+  port,
+  staticRoots: [webDist],
+  gameServer: createDefaultGameServer({ bots, track }),
+});
 
 const shutdown = (signal: string) => {
   console.log(`${signal} received, shutting down`);

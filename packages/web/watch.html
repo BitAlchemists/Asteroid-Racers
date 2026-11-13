@@ -18,7 +18,13 @@
         </select></label
       >
       <input type="file" id="file" accept=".json,.txt" hidden />
-      <label>Exam seed <input type="number" id="seed" min="0" step="1" value="1" /></label>
+      <label
+        >Track
+        <select id="track">
+          <option value="">Race exam</option>
+        </select></label
+      >
+      <label>Seed <input type="number" id="seed" min="0" step="1" value="1" /></label>
       <label>Time limit <input type="number" id="time" min="5" step="5" value="180" /> s</label>
       <span id="status"></span>
     </form>

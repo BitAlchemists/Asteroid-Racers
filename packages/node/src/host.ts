@@ -9,6 +9,7 @@ import {
   GameServer,
   RealtimeGameLoop,
   registerAIRacingService,
+  trackByName,
   type GameLoop,
 } from "@ar/server";
 import { WebSocketServer } from "ws";
@@ -119,14 +120,18 @@ export interface DefaultGameServerOptions {
   bots?: number;
   /** Model directory; a model trained there wins over the bundled one. */
   modelDir?: string;
+  /** Track name from the registry (default `demo`). */
+  track?: string;
 }
 
-/** The demo world with chat and racing bots. */
+/** A track's world (the demo by default) with chat and racing bots. */
 export function createDefaultGameServer({
   bots = 1,
   modelDir = "db",
+  track = "demo",
 }: DefaultGameServerOptions = {}): GameServer {
-  const server = new GameServer().prepareDemoConfiguration();
+  const server = new GameServer().loadTrack(trackByName(track));
+  log.info(`track: ${track}`);
   server.registerService(new ChatServer());
   if (bots > 0) {
     const trained = new FileModelStore(modelDir);

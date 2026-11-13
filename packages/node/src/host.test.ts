@@ -11,7 +11,7 @@ import {
 } from "@ar/shared";
 import { ChatServer, GameServer, ManualGameLoop, seededRandom } from "@ar/server";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
-import { startHost, type RunningHost } from "./host";
+import { createDefaultGameServer, startHost, type RunningHost } from "./host";
 
 /** Polls until `predicate` holds (network delivery is asynchronous). */
 async function until(predicate: () => boolean, what: string, timeoutMs = 2000): Promise<void> {
@@ -215,5 +215,15 @@ describe("soak over WebSocket", () => {
     }
     loop.advance(100);
     expect(host.gameServer.stats()).toEqual(baseline);
+  });
+});
+
+describe("default game server", () => {
+  it("races the demo by default and any registry track by name (TRACK=)", () => {
+    const checkpoints = (track?: string) =>
+      createDefaultGameServer({ bots: 0, ...(track ? { track } : {}) }).raceController!.checkpoints.length;
+    expect(checkpoints()).toBe(7);
+    expect(checkpoints("slalom")).toBe(10);
+    expect(() => createDefaultGameServer({ bots: 0, track: "moon" })).toThrow(/unknown track/);
   });
 });
