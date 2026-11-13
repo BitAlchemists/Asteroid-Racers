@@ -160,6 +160,10 @@ not adopted.
    `curriculum.success: 0.6`. Screen at g100 (E3b's g50 screen nearly dropped a late winner), final
    at g150. Winners join the baseline. If two or more win, a confirmation run of them together
    follows (one arm, 10 seeds).
+5b. **E4b confirmation (leave-one-out, two switches):** `parents: 10` and `curriculum.success: 0.6`,
+   together and each alone, against the E4 baseline, seeds 1–10, all to g150 (screen at g150, so
+   nothing stops early). Decision: `full` vs baseline on exam as usual; crashes veto. By user
+   decision after E4 (no arm won; these two were the most promising).
 6. **E5 sensors again (one-at-a-time):** on the E4 setup, add `whiskers`, `sectors` (both with a
    `horizon` if E4 adopted it) and `nearest` (with `flag: 1`), one at a time. Does richer sensing
    pay off once the learner is fixed?
