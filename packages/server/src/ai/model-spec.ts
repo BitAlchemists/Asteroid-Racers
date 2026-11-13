@@ -2,6 +2,22 @@ import type { Movable, Vector2 } from "@ar/shared";
 import type { ObstacleGrid } from "./obstacle-grid";
 import { sensorSize, type SensorSpec } from "./sensors";
 
+/** Display names of one sensor's inputs, in input order, e.g. `whiskers[0]` or `nearest[1].dist`. */
+export function sensorInputNames(s: SensorSpec): string[] {
+  const indexed = (n: number) => Array.from({ length: n }, (_, i) => `${s.type}[${i}]`);
+  switch (s.type) {
+    case "lineCheck":
+      return ["lineCheck.near", "lineCheck.offset"];
+    case "whiskers":
+    case "sectors":
+      return indexed(s.count);
+    case "nearest": {
+      const fields = s.flag ? ["present", "angle", "dist", "radius"] : ["angle", "dist", "radius"];
+      return Array.from({ length: s.k }, (_, i) => fields.map((f) => `nearest[${i}].${f}`)).flat();
+    }
+  }
+}
+
 /** Scales distances and speeds into a range the network handles well. */
 export const INPUT_SCALE = 1 / 1000;
 
@@ -21,6 +37,11 @@ export interface ModelSpec {
 /** Number of input neurons a spec needs: its named inputs plus every sensor's inputs. */
 export function inputCount(spec: ModelSpec): number {
   return spec.inputs.length + (spec.sensors ?? []).reduce((n, s) => n + sensorSize(s), 0);
+}
+
+/** Display names of every input neuron: the spec's input names, then each sensor's inputs. */
+export function inputNames(spec: ModelSpec): string[] {
+  return [...spec.inputs, ...(spec.sensors ?? []).flatMap(sensorInputNames)];
 }
 
 /** What an input function may look at. */

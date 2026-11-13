@@ -6,7 +6,7 @@ import { trackByName } from "../tracks";
 import { deriveSeed } from "./arenas";
 import { AIDirector } from "./directors";
 import type { MajorTom } from "./network";
-import { startScript, type Replay, type ReplaySource, type ReplayStatus } from "./replay";
+import { startScript, type Replay, type ReplayInputs, type ReplaySource, type ReplayStatus } from "./replay";
 import { RaceTargetScript } from "./scripts";
 import type { SensorPrimitive } from "./sensors";
 import { addPathPoint, PATH_EVERY } from "./trace";
@@ -188,6 +188,10 @@ export class ExamReplay implements Replay {
 
   sensors(): SensorPrimitive[] {
     return this.script.vehicleController?.sensorPrimitives() ?? [];
+  }
+
+  inputs(): ReplayInputs | undefined {
+    return this.script.vehicleController?.lastActivation();
   }
 
   step(frames = 1): void {

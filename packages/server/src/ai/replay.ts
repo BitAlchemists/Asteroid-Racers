@@ -28,6 +28,17 @@ export interface ReplayStatus {
 }
 
 /**
+ * What the model saw and answered in its last step: one name per input neuron, the input values
+ * and the raw outputs (tanh −1..1: thrust, turn). The arrays are live views of the controller's
+ * buffers, valid until the next step: copy them to keep them.
+ */
+export interface ReplayInputs {
+  names: readonly string[];
+  values: ArrayLike<number>;
+  outputs: ArrayLike<number>;
+}
+
+/**
  * A flight re-simulated frame by frame, exactly as it was measured. Draw `server.world`; call
  * `step()` to advance. Seeking means creating a new replay and stepping it forward (fast: the
  * simulation runs far faster than real time).
@@ -46,6 +57,8 @@ export interface Replay {
   status(): ReplayStatus;
   /** What the model's obstacle sensors see now, in world coordinates (empty without sensors). */
   sensors?(): SensorPrimitive[];
+  /** The model's inputs and outputs of the last step (undefined before the first one). */
+  inputs?(): ReplayInputs | undefined;
   /** Advances up to `frames` frames (stops early when done). */
   step(frames?: number): void;
   dispose(): void;
@@ -161,6 +174,10 @@ export class ArenaReplay implements Replay {
 
   sensors(): SensorPrimitive[] {
     return this.script.vehicleController?.sensorPrimitives() ?? [];
+  }
+
+  inputs(): ReplayInputs | undefined {
+    return this.script.vehicleController?.lastActivation();
   }
 
   step(frames = 1): void {

@@ -25,6 +25,7 @@ import {
   type ReplaySource,
 } from "@ar/server";
 import { Level, setLogLevel } from "@ar/shared";
+import { curriculumLevel, levelLabel, type CurriculumLevel } from "./level";
 
 setLogLevel("", Level.WARNING);
 
@@ -175,6 +176,27 @@ function drawingsOf(data: unknown): Drawing[] | undefined {
   return Array.isArray(trace) ? drawingOfTrain(trace) : undefined;
 }
 
+/** The curriculum level of a training snapshot (or gen event), when the run has one. */
+function levelOf(data: unknown, ctx: PluginContext): CurriculumLevel | undefined {
+  if (isExam(data)) return undefined;
+  return curriculumLevel(ctx.config, (data as TrainSnapshot | undefined)?.arenas, ctx.metrics);
+}
+
+/** A small "L2/5" badge in the top-left corner of a thumbnail. */
+function badge(canvas: HTMLCanvasElement, text: string): void {
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+  const px = Math.max(9, Math.round(canvas.height / 9));
+  ctx.font = `600 ${px}px system-ui,sans-serif`;
+  const pad = Math.round(px * 0.3);
+  const w = ctx.measureText(text).width + 2 * pad;
+  ctx.fillStyle = "rgba(0,0,0,0.7)";
+  ctx.fillRect(pad, pad, w, px + 2 * pad);
+  ctx.fillStyle = "#fe6";
+  ctx.textBaseline = "top";
+  ctx.fillText(text, 2 * pad, 2 * pad);
+}
+
 function message(el: HTMLElement, text: string): void {
   const div = document.createElement("div");
   div.style.cssText = "padding:8px;font:12px system-ui,sans-serif;opacity:.75;text-align:center";
@@ -184,9 +206,11 @@ function message(el: HTMLElement, text: string): void {
 
 export function thumb(el: HTMLElement, data: unknown, ctx: PluginContext): void {
   const drawings = drawingsOf(data);
+  const level = levelOf(data, ctx);
   if (!drawings) {
     const score = (data as TrainSnapshot | undefined)?.score ?? ctx.metrics?.score;
-    message(el, typeof score === "number" ? `score ${Math.round(score)}` : `g ${ctx.g}`);
+    const text = typeof score === "number" ? `score ${Math.round(score)}` : `g ${ctx.g}`;
+    message(el, level ? `${text} · ${levelLabel(level)}` : text);
     return;
   }
   const canvas = document.createElement("canvas");
@@ -198,6 +222,7 @@ export function thumb(el: HTMLElement, data: unknown, ctx: PluginContext): void 
   canvas.style.cssText = "display:block;width:100%;height:100%";
   el.append(canvas);
   paint(canvas, drawings);
+  if (level) badge(canvas, `L${level.index + 1}/${level.count}`);
 }
 
 // --- full view: the replay viewer ------------------------------------------------------------
@@ -265,6 +290,7 @@ async function sourceFor(
   // Configs from before the rename say `brain`; the replay does not need the model section.
   const episodes = (snapshot.trace ?? []).flatMap((a) => a.episodes);
   const firstFailed = episodes.findIndex((e) => e.reached < e.targets.length);
+  const level = levelOf(data, ctx);
   return {
     source: arenaReplaySource({
       model,
@@ -276,7 +302,7 @@ async function sourceFor(
       g: ctx.g,
     }),
     first: Math.max(0, firstFailed),
-    title: `${ctx.run} · g${ctx.g}`,
+    title: `${ctx.run} · g${ctx.g}${level ? ` · ${levelLabel(level)}` : ""}`,
   };
 }
 
