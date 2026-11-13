@@ -24,7 +24,7 @@ How we work is described in [`CLAUDE.md`](../CLAUDE.md). Each milestone gets its
 
 Status: ⬜ not started · 🟡 in progress · ✅ done
 
-### M1 — Training foundations ⬜
+### M1 — Training foundations 🟡
 
 Plan: [`plans/M1-training-foundations.md`](plans/M1-training-foundations.md)
 

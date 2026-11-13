@@ -1,6 +1,6 @@
 # M1 — Training foundations
 
-Status: ⬜ not started — this plan needs the user's OK before work begins. Roadmap: [`../ROADMAP.md`](../ROADMAP.md)
+Status: 🟡 in progress (approved 2026-11-13). Roadmap: [`../ROADMAP.md`](../ROADMAP.md)
 
 ## Goal
 

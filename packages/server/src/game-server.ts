@@ -198,7 +198,8 @@ export class GameServer implements IGameServer {
 
     if (canCollide) this.joinRaceDetector.activate(player);
     this.physics.addMovable(player);
-    this.spawnPlayer(client, canCollide);
+    // No own-ship update yet: the handshake sends PLAYER first.
+    this.spawnPlayer(client, canCollide, false);
   }
 
   // --- frame ------------------------------------------------------------------
@@ -289,26 +290,46 @@ export class GameServer implements IGameServer {
   // --- players & entities -------------------------------------------------------
 
   /** Puts the ship at a random point of its spawn area (race checkpoint or the world spawn). */
-  spawnPlayer(client: IClientProxy, canCollide = true): void {
+  spawnPlayer(client: IClientProxy, canCollide = true, notifyOwner = true): void {
     const movable = client.movable;
     if (!movable) return;
 
     const spawn = this.race?.isClientInRace(client) ? this.race.spawnEntityForPlayer(client) : this.spawn;
     const offset = this.randomPointInUnitCircle().scale(Math.max(0, spawn.radius - movable.radius));
     if (canCollide) this.crashDetector.activate(movable);
-    this.teleportPlayerTo(client, spawn.position.plus(offset), spawn.orientation);
+    this.placePlayer(client, spawn.position.plus(offset), spawn.orientation, Vector2.zero(), notifyOwner);
   }
 
-  teleportPlayerTo(client: IClientProxy, position: Vector2, orientation: number): void {
+  /**
+   * Moves the ship and sends its owner the new state right away, so the owner's next input is based
+   * on where the ship is now (not on the last broadcast from before the jump).
+   */
+  teleportPlayerTo(
+    client: IClientProxy,
+    position: Vector2,
+    orientation: number,
+    velocity: Vector2 = Vector2.zero(),
+  ): void {
+    this.placePlayer(client, position, orientation, velocity, true);
+  }
+
+  private placePlayer(
+    client: IClientProxy,
+    position: Vector2,
+    orientation: number,
+    velocity: Vector2,
+    notifyOwner: boolean,
+  ): void {
     const movable = client.movable;
     if (!movable) return;
     movable.position = position.clone();
     movable.orientation = orientation;
     movable.canMove = true;
-    movable.velocity = Vector2.zero();
+    movable.velocity = velocity.clone();
     movable.acceleration = Vector2.zero();
     movable.rotationSpeed = 0;
     movable.updateRank += 1;
+    if (notifyOwner) client.send(createEnvelope(MessageType.ENTITY, EntityMarshal.toNet(movable)));
   }
 
   /**

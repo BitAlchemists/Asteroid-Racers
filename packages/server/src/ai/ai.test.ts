@@ -270,6 +270,31 @@ describe("TrainingDirector", () => {
     expect(second.reports[0]!.brainGeneration).toBeGreaterThanOrEqual(saved[0]!.generation);
   });
 
+  it("an unchanged brain scores exactly the same in every generation (no stale first frame)", async () => {
+    const store = new MemoryBrainStore();
+    store.save(DEFAULT_BRAIN_NAME, [MajorTom.random(DEFAULT_LAYOUT, seededRandom(9), "Fixed")]);
+    const server = createTrainingServer(3);
+    const scores: number[] = [];
+    const director = registerAITrainingService(server, {
+      store,
+      sampleSize: 3,
+      framesPerTarget: 40,
+      mutationRate: 0, // children are exact copies
+      maxGenerations: 3,
+      random: seededRandom(4),
+      onGeneration: (r) => scores.push(r.bestScore, r.worstScore),
+    });
+    await server.start();
+    let done = false;
+    void director.done.then(() => (done = true));
+    for (let guard = 0; !done && guard < 100_000; guard++) {
+      server.tick();
+      if (guard % 20 === 0) await new Promise<void>((r) => setTimeout(r, 0));
+    }
+    expect(done).toBe(true);
+    expect(new Set(scores).size).toBe(1);
+  });
+
   it("candidates are the stored parent plus mutated, renamed children", () => {
     const parent = MajorTom.random(DEFAULT_LAYOUT, seededRandom(4), "Parent");
     parent.generation = 3;

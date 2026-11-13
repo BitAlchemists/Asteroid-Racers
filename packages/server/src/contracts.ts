@@ -27,7 +27,7 @@ export interface IGameServer {
   spawnEntity(entity: Entity): void;
   despawnEntity(entity: Entity): void;
   computePlayerInput(client: IClientProxy, input: MovementInput): void;
-  teleportPlayerTo(client: IClientProxy, position: Vector2, orientation: number): void;
+  teleportPlayerTo(client: IClientProxy, position: Vector2, orientation: number, velocity?: Vector2): void;
   clientLeavesRace(client: IClientProxy): void;
 
   broadcastMessage(envelope: Envelope, except?: ReadonlySet<IClientProxy>): void;
