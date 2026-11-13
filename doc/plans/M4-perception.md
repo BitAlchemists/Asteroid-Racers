@@ -131,12 +131,98 @@ good.
 - **Reporting:** every gen event carries `level`. Snapshots record the arenas of their generation,
   so the viewer replays the right level.
 
-### 8. Experiments (revised)
+### 8. Measurement and learner switches (added after the research)
 
-Each experiment is approved before it runs. **Decision:** the paired exam effect (`exam`, lower is
-better) at the final generation, beyond 2 × paired noise and `minEffect`, with ≥ 80 % of seeds
-better. Exam crashes are always reported. A switch that wins on exam but raises crashes is flagged,
-not adopted.
+Rewritten 2026-11-13 from [`../research/neuroevolution-best-practices.md`](../research/neuroevolution-best-practices.md).
+E4 found no clear difference for any learner switch. The research gives three reasons to distrust
+that null result before testing more:
+- the winner's curse: the best of 99 noisy children is usually a lucky one, and nothing re-checks it;
+- an underpowered exam: 17 races per model;
+- a non-standard mutation, and a Gaussian arm that was not the standard form (σ 0.2 on 10 % of the
+  weights).
+
+Every item is a switch, absent = byte-identical (fixtures, exact resume, Evo Lab gate), with tests
+per switch, like step 6.
+
+**(a) Re-evaluate the top children.**
+- Config: `reevaluate: { top: 5, episodes: 24 }`.
+- After scoring a generation, the top `top` children plus the parent fly `episodes` extra fresh
+  scenarios, seeded from (seed, generation, a new stream).
+- The parent is replaced, and curriculum level-ups are judged, on the combined mean of both rounds.
+- The checkpoint and `stateHash` stay complete. The extra scenarios are derived, so no new random
+  state is needed.
+- Cost: one extra round of 24 episodes with 6 ships per generation, about +10–20 % wall time.
+- Source: Such et al. 2017 (top 10 re-evaluated on 30 episodes); Jin & Branke 2005.
+
+**(b) Exam v2 for decisions: more races, robust statistics.**
+- The exam already takes `randomTracks`. Decisions use `exam: { every: 25, randomTracks: 100 }`:
+  102 races, every 25 generations and always at the last one.
+- Cost, from today's numbers: 17 races take about 1.6 s with S1's speed-ups (train-250), so 102
+  races take about 10 s, about 1 minute per 150-generation run (runs take about 15–20 minutes).
+- Reports add the **IQM with stratified-bootstrap 95 % CIs** across seeds, paired per seed, plus a
+  power check: the effect the current spread can detect with 10 seeds.
+  - Evo Lab's reports do not compute IQM or bootstrap CIs (`docs/experiments.md`). A small script
+    (`npm run iqm -- <experiment>`, in `packages/node`) reads the runs' gen events and prints the
+    table.
+  - The feature request goes to the Evo Lab session as information.
+- Old 17-race exam numbers stay comparable only with each other; reports say which exam was used.
+- Source: Agarwal et al. 2021 (rliable); Colas et al. 2018; Ha & Schmidhuber 2018.
+
+**(c) Standard Gaussian mutation.**
+- No new code: `mutation: { kind: "gaussian", sigma: 0.03, rate: 1 }` already works (`rate` is
+  accepted in (0, 1]).
+- Step 8 only adds a test that `rate: 1` touches every weight.
+- Optional annealing (`sigmaEnd`, linear over the run) is a later switch if E6 points that way.
+- Source: Such et al. 2017; Salimans et al. 2017.
+
+**(d) Network shape.**
+- `hidden: [16]` works today.
+- A linear policy is `hidden: []`. The config check accepts it, and `layoutFor` with `MajorTom`
+  gives a [inputs, 2] network with tanh outputs (checked by hand 2026-11-13). Step 8 adds a worker
+  test: train, resume and replay with `hidden: []`.
+- Source: Mania et al. 2018.
+
+**(e) A progress term in scoring.**
+- A new scoring weight `progress` (absent = 0 = today). Per frame it adds
+  `−progress × (d(t−1) − d(t))`, the reduction of distance to the current target: potential-based
+  shaping with Φ = −distance.
+- It is credited only while the episode runs; a respawn does not count as progress.
+- Variant to decide in implementation: weight `time` already exists. If `progress` is awkward to
+  make exact, time-to-target is the fallback.
+- Source: Ng et al. 1999; Togelius & Lucas 2005.
+
+**(f) Curriculum mixing.**
+- `curriculum.keepEasy: 0.25` (absent = 0): after a level-up, about a quarter of each arena's
+  episodes come from earlier levels (chosen deterministically from seed and generation).
+- With `reevaluate`, level-ups are judged on the re-evaluated success.
+- Source: Narvekar et al. 2020; Gomez & Miikkulainen 1997.
+
+### 9. CMA-ES optimiser (larger build)
+
+- A new optimiser switch, `optimizer: { kind: "cmaes", population: 50, sigma: 0.1 }` (absent = the
+  GA), on the same shared scenarios with rank-based weights.
+- At about 250 weights, full CMA-ES fits; sep-CMA-ES only if we go far beyond 1,000.
+- **Determinism:**
+  - the mean, step size, covariance and evolution paths go into the checkpoint and the
+    `stateHash`;
+  - sampling uses the run's seeded generator;
+  - exact kill-and-resume is tested like every switch;
+  - the eigen-decomposition must be deterministic (a fixed algorithm, no library with
+    platform-dependent ordering).
+- The reported "winner" is the best sampled candidate. The CMA mean is examined too, as a second
+  model.
+- Source: Hansen 2016; Ha & Schmidhuber 2018; Heidrich-Meisner & Igel 2009; Igel 2003.
+
+### 10. Experiments
+
+Each experiment is approved before it runs. **Decision:**
+- the paired exam effect (`exam`, lower is better) at the final generation, beyond 2 × paired noise
+  and `minEffect`, with ≥ 80 % of seeds better;
+- from E5 on, also the IQM's paired bootstrap CI excluding 0;
+- exam crashes always reported: a switch that wins on exam but raises crashes is flagged, not
+  adopted;
+- the g100 column read too: a setup that wins at g100 but collapses by g150 is not adopted on its
+  g150 number alone.
 
 1. **E1 noise floor** ✅ (blind, task v1).
 2. **E2 sensors** ✅ (task v1, 5 seeds): `lineCheck` better early and fewer crashes; the others not
@@ -144,38 +230,60 @@ not adopted.
 3. **E3 noise floor v2 (measurement)** ✅: the task v2 config with `lineCheck`, seeds 1–10, g150.
    - Exam mean 42,160 (sd 27,440) at g100, but 96,360 (sd 49,030) at g150.
    - 5 of 10 seeds collapsed after g100 into passive hovering (see HISTORY).
-   - Its runs are the gate baseline for E3b and E4.
 4. **E3b curriculum (one-at-a-time)** ✅ **the curriculum wins**:
-   - at g150: exam 96,360 → 32,730 (paired −63,630, 2 × se 44,420, 8/10 seeds better); crashes
-     190 → 147; no seed collapses (E3: 5);
-   - the screen at g50 showed no clear difference, and the runs were continued to g150 by the
-     user's decision;
-   - `curriculum: {}` joins E4's baseline.
-   Original plan: the E3 baseline against the same config plus
-   `curriculum: {}`, seeds 1–10. E3's runs are the stored baseline (the gate re-runs them to g5).
-   Screen at g50, final at g150, decision on `exam` as usual. If the curriculum wins, it becomes
-   part of the baseline for E4.
-5. **E4 learner (one-at-a-time):** against the E3b winner (task v2 + `curriculum: {}`), six switches:
-   `encoding`, `mutation`, `parents`, `lineCheck.horizon: 2`, `crashLimit: 3` and
-   `curriculum.success: 0.6`. Screen at g100 (E3b's g50 screen nearly dropped a late winner), final
-   at g150. Winners join the baseline. If two or more win, a confirmation run of them together
-   follows (one arm, 10 seeds).
-5b. **E4b confirmation (leave-one-out, two switches):** `parents: 10` and `curriculum.success: 0.6`,
-   together and each alone, against the E4 baseline, seeds 1–10, all to g150 (screen at g150, so
-   nothing stops early). Decision: `full` vs baseline on exam as usual; crashes veto. By user
-   decision after E4 (no arm won; these two were the most promising).
-6. **E5 sensors again (one-at-a-time):** on the E4 setup, add `whiskers`, `sectors` (both with a
-   `horizon` if E4 adopted it) and `nearest` (with `flag: 1`), one at a time. Does richer sensing
-   pay off once the learner is fixed?
-7. **E6 capacity (multi-level switch `hidden`):** on the E5 setup, `[16]`, `[32]`, `[16,16]` and
-   `[32,32]` against 10-8-6-4. Optional arm: a pretrained start (a trained model with new inputs
-   added as zero weights), if E5 adopts a new sensor.
-8. **E7 confirmation:** the chosen setup trained to g300, re-examined, and watched in the viewer on
-   the crash-loop tracks. Then it is a candidate for the game (your call, per `CLAUDE.md`).
+   - at g150: exam 96,360 → 32,730 (paired −63,630, 2 × se 44,420, 8/10 seeds better);
+   - crashes 190 → 147;
+   - no seed collapses (E3: 5);
+   - the g50 screen showed no clear difference, and the runs were continued to g150 by the user's
+     decision;
+   - `curriculum: {}` joins the baseline.
+5. **E4 learner (one-at-a-time)** ✅ (closed): six switches against the curriculum baseline:
+   - `encoding`, `mutation` (σ 0.2, rate 0.1), `parents: 10`, `lineCheck.horizon: 2`,
+     `crashLimit: 3` and `curriculum.success: 0.6`;
+   - **no clear difference for any**;
+   - `horizon` and `success 0.6` looked worse at g100 but not at g150;
+   - `parents: 10` was best at g100 but stopped by the screen.
+6. **E4b confirmation (leave-one-out)**, running: `parents: 10` and `curriculum.success: 0.6`,
+   together and each alone, to g150. Its result decides the baseline for E5.
+7. **E5 noise floor v3 (measurement):** the E4b-decided baseline plus `reevaluate` (8a), with exam
+   v2 (8b), seeds 1–10, g150.
+   - It re-measures the spread between seeds with IQM and bootstrap CIs, and sets `minEffect`.
+   - It answers whether re-evaluation alone stops collapses, by comparing with E3b/E4's baseline
+     on the same seeds (re-examined with exam v2 from their snapshots, an exam-only run).
+   - About 10 runs + 10 exam-only runs.
+8. **E6 learner, done properly (one-at-a-time)** on the E5 baseline:
+   - standard Gaussian (8c);
+   - `hidden: [16]` and `hidden: []` (8d);
+   - the progress term (8e);
+   - curriculum mixing (8f);
+   - `parents: 10` again, if E4b did not settle it.
+   - Screen at g100, final at g150; about 60 runs.
+9. **E7 CMA-ES** (after step 9): `optimizer: cmaes` against the E6 winner setup, seeds 1–10, g150
+   (a population of 50 means half the episodes per generation of the GA's 100, so also compare at
+   equal episode budgets). About 20 runs.
+10. **E8 sensors again (one-at-a-time)** on the improved setup:
+    - `whiskers`, `sectors` and `nearest` (`flag: 1`), each added to `lineCheck`;
+    - capacity folded in where a sensor needs it (e.g. that sensor with `hidden: [32]`);
+    - optional: a pretrained start (a trained model with the new inputs as zero weights);
+    - about 40–60 runs.
+11. **E9 confirmation:** the chosen setup trained to g300, re-examined with exam v2, and watched in
+    the viewer on the crash-loop tracks. Then it is a candidate for the game (your call, per
+    `CLAUDE.md`).
 
-Budget: about 10 runs (E3) + 50 (E4) + 30 (E5) + 50 (E6) + 10 (E7). At about 20 minutes per run
-(the v2 task doubles the episodes) and 5 parallel slots, that is about 12 hours of wall time, run in
-the background, one experiment at a time.
+**Superseded** (2026-11-13, after the research):
+- the old E5 (sensors again on the E4 setup) is now E8, moved after the learner and measurement
+  fixes;
+- the old E6 (capacity sweep `[16]`, `[32]`, `[16,16]`, `[32,32]`) is folded into E6 (one hidden
+  layer, linear) and E8 (capacity per sensor);
+- the old E7 confirmation is now E9.
+- Why: with the winner's curse, a 17-race exam and a non-standard mutation, null results say little
+  about sensors or capacity.
+
+**Budget:**
+- With S1's speed-ups a 150-generation run takes about 15–20 minutes with up to 20 in parallel.
+  E4 (70 runs) took about 50 minutes of wall time.
+- Expected wall time: E5 about 30 minutes, E6 about 1 hour, E7 about 30 minutes, E8 about 1 hour,
+  E9 about 1 hour, plus implementation time for steps 8 and 9.
 
 Experiments may be added or changed as results come in; each change goes into the history.
 
@@ -189,8 +297,14 @@ Experiments may be added or changed as results come in; each change goes into th
 - [x] E1 and E2 run through Evo Lab experiments with plans, reports and sign-offs.
 - [x] Step 6 committed: every setup switch absent = byte-identical baseline; tests per switch.
 - [x] Step 7: task v2 checked and recorded.
-- [ ] Step 7b: curriculum switch, tested (determinism, resume, level-ups, replay of the right level).
-- [ ] E3, E3b and E4–E6 run with approved plans, reports and sign-offs; E7 done.
+- [x] Step 7b: curriculum switch, tested (determinism, resume, level-ups, replay of the right level).
+- [x] E3, E3b and E4 run with approved plans, reports and sign-offs.
+- [ ] E4b signed off; its result sets the baseline for E5.
+- [ ] Step 8: `reevaluate`, exam v2 with the IQM/bootstrap script, the Gaussian `rate: 1` test, the
+      linear-policy worker test, the `progress` scoring term and `curriculum.keepEasy`. Each is
+      absent = byte-identical, with tests (determinism, exact resume, replay where it applies).
+- [ ] Step 9: CMA-ES optimiser with exact resume (tests).
+- [ ] E5–E8 run with approved plans, reports and sign-offs; E9 done.
 - [ ] A chosen setup (sensing, encoding, learner, network size) recorded in `HISTORY.md` and the
       roadmap, with its exam and crash numbers against the blind baseline.
 - [ ] CI green after the user asks for a push.
@@ -200,6 +314,9 @@ Experiments may be added or changed as results come in; each change goes into th
 - Track files, new tracks, the track picker and the other arenas: M5.
 - Lookahead to the next checkpoint, crossover, rate and strength schedules: M6. (A first
   curriculum moved into M4 as step 7b; M6 can still explore richer ones.)
+- Novelty search, MAP-Elites or other quality-diversity methods: later, only if hovering or other
+  local optima persist after step 8 (research item 8).
+- NEAT or other topology-evolving methods.
 - Changing the game's physics (thrust, turn rate, ship size) or respawn rule.
 - Shipping a model into the game (decided by you after E7).
 
@@ -211,6 +328,9 @@ Experiments may be added or changed as results come in; each change goes into th
 | What counts as "measurably better"? | Paired exam effect beyond 2 × noise and `minEffect`, ≥ 80 % of 10 seeds, crashes not worse. |
 | Should crashes be the decision metric instead of the exam score? | No: exam stays primary; crashes are reported and can veto. Their paired noise is far lower, so they are the first thing to look at. |
 | Are the task v2 numbers right (crash cost 3,000, density, episodes)? | Working defaults; checked once in step 7, changed with a history note if wrong. |
+| Is a 102-race exam enough? | Yes for decisions (6× today's races, about 1 minute per run). The final candidate in E9 gets a larger one-off exam (e.g. 500 races, exam-only run). |
+| Does Evo Lab compute IQM and bootstrap CIs? | Not today; our script does, and the request goes to the Evo Lab session. |
+| How big should σ be for standard Gaussian mutation? | 0.03 with starting weights in ±1 (the research suggests 0.02–0.05 of the weight scale); annealing only if E6 points that way. |
 
 ## Risks
 
@@ -225,6 +345,14 @@ Experiments may be added or changed as results come in; each change goes into th
   experiment. E3 re-measures the baseline, so later effects are not confused with the task change.
 - **No sensor or size wins clearly.** A null result is recorded as such; `lineCheck` stays the
   default.
+- **Re-evaluation changes what "winner" means.** Training scores and level-ups follow the combined
+  mean, so runs with and without `reevaluate` are only compared on the exam and held-out metrics.
+- **The progress term changes the score's scale.** Training scores of runs with and without it are
+  not comparable; decisions stay on the exam.
+- **CMA-ES determinism:** floating-point linear algebra must give identical results across resume;
+  the eigen-decomposition is our own fixed code, and kill-and-resume is tested.
+- **Exam v2 breaks comparability with older exam numbers.** Reports name the exam; older runs are
+  re-examined from their snapshots when a comparison is needed (exam-only runs).
 
 ## Changes to this plan
 
@@ -279,3 +407,22 @@ Experiments may be added or changed as results come in; each change goes into th
   - **What is left as it is:** the streak of 3 generations stays.
   - **How to test it:** in E4 as a further one-at-a-time arm (`curriculum: { success: 0.6 }`), or as
     the new default.
+- **2026-11-13, after the research** (agreed with the user: "Yes, rewrite the plan"):
+  - **Why:** the user asked how such trainings are best conducted. The research
+    ([`../research/neuroevolution-best-practices.md`](../research/neuroevolution-best-practices.md))
+    found three reasons E4's "no clear difference" says little: the winner's curse with no
+    re-evaluation, a 17-race exam, and a non-standard mutation (the E4 Gaussian arm was not the
+    standard form either).
+  - **Added:**
+    - step 8, measurement and learner switches: `reevaluate`, exam v2 with IQM and bootstrap CIs,
+      standard Gaussian, linear and one-layer networks, a `progress` scoring term and curriculum
+      mixing;
+    - step 9, the CMA-ES optimiser.
+  - **Experiments:**
+    - E5 is now a noise floor v3 with re-evaluation and exam v2;
+    - E6 tests the learner switches properly;
+    - E7 is CMA-ES;
+    - E8 is the richer sensors (the old E5) with capacity folded in (the old E6);
+    - E9 is the confirmation (the old E7).
+  - **Scope:** re-evaluation and CMA-ES move into M4. Novelty search and MAP-Elites are listed as
+    "later, only if hovering persists".

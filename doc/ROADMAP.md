@@ -76,8 +76,14 @@ by experiment, how a model should sense obstacles:
   race exam;
 - a training setup that can learn from sensors (input encoding, mutation, selection, the
   training task), fixed after the E2 review;
-- experiments: noise floor, sensor comparison, learner fixes, sensors again, network capacity.
-  E1 and E2 are done; the plan was rewritten after E2.
+- experiments, done: E1 noise floor, E2 sensors (`lineCheck` wins), E3 noise floor v2, E3b
+  curriculum (wins, ends the passive collapse), E4 learner switches (no clear difference); E4b
+  (10 parents + curriculum at 60 %) running;
+- next, after the best-practice research
+  ([`research/neuroevolution-best-practices.md`](research/neuroevolution-best-practices.md)):
+  re-evaluation of the top children, a 102-race exam with IQM and bootstrap CIs, standard Gaussian
+  mutation, linear and one-layer networks, a progress term in the score, curriculum mixing, then
+  CMA-ES, then the richer sensors again, then a g300 confirmation (E5–E9).
 
 ### S1 — Training speed ✅ (side track)
 
@@ -106,7 +112,10 @@ Each one is an Evo Lab experiment, compared against a baseline on the race exam:
    of sight → more rocks) moved into M4 as step 7b; M6 can explore richer ones.
 2. Inputs: lookahead to the next target and beyond (obstacle sensing is M4).
 3. Mutation and population strategy beyond M4 (rate and strength schedules, crossover). Network
-   size, Gaussian mutation and (μ+λ) selection moved to M4.
+   size, Gaussian mutation, (μ+λ) selection, re-evaluation of the top children and CMA-ES moved
+   to M4.
+4. Quality diversity (novelty search, MAP-Elites), only if hovering or other local optima persist
+   after M4.
 5. Latency and robustness (delayed inputs, noise).
 
 ## Open questions

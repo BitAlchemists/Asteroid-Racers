@@ -854,3 +854,36 @@ train-87 2,670–4,959 tps (20 busy slots), train-109 11,544–12,892 tps.
 - **Speed:** median 13,500–18,600 ticks/s per run with up to 20 runs in parallel; the whole E4 took
   about 50 minutes of wall time.
 - **Not signed off:** adoption is the user's decision. Report: `experiments/m4-e4-learner.report.md`.
+
+### Best-practice research; M4 plan rewritten (agreed with the user)
+
+- **Research:** the user asked how such trainings are best conducted. A research agent compared our
+  setup with the literature: Such et al. 2017, Salimans et al. 2017, Hansen's CMA-ES tutorial,
+  World Models, Togelius & Lucas, Agarwal et al. 2021 and more. The write-up, with sources and
+  reliability markers, is in [`research/neuroevolution-best-practices.md`](research/neuroevolution-best-practices.md).
+- **Main findings:**
+  - nothing re-checks the best of 99 noisy children before it replaces the parent: the winner's
+    curse, and the mechanism behind E3's collapse;
+  - a 17-race exam is underpowered for small effects;
+  - our relative mutation is non-standard, and E4's Gaussian arm (σ 0.2 on 10 % of the weights)
+    was not the standard form either;
+  - CMA-ES suits about 250 weights;
+  - 10-8-6-4 is unusually deep for a small control task;
+  - scoring rewards hovering, and a progress term is the usual fix.
+- **What we already do right:** shared scenarios per generation, re-scoring the parent, a staged
+  curriculum, a few egocentric task-specific sensors, paired seeds.
+- **The user agreed to rewrite the plan.** `doc/plans/M4-perception.md` now has:
+  - step 8: `reevaluate`, exam v2 (102 races every 25 generations) with IQM and bootstrap CIs, the
+    standard Gaussian (`rate: 1`, σ 0.03), `hidden: [16]` and `[]`, a `progress` score term,
+    `curriculum.keepEasy`;
+  - step 9: CMA-ES;
+  - experiments E5 (noise floor v3), E6 (learner done properly), E7 (CMA-ES), E8 (richer sensors
+    again, capacity folded in), E9 (confirmation at g300).
+  - The old E5–E7 are superseded, with the reason recorded.
+  - `doc/ROADMAP.md` is updated: re-evaluation and CMA-ES move from M6 into M4; quality diversity
+    is listed for later.
+- **Checked while rewriting:**
+  - `mutation: { kind: "gaussian", rate: 1 }` already works, since `rate` is accepted in (0, 1];
+  - `hidden: []` passes the config check, and `MajorTom` builds and activates a [4, 2] network;
+  - 17 exam races take about 1.6 s on the S1 code (train-250), so 102 races take about 10 s;
+  - Evo Lab's reports have no IQM or bootstrap CIs.
