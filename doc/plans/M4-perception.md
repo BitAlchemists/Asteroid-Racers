@@ -105,6 +105,31 @@ by decision, not by a screen, because they change what is measured:
 The numbers are working defaults, checked once with a short run (a crash costs more than a detour; a
 generation takes under 15 s). If the check fails, the plan is edited and the history says why.
 
+### 7b. Curriculum switch (added after E3's first look)
+
+E3 at g50: half the seeds reach almost no training targets on the v2 task, so selection has little
+to go on. A staged curriculum starts with a clear line of sight and adds rocks as the model gets
+good.
+
+- Config `curriculum: {}` (absent = off) with optional `levels`, `success` (default 0.8) and
+  `streak` (default 3). Default levels, as overrides of the arena params:
+
+  | Level | `rock-in-line` | `point-to-point` |
+  | --- | --- | --- |
+  | 0 | `rocks: 0` (clear line of sight) | `asteroids: 0` |
+  | 1 | `rocks: 1` | `asteroids: 0` |
+  | 2 | `rocks: 1` | `asteroids: 20` |
+  | 3 | `rocks: 2` | `asteroids: 40` |
+  | 4 | `rocks: 2` | `asteroids: 80` (the v2 task) |
+
+- **Level up:** when the winner reaches ≥ `success` of the training targets in `streak` generations
+  in a row, the next generation uses the next level, and the streak starts again.
+- **Held-out:** always on the last level (the target task), so it measures the same thing all run.
+- **Determinism:** the level and the streak are saved in the checkpoint and covered by the
+  `stateHash`. Exact resume is tested.
+- **Reporting:** every gen event carries `level`. Snapshots record the arenas of their generation,
+  so the viewer replays the right level.
+
 ### 8. Experiments (revised)
 
 Each experiment is approved before it runs. **Decision:** the paired exam effect (`exam`, lower is
@@ -117,16 +142,20 @@ not adopted.
    at today's size.
 3. **E3 noise floor v2 (measurement):** the task v2 config with `lineCheck`, seeds 1–10, g150. This
    gives the new baseline, its spread and `minEffect`, and is the gate baseline for E4–E6.
-4. **E4 learner (one-at-a-time):** against E3's baseline, switches `encoding`, `mutation`, `parents`
+4. **E3b curriculum (one-at-a-time):** the E3 baseline against the same config plus
+   `curriculum: {}`, seeds 1–10. E3's runs are the stored baseline (the gate re-runs them to g5).
+   Screen at g50, final at g150, decision on `exam` as usual. If the curriculum wins, it becomes
+   part of the baseline for E4.
+5. **E4 learner (one-at-a-time):** against the E3 or E3b baseline, switches `encoding`, `mutation`, `parents`
    and `lineCheck.horizon: 2`. Screen at g50, final at g150. Winners join the baseline. If two or
    more win, a confirmation run of them together follows (one arm, 10 seeds).
-5. **E5 sensors again (one-at-a-time):** on the E4 setup, add `whiskers`, `sectors` (both with a
+6. **E5 sensors again (one-at-a-time):** on the E4 setup, add `whiskers`, `sectors` (both with a
    `horizon` if E4 adopted it) and `nearest` (with `flag: 1`), one at a time. Does richer sensing
    pay off once the learner is fixed?
-6. **E6 capacity (multi-level switch `hidden`):** on the E5 setup, `[16]`, `[32]`, `[16,16]` and
+7. **E6 capacity (multi-level switch `hidden`):** on the E5 setup, `[16]`, `[32]`, `[16,16]` and
    `[32,32]` against 10-8-6-4. Optional arm: a pretrained start (a trained model with new inputs
    added as zero weights), if E5 adopts a new sensor.
-7. **E7 confirmation:** the chosen setup trained to g300, re-examined, and watched in the viewer on
+8. **E7 confirmation:** the chosen setup trained to g300, re-examined, and watched in the viewer on
    the crash-loop tracks. Then it is a candidate for the game (your call, per `CLAUDE.md`).
 
 Budget: about 10 runs (E3) + 50 (E4) + 30 (E5) + 50 (E6) + 10 (E7). At about 20 minutes per run
@@ -145,7 +174,8 @@ Experiments may be added or changed as results come in; each change goes into th
 - [x] E1 and E2 run through Evo Lab experiments with plans, reports and sign-offs.
 - [x] Step 6 committed: every setup switch absent = byte-identical baseline; tests per switch.
 - [x] Step 7: task v2 checked and recorded.
-- [ ] E3–E6 run with approved plans, reports and sign-offs; E7 done.
+- [ ] Step 7b: curriculum switch, tested (determinism, resume, level-ups, replay of the right level).
+- [ ] E3, E3b and E4–E6 run with approved plans, reports and sign-offs; E7 done.
 - [ ] A chosen setup (sensing, encoding, learner, network size) recorded in `HISTORY.md` and the
       roadmap, with its exam and crash numbers against the blind baseline.
 - [ ] CI green after the user asks for a push.
@@ -153,7 +183,8 @@ Experiments may be added or changed as results come in; each change goes into th
 ## Not in M4
 
 - Track files, new tracks, the track picker and the other arenas: M5.
-- Lookahead to the next checkpoint, curriculum, crossover, rate and strength schedules: M6.
+- Lookahead to the next checkpoint, crossover, rate and strength schedules: M6. (A first
+  curriculum moved into M4 as step 7b; M6 can still explore richer ones.)
 - Changing the game's physics (thrust, turn rate, ship size) or respawn rule.
 - Shipping a model into the game (decided by you after E7).
 
@@ -199,3 +230,8 @@ Experiments may be added or changed as results come in; each change goes into th
   - **Episodes kept at 16 + 8**, even though a run takes 45–60 minutes instead of about 20. The
     20-minute rule came from a budget that assumed 5 parallel slots. The machine has 24 threads and
     Evo Lab allows 20 workers, so total wall time stays close to the planned ~12 hours.
+- **2026-11-13, after E3's first look** (agreed with the user): step 7b (curriculum switch) and
+  experiment E3b added.
+  - **Why:** at g50, 5 of 10 seeds reached almost no training targets on the v2 task. The user asked
+    for a smoother difficulty curve: first a clear line of sight, then more rocks in the way.
+  - **Scope:** this moves a first curriculum forward from M6.

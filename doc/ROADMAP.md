@@ -101,7 +101,8 @@ Plan: [`plans/M5-content.md`](plans/M5-content.md) (liked by the user; final OK 
 
 Each one is an Evo Lab experiment, compared against a baseline on the race exam:
 
-1. Curriculum (tiered arenas) vs the current single course.
+1. Curriculum (tiered arenas) vs the current single course. A first staged curriculum (clear line
+   of sight → more rocks) moved into M4 as step 7b; M6 can explore richer ones.
 2. Inputs: lookahead to the next target and beyond (obstacle sensing is M4).
 3. Mutation and population strategy beyond M4 (rate and strength schedules, crossover). Network
    size, Gaussian mutation and (μ+λ) selection moved to M4.
