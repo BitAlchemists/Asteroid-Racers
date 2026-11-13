@@ -1,7 +1,8 @@
 import type { Entity, Movable, Vector2 } from "@ar/shared";
 import type { AIGameClient, VehicleController } from "./ai-game-client";
 import { inputCount, inputNames, INPUTS, LEGACY_SPEC, validateSpec, type InputContext } from "./model-spec";
-import { drawSensors, readSensors, type SensorPrimitive } from "./sensors";
+import { drawSensors, readSensors, type LineCheckSpec, type SensorPrimitive } from "./sensors";
+import { scriptedPolicy } from "./scripted-controller";
 import type { MajorTom } from "./network";
 import { seededRandom, type Random } from "../random";
 
@@ -63,6 +64,8 @@ export class TargetVehicleController implements VehicleController {
   /** With latency or noise: what the network sees (else it sees `buffer` itself). */
   private readonly seen: Float64Array | undefined;
   private readonly noise: { sigma: number; random: Random } | undefined;
+  /** With `controller: residual`: the scripted policy's own inputs (legacy four + lineCheck). */
+  private readonly baseInputs: Float64Array | undefined;
 
   constructor(
     private readonly client: AIGameClient,
@@ -79,6 +82,7 @@ export class TargetVehicleController implements VehicleController {
     for (let i = 0; delay > 0 && i <= delay; i++) this.history.push(new Float64Array(this.buffer.length));
     if (sigma > 0) this.noise = { sigma, random: seededRandom(perception.noiseSeed ?? 0) };
     if (delay > 0 || sigma > 0) this.seen = new Float64Array(this.buffer.length);
+    if (network.spec.controller?.kind === "residual") this.baseInputs = new Float64Array(6);
   }
 
   /** Forgets the delayed inputs (a new episode): the next step sees its own inputs at first. */
@@ -141,11 +145,46 @@ export class TargetVehicleController implements VehicleController {
       );
     const outputs = this.network.activate(this.perceive());
     this.lastOutputs = outputs;
-    const [thrust, turn] = outputs;
+    let thrust = outputs[0]!;
+    let turn = outputs[1]!;
+    const controller = this.network.spec.controller;
+    if (controller) {
+      if (controller.kind === "residual") {
+        const [baseThrust, baseTurn] = this.scriptedBase(ship, ctx.target);
+        thrust = clampUnit(baseThrust + controller.scale * thrust);
+        turn = clampUnit(baseTurn + controller.scale * turn);
+      } else {
+        // Output 0: desired heading offset in half turns from the nose (same sign as targetAngle).
+        turn = clampUnit(controller.gain * outputs[0]!);
+        thrust = outputs[1]!;
+      }
+    }
     this.client.move({
-      accelerationFactor: (thrust! + 1) / 2, // tanh −1..1 → 0..1
-      rotationSpeed: turn! * MAX_BOT_ROTATION_SPEED,
+      accelerationFactor: (thrust + 1) / 2, // tanh −1..1 → 0..1
+      rotationSpeed: turn * MAX_BOT_ROTATION_SPEED,
       // no newOrientation: the server keeps the orientation and integrates the rotation speed
     });
   }
+
+  /**
+   * The scripted controller's action from the true state (no latency or noise): the legacy inputs
+   * plus a `lineCheck` reading at its default range, exactly what {@link scriptedPolicy} expects.
+   */
+  private scriptedBase(ship: Movable, target: Vector2): [number, number] {
+    const x = this.baseInputs!;
+    const ctx: InputContext = { ship, target };
+    x[0] = INPUTS.targetAngle!(ctx);
+    x[1] = INPUTS.targetDistance!(ctx);
+    x[2] = INPUTS.velocityAngle!(ctx);
+    x[3] = INPUTS.speed!(ctx);
+    readSensors([BASE_LINE_CHECK], { ship, target, obstacles: this.client.obstacles }, x, 4);
+    return scriptedPolicy(x);
+  }
+}
+
+/** The scripted policy's corridor sensor: `lineCheck` at its default range. */
+const BASE_LINE_CHECK: LineCheckSpec = { type: "lineCheck", range: 1000 };
+
+function clampUnit(v: number): number {
+  return v < -1 ? -1 : v > 1 ? 1 : v;
 }

@@ -790,6 +790,33 @@ describe("evo-lab worker (protocol v1)", () => {
     expect(replayed).toEqual(traced);
   }, 180_000);
 
+  it("controller switch (residual, heading): in the spec, exact resume, replay, the exam's bot flies it", async () => {
+    const base = {
+      sample: 6,
+      frames: 60,
+      arenas: [{ name: "rock-in-line", params: { episodes: 2 } }],
+      collisions: "obstacles",
+      crashMode: "respawn",
+      sensors: { lineCheck: {} },
+      exam: { every: 4, tracks: ["short"], randomTracks: 0, timeLimitSeconds: 5 },
+    };
+    for (const controller of [{ kind: "residual", scale: 0.5 }, { kind: "heading" }]) {
+      const config = { ...base, controller };
+      const dir = await exactResume(config);
+      const res = JSON.parse(result(dir)) as { winner: { spec: { controller: unknown } } };
+      expect(res.winner.spec.controller).toEqual(
+        controller.kind === "residual" ? controller : { kind: "heading", gain: 3 },
+      );
+      const examined = events(dir).filter((e) => e.type === "gen" && e.g === 4)[0]!.metrics as Record<
+        string,
+        unknown
+      >;
+      expect(examined.examCheckpoints).toEqual(expect.any(Number));
+      const { replayed, traced } = await replayEpisodes(dir, 4, 0, config);
+      expect(replayed).toEqual(traced);
+    }
+  }, 240_000);
+
   it("lookahead switch: next-leg inputs appended to the spec, exact resume, replay, the exam's bot flies it", async () => {
     const config = {
       sample: 6,
@@ -1102,6 +1129,8 @@ describe("evo-lab worker (protocol v1)", () => {
       [{ mutation: { kind: "gaussian", sigma: 0 } }, /sigma/],
       [{ sample: 10, parents: 3 }, /parents/],
       [{ initRange: -1 }, /initRange/],
+      [{ controller: { kind: "pid" } }, /controller.kind/],
+      [{ controller: { kind: "residual", scale: -1 } }, /controller.scale/],
       [{ scoring: { rotation: -1 } }, /scoring.rotation/],
       [{ optimizer: { kind: "nes" } }, /optimizer.kind/],
       [{ optimizer: { kind: "cmaes", population: 2 } }, /population/],

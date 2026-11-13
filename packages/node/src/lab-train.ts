@@ -30,6 +30,8 @@ import {
   ENCODINGS,
   GameServer,
   lookaheadInputs,
+  parseController,
+  type ControllerSpec,
   type LookaheadConfig,
   ManualGameLoop,
   MemoryModelStore,
@@ -105,6 +107,11 @@ export interface TrainConfig {
    * `{ legs, frame: "corner" }` gives the turn at each target instead (`next2TurnSin`, …). Absent = none.
    */
   lookahead?: LookaheadConfig;
+  /**
+   * Switch: how the network's outputs drive the ship (`{ kind: "residual", scale }`: added to the
+   * scripted controller; `{ kind: "heading", gain }`: heading offset + throttle). Absent = directly.
+   */
+  controller?: ControllerSpec;
   /**
    * Switch: every bot sees its inputs this many controller steps late (a ring buffer; 4 ≈ 66 ms at
    * the 15 ms tick), reset at each episode start. Absent or 0 = none.
@@ -349,6 +356,7 @@ function readConfig(): TrainConfig {
     ...(raw.exam === undefined ? {} : { exam: parseTrainingExam(raw.exam) }),
     ...(raw.encoding === undefined ? {} : { encoding: raw.encoding as string }),
     ...(raw.lookahead === undefined ? {} : { lookahead: raw.lookahead as LookaheadConfig }),
+    ...(raw.controller === undefined ? {} : { controller: parseController(raw.controller) }),
     ...(raw.inputDelay === undefined ? {} : { inputDelay: raw.inputDelay as number }),
     ...(raw.inputNoise === undefined ? {} : { inputNoise: raw.inputNoise as number }),
     ...(raw.mutation === undefined ? {} : { mutation: parseMutation(raw.mutation) }),
@@ -645,6 +653,7 @@ async function main(): Promise<void> {
           ],
           outputs: config.model.outputs,
           ...(config.sensors ? { sensors: parseSensors(config.sensors) } : {}),
+          ...(config.controller ? { controller: config.controller } : {}),
         },
         hidden: config.hidden ?? config.model.hidden,
       },

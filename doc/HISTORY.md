@@ -1534,3 +1534,23 @@ Approved by the user as the rest of M5 after M4 closed. M5 is done.
     other session's closing docs were removed again in 8c1461a. Its baseline table is kept in the
     plan, with two corrections: the exam is the 102-race exam v2, not 17 races, and the arenas
     were also checked by eye in the watch page.
+
+### M6 3.4: controller switch
+
+- **`controller: { kind: "residual", scale }`:** network outputs are added, scaled, to the scripted
+  steering controller's thrust and turn, then clamped.
+- **`controller: { kind: "heading", gain }`:** output 0 is a heading offset in half turns from the
+  nose, steered with a P-controller; output 1 is the throttle.
+- **Spec and game:** the choice is stored in `spec.controller`, so the game, the exam and replays use
+  the same code path. Absent means byte-identical (fixtures).
+- **Tests:**
+  - a residual model with a zero network flies the scripted controller's exact path, frame by frame
+    (`short` track);
+  - the residual sum and clamp, and the heading P-controller;
+  - spec round trip and validation, config parsing;
+  - worker: both kinds give exact resume, replay matches the trace, and the exam flies them;
+  - config rejection cases.
+- **Overhead:** the controller step goes from 0.85 to 1.17 µs (residual) with 120 rocks nearby;
+  heading costs nothing extra. A whole run is estimated at roughly +15–20 % (not measured).
+- **For batch A:** the residual arm at `scale: 0.5`. Optionally a second arm at `scale: 1`, letting
+  the network fully override the scripted turn.

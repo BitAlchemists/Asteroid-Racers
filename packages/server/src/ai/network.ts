@@ -7,6 +7,7 @@ function copySpec(spec: ModelSpec): ModelSpec {
     inputs: [...spec.inputs],
     outputs: spec.outputs,
     ...(spec.sensors && spec.sensors.length > 0 ? { sensors: spec.sensors.map((s) => ({ ...s })) } : {}),
+    ...(spec.controller ? { controller: { ...spec.controller } } : {}),
   };
 }
 

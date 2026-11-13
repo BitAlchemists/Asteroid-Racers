@@ -32,6 +32,39 @@ export interface ModelSpec {
   outputs: string;
   /** Obstacle sensors, whose inputs follow `inputs` (absent = none). */
   sensors?: SensorSpec[];
+  /**
+   * How the outputs become thrust and turn (absent = directly, as always). `residual`: the scripted
+   * controller flies and the outputs are added to its thrust and turn, times `scale`. `heading`:
+   * output 0 is a desired heading offset (half turns from the nose), output 1 the throttle, and a
+   * fixed P-controller turns towards the heading with `gain`.
+   */
+  controller?: ControllerSpec;
+}
+
+/** See {@link ModelSpec.controller}. */
+export type ControllerSpec = { kind: "residual"; scale: number } | { kind: "heading"; gain: number };
+
+/** Defaults of the `controller` switch. */
+export const CONTROLLER_DEFAULTS = { residual: { scale: 0.5 }, heading: { gain: 3 } } as const;
+
+/** The `controller` section of a training config, with defaults filled in. */
+export function parseController(raw: unknown): ControllerSpec {
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw))
+    throw new Error('config.controller must be an object ({ kind: "residual" | "heading", ... })');
+  const { kind, ...rest } = raw as Record<string, unknown>;
+  const num = (key: string, fallback: number): number => {
+    const value = rest[key] ?? fallback;
+    if (typeof value !== "number" || !Number.isFinite(value) || !(value > 0))
+      throw new Error(`config.controller.${key} must be a number > 0`);
+    return value;
+  };
+  const allowed = kind === "residual" ? ["scale"] : kind === "heading" ? ["gain"] : undefined;
+  if (!allowed) throw new Error('config.controller.kind must be "residual" or "heading"');
+  const unknown = Object.keys(rest).filter((k) => !allowed.includes(k));
+  if (unknown.length > 0) throw new Error(`unknown config.controller keys ${unknown.join(", ")}`);
+  return kind === "residual"
+    ? { kind, scale: num("scale", CONTROLLER_DEFAULTS.residual.scale) }
+    : { kind: "heading", gain: num("gain", CONTROLLER_DEFAULTS.heading.gain) };
 }
 
 /** Number of input neurons a spec needs: its named inputs plus every sensor's inputs. */
@@ -264,6 +297,15 @@ export function validateSpec(spec: ModelSpec, layout: readonly number[]): void {
     throw new Error(
       `model spec needs ${inputCount(spec)} inputs and ${output.count} outputs, network layout is ${JSON.stringify(layout)}`,
     );
+  const c = spec.controller;
+  if (
+    c !== undefined &&
+    !(
+      (c.kind === "residual" && c.scale > 0 && Number.isFinite(c.scale)) ||
+      (c.kind === "heading" && c.gain > 0 && Number.isFinite(c.gain))
+    )
+  )
+    throw new Error(`unknown or invalid model controller ${JSON.stringify(c)}`);
 }
 
 export function layoutFor(spec: ModelSpec, hidden: readonly number[]): number[] {
@@ -277,7 +319,8 @@ export function sameSpec(a: ModelSpec, b: ModelSpec): boolean {
     a.outputs === b.outputs &&
     a.inputs.length === b.inputs.length &&
     a.inputs.every((x, i) => x === b.inputs[i]) &&
-    JSON.stringify(a.sensors ?? []) === JSON.stringify(b.sensors ?? [])
+    JSON.stringify(a.sensors ?? []) === JSON.stringify(b.sensors ?? []) &&
+    JSON.stringify(a.controller ?? null) === JSON.stringify(b.controller ?? null)
   );
 }
 

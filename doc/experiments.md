@@ -238,6 +238,31 @@ Details in evo-lab's `docs/profiling.md`.
   --cpu-prof-dir=profiles` as node flags in the method `command`; `lab hotspots` reads the result.
 - `lab machine reload --yes`: restart the machine runner on new Evo Lab code without stopping runs.
 
+## Controller: `controller` (M6 3.4)
+
+How the network's two outputs drive the ship. Absent means directly, as always.
+
+- **`{ "kind": "residual", "scale": 0.5 }`:** the scripted steering controller
+  (`scripted-controller.ts`) flies, and the network's outputs are added to its thrust and turn,
+  times `scale`, then clamped to −1..1.
+  - The scripted part reads the true state: the legacy four inputs plus a `lineCheck` at range 1000.
+    `inputDelay` and `inputNoise` affect only the network.
+  - With all network outputs at 0, the model flies exactly like the scripted controller.
+- **`{ "kind": "heading", "gain": 3 }`:** output 0 is a desired heading offset in half turns from the
+  nose, with the same sign as `targetAngle`. Output 1 is the throttle. Turn rate =
+  clamp(gain × offset) × 5 rad/s.
+
+The choice is stored in the model spec (`spec.controller`), so the game's bots, the exam and replays
+use it. Older models load unchanged.
+
+Cost, measured per controller step with 120 rocks nearby:
+
+| controller | µs per step |
+| --- | --- |
+| direct | 0.85 |
+| residual | 1.17 (the scripted policy and its corridor check) |
+| heading | 0.84 |
+
 ## Arenas (M5)
 
 `arenas` in a training config is not a switch, but the arena names are opt-in content: a config

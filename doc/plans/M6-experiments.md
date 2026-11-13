@@ -212,7 +212,7 @@ than 6 experiments are needed, 2a and 2b each get their own decision point.
 | 3.1 | Lookahead | Does seeing the next legs make faster racers, trained with the `chain` arena, and which encoding learns better: the leg relative to the nose (`lookahead: 2`) or the turn at each target (`lookahead: { legs: 2, frame: "corner" }`)? | one-at-a-time, 2 arms (nose, corner), both against no lookahead | built (M6 step 1 and the corner frame, landed); `chain` arena (landed) |
 | 3.2 | Richer sensors | Do `whiskers`, `sectors` or `nearest` (`flag: 1`) next to `lineCheck` help on the stronger setup? | one-at-a-time, 3 arms | built (M4) |
 | 3.3 | Network size | Does a sensor that did not help in 3.2 pay off with more capacity (`hidden: [16]`, `[32]`), and is a linear network (`hidden: []`) enough for today's inputs? | one-at-a-time, only for the inputs where it matters | built |
-| 3.4 | Residual policy / heading output | Does starting from a competent scripted controller let evolution keep steering speed *and* learn avoidance, instead of settling on "spin and pulse"? | one-at-a-time, 2 arms: **residual** (the network's outputs are added, scaled, to the scripted controller's thrust/turn: `controller: { kind: "residual", scale: 0.5 }`); **heading** (the network outputs a desired heading offset and a throttle; a fixed P-controller turns towards it: `controller: { kind: "heading", gain: 3 }`) | **new code**: a `controller` switch (absent = today, byte-identical) stored in the model spec (`spec.controller`) so the game's bots feed it identically; reuses `scripted-controller.ts` (built for the diagnostic below) |
+| 3.4 | Residual policy / heading output | Does starting from a competent scripted controller let evolution keep steering speed *and* learn avoidance, instead of settling on "spin and pulse"? | one-at-a-time, 2 arms: **residual** (the network's outputs are added, scaled, to the scripted controller's thrust/turn: `controller: { kind: "residual", scale: 0.5 }`); **heading** (the network outputs a desired heading offset and a throttle; a fixed P-controller turns towards it: `controller: { kind: "heading", gain: 3 }`) | **code built** (2026-11-13): the `controller` switch, absent = today, byte-identical; stored in `spec.controller`, so the game's bots, the exam and replays drive the model the same way; reuses `scripted-controller.ts` |
 
 **Decision point 3:** the inputs, the network size and the controller form.
 
@@ -386,3 +386,5 @@ so (`CLAUDE.md`).
   as a diagnostic (`npm run scripted`); its result (a search problem: steering pays under our score,
   the learner is stuck in "spin and pulse") is recorded under phase 2, and experiment 3.4 (residual
   policy / heading output) is added to phase 3.
+- **2026-11-13, 3.4 code built:** the `controller` switch, `residual` and `heading`. It is
+  pulled forward into batch A (2.1, 2.2, 2.8, 3.4), as agreed with the user.
