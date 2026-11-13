@@ -141,6 +141,8 @@ export interface TrainConfig {
    * like an `end` crash (at the crash distance). With `end` it changes nothing. Absent = no limit.
    */
   crashLimit?: number;
+  /** Fly the held-out scenarios only every N-th generation (g % N === 0); absent = every one. */
+  heldOutEvery?: number;
   /**
    * Switch: a staged curriculum over `arenas` (`{ levels, success, streak }`, defaults filled in):
    * a clear line of sight first, more rocks as the winner gets good. Absent = always `arenas`.
@@ -355,6 +357,7 @@ function readConfig(): TrainConfig {
     ...(raw.initRange === undefined ? {} : { initRange: raw.initRange as number }),
     ...(raw.optimizer === undefined ? {} : { optimizer: parseOptimizer(raw.optimizer) }),
     ...(raw.crashLimit === undefined ? {} : { crashLimit: raw.crashLimit as number }),
+    ...(raw.heldOutEvery === undefined ? {} : { heldOutEvery: raw.heldOutEvery as number }),
     ...(raw.reevaluate === undefined ? {} : { reevaluate: parseReevaluate(raw.reevaluate) }),
     ...(raw.curriculum === undefined
       ? {}
@@ -389,6 +392,11 @@ function readConfig(): TrainConfig {
     throw new Error("config.initRange must be a number > 0");
   if (config.crashLimit !== undefined && (!Number.isInteger(config.crashLimit) || config.crashLimit < 1))
     throw new Error("config.crashLimit must be an integer ≥ 1");
+  if (
+    config.heldOutEvery !== undefined &&
+    (!Number.isInteger(config.heldOutEvery) || config.heldOutEvery < 1)
+  )
+    throw new Error("config.heldOutEvery must be an integer ≥ 1");
   if (
     config.hidden !== undefined &&
     (!Array.isArray(config.hidden) || !config.hidden.every((n) => Number.isInteger(n) && n >= 1))
@@ -666,6 +674,7 @@ async function main(): Promise<void> {
         : {}),
       ...(config.initRange === undefined ? {} : { initRange: config.initRange }),
       ...(config.crashLimit === undefined ? {} : { crashLimit: config.crashLimit }),
+      ...(config.heldOutEvery === undefined ? {} : { heldOutEvery: config.heldOutEvery }),
       ...(config.reevaluate === undefined ? {} : { reevaluate: config.reevaluate }),
       ...(config.inputDelay === undefined && config.inputNoise === undefined
         ? {}

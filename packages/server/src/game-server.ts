@@ -62,7 +62,8 @@ interface Timer {
 export class GameServer implements IGameServer {
   readonly world = new World();
   readonly dispatcher = new MessageDispatcher<IClientProxy>();
-  readonly random: Random;
+  /** Swapped only by the training director, around held-out flights with `heldOutEvery`. */
+  random: Random;
   readonly tickSeconds: number;
 
   private readonly clientSet = new Set<IClientProxy>();

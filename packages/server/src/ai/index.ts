@@ -162,6 +162,8 @@ export interface TrainingServiceOptions {
   crashMode?: CrashMode;
   /** With `respawn`: an episode ends at its N-th crash, charged like `end`. Default: no limit. */
   crashLimit?: number;
+  /** Fly the held-out scenarios only when g % N === 0. Default: every generation. */
+  heldOutEvery?: number;
   onGeneration?: (report: GenerationReport) => void;
 }
 
@@ -190,6 +192,7 @@ export function registerAITrainingService(
     ...(options.collisions === undefined ? {} : { collisions: options.collisions }),
     ...(options.crashMode === undefined ? {} : { crashMode: options.crashMode }),
     ...(options.crashLimit === undefined ? {} : { crashLimit: options.crashLimit }),
+    ...(options.heldOutEvery === undefined ? {} : { heldOutEvery: options.heldOutEvery }),
     ...(options.firstGeneration === undefined ? {} : { firstGeneration: options.firstGeneration }),
     ...(options.maxGenerations === undefined ? {} : { maxGenerations: options.maxGenerations }),
     ...(options.onGeneration === undefined ? {} : { onGeneration: options.onGeneration }),

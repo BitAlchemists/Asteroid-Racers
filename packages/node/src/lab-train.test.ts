@@ -742,6 +742,35 @@ describe("evo-lab worker (protocol v1)", () => {
     expect(plainGen.heldOutCurrent).toBeUndefined();
   }, 180_000);
 
+  it("heldOutEvery: held-out only every N-th generation on its own generator, training as with heldOut 0", async () => {
+    const config = {
+      sample: 6,
+      frames: 60,
+      arenas: [{ name: "point-to-point", params: { episodes: 2, asteroids: 5 } }],
+      collisions: "obstacles",
+      heldOut: 2,
+    };
+    const sparse = await exactResume({ ...config, heldOutEvery: 2 });
+    const every = newRun({ ...config, heldOutEvery: 1 });
+    expect(await run(every, ["--to", "4"])).toBe(0);
+    const none = newRun({ ...config, heldOut: 0 });
+    expect(await run(none, ["--to", "4"])).toBe(0);
+    const gens = (dir: string) => events(dir).filter((e) => e.type === "gen");
+    const hashes = (dir: string) => gens(dir).map((e) => e.stateHash);
+    expect(hashes(sparse)).toEqual(hashes(none));
+    expect(hashes(every)).toEqual(hashes(none));
+    const heldOut = (dir: string) => gens(dir).map((e) => (e.metrics as { heldOut?: number }).heldOut);
+    const full = heldOut(every);
+    expect(full.every((v) => typeof v === "number")).toBe(true);
+    expect(heldOut(sparse)).toEqual([undefined, full[1], undefined, full[3]]);
+    const res = (dir: string) =>
+      JSON.parse(result(dir)) as { winner: unknown; config: { heldOutEvery?: number } };
+    expect(res(sparse).winner).toEqual(res(every).winner);
+    expect(res(sparse).config.heldOutEvery).toBe(2);
+    expect(res(none).config.heldOutEvery).toBeUndefined();
+    expect(await run(newRun({ ...config, heldOutEvery: 0 }), ["--to", "1"])).not.toBe(0);
+  }, 180_000);
+
   it("standard Gaussian mutation (all weights, sigma 0.03) and a linear policy: deterministic, exact resume, replay", async () => {
     const arenas = [{ name: "point-to-point", params: { episodes: 2, asteroids: 5 } }];
     const gaussian = {

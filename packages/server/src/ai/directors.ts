@@ -2,11 +2,12 @@ import { Checkpoint, CheckpointState, Entity, EntityType, getLogger } from "@ar/
 import type { CollisionMode, IGameServer, IServerService } from "../contracts";
 import { GameServer } from "../game-server";
 import { LocalServerConnection, type LocalConnectionOptions } from "../local-connection";
-import type { Random } from "../random";
+import { seededRandom, type Random } from "../random";
 import { AIGameClient } from "./ai-game-client";
 import { ArenaScript, type CrashMode, type PlacedEpisode } from "./arena-script";
 import { sameSpec, type ModelSpec } from "./model-spec";
 import {
+  deriveSeed,
   heldOutScenarios,
   mixEasyEpisodes,
   noiseSeed,
@@ -254,6 +255,13 @@ export interface TrainingOptions {
   scenarioSeed: number;
   /** Held-out scenarios per arena: fixed for the whole run, flown by the winner only, never used for selection. */
   heldOut?: number;
+  /**
+   * Fly the held-out scenarios (and `curriculum.heldOutCurrent`) only in generations with
+   * g % N === 0; the others report no held-out metrics. These flights then draw spawn points from
+   * their own generator (derived from the seed and g), not the server's, so training is exactly the
+   * run with `heldOut: 0`, whatever N. Absent = every generation, on the server's generator (as ever).
+   */
+  heldOutEvery?: number;
   scoring?: ScoringWeights;
   collisions?: CollisionMode;
   crashMode?: CrashMode;
@@ -465,6 +473,23 @@ export class TrainingDirector extends AIDirector {
     return { records, paths };
   }
 
+  /**
+   * The winner flies held-out scenarios. With `heldOutEvery` the server's generator is swapped for
+   * one of their own (`part` tells the two held-out flights of a generation apart).
+   */
+  private async flyHeldOut(network: MajorTom, scenarios: Scenario[], g: number, part: number) {
+    const server = this.server;
+    if (this.options.heldOutEvery === undefined || !server)
+      return this.fly([network], scenarios, SCENARIO_STREAM.heldOut);
+    const saved = server.random;
+    server.random = seededRandom(deriveSeed(this.options.scenarioSeed, SCENARIO_STREAM.heldOut, g, part));
+    try {
+      return await this.fly([network], scenarios, SCENARIO_STREAM.heldOut);
+    } finally {
+      server.random = saved;
+    }
+  }
+
   private get tickSeconds(): number {
     return this.server?.tickSeconds ?? 0.015;
   }
@@ -530,9 +555,11 @@ export class TrainingDirector extends AIDirector {
     const parents = scored.slice(0, this.options.parents ?? 1).map((s) => s.network);
     this.options.store.save(this.options.networkName, parents);
 
+    const every = this.options.heldOutEvery;
+    const heldOutDue = every === undefined || g % every === 0;
     let heldOut: { heldOutScore: number; heldOutSuccess: number } | undefined;
-    if (this.heldOutScenarios.length > 0) {
-      const [winnerRecords] = await this.fly([best.network], this.heldOutScenarios, SCENARIO_STREAM.heldOut);
+    if (heldOutDue && this.heldOutScenarios.length > 0) {
+      const [winnerRecords] = await this.flyHeldOut(best.network, this.heldOutScenarios, g, 0);
       if (this.stopped) return;
       heldOut = {
         heldOutScore: scoreEpisodes(winnerRecords!, this.scoring, this.tickSeconds),
@@ -543,7 +570,7 @@ export class TrainingDirector extends AIDirector {
     // Held-out at the level this generation flew; on the last level they are the same scenarios.
     let heldOutCurrent: { heldOutCurrentScore: number; heldOutCurrentSuccess: number } | undefined;
     const plan0 = this.options.curriculum;
-    if (plan0?.heldOutCurrent && (this.options.heldOut ?? 0) > 0) {
+    if (heldOutDue && plan0?.heldOutCurrent && (this.options.heldOut ?? 0) > 0) {
       if (this.level === plan0.levels.length - 1 && heldOut) {
         heldOutCurrent = {
           heldOutCurrentScore: heldOut.heldOutScore,
@@ -559,7 +586,7 @@ export class TrainingDirector extends AIDirector {
           );
           this.heldOutByLevel.set(this.level, scenarios);
         }
-        const [records] = await this.fly([best.network], scenarios, SCENARIO_STREAM.heldOut);
+        const [records] = await this.flyHeldOut(best.network, scenarios, g, 1);
         if (this.stopped) return;
         heldOutCurrent = {
           heldOutCurrentScore: scoreEpisodes(records!, this.scoring, this.tickSeconds),
