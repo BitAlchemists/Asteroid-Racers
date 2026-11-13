@@ -169,6 +169,14 @@ came from (the scoring). Two parts, in this order.
   (ordered, being built); until then they run as separate measurements paired with `npm run iqm`.
 - Phase 2's baseline is M4's default setup, plus `reevaluate` if 1.1 shows that it clearly helps
   (decided at decision point 1; 1.1 is running).
+- **Reward trap with several targets per episode** (M5 race-legs baseline: 4 of 5 seeds at 0 %
+  success at level 2). The distance integral makes orbiting just outside the first checkpoint beat
+  taking it: reaching a target makes the distance to the next one jump, and the 1,000 success bonus
+  is smaller than that. It affects `chain`, `race-legs`, 3.1 lookahead and 2.6.
+  - Fix candidates: the progress term (2.1: potential-based, resets at each target switch), a larger
+    success bonus, or a distance reset per target.
+  - **2.1 is therefore a prerequisite for 2.6 and 3.1:** they run on 2.1's adopted scoring (or with
+    the progress term in their baseline if 2.1 is still open).
 
 **Decision point 2:** the scoring weights, the curriculum rules and the level definitions. If more
 than 6 experiments are needed, 2a and 2b each get their own decision point.
@@ -348,3 +356,4 @@ so (`CLAUDE.md`).
   - New 2.8 rotation cost against "spin and pulse" (switch and `spin` metric built, 3120894).
   - 2.2 and 2.3 wait for value switches.
   - Phase 2's baseline is decided at decision point 1.
+  - The race-legs reward trap makes 2.1 a prerequisite for 2.6 and 3.1.

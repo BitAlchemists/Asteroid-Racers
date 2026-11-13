@@ -17,6 +17,11 @@ Levels built from M5's arenas, ordered by **M5's measured difficulty** (the `m5-
 2 of 5 seeds leave their level 0, at g22–109; success 0.28 and 0.11 at g150). Seven levels (the
 earlier draft) would have needed at least 7 × (climb + 3-generation streak) before the race task.
 
+**Prerequisite: 2.1 (progress term).** The M5 race-legs baseline found a reward trap with several
+targets per episode: orbiting just outside the first checkpoint beats taking it under the distance
+integral. Level 1 contains `chain` and `race-legs`, so this experiment runs on 2.1's adopted scoring
+(or with `scoring.progress` in its baseline).
+
 Risk: at the observed rates some seeds reach level 4 only late, so the exam at g150 may understate
 the curriculum; the report includes g300 (the baseline runs go to g300) and `level` per seed. The
 baseline's `success: 0.6` and default streak apply to every level.

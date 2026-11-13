@@ -1305,22 +1305,6 @@ no tool. Measured:
 - **Deviations from the step 5 text** (recorded in the plan): `curriculum.plateau` instead of
   `success: "adaptive"`, and `keepEasy` instead of `curriculum.mix`.
 
-### M5 closed
-
-- **Six arena baselines signed off** (`m5-base-*`; reports in `experiments/m5-base-*.report.md`). The
-  M4 default setup was trained on each arena alone, 5 seeds to g150, each with its own 3-level
-  curriculum:
-  - easy: `stop`, `turn-and-go` and `chain`. Every seed clears all levels by g11–23, with training
-    success 1.00.
-  - medium: `race-legs`. Every seed reaches level 1 by g4–9, 3 of 5 reach level 2; success 0.20 at
-    g150.
-  - hard: `corridor`. 4 of 5 seeds leave level 0, at g41–109; success 0.28.
-  - hardest: `field`. 2 of 5 seeds leave level 0; success 0.11.
-  - Exam checkpoints after training on one easy arena: 0.63–0.70 (17 races). That is weaker than the
-    M4 default (0.89 with the 102-race exam), so these arenas are curriculum building blocks.
-- **M5 ✅:** track files, three tracks and the picker, six tier arenas, the watch page's arena mode,
-  baselines. Exam v2 moved to M4. The plan's "checked by eye" items were replaced by these numbers.
-
 ### M6 phase 2 updated after M5; rotation cost built
 
 - **2.6** (`experiments/m6-2-6-tiered-curriculum.md`): levels re-ordered by M5's data and cut from 7
@@ -1338,3 +1322,14 @@ no tool. Measured:
   - Not done: a spin metric in the exam.
 - **Notes:** 2.2 and 2.3 wait for Evo Lab's value switches. Phase 2's baseline is decided at decision
   point 1.
+- **Reward trap, found by the M5 agent:** in race-legs, with several targets per episode, the distance
+  integral makes orbiting just outside the first checkpoint score better than taking it. Taking it
+  makes the distance to the next target jump, and the 1,000 success bonus is smaller than that.
+  4 of 5 seeds sit at 0 % success at race-legs' level 2. This affects `chain`, `race-legs`, lookahead
+  (3.1) and the tiered curriculum (2.6). The M6 plan now makes 2.1 (the progress term) a prerequisite
+  for 2.6 and 3.1.
+- **Correction:** I first committed duplicate M5 closing docs (my own report copies, M5 plan and
+  roadmap ✅, an "M5 closed" history entry) in c90d1c4, overlapping with the M5 arenas agent, which
+  closes M5 itself. They are removed again in the next commit; its versions are authoritative. (My
+  copy had wrongly said the arenas were not checked by eye and labelled the exam numbers 17-race;
+  they are the 102-race exam v2.)

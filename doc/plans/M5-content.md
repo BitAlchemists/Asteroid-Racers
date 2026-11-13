@@ -1,8 +1,9 @@
 # M5 — Content
 
-Status: ✅ done 2026-11-13 (closed by the user's decision). Game side: track files, three tracks,
-picker. Training side: six tier arenas, the watch page's arena mode, baseline runs (exam v2 moved to
-M4, where it was built). Roadmap: [`../ROADMAP.md`](../ROADMAP.md)
+Status: 🟡 game side started 2026-11-13 (approved by the user while M4 continues). Liked by the
+user on 2026-11-13, then moved behind M4 (perception), so that models can see obstacles before they
+train on obstacle-heavy content. The training side (arenas, exam, baselines) waits until M4 is done.
+Roadmap: [`../ROADMAP.md`](../ROADMAP.md)
 
 ## Goal
 
@@ -118,26 +119,11 @@ Phase 1 (game side):
 
 Phase 2 (after M4):
 
-- [x] Steps 4, 5 and 7 committed, `npm run check` green. CI: pending (nothing pushed yet).
-- [x] Six new arenas, deterministic per seed, exact replay (tests). "Checked by eye" was replaced by
-      the baseline runs' numbers (below): agents judge from data, the user watches.
+- [ ] Steps 4, 5 and 7 committed, `npm run check` green, CI green.
+- [ ] Six new arenas, deterministic per seed, exact replay (tests); each checked by eye in the
+      watch page.
 - [ ] ~~Exam v2 in place; the bundled model, train-2 and train-4 g110 re-examined.~~ Moved to M4.
-- [x] Baseline runs recorded in `HISTORY.md` and below.
-
-### Baseline results (M4 default setup per arena, 5 seeds, g150; each arena with its own 3-level curriculum)
-
-| Arena | Difficulty | Level-ups (per seed) | Training success g150 | Held-out g150 | 17-race exam checkpoints |
-| --- | --- | --- | --- | --- | --- |
-| `stop` | easy | all 5 reach level 2 by g11–23 | 1.00 | 1.00 | 0.70 (sd 0.09) |
-| `turn-and-go` | easy | all 5 reach level 2 by g13–19 | 1.00 | 0.98 | 0.67 (sd 0.08) |
-| `chain` | easy | all 5 reach level 2 by g11–16 | 1.00 | 1.00 | 0.63 (sd 0.19) |
-| `race-legs` | medium | level 1 by g4–9 (all), level 2 for 3 of 5 (g12–32) | 0.20 (sd 0.45) | 0.15 | 0.38 (sd 0.35) |
-| `corridor` | hard | level 1 for 4 of 5 (g41–109) | 0.28 (sd 0.29) | 0.07 | 0.43 (sd 0.42) |
-| `field` | hardest | level 1 for 2 of 5 (g22, g88) | 0.11 (sd 0.16) | 0.08 | 0.60 (sd 0.17) |
-
-Training on one easy arena alone gives weaker racers (exam 0.63–0.70 of checkpoints) than M4's
-default setup (0.89 at g150 with the 102-race exam): single arenas are building blocks for a
-curriculum (M6 2.6), not replacements.
+- [ ] Baseline runs recorded in `HISTORY.md`.
 
 ## Not in M5
 
