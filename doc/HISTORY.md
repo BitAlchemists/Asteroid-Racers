@@ -78,3 +78,53 @@ Issues fixed along the way:
 - Wrote [`ROADMAP.md`](ROADMAP.md), [`plans/M1-training-foundations.md`](plans/M1-training-foundations.md),
   this file and `CLAUDE.md`. Moved `PORTING_PLAN.md` to `doc/plans/`.
 - Local commits are not pushed yet.
+
+## 2026-11-13 — M1: training foundations
+
+Plan: [`plans/M1-training-foundations.md`](plans/M1-training-foundations.md), approved by the user
+("Start M1").
+
+| Commit    | What                                                                                     |
+| --------- | ---------------------------------------------------------------------------------------- |
+| `2fc91ea` | M1.1: a teleport sends the owner its new state at once; optional velocity                |
+| `16c0c02` | M1.2: collision modes `all` / `obstacles` / `none`, `autoRespawn`, obstacles added while running |
+| `735813a` | M1.3+4: arenas (`legacy`, `point-to-point`), ArenaScript, scoring library, held-out scenarios |
+| `c5dac09` | M1.5: a brain spec in every brain's JSON, an input registry                              |
+| `3a8cd73` | M1.6: training config (`brain`, `arenas`, `scoring`, `collisions`, `crashMode`, `heldOut`), checkpoint v2 |
+| `1a1f4cb` | Kill-and-resume test on point-to-point too                                               |
+
+- **Teleport bug confirmed:** a test that flies one unchanged brain for 3 generations got 6
+  different scores before the fix and the same score every time after it. The stale first frame
+  affected both the bot's inputs and the evaluator.
+- **Bug found by the tests:** in `respawn` crash mode, a ship that crashed on every frame never ran
+  out of time, because the crash branch skipped the time-limit check. Fixed before the commit.
+- **Deviations from the plan:**
+  - Steps 3 and 4 are one commit, because the arena runner and the scorer share the episode records.
+  - Obstacles cannot move yet (the plan's type allowed a velocity).
+  - The brain spec stores `inputs` and `outputs`; the layout comes from the weights, so it is not
+    stored twice.
+  - The trainer now numbers generations from the start of the run (`firstGeneration`), so a resumed
+    run makes the same scenarios.
+- **Speed:** no slowdown. train-2 averaged 4.6 s per generation against 7.7 s for train-1; the gain
+  comes from episodes ending as soon as the target is reached. train-3, with collisions on, averaged
+  3.8 s.
+
+### Baselines (Evo Lab, seed 2026)
+
+| Run     | Setup                                                    | Best score (gen 1 → 25 → 50 → 200)   | Success |
+| ------- | -------------------------------------------------------- | ------------------------------------ | ------- |
+| train-1 | before M1, original course                               | 68,999 → 34,555 → 33,937 → 19,050    | (not measured) |
+| train-2 | `legacy` arena, default config (after the teleport fix)  | 63,977 → 17,175 → 13,168 → 13,109    | 16/16 targets |
+| train-3 | `point-to-point`, 8 episodes, 20 asteroids, collisions `obstacles`, scoring distance 1 / missed target 1000 / crash 500, 2 held-out, 50 gens | 65,755 → 23,717 → 16,667 (gen 50) | 88 % training, 75 % held-out |
+
+- **train-2 did not match train-1 within noise, as the plan expected.** It is much better (13,109 vs
+  19,050) and gets there by generation 50. Two things changed together: the teleport fix (selection
+  no longer sees a noisy first frame), and the course's start headings (now drawn from the derived
+  scenario seed instead of the mutation generator). This run cannot tell them apart; an A/B run
+  with the old headings would. Also, since teleports no longer move the score, scores from before
+  M1 are not comparable with scores after it.
+- **train-3** shows the new path works from config alone. Held-out success went from 13 % in
+  generation 1 to 75 % by generation 50, so on this arena the brains learn something that carries
+  over to unseen scenarios, unlike train-1 on the original course.
+- Not checked yet: how train-2 or train-3 brains do in the real race. That is the race exam in M2.
+- Nothing pushed. CI has not run on these commits.

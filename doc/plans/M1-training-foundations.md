@@ -119,12 +119,13 @@ interface Arena {
 
 ## Acceptance
 
-- [ ] Steps 1–6 merged, `npm run check` green, CI green.
-- [ ] Exact-resume tests pass for both arenas, including kill-and-resume.
-- [ ] Same seed gives the same result twice, byte for byte.
-- [ ] Legacy baseline recorded and compared with train-1.
-- [ ] A point-to-point run works from config alone.
-- [ ] The bundled brain still plays in the game (legacy spec loads).
+- [x] Steps 1–6 committed, `npm run check` green. CI is still open: it runs only after a push.
+- [x] Exact-resume tests pass for both arenas, including kill-and-resume.
+- [x] Same seed gives the same result twice, byte for byte.
+- [x] Legacy baseline recorded and compared with train-1 (train-2). It did **not** match within
+      noise: it is clearly better; see `HISTORY.md`.
+- [x] A point-to-point run works from config alone (train-3).
+- [x] The bundled brain still plays in the game (legacy spec loads; the racing-bot tests use it).
 
 ## Not in M1
 

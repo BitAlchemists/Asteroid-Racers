@@ -26,7 +26,8 @@ Status: ⬜ not started · 🟡 in progress · ✅ done
 
 ### M1 — Training foundations 🟡
 
-Plan: [`plans/M1-training-foundations.md`](plans/M1-training-foundations.md)
+Plan: [`plans/M1-training-foundations.md`](plans/M1-training-foundations.md). All steps are done and
+the acceptance items are ticked, except CI, which runs only after a push.
 
 Make the trainer generic enough that new courses, inputs and scoring are config rather than code:
 
