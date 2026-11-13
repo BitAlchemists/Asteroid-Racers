@@ -27,23 +27,40 @@ import {
   MajorTom,
   registerAITrainingService,
   seededRandom,
+  arenaByName,
+  parseBrainConfig,
+  parseScoring,
+  type ArenaConfig,
+  type CollisionMode,
+  type CrashMode,
   type GenerationReport,
   type NetworkJson,
+  type ScoringWeights,
 } from "@ar/server";
 
 const PROTOCOL = 1;
 const CHECKPOINT = "ckpt.json";
-const CHECKPOINT_FORMAT = "asteroid-racers/train-ckpt/v1";
+const CHECKPOINT_FORMAT = "asteroid-racers/train-ckpt/v2";
 /** Generations to run when the run has no `--to`. */
 const DEFAULT_GENERATIONS = 200;
 
 export interface TrainConfig {
   sample: number;
+  /** Default `frames` param of every arena (per target in `legacy`, per episode elsewhere). */
   frames: number;
   mutationRate: number;
   mutationStrength: number;
   /** Used only when the runner gives no --to. */
   generations: number;
+  /** Inputs, hidden layers and outputs of new brains. */
+  brain: { inputs: string[]; hidden: number[]; outputs: string };
+  /** Every candidate flies every arena, in order. */
+  arenas: ArenaConfig[];
+  scoring: ScoringWeights;
+  collisions: CollisionMode;
+  crashMode: CrashMode;
+  /** Held-out scenarios per arena, flown by each winner only. */
+  heldOut: number;
 }
 
 interface Checkpoint {
@@ -125,17 +142,49 @@ function intArg(value: unknown, name: string, min: number): number | undefined {
   return n;
 }
 
+function oneOf<T extends string>(value: unknown, name: string, allowed: readonly T[], fallback: T): T {
+  if (value === undefined) return fallback;
+  if (!allowed.includes(value as T))
+    throw new Error(`config.${name} must be one of ${allowed.join(", ")}, got ${JSON.stringify(value)}`);
+  return value as T;
+}
+
+function parseArenas(value: unknown): ArenaConfig[] {
+  if (value === undefined) return [{ name: "legacy", params: {} }];
+  if (!Array.isArray(value) || value.length === 0)
+    throw new Error("config.arenas must be a non-empty list of { name, params }");
+  return value.map((entry: unknown, i) => {
+    const { name, params = {} } = (entry ?? {}) as { name?: unknown; params?: unknown };
+    if (typeof name !== "string") throw new Error(`config.arenas[${i}].name must be a string`);
+    if (typeof params !== "object" || params === null || Array.isArray(params))
+      throw new Error(`config.arenas[${i}].params must be an object`);
+    arenaByName(name); // unknown names fail here, before the run starts
+    return { name, params: params as Record<string, unknown> };
+  });
+}
+
 function readConfig(): TrainConfig {
   const file = values.config === undefined ? undefined : resolve(runDir, String(values.config));
   const raw =
-    file && existsSync(file) ? (JSON.parse(readFileSync(file, "utf8")) as Partial<TrainConfig>) : {};
+    file && existsSync(file)
+      ? (JSON.parse(readFileSync(file, "utf8")) as Partial<Record<keyof TrainConfig, unknown>>)
+      : {};
+  const brain = parseBrainConfig(raw.brain);
   const config: TrainConfig = {
-    sample: raw.sample ?? AI_TRAINING_SAMPLE_SIZE,
-    frames: raw.frames ?? AI_TRAINING_FRAMES,
-    mutationRate: raw.mutationRate ?? MUTATION_RATE,
-    mutationStrength: raw.mutationStrength ?? MUTATION_STRENGTH,
-    generations: raw.generations ?? DEFAULT_GENERATIONS,
+    sample: (raw.sample as number | undefined) ?? AI_TRAINING_SAMPLE_SIZE,
+    frames: (raw.frames as number | undefined) ?? AI_TRAINING_FRAMES,
+    mutationRate: (raw.mutationRate as number | undefined) ?? MUTATION_RATE,
+    mutationStrength: (raw.mutationStrength as number | undefined) ?? MUTATION_STRENGTH,
+    generations: (raw.generations as number | undefined) ?? DEFAULT_GENERATIONS,
+    brain: { inputs: brain.spec.inputs, hidden: brain.hidden, outputs: brain.spec.outputs },
+    arenas: parseArenas(raw.arenas),
+    scoring: parseScoring(raw.scoring),
+    collisions: oneOf(raw.collisions, "collisions", ["none", "obstacles", "all"] as const, "none"),
+    crashMode: oneOf(raw.crashMode, "crashMode", ["end", "respawn"] as const, "end"),
+    heldOut: (raw.heldOut as number | undefined) ?? 0,
   };
+  if (!Number.isInteger(config.heldOut) || config.heldOut < 0)
+    throw new Error("config.heldOut must be an integer ≥ 0");
   if (!Number.isInteger(config.sample) || config.sample < 2)
     throw new Error("config.sample must be an integer ≥ 2");
   if (!Number.isInteger(config.frames) || config.frames < 1)
@@ -224,7 +273,15 @@ async function main(): Promise<void> {
     const cpuSec = (cpu.user + cpu.system) / 1e6;
     emit("gen", {
       g,
-      metrics: { score: report.bestScore, mean: report.meanScore, worst: report.worstScore },
+      metrics: {
+        score: report.bestScore,
+        mean: report.meanScore,
+        worst: report.worstScore,
+        success: report.success,
+        ...(report.heldOutScore === undefined
+          ? {}
+          : { heldOut: report.heldOutScore, heldOutSuccess: report.heldOutSuccess }),
+      },
       phases: { simulate: { wall, cpu: cpuSec } },
       cpuSec,
       rssMiB: Math.round(process.memoryUsage().rss / 2 ** 20),
@@ -240,6 +297,16 @@ async function main(): Promise<void> {
       store,
       sampleSize: config.sample,
       framesPerTarget: config.frames,
+      brain: {
+        spec: { inputs: config.brain.inputs, outputs: config.brain.outputs },
+        hidden: config.brain.hidden,
+      },
+      arenas: config.arenas,
+      scoring: config.scoring,
+      collisions: config.collisions,
+      crashMode: config.crashMode,
+      heldOut: config.heldOut,
+      scenarioSeed: seed,
       mutationRate: config.mutationRate,
       mutationStrength: config.mutationStrength,
       random: mutationRandom,

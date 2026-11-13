@@ -10,7 +10,10 @@
   "metrics": {
     "score": { "direction": "min", "label": "Best score (lower is better)" },
     "mean": { "direction": "min", "label": "Mean score of the generation" },
-    "worst": { "direction": "min", "label": "Worst score of the generation" }
+    "worst": { "direction": "min", "label": "Worst score of the generation" },
+    "success": { "direction": "max", "label": "Share of training targets the winner reached" },
+    "heldOut": { "direction": "min", "label": "Winner's score on held-out scenarios" },
+    "heldOutSuccess": { "direction": "max", "label": "Share of held-out targets the winner reached" }
   },
   "leaderboard": { "metrics": ["score"] },
   "methods": {
@@ -21,7 +24,17 @@
         "frames": 600,
         "mutationRate": 0.1,
         "mutationStrength": 1,
-        "generations": 200
+        "generations": 200,
+        "brain": {
+          "inputs": ["targetAngle", "targetDistance", "velocityAngle", "speed"],
+          "hidden": [10, 8, 6, 4],
+          "outputs": "thrustTurn"
+        },
+        "arenas": [{ "name": "legacy", "params": {} }],
+        "scoring": { "distance": 1, "success": 0, "time": 0, "crashes": 0 },
+        "collisions": "none",
+        "crashMode": "end",
+        "heldOut": 0
       },
       "seeded": true,
       "defaultSeed": 2026,

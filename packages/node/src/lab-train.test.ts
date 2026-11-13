@@ -87,7 +87,9 @@ describe("evo-lab worker (protocol v1)", () => {
       score: expect.any(Number),
       mean: expect.any(Number),
       worst: expect.any(Number),
+      success: expect.any(Number),
     });
+    expect(gen.metrics).not.toHaveProperty("heldOut");
     expect(ev[0]).toMatchObject({ protocol: 1, method: "train", seed: 7, to: 3, resume: false });
     expect(ev[0]!.versions).toMatchObject({
       node: process.version,
@@ -144,6 +146,49 @@ describe("evo-lab worker (protocol v1)", () => {
     expect(await run(killed, ["--resume", "--to", "8"])).toBe(0);
     expect(result(killed)).toBe(result(straight));
   }, 120_000);
+
+  it("exact resume with point-to-point arenas, obstacles and held-out scenarios", async () => {
+    const config = {
+      sample: 6,
+      frames: 60,
+      arenas: [{ name: "point-to-point", params: { episodes: 2, asteroids: 8 } }],
+      collisions: "obstacles",
+      scoring: { distance: 1, success: 500, crashes: 100 },
+      heldOut: 1,
+      brain: { inputs: ["targetAngle", "targetDistance", "speed"], hidden: [5] },
+    };
+    const straight = newRun(config);
+    expect(await run(straight, ["--to", "4"])).toBe(0);
+    const gens = events(straight).filter((e) => e.type === "gen");
+    expect(gens[0]!.metrics).toMatchObject({
+      heldOut: expect.any(Number),
+      heldOutSuccess: expect.any(Number),
+    });
+
+    const resumed = newRun(config);
+    expect(await run(resumed, ["--to", "2"])).toBe(0);
+    expect(await run(resumed, ["--resume", "--to", "4"])).toBe(0);
+    expect(result(resumed)).toBe(result(straight));
+    const res = JSON.parse(result(straight)) as { winner: { spec: unknown; input_neurons_count: number } };
+    expect(res.winner.spec).toEqual({
+      inputs: ["targetAngle", "targetDistance", "speed"],
+      outputs: "thrustTurn",
+    });
+    expect(res.winner.input_neurons_count).toBe(3);
+  }, 120_000);
+
+  it("rejects unknown arenas and bad config values before running", async () => {
+    for (const [config, message] of [
+      [{ arenas: [{ name: "moon" }] }, /unknown arena/],
+      [{ collisions: "some" }, /collisions/],
+      [{ scoring: { speed: 1 } }, /unknown scoring term/],
+      [{ brain: { inputs: ["sonar"] } }, /unknown brain inputs/],
+    ] as const) {
+      const dir = newRun(config);
+      expect(await run(dir, ["--to", "1"])).not.toBe(0);
+      expect(String(events(dir).at(-1)!.message)).toMatch(message);
+    }
+  }, 60_000);
 
   it("reports bad input with an error event and a non-zero exit", async () => {
     const dir = newRun({ sample: 1 });
