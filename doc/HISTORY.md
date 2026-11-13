@@ -1138,3 +1138,60 @@ for M4's close). Built in a worktree, each step rebased onto `main`, checked and
 - **Ready once M4 closes:** 3.1 lookahead (on `chain` / tiered arenas), 4.2 crossover (with
   `parents` ≥ 2), 4.3 σ annealing and self-adaptive σ, 5.1 latency and noise (training switches plus
   the robustness exam on every run).
+
+### Full-stack training performance analysis (asked by the user)
+
+Report: [`doc/research/training-performance.md`](research/training-performance.md). It used Evo
+Lab's `analyze`, `scaling` and its run data first, plus project scripts (deleted) where Evo Lab has
+no tool. Measured:
+
+- **Where a run's time goes** (E9, 150 generations):
+  - training flights about 86 %, held-out about 5 %, exam v2 5.7 %;
+  - start-up 0.4 s, exit 0.02 s, snapshot and checkpoint I/O 0.07 %, GC about 4 %.
+  - Set-up, teardown and restart are negligible. A tsx → bundle switch would save 0.35 s per run.
+- **The `tps` metric misleads:** about 78 % of the reported ticks are one-ship held-out frames.
+  Training does about 375,000–424,000 ship-steps/s per run under load.
+- **CPU profile:**
+  - `lineCheck`'s grid query 23 % (inclusive);
+  - bot ↔ server messages in the same process about 25 % (inclusive, overlapping);
+  - network forward 14 %;
+  - collisions 7 %.
+  - The exam is dominated by collisions without a grid (39 %).
+- **Runner:** 0.04 s scheduling latency, below 1 % of the machine's CPU. Experiment slot
+  utilisation was 86–94 %; the loss is straggler tails.
+- **Scaling sweep:** knee at 20 parallel runs (14.2× of one run), +3 % at 24, about 230 MiB per run.
+- **Ranked options:**
+  1. a training fast path for bots (about 1.3×);
+  2. a `lineCheck` grid traversal (about 1.15×);
+  3. a collision grid (exam about 1.6×);
+  4. a batched forward pass (about 4 %).
+  - Threads only help when runs < cores. A GPU is not worth it at 100 × 250 weights.
+- **Tooling gaps for Evo Lab** are listed in the report, for the parent session to order.
+
+### M4 closing: docs, E9 confirmation (default setup to g300, exam v2)
+
+- **Closing docs** (commit 3919226), agreed with the user:
+  - the M4 plan has a "Closing M4" section (goal met; proven: `lineCheck` and the curriculum; the
+    default setup; the IQM power finding);
+  - E5–E8 and step 9 (CMA-ES) moved to M6 as backlog B1–B4, with a budget rule (each experiment
+    states its detectable effect; at most 6 experiments before a decision point);
+  - the roadmap is updated.
+- **E9 `m4-e9-confirm`** (plan 6430fd7, closed): the default setup (task v2, lineCheck,
+  `curriculum: { success: 0.6 }`, `parents: 10`) to g300 with exam v2 (102 races every 25
+  generations), seeds 1–10. Runs train-310..319 (to g150) and train-320..329 (to g300).
+  - **Exam v2 IQM:** 104,190 at g150 and 131,860 at g300. Checkpoints 0.89 → 0.86, finished
+    0.86 → 0.82, crashes about 1,150 (about 11 per race), held-out success 0.65 → 0.69.
+  - **A plateau:** training to g300 does not improve the exam.
+  - **No collapse.** 8 of 10 seeds reach level 4; seed 1 ends on level 2, seed 10 on level 1.
+  - **Outlier:** seed 7's g300 exam score of 1.15M (54 % finished, inflated distance-left term).
+  - **Best model:** seed 8, **train-327 at g300**, `lab/runs/train-327/luke.txt`. Exam v2 57,808,
+    94.5 % of checkpoints, 91 % of races finished, 711 crashes. The exam-only re-run exam-7
+    (102 races) reproduced it exactly. It is not promoted; that is the user's decision.
+  - **Behaviour seen in the replay:** the turn output is pinned at −1 (constant spinning) with
+    pulsed thrust, a "spin and pulse" controller. The viewer check was then skipped by the user's
+    decision.
+  - **Speed:** median 12,700 ticks/s per run with up to 20 runs in parallel.
+- **Remaining to close M4:** step 8 (a) re-evaluation, (c), (d) and (f) landing (the step8-selection
+  agent), then M4 ✅ in the roadmap and plan.
+- **Also seen:** the runner was running M5 experiments (`m5-base-chain`, `m5-base-corridor`) during
+  E9, started by the M5 agent.
