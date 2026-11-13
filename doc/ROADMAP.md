@@ -105,22 +105,22 @@ picker) started 2026-11-13 with the user's OK; the training side waits for M4.
 
 ### M6 — Experiments ⬜
 
-Plan: [`plans/M6-experiments.md`](plans/M6-experiments.md), waiting for approval. Switch code for lookahead, robustness, crossover and mutation schedules may be built before M4 ends; experiments wait for M4's final baseline.
+Plan: [`plans/M6-experiments.md`](plans/M6-experiments.md), approved 2026-11-13. Switch code (steps
+1–4) is being built; experiments start once M4 is closed.
 
-Each one is an Evo Lab experiment, compared against a baseline on the race exam:
+Five phases, each ending in a decision point (at most 6 experiments per phase):
 
-1. Curriculum (tiered arenas) vs the current single course. A first staged curriculum (clear line
-   of sight → more rocks) moved into M4 as step 7b; M6 can explore richer ones.
-2. Inputs: lookahead to the next target and beyond (obstacle sensing is M4).
-3. Mutation and population strategy beyond M4 (rate and strength schedules, crossover). Network
-   size, Gaussian mutation, (μ+λ) selection, re-evaluation of the top children and CMA-ES moved
-   to M4.
-4. Quality diversity (novelty search, MAP-Elites), only if hovering or other local optima persist
-   after M4.
-6. The backlog moved from M4: noise floor with re-evaluation, the learner fixes (standard Gaussian,
-   one-layer and linear networks, progress term, curriculum mixing), CMA-ES, and the richer sensors
-   again. At most 6 experiments before a decision point, each stating the effect it can detect.
-5. Latency and robustness (delayed inputs, noise).
+1. **Measurement:** 1.1 noise floor with re-evaluation.
+2. **Rewards, metrics and curriculum** (the most important phase): 2.0 headline metrics, 2.1 progress
+   reward, 2.2 crash and miss costs, 2.3 time to target (optional), 2.4 mixing easy episodes, 2.5
+   level-up thresholds, 2.6 tiered arenas (from M5), 2.7 level-aware held-out.
+3. **Perception and capacity:** 3.1 lookahead, 3.2 richer sensors, 3.3 network size.
+4. **The learner:** 4.1 standard Gaussian mutation, 4.2 crossover, 4.3 mutation schedules, 4.4 CMA-ES
+   (optional, last).
+5. **Robustness and readiness:** 5.1 latency and noise, 5.2 final confirmation at g300, then the
+   readiness report for the game (the user decides on promotion).
+
+Only if needed: Q.1 quality diversity (MAP-Elites).
 
 ## Open questions
 

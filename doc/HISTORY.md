@@ -1081,3 +1081,16 @@ and all earlier tests pass unchanged.
 - **Tests:** a worker test per switch (exact resume with equal per-generation hashes; re-evaluation
   changes the run; levels 0, 1, 2, 2 with mixing; the snapshot arenas), plus four config validation
   cases.
+
+### M6 experiment roadmap rewritten (user request)
+
+- Grouped into five phases by what they change, each with a decision point:
+  1. measurement;
+  2. rewards, metrics and curriculum (the most important phase, as the user stressed);
+  3. perception and capacity;
+  4. the learner (CMA-ES optional, last);
+  5. robustness and readiness.
+- Clearer names (`2.1 Progress reward`, Evo Lab id `m6-2-1-progress-reward`), with a table mapping
+  the old ids X1–X7 and B1–B4 to the new numbers.
+- New items: headline metrics (2.0), crash and miss costs (2.2), time to target (2.3, optional),
+  level-up thresholds (2.5), level-aware held-out (2.7).

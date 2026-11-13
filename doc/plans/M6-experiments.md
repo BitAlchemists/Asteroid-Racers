@@ -103,45 +103,114 @@ step 5 (it needs M5's arenas).
   method or switch, with the archive in the checkpoint.
 - A large build: planned in detail only when needed.
 
-### 7. Experiments
+### 7. Experiment roadmap (five phases)
 
-Each is approved before it runs. **Decision on exam v2** (IQM over 10 seeds, paired, bootstrap
-confidence intervals, effect beyond `minEffect`). Crashes and the robustness exam are always
-reported, and more crashes veto. No early screen drops an arm before g100, a lesson from E3b. With
-Evo Lab's `baseline.reuse`, stored baseline runs serve as the baseline arm.
+Experiments are grouped by **which part of the system they change**. Each phase ends in a
+**decision point**, where the user decides what is adopted and what is dropped. The plan is then
+updated before the next phase starts.
 
-| # | Question | Design | Cost (S1 speed) |
+Names follow `<phase>.<number> <plain name>`, e.g. "2.1 Progress reward". The Evo Lab id is
+`m6-<phase>-<number>-<name>`, e.g. `m6-2-1-progress-reward`.
+
+**Rules for every experiment** (the budget rule):
+- Each plan states the effect it can detect, from `npm run iqm`'s power estimate on the current
+  baseline's spread, and the number of seeds that needs. An experiment that cannot detect a
+  worthwhile effect at an affordable seed count is not run.
+- At most **6 experiments per phase** before its decision point.
+- **Decision on exam v2**: IQM over the seeds, paired, with a 95 % bootstrap confidence interval
+  that excludes 0, plus the effect beyond `minEffect`. Crashes are always reported, and more crashes
+  veto. No early screen drops an arm before g100, a lesson from E3b. Plans set `baseline.reuse: true`.
+- Each experiment runs on the then-current baseline: M4's default setup (task v2, `lineCheck`,
+  `curriculum: { success: 0.6 }`, `parents: 10`) plus whatever earlier decision points adopted.
+
+#### Phase 1: Measurement
+
+| # | Name | Question | Design | Needs |
+| --- | --- | --- | --- | --- |
+| 1.1 | Noise floor with re-evaluation | How much does re-checking the top children (`reevaluate`) narrow the spread between seeds and stop late collapses? | measurement against the baseline without it, 10 seeds (20 if the power estimate asks), exam v2 | built (M4 step 8a) |
+
+**Decision point 1:** adopt `reevaluate` or not. Set `minEffect` and the seed count for phases 2–5
+from 1.1's IQM spread and power.
+
+#### Phase 2: Rewards, metrics and curriculum (the most important phase)
+
+This is where the only clear win so far came from (the curriculum, E3b), and where E3's collapse
+came from (the scoring). Two parts, in this order.
+
+**2a. Rewards and metrics: what we optimise and what we look at**
+
+| # | Name | Question | Design | Needs |
+| --- | --- | --- | --- | --- |
+| 2.0 | Headline metrics | Which metrics show progress, and do they read clearly in Evo Lab? | not an experiment: rename and describe metrics in `lab.config.json` (e.g. "Exam: races finished" first), mark exam and held-out as headline metrics, add a best-so-far view if Evo Lab supports it; else a feature request to the Evo Lab session | config and docs; possibly an Evo Lab feature |
+| 2.1 | Progress reward | Does rewarding each frame's drop in distance to the target (`scoring.progress`, weights 3 and 5) make better racers and remove the pull towards hovering? | one-at-a-time, 2 arms | built (M4 step 8e) |
+| 2.2 | Crash and miss costs | Are 3,000 per crash and 1,000 per missed target the right balance? | one-at-a-time over `scoring.crashes` (1,500 / 6,000) and `scoring.success` (2,000) | config only |
+| 2.3 | Time to target (optional) | Does a time-based score beat the distance integral? | one-at-a-time, only if 2.1 does not settle it | small code (a `time` scoring term exists; check whether it fits) |
+
+**2b. Curriculum: how the task gets harder**
+
+| # | Name | Question | Design | Needs |
+| --- | --- | --- | --- | --- |
+| 2.4 | Mixing easy episodes | Does keeping about 25 % of episodes from earlier levels (`curriculum.keepEasy: 0.25`) prevent forgetting and help more seeds reach the full task? | one-at-a-time | built (M4 step 8f) |
+| 2.5 | Level-up thresholds | Which level-up rule works best: 0.6, 0.8, or an adaptive threshold aimed at 50–70 % success? Judged on re-evaluated scores if 1.1 adopted them. | one-at-a-time, 2–3 arms | 0.6 / 0.8 are config; adaptive needs small code |
+| 2.6 | Tiered arenas | Do levels built from M5's arenas (tier 1 `stop`, `turn-and-go`, `chain`; tier 2 `corridor`, `field`; tier 3 `race-legs`) beat levels that only add rocks? | one-at-a-time | M5 arenas (in progress); level definitions as config |
+| 2.7 | Level-aware held-out | Should held-out scenarios follow the current level as well as the last one, so progress is visible early? | measurement / reporting change, not a selection change | small code (extra held-out metric) |
+
+**Decision point 2:** the scoring weights, the curriculum rules and the level definitions. If more
+than 6 experiments are needed, 2a and 2b each get their own decision point.
+
+#### Phase 3: Perception and capacity: what the models see, and the network to use it
+
+| # | Name | Question | Design | Needs |
+| --- | --- | --- | --- | --- |
+| 3.1 | Lookahead | Does seeing the next 1–2 targets (`lookahead: 1 \| 2`) make faster racers, trained with the `chain` arena? | one-at-a-time, 2 arms | built (M6 step 1, landed); `chain` arena (landed) |
+| 3.2 | Richer sensors | Do `whiskers`, `sectors` or `nearest` (`flag: 1`) next to `lineCheck` help on the stronger setup? | one-at-a-time, 3 arms | built (M4) |
+| 3.3 | Network size | Does a sensor that did not help in 3.2 pay off with more capacity (`hidden: [16]`, `[32]`), and is a linear network (`hidden: []`) enough for today's inputs? | one-at-a-time, only for the inputs where it matters | built |
+
+**Decision point 3:** the inputs and the network size.
+
+#### Phase 4: The learner: how evolution searches
+
+So far every change here has shown no detectable effect, so this phase is the first to be trimmed.
+
+| # | Name | Question | Design | Needs |
+| --- | --- | --- | --- | --- |
+| 4.1 | Standard Gaussian mutation | Does small Gaussian noise on all weights (`{ kind: "gaussian", sigma: 0.03, rate: 1 }`) beat today's relative mutation? | one-at-a-time | built |
+| 4.2 | Crossover | Does crossover between the parents (uniform or by layer) beat mutation only? | one-at-a-time, 2 arms | M6 step 3 |
+| 4.3 | Mutation schedules | Does a shrinking or self-adapting mutation size beat a fixed one? | one-at-a-time, 2 arms | M6 step 4 |
+| 4.4 | CMA-ES (optional, last) | Does CMA-ES, an evolution strategy that adapts its own step sizes, beat our genetic algorithm, also at an equal number of episodes? | one-at-a-time | a larger build (`optimizer: { kind: "cmaes" }`, full state in checkpoint and `stateHash`, deterministic eigen-decomposition, exact resume) — only if 4.1–4.3 leave room |
+
+**Decision point 4:** the learner settings, and whether CMA-ES is worth building.
+
+#### Phase 5: Robustness and readiness for the game
+
+| # | Name | Question | Design | Needs |
+| --- | --- | --- | --- | --- |
+| 5.1 | Latency and noise | How much does the best setup lose with 66 ms input delay and input noise, and does training with `inputDelay` / `inputNoise` win it back? | measurement, then one-at-a-time (delay, noise, both) | M6 step 2 |
+| 5.2 | Final confirmation | How good is the final setup at g300, over at least 20 seeds? | measurement against M4's final model (E9) | none |
+
+Then the readiness report (section 8).
+
+#### Only if needed
+
+| # | Name | Question | Needs |
 | --- | --- | --- | --- |
-| X1 | Does lookahead (1, then 2) make faster racers on the exam? | one-at-a-time, on M4's baseline plus the chained arena; the chained arena alone is the baseline | 2–3 arms × 10 seeds to g150, about 1 h |
-| X2 | Robustness: how much do M4's best models lose with 66 ms delay and input noise? Does training with `inputDelay` / `inputNoise` recover it? | measurement, then one-at-a-time (delay, noise, both) | about 1 h |
-| X3 | Crossover against mutation only (with μ = 10) | one-at-a-time, uniform and layer | about 1 h |
-| X4 | σ annealing and self-adaptive σ against fixed σ | one-at-a-time | about 1 h |
-| X5 | Curriculum v2: mixing, adaptive thresholds, tiered arenas | one-at-a-time, then the winners together | 3–4 arms, about 1.5 h |
-| X6 | (optional) MAP-Elites against the GA | only if traps persist | large |
-| X7 | Confirmation: the combined setup to g300, ≥ 20 seeds | measurement against M4's final model | about 2 h |
+| Q.1 | Quality diversity (MAP-Elites) | Does keeping a map of diverse good behaviours escape traps like hovering? | only if such traps come back after phases 1–4; a large build (step 6) |
 
-### 7b. Backlog moved from M4 (2026-11-13)
+#### Old ids → new numbers
 
-M4 closed on its proven setup; its open experiments move here. Each runs on the then-current
-baseline, under the budget rule below.
-
-| # | Question | Design | Notes |
+| old | new | old | new |
 | --- | --- | --- | --- |
-| B1 | Noise floor v3: how much does re-evaluation of the top children (`reevaluate`) change the spread and stop late collapses? | measurement, seeds 1–10 (or 20), exam v2 | sets `minEffect` from IQM and power |
-| B2 | Learner fixes, done properly: standard Gaussian (`{kind: "gaussian", sigma: 0.03, rate: 1}`), `hidden: [16]` and linear (`hidden: []`), the `progress` scoring term, `curriculum.keepEasy` | one-at-a-time on B1's baseline, no screen before g100 | switches built in M4 step 8 |
-| B3 | CMA-ES against the GA (also at equal episode budgets) | one-at-a-time | needs M4's step 9 build: `optimizer: { kind: "cmaes", population, sigma }`; mean, step size, covariance and evolution paths in the checkpoint and `stateHash`; sampling from the run's seeded generator; a deterministic eigen-decomposition (fixed algorithm); exact kill-and-resume test |
-| B4 | Richer sensors again (`whiskers`, `sectors`, `nearest` with `flag: 1`) next to `lineCheck`, with capacity where a sensor needs it (e.g. `hidden: [32]`); optional pretrained start | one-at-a-time | E2's null result came from a weaker setup |
-
-**Budget rule** (all M6 experiments, X1–X7 and B1–B4):
-- Each experiment plan states the effect it can detect, from `npm run iqm`'s power estimate on the
-  current baseline's spread, and the number of seeds that needs.
-- At most **6 experiments** run before a decision point, where the user decides what is adopted
-  and what is dropped. Then the plan is updated before more experiments start.
-- An experiment that cannot detect the effect worth having at an affordable seed count is not run.
+| B1 | 1.1 | X1 | 3.1 |
+| B2 (progress term) | 2.1 | X2 | 5.1 |
+| B2 (keepEasy) | 2.4 | X3 | 4.2 |
+| B2 (Gaussian) | 4.1 | X4 | 4.3 |
+| B2 (network shape) | 3.3 | X5 | 2.4–2.6 |
+| B3 | 4.4 | X6 | Q.1 |
+| B4 | 3.2 | X7 | 5.2 |
 
 ### 8. Readiness for the game
 
-For the best X7 model, a readiness report the user can decide on:
+For the best model of 5.2 (final confirmation), a readiness report the user can decide on:
 
 - exam v2 and the robustness exam (IQM, confidence intervals, races finished, crashes);
 - M5's hand-made tracks (`slalom`, `gauntlet`, `canyon`): finish rate and lap times;
@@ -159,9 +228,9 @@ so (`CLAUDE.md`).
 - [ ] Steps 1–4 committed; every switch absent = byte-identical (fixtures, resume, gate); tests per
       switch.
 - [ ] Step 5 committed after M5's arenas exist.
-- [ ] X1–X5 run with approved plans, reports and sign-offs; X7 done; X6 only if triggered (decision
-      recorded either way).
-- [ ] The M4 backlog (B1–B4) run or dropped by a recorded decision, under the budget rule.
+- [ ] Phases 1–5 run under the budget rule, each closed by a decision point recorded in
+      `HISTORY.md` (experiments run, adopted or dropped); Q.1 only if triggered (decision recorded
+      either way).
 - [ ] A readiness report for the best model, and the user's decision on promotion recorded in
       `HISTORY.md`.
 - [ ] `npm run check` green; nothing pushed without asking.
@@ -198,7 +267,7 @@ so (`CLAUDE.md`).
 | Build the "race a model yourself" mode in M5 or M6? | M6 step 8, unless M5 builds it. |
 | Is MAP-Elites worth it? | Only if traps persist after M4's re-evaluation and progress term. |
 | How many seeds for the final confirmation? | 20, with IQM and bootstrap confidence intervals. |
-| What counts as "ready for the game"? | Exam v2 finish rate ≥ 90 % on random tracks, finishes all hand-made tracks, holds up under X2's latency, and the user's own races. The final call is the user's. |
+| What counts as "ready for the game"? | Exam v2 finish rate ≥ 90 % on random tracks, finishes all hand-made tracks, holds up under 5.1's latency, and the user's own races. The final call is the user's. |
 
 ## Changes to this plan
 
@@ -207,3 +276,15 @@ so (`CLAUDE.md`).
   most 6 before a decision point).
   - **Why:** in M4, experiments kept spawning experiments and the milestone stalled. With 10 seeds,
     effects below about 13,000–36,000 exam points cannot be detected.
+- **2026-11-13, experiment roadmap rewritten** (user request): the experiments are grouped into
+  five phases by what they change: measurement, rewards/metrics/curriculum, perception and
+  capacity, the learner, robustness and readiness. Each phase ends in a decision point.
+  - **Why:** the user wanted clearer groups and names, and stressed that the curriculum (old X5)
+    and finding the right scores and metrics (old B2) matter most. Phase 2 therefore covers both in
+    detail, and comes before perception.
+  - **Order:** the learner (phase 4) comes after perception (phase 3): the learner changes showed
+    no detectable effect so far, and CMA-ES is a larger build, so it is optional and last.
+  - **New items:** 2.0 headline metrics, 2.2 crash and miss costs, 2.3 time to target (optional),
+    2.5 level-up thresholds, 2.7 level-aware held-out.
+  - **Names:** `<phase>.<number> <plain name>`, Evo Lab ids `m6-<phase>-<number>-<name>`; the old ids
+    map to the new numbers in a table.
