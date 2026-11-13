@@ -18,6 +18,7 @@ import {
   type Scenario,
 } from "./arenas";
 import type { ModelStore } from "./model-store";
+import { CmaEs, flatWeights, setFlatWeights, type CmaEsJson, type CmaEsOptions } from "./cmaes";
 import { MajorTom, type CrossoverKind } from "./network";
 import {
   LEGACY_SCORING,
@@ -162,6 +163,8 @@ export interface GenerationReport {
   curriculum?: { level: number; nextLevel: number; streak: number };
   /** With `reevaluate`: the winner's score and success share on the re-evaluation scenarios alone. */
   reevaluation?: { score: number; success: number };
+  /** With the CMA-ES optimizer: its full state after this generation's update (for the checkpoint). */
+  optimizerState?: CmaEsJson;
   /**
    * With curriculum mixing: the arena runs this generation flew (regular runs, then the easy ones),
    * as configs, so a replay builds the same scenarios. Absent when no episodes were mixed.
@@ -183,6 +186,12 @@ export interface TrainingOptions {
   mutate: (network: MajorTom, random: Random, g: number) => void;
   /** Self-adaptive mutation: the σ the first random models start with (absent = they carry none). */
   initialSigma?: number;
+  /**
+   * CMA-ES instead of the GA: each generation samples `population` candidates from N(m, σ²C) and
+   * updates the distribution from their ranks. `state` resumes a run. Without `state`, the mean starts
+   * at a random network (`initRange`) drawn from `random` in the first generation.
+   */
+  optimizer?: { kind: "cmaes"; options: CmaEsOptions; state?: CmaEsJson };
   /** Drives mutation and the first random models. */
   random: Random;
   /**
@@ -278,6 +287,8 @@ export class TrainingDirector extends AIDirector {
 
   /** The previous generation's parents (empty before the first generation). */
   private lastParents: readonly MajorTom[] = [];
+  /** The CMA-ES distribution (with the `optimizer` option), created in the first generation. */
+  private cma: CmaEs | undefined;
 
   /** The arena runs generation `g` trains on, and how many of them are on the current level. */
   private runsFor(g: number): { runs: readonly ArenaRun[]; hard: number } {
@@ -316,6 +327,7 @@ export class TrainingDirector extends AIDirector {
 
   /** Candidates for the next generation: each stored model plus mutated copies of it. */
   createCandidates(): MajorTom[] {
+    if (this.options.optimizer) return this.sampleCandidates();
     const { store, networkName, layout, spec, sampleSize, mutate, random } = this.options;
     const parents = store.load(networkName);
     this.lastParents = parents ?? [];
@@ -357,6 +369,29 @@ export class TrainingDirector extends AIDirector {
       }
     }
     return candidates;
+  }
+
+  /** CMA-ES: λ networks sampled from the distribution (created from a random network the first time). */
+  private sampleCandidates(): MajorTom[] {
+    const { layout, spec, random, optimizer } = this.options;
+    this.lastParents = [];
+    if (!this.cma) {
+      if (optimizer!.state) this.cma = CmaEs.fromJson(optimizer!.state);
+      else {
+        const start =
+          this.options.initRange === undefined
+            ? MajorTom.random(layout, random, "CMA-ES mean", spec)
+            : MajorTom.random(layout, random, "CMA-ES mean", spec, this.options.initRange);
+        const mean = flatWeights(start.weights);
+        this.cma = new CmaEs(mean.length, mean, optimizer!.options);
+      }
+    }
+    return this.cma.sample(random).map((x, k) => {
+      const network = new MajorTom(layout, { name: `CMA-ES #${k}`, spec });
+      setFlatWeights(network.weights, x);
+      network.generation = this.generation + 1;
+      return network;
+    });
   }
 
   /** Flies `networks` through `scenarios` (one after the other) and returns each network's episode records. */
@@ -467,6 +502,8 @@ export class TrainingDirector extends AIDirector {
         .map((x) => x.s);
       scored = [...order, ...scored.filter((s) => !finalists.includes(s))];
     }
+    // CMA-ES: rank the samples by the final order (training score, finalists first when re-evaluated).
+    if (this.cma) this.cma.update(scored.map((s) => candidates.indexOf(s.network)));
     const best = scored[0]!;
     best.network.name = "Winner from last round";
     const parents = scored.slice(0, this.options.parents ?? 1).map((s) => s.network);
@@ -522,6 +559,7 @@ export class TrainingDirector extends AIDirector {
             },
           }
         : {}),
+      ...(this.cma ? { optimizerState: this.cma.toJson() } : {}),
       // Mixed-in easy runs come after the regular ones: record the runs so a replay matches.
       ...(runs.length !== hard
         ? { trainingArenas: runs.map((run) => ({ name: run.arena.name, params: { ...run.params } })) }

@@ -184,7 +184,7 @@ So far every change here has shown no detectable effect, so this phase is the fi
 | 4.1 | Standard Gaussian mutation | Does small Gaussian noise on all weights (`{ kind: "gaussian", sigma: 0.03, rate: 1 }`) beat today's relative mutation? | one-at-a-time | built |
 | 4.2 | Crossover | Does crossover between the parents (uniform or by layer) beat mutation only? | one-at-a-time, 2 arms | M6 step 3 |
 | 4.3 | Mutation schedules | Does a shrinking or self-adapting mutation size beat a fixed one? | one-at-a-time, 2 arms | M6 step 4 |
-| 4.4 | CMA-ES (optional, last) | Does CMA-ES, an evolution strategy that adapts its own step sizes, beat our genetic algorithm, also at an equal number of episodes? | one-at-a-time | a larger build (`optimizer: { kind: "cmaes" }`, full state in checkpoint and `stateHash`, deterministic eigen-decomposition, exact resume) — only if 4.1–4.3 leave room |
+| 4.4 | CMA-ES (optional, last; code built 2026-11-13) | Does CMA-ES, an evolution strategy that adapts its own step sizes, beat our genetic algorithm, also at an equal number of episodes? | one-at-a-time | a larger build (`optimizer: { kind: "cmaes" }`, full state in checkpoint and `stateHash`, deterministic eigen-decomposition, exact resume) — only if 4.1–4.3 leave room |
 
 **Decision point 4:** the learner settings, and whether CMA-ES is worth building.
 
@@ -323,3 +323,6 @@ so (`CLAUDE.md`).
   as two arms. The nose frame (built in step 1) gives the next leg's direction relative to the
   ship's nose. The corner frame gives the turn at each target relative to the arrival direction,
   which is the quantity that decides the racing line and is easier for a small network to learn.
+- **2026-11-13, CMA-ES code built early** (the user asked for phase 2 plus CMA-ES): the `optimizer`
+  switch exists, so experiment 4.4 can run whenever phase 4 is reached. Running it is still subject
+  to the budget rule.

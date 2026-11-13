@@ -806,6 +806,41 @@ describe("evo-lab worker (protocol v1)", () => {
     expect(replayed).toEqual(traced);
   }, 240_000);
 
+  it("optimizer switch (CMA-ES): population from the distribution, kill-and-resume, state in checkpoint and stateHash, replay", async () => {
+    const base = {
+      sample: 8,
+      frames: 60,
+      arenas: [{ name: "point-to-point", params: { episodes: 2, asteroids: 5 } }],
+      collisions: "obstacles",
+      hidden: [4],
+    };
+    for (const optimizer of [
+      { kind: "cmaes", population: 6, sigma: 0.3 },
+      { kind: "cmaes", population: 6, separable: true },
+    ]) {
+      const config = { ...base, optimizer };
+      const dir = await killResume(config);
+      const ckpt = JSON.parse(readFileSync(join(dir, "ckpt.json"), "utf8")) as {
+        cmaes: { format: string; lambda: number; generation: number; mean: number[] };
+      };
+      expect(ckpt.cmaes.format).toBe("asteroid-racers/cmaes/v1");
+      expect(ckpt.cmaes.lambda).toBe(6);
+      expect(ckpt.cmaes.generation).toBe(6);
+      const gens = events(dir).filter((e) => e.type === "gen");
+      expect(gens.length).toBeGreaterThan(0);
+      const { replayed, traced } = await replayEpisodes(dir, 6, 0, config);
+      expect(replayed).toEqual(traced);
+    }
+    // Default population 4 + ⌊3 ln n⌋ for n = (4+1)·4 + (4+1)·2 = 30 weights → 14.
+    const dflt = newRun({ ...base, optimizer: { kind: "cmaes" } });
+    expect(await run(dflt, ["--to", "1"])).toBe(0);
+    const ck = JSON.parse(readFileSync(join(dflt, "ckpt.json"), "utf8")) as {
+      cmaes: { lambda: number; n: number };
+    };
+    expect(ck.cmaes.n).toBe(30);
+    expect(ck.cmaes.lambda).toBe(4 + Math.floor(3 * Math.log(30)));
+  }, 240_000);
+
   it("exam switch: race metrics on every N-th generation, results and resume unchanged", async () => {
     const exam = { every: 2, tracks: ["short"], randomTracks: 1, timeLimitSeconds: 10 };
     const withExam = newRun({ ...CONFIG, exam });
@@ -875,6 +910,16 @@ describe("evo-lab worker (protocol v1)", () => {
       [{ mutation: { kind: "gaussian", sigma: 0 } }, /sigma/],
       [{ sample: 10, parents: 3 }, /parents/],
       [{ initRange: -1 }, /initRange/],
+      [{ optimizer: { kind: "nes" } }, /optimizer.kind/],
+      [{ optimizer: { kind: "cmaes", population: 2 } }, /population/],
+      [{ optimizer: { kind: "cmaes", sigma: 0 } }, /optimizer.sigma/],
+      [{ optimizer: { kind: "cmaes", separable: "yes" } }, /separable/],
+      [{ optimizer: { kind: "cmaes", pop: 9 } }, /unknown config.optimizer keys/],
+      [{ optimizer: { kind: "cmaes" }, parents: 2 }, /cannot be combined with config.parents/],
+      [
+        { optimizer: { kind: "cmaes" }, mutation: { kind: "gaussian" } },
+        /cannot be combined with config.mutation/,
+      ],
       [{ crashLimit: 0 }, /crashLimit/],
       [{ crashLimit: 1.5 }, /crashLimit/],
       [{ curriculum: { levels: [{}] } }, /at least 2 levels/],

@@ -1243,3 +1243,38 @@ no tool. Measured:
 - **Tests:** straight, left and right corners and a U-turn; unchanged under ship rotation (the nose
   frame changes); leg 2 relative to leg 1; missing legs; a worker run with exact resume and replay;
   config validation.
+### M6: CMA-ES optimizer switch (experiment 4.4 code)
+
+- **`optimizer: { kind: "cmaes", population?, sigma?, separable? }`** (absent = the GA, byte-identical
+  fixtures):
+  - `packages/server/src/ai/cmaes.ts`: Hansen's CMA-ES (rank-one + rank-μ update, cumulative step
+    size, log weights, μ = ⌊λ/2⌋);
+  - a fixed cyclic Jacobi eigen-decomposition with the lazy update cadence;
+  - sep-CMA-ES for large n.
+  - All sampling comes from the run's mutation generator (Box–Muller). The full state is in the
+    checkpoint (`cmaes`) and the `stateHash`.
+- **Integration (TrainingDirector):**
+  - every generation samples λ networks, which all fly the same scenarios;
+  - the ranks come from the final order, so with `reevaluate` the re-scored finalists come first;
+  - the first generation's mean is a random network (`initRange`);
+  - winner, held-out, exam, snapshot and curriculum level-ups all use the best candidate of the
+    generation.
+  - Not reported: the mean vector's own performance.
+  - Rejected together with `parents`, `crossover` or `mutation`.
+- **Measured overhead** of sample + update + eigen per generation:
+
+  | n | λ | full C | separable |
+  | --- | --- | --- | --- |
+  | 250 | 20 | 185 ms | |
+  | 250 | 50–100 | about 390 ms | |
+  | 1,000 | 50 | about 10.5 s, eigen every 3 gens | 3 ms |
+
+  At n = 250 that is about 4–8 % of a ~5 s generation; for n ≫ 250, use `separable`.
+- **Tests:**
+  - Jacobi correctness (A·v = λ·v, orthonormal);
+  - convergence on the sphere and an ill-conditioned ellipsoid (full and separable);
+  - determinism and exact JSON resume;
+  - a worker kill-and-resume with the state in the checkpoint, and a replay of the snapshot (full
+    and separable);
+  - the default population;
+  - 7 validation cases.

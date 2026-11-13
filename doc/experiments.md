@@ -55,6 +55,12 @@ An experiment answers one question by comparing **arms** (the baseline config, p
     noise stream is fixed per race (from the race seed), so every model meets the same noise. In the
     `exam` method the keys make the exam itself the perturbed one.
   - `crossover` (M6): `{ "kind": "uniform" | "layer", "rate": 0.5 }` (rate default 0.5, in [0, 1]);
+  - `optimizer` (M6, experiment 4.4): `{ "kind": "cmaes", "population": 50, "sigma": 0.3, "separable": false }`
+    replaces the GA with CMA-ES. `population` defaults to 4 + ⌊3 ln n⌋ (n = number of weights; 20 for
+    today's 250 weights), and `sample` is then unused. `sigma` defaults to 0.3. `separable: true` keeps
+    only the diagonal of C, for large networks. It cannot be combined with `parents`, `crossover` or
+    `mutation`. The reported winner, held-out, exam and snapshot are the best candidate of the
+    generation;
     needs `parents` ≥ 2. Each child of parent p is, with probability `rate`, p crossed with another
     parent drawn uniformly from the rest (`uniform`: each weight from the mate with probability ½;
     `layer`: each whole layer from the mate with probability ½), then mutated as usual. All draws

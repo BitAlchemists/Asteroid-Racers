@@ -42,6 +42,7 @@ import {
   parseCurriculum,
   applyLevel,
   type CurriculumConfig,
+  type CmaEsJson,
   parseModelConfig,
   parseSensors,
   parseExamConfig,
@@ -129,6 +130,12 @@ export interface TrainConfig {
   /** Switch: range of the random starting weights. Absent = 1. */
   initRange?: number;
   /**
+   * Switch: CMA-ES instead of the GA (`{ kind: "cmaes", population?, sigma?, separable? }`). Each
+   * generation samples `population` candidates (default 4 + ⌊3 ln n⌋; `sample` is then unused).
+   * Cannot be combined with `parents`, `crossover` or `mutation`. Absent = the GA.
+   */
+  optimizer?: { kind: "cmaes"; population?: number; sigma?: number; separable?: boolean };
+  /**
    * Switch: with `crashMode: "respawn"`, an episode ends at its N-th crash and the rest is charged
    * like an `end` crash (at the crash distance). With `end` it changes nothing. Absent = no limit.
    */
@@ -158,6 +165,8 @@ interface Checkpoint {
   winner: NetworkJson | null;
   /** All kept models, best first; only with the `parents` switch (else the winner alone). */
   parents?: NetworkJson[];
+  /** The CMA-ES distribution after generation `g`; only with the `optimizer` switch. */
+  cmaes?: CmaEsJson;
   /** Where the curriculum stands for the next generation; only with the `curriculum` switch. */
   curriculum?: { level: number; streak: number };
   bestScore: number | null;
@@ -276,6 +285,34 @@ function parseReevaluate(raw: unknown): { top: number; episodes: number } {
   return { top: top as number, episodes: episodes as number };
 }
 
+function parseOptimizer(raw: unknown): {
+  kind: "cmaes";
+  population?: number;
+  sigma?: number;
+  separable?: boolean;
+} {
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw))
+    throw new Error(
+      'config.optimizer must be an object ({ kind: "cmaes", population?, sigma?, separable? })',
+    );
+  const { kind, population, sigma, separable, ...rest } = raw as Record<string, unknown>;
+  if (Object.keys(rest).length > 0)
+    throw new Error(`unknown config.optimizer keys ${Object.keys(rest).join(", ")}`);
+  if (kind !== "cmaes") throw new Error('config.optimizer.kind must be "cmaes"');
+  if (population !== undefined && (!Number.isInteger(population) || (population as number) < 4))
+    throw new Error("config.optimizer.population must be an integer ≥ 4");
+  if (sigma !== undefined && (typeof sigma !== "number" || !(sigma > 0)))
+    throw new Error("config.optimizer.sigma must be a number > 0");
+  if (separable !== undefined && typeof separable !== "boolean")
+    throw new Error("config.optimizer.separable must be true or false");
+  return {
+    kind,
+    ...(population === undefined ? {} : { population: population as number }),
+    ...(sigma === undefined ? {} : { sigma }),
+    ...(separable === undefined ? {} : { separable }),
+  };
+}
+
 function readConfig(): TrainConfig {
   const file = values.config === undefined ? undefined : resolve(runDir, String(values.config));
   const raw =
@@ -315,6 +352,7 @@ function readConfig(): TrainConfig {
     ...(raw.parents === undefined ? {} : { parents: raw.parents as number }),
     ...(raw.crossover === undefined ? {} : { crossover: parseCrossover(raw.crossover) }),
     ...(raw.initRange === undefined ? {} : { initRange: raw.initRange as number }),
+    ...(raw.optimizer === undefined ? {} : { optimizer: parseOptimizer(raw.optimizer) }),
     ...(raw.crashLimit === undefined ? {} : { crashLimit: raw.crashLimit as number }),
     ...(raw.reevaluate === undefined ? {} : { reevaluate: parseReevaluate(raw.reevaluate) }),
     ...(raw.curriculum === undefined
@@ -340,6 +378,10 @@ function readConfig(): TrainConfig {
       (config.sample - config.parents) % config.parents !== 0)
   )
     throw new Error("config.parents must be an integer ≥ 1 that divides sample − parents");
+  if (config.optimizer !== undefined)
+    for (const key of ["parents", "crossover", "mutation"] as const)
+      if (config[key] !== undefined)
+        throw new Error(`config.optimizer (CMA-ES) cannot be combined with config.${key}`);
   if (config.crossover !== undefined && (config.parents ?? 1) < 2)
     throw new Error("config.crossover needs config.parents ≥ 2");
   if (config.initRange !== undefined && (typeof config.initRange !== "number" || !(config.initRange > 0)))
@@ -418,6 +460,8 @@ async function main(): Promise<void> {
   let winner: MajorTom | undefined = saved?.winner ? MajorTom.fromJson(saved.winner) : undefined;
   /** Kept models after the last generation (only tracked with the `parents` switch). */
   let parents: NetworkJson[] | undefined = saved?.parents;
+  /** The CMA-ES state after the last generation (only with the `optimizer` switch). */
+  let cmaes: CmaEsJson | undefined = saved?.cmaes;
   /** Curriculum level and streak for the next generation (only with the `curriculum` switch). */
   let curriculum: { level: number; streak: number } | undefined = config.curriculum
     ? (saved?.curriculum ?? { level: 0, streak: 0 })
@@ -439,6 +483,7 @@ async function main(): Promise<void> {
     winner: winner ? winner.toJson() : null,
     ...(parents === undefined ? {} : { parents }),
     ...(curriculum === undefined ? {} : { curriculum }),
+    ...(cmaes === undefined ? {} : { cmaes }),
     bestScore,
     rng: { mutation: mutationRandom.state, server: serverRandom.state },
   });
@@ -452,6 +497,7 @@ async function main(): Promise<void> {
     winner = report.winner;
     bestScore = report.bestScore;
     if (config.parents !== undefined) parents = report.parents.map((p) => p.toJson());
+    if (report.optimizerState) cmaes = report.optimizerState;
     const flownLevel = report.curriculum?.level;
     if (report.curriculum)
       curriculum = { level: report.curriculum.nextLevel, streak: report.curriculum.streak };
@@ -513,6 +559,7 @@ async function main(): Promise<void> {
           winner: report.winner.toJson(),
           ...(parents === undefined ? {} : { parents }),
           ...(curriculum === undefined ? {} : { curriculum }),
+          ...(cmaes === undefined ? {} : { cmaes }),
           bestScore: report.bestScore,
           rng: { mutation: mutationRandom.state, server: serverRandom.state },
         }),
@@ -592,6 +639,9 @@ async function main(): Promise<void> {
       ...(config.mutation ? { mutation: config.mutation } : {}),
       ...(config.parents === undefined ? {} : { parents: config.parents }),
       ...(config.crossover === undefined ? {} : { crossover: config.crossover }),
+      ...(config.optimizer === undefined
+        ? {}
+        : { optimizer: { ...config.optimizer, ...(cmaes === undefined ? {} : { state: cmaes }) } }),
       ...(config.curriculum && curriculum
         ? { curriculum: { ...config.curriculum, level: curriculum.level, streakCount: curriculum.streak } }
         : {}),

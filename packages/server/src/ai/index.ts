@@ -1,3 +1,4 @@
+import type { CmaEsJson } from "./cmaes";
 import { Vector2 } from "@ar/shared";
 import type { CollisionMode } from "../contracts";
 import { GameServer } from "../game-server";
@@ -25,6 +26,7 @@ export * from "./ai-game-client";
 export * from "./arena-script";
 export * from "./arenas";
 export * from "./tier-arenas";
+export * from "./cmaes";
 export * from "./scoring";
 export * from "./sensors";
 export * from "./trace";
@@ -130,6 +132,8 @@ export interface TrainingServiceOptions {
   curriculum?: CurriculumConfig & { level?: number; streakCount?: number };
   /** Re-evaluate the best `top` candidates plus the parents on about `episodes` extra scenarios. */
   reevaluate?: { top: number; episodes: number };
+  /** CMA-ES instead of the GA (`population`, `sigma`, `separable`); `state` resumes. Absent = the GA. */
+  optimizer?: { kind: "cmaes"; population?: number; sigma?: number; separable?: boolean; state?: CmaEsJson };
   /** Latency (`inputDelay` steps) and Gaussian noise (`inputNoise`) on the bots' inputs. Absent = none. */
   perception?: { inputDelay?: number; inputNoise?: number };
   maxGenerations?: number;
@@ -186,6 +190,23 @@ export function registerAITrainingService(
     ...(options.initRange === undefined ? {} : { initRange: options.initRange }),
     ...(options.reevaluate ? { reevaluate: options.reevaluate } : {}),
     ...(options.crossover ? { crossover: options.crossover } : {}),
+    ...(options.optimizer
+      ? {
+          optimizer: {
+            kind: "cmaes" as const,
+            options: {
+              ...(options.optimizer.population === undefined
+                ? {}
+                : { population: options.optimizer.population }),
+              ...(options.optimizer.sigma === undefined ? {} : { sigma: options.optimizer.sigma }),
+              ...(options.optimizer.separable === undefined
+                ? {}
+                : { separable: options.optimizer.separable }),
+            },
+            ...(options.optimizer.state ? { state: options.optimizer.state } : {}),
+          },
+        }
+      : {}),
     ...(options.perception ? { perception: options.perception } : {}),
     ...(options.curriculum
       ? {
