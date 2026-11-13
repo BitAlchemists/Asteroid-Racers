@@ -162,7 +162,8 @@ const whiskers: SensorKind<WhiskersSpec> = {
 /** Per ray: its world direction and the distance to the first rock it hits (Infinity if none). */
 function whiskerHits(s: WhiskersSpec, { ship, obstacles }: SensorContext): { t: number; d: Vector2 }[] {
   const { x, y } = ship.position;
-  const near = obstacles.near(x, y, s.range);
+  // Unsorted is fine: each ray takes a minimum over all rocks.
+  const near = obstacles.nearUnsorted(x, y, s.range);
   return whiskerAngles(s).map((a) => {
     const d = direction(ship.orientation, a);
     let t = Infinity;
@@ -217,8 +218,9 @@ function sectorReadings(
 }
 
 function nearestRocks(s: NearestSpec, { ship, obstacles }: SensorContext): Entity[] {
+  // Unsorted is fine: the sort below orders by (edge, id), a total order for a world's unique ids.
   return obstacles
-    .near(ship.position.x, ship.position.y, s.range + ship.radius)
+    .nearUnsorted(ship.position.x, ship.position.y, s.range + ship.radius)
     .map((o) => ({ o, edge: edgeDistance(ship, o) }))
     .filter((e) => e.edge < s.range)
     .sort((a, b) => a.edge - b.edge || a.o.id - b.o.id)
@@ -277,7 +279,13 @@ function firstOnLine(s: LineCheckSpec, { ship, target, obstacles }: SensorContex
   let bestAlong = Infinity;
   let bestOffset = 0;
   let bestRock: Entity | undefined;
-  for (const o of obstacles.near(x + (dx * length) / 2, y + (dy * length) / 2, length / 2 + ship.radius)) {
+  // Unsorted candidates; the smallest `along` wins and ties go to the smaller id: the same rock the
+  // id-sorted scan with a strict "<" picks (ids are unique in a world).
+  for (const o of obstacles.nearUnsorted(
+    x + (dx * length) / 2,
+    y + (dy * length) / 2,
+    length / 2 + ship.radius,
+  )) {
     const ox = o.position.x - x;
     const oy = o.position.y - y;
     const t = ox * dx + oy * dy;
@@ -286,7 +294,7 @@ function firstOnLine(s: LineCheckSpec, { ship, target, obstacles }: SensorContex
     if (t < -reach || t > length + reach || Math.abs(lateral) >= reach) continue;
     const along = Math.max(0, t - Math.sqrt(reach * reach - lateral * lateral));
     if (along > length) continue;
-    if (!bestRock || along < bestAlong) {
+    if (!bestRock || along < bestAlong || (along === bestAlong && o.id < bestRock.id)) {
       bestAlong = along;
       bestOffset = lateral / reach;
       bestRock = o;

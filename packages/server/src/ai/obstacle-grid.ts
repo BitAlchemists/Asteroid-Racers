@@ -138,6 +138,51 @@ export class ObstacleGrid {
     return found.length > 1 ? found.sort(byId) : found;
   }
 
+  /**
+   * Like {@link near}, but unsorted and without allocating: fills and returns a buffer the grid
+   * reuses (valid until the next call). For callers that pick a minimum and break ties by id
+   * themselves, so the order does not matter.
+   */
+  nearUnsorted(x: number, y: number, r: number): readonly Entity[] {
+    const found = this.buffer;
+    found.length = 0;
+    if (this.size === 0) return found;
+    if (this.stamp === 0xffffffff) {
+      this.marks.fill(0);
+      this.stamp = 0;
+    }
+    const stamp = ++this.stamp;
+    const marks = this.marks;
+    const s = this.cellSize;
+    const x0 = Math.max(Math.floor((x - r) / s) - this.cx0, 0);
+    const x1 = Math.min(Math.floor((x + r) / s) - this.cx0, this.cxCount - 1);
+    const y0 = Math.max(Math.floor((y - r) / s) - this.cy0, 0);
+    const y1 = Math.min(Math.floor((y + r) / s) - this.cy0, this.cyCount - 1);
+    const rows = this.cyCount;
+    if (this.sparse) {
+      for (let cx = x0; cx <= x1; cx++)
+        for (let cy = y0; cy <= y1; cy++) {
+          const list = this.sparse.get(cx * rows + cy);
+          if (list) for (const slot of list) this.collect(slot, stamp, found);
+        }
+    } else {
+      const { start, slots } = this;
+      for (let cx = x0; cx <= x1; cx++)
+        for (let cy = y0; cy <= y1; cy++) {
+          const cell = cx * rows + cy;
+          for (let i = start[cell]!, end = start[cell + 1]!; i < end; i++) {
+            const slot = slots[i]!;
+            if (marks[slot] === stamp) continue;
+            marks[slot] = stamp;
+            found.push(this.obstacles[slot]!);
+          }
+        }
+    }
+    return found;
+  }
+
+  private readonly buffer: Entity[] = [];
+
   private collect(slot: number, stamp: number, found: Entity[]): void {
     if (this.marks[slot] === stamp) return;
     this.marks[slot] = stamp;

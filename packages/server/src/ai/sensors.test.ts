@@ -119,3 +119,51 @@ describe("sensors", () => {
     expect(Object.keys(blind.toJson().spec!)).toEqual(["inputs", "outputs"]);
   });
 });
+
+describe("sensors with the unsorted grid query", () => {
+  it("read exactly what an id-sorted scan reads (random fields, ships and targets)", () => {
+    const random = seededRandom(11);
+    const all = Array.from({ length: 300 }, (_, i) =>
+      Object.assign(
+        new Entity({
+          type: EntityType.ASTEROID,
+          position: new Vector2((random() * 2 - 1) * 2000, (random() * 2 - 1) * 2000),
+          radius: 20 + random() * 50,
+        }),
+        { id: i + 1 }, // Entity ignores id in its constructor; worlds assign unique ids
+      ),
+    );
+    const grid = new ObstacleGrid(all);
+    /** The old behaviour: every query sorted by id. */
+    const sorted = {
+      near: (x: number, y: number, r: number) => grid.near(x, y, r),
+      nearUnsorted: (x: number, y: number, r: number) => grid.near(x, y, r),
+    } as unknown as ObstacleGrid;
+    // Reversed candidate order: the result must not depend on it.
+    const reversed = {
+      near: (x: number, y: number, r: number) => grid.near(x, y, r),
+      nearUnsorted: (x: number, y: number, r: number) => [...grid.near(x, y, r)].reverse(),
+    } as unknown as ObstacleGrid;
+    const specs = parseSensors({ whiskers: {}, nearest: { k: 3 }, lineCheck: {} });
+    const specsTime = parseSensors({ whiskers: { horizon: 2 }, lineCheck: { horizon: 2 } });
+    for (const set of [specs, specsTime]) {
+      const n = set.reduce((sum, s) => sum + sensorSize(s), 0);
+      for (let k = 0; k < 2000; k++) {
+        const ship = new Movable({
+          position: new Vector2((random() * 2 - 1) * 2000, (random() * 2 - 1) * 2000),
+          radius: 20,
+          orientation: random() * 6,
+        });
+        ship.velocity = new Vector2(random() * 600 - 300, random() * 600 - 300);
+        const target = new Vector2((random() * 2 - 1) * 2500, (random() * 2 - 1) * 2500);
+        const outs = [grid, sorted, reversed].map((obstacles) => {
+          const out = new Float64Array(n);
+          readSensors(set, { ship, target, obstacles }, out, 0);
+          return [...out];
+        });
+        expect(outs[0]).toEqual(outs[1]);
+        expect(outs[2]).toEqual(outs[1]);
+      }
+    }
+  });
+});
