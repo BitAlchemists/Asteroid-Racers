@@ -330,3 +330,21 @@ Plan: [`plans/M3-visibility.md`](plans/M3-visibility.md), approved by the user (
 - Dropped moving obstacles from the roadmap's tier 3, because the game has none.
 - Pushed to `main` at the user's request; CI passed on `ab90101` (run 43437647970), including the
   plugin build. M3 is done.
+
+## 2026-11-13 — Roadmap change: perception before content
+
+- The user liked the content plan, but pointed out that models cannot see obstacles yet. They
+  proposed a milestone for that first, combined with a harness that tests model variants, because
+  the solution needs experimentation.
+- Roadmap restructured:
+  - new **M4 Perception** ([`plans/M4-perception.md`](plans/M4-perception.md), waiting for approval);
+  - content becomes **M5** (`plans/M4-content.md` → `plans/M5-content.md`; `rock-in-line` moved to
+    M4; final OK after M4);
+  - experiments become **M6** (obstacle sensing moved out to M4).
+- Read Evo Lab's `docs/experiments.md`. Its experiments become the harness: switches, matched seeds,
+  a baseline gate, a decision rule and sign-off. Consequences for the design:
+  - sensors are new config keys, absent by default;
+  - `hidden` moves out of the method's default config so it can be switched;
+  - training runs get an optional in-run exam, so decisions can be about racing.
+- Design point found while planning: the bot drops asteroid messages today, so sensors need it to
+  keep them first.

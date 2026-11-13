@@ -63,22 +63,35 @@ CI green on `ab90101`
     exam flight, path thumbnails in the filmstrip;
   - an in-game **watch page**: the bundled model or a model file on any track.
 
-### M4 — Content ⬜
+### M4 — Perception ⬜
 
-Plan: [`plans/M4-content.md`](plans/M4-content.md) (waiting for approval)
+Plan: [`plans/M4-perception.md`](plans/M4-perception.md) (waiting for approval)
+
+Models cannot see asteroids (M3 finding: crash loops on rocks in line). This milestone finds out,
+by experiment, how a model should sense obstacles:
+
+- candidate sensors as switchable inputs (e.g. whiskers, sectors, nearest obstacles, a clear-line
+  check), a `rock-in-line` arena that demands avoidance, and an exam metric inside training runs;
+- a variant harness on Evo Lab experiments: matched seeds, a baseline gate, a decision rule on the
+  race exam;
+- experiments: noise floor, sensor comparison, network capacity for the winner.
+
+### M5 — Content ⬜
+
+Plan: [`plans/M5-content.md`](plans/M5-content.md) (liked by the user; final OK after M4)
 
 - A track file format, three hand-designed tracks (`slalom`, `gauntlet`, `canyon`) and a track
   picker in the game.
-- Tiered training arenas: tier 1 `stop`, `turn-and-go`, `chain`; tier 2 `rock-in-line`, `corridor`,
-  `field`; tier 3 `race-legs`. Moving obstacles are dropped: the game has none.
+- Tiered training arenas: tier 1 `stop`, `turn-and-go`, `chain`; tier 2 `corridor`, `field`;
+  tier 3 `race-legs`. Moving obstacles are dropped: the game has none.
 - Race exam v2 with the new tracks and 15 random tracks, so a single crash loop weighs less.
 
-### M5 — Experiments ⬜
+### M6 — Experiments ⬜
 
 Each one is an Evo Lab experiment, compared against a baseline on the race exam:
 
 1. Curriculum (tiered arenas) vs the current single course.
-2. Inputs: lookahead to the next target and beyond, obstacle whiskers.
+2. Inputs: lookahead to the next target and beyond (obstacle sensing is M4).
 3. Network size and shape.
 4. Mutation and population strategy (rate and strength schedules, (μ+λ), crossover).
 5. Latency and robustness (delayed inputs, noise).
@@ -92,6 +105,6 @@ Each question below has a default we work with until it is answered.
 | What counts as "good"? Finishing, lap time, or beating humans?  | Finish the race tracks reliably first, then lap time.               |
 | Neuro-evolution only, or other algorithms too (e.g. RL)?        | Neuro-evolution only; keep the model interface algorithm-neutral.   |
 | Are extra sensors (whiskers) fair, given human players lack them? | Allowed for experiments; decide before shipping a model into the game. |
-| Who designs the tracks? Is there a track picker for players?    | Hand-designed by us in M4; a simple picker in the game.             |
+| Who designs the tracks? Is there a track picker for players?    | Hand-designed by us in M5; a simple picker in the game.             |
 | Are trained models promoted into the game automatically?        | Manually, after the race exam.                                      |
 | When do local commits get pushed?                               | Only when the user asks.                                            |

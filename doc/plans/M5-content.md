@@ -1,6 +1,8 @@
-# M4 — Content
+# M5 — Content
 
-Status: ⬜ not started. This plan needs the user's OK before work begins. Roadmap: [`../ROADMAP.md`](../ROADMAP.md)
+Status: ⬜ not started. Liked by the user on 2026-11-13, then moved behind M4 (perception), so that
+models can see obstacles before they train on obstacle-heavy content. Needs a final OK before work
+begins, after M4. Roadmap: [`../ROADMAP.md`](../ROADMAP.md)
 
 ## Goal
 
@@ -11,7 +13,8 @@ Give training and the exam the content they lack:
 - **race tracks** as data files: a few hand-designed ones, a track picker in the game, and a
   broader race exam.
 
-M5 then runs the experiments (curriculum, sensors, network size) on this content.
+M6 then runs the experiments (curriculum, network size, mutation) on this content. Obstacle
+sensing comes first, in M4 (perception).
 
 ## Today
 
@@ -69,7 +72,6 @@ New arenas, each with params for difficulty. All deterministic per seed, like th
 | 1 | `stop` | Reach a target and be slower than `maxSpeed` inside it (braking). |
 | 1 | `turn-and-go` | Start moving fast away from the target and turn around. |
 | 1 | `chain` | Several targets in one episode, like legs of a race (planning the next turn). |
-| 2 | `rock-in-line` | One or more rocks on the direct line to the target (avoidance). |
 | 2 | `corridor` | Reach a target at the end of a bent corridor of asteroid walls. |
 | 2 | `field` | A chain of targets through a dense asteroid field. |
 | 3 | `race-legs` | Legs of the real race tracks (from the track registry) as episodes, with crashes respawning at the last target, as in a race. |
@@ -95,8 +97,7 @@ New arenas, each with params for difficulty. All deterministic per seed, like th
 
 - One training run per tier-1 and tier-2 arena (point-to-point setup otherwise, 150 generations),
   examined with exam v2 along the run.
-- Expected: tier-1 arenas are learnable with today's inputs; tier-2 arenas show the missing
-  obstacle sensing as a ceiling. That is the measurement M5's sensor experiments start from.
+- Train with the obstacle sensing chosen in M4, so tier-2 arenas are learnable in principle.
 - Record everything in `HISTORY.md`, with the viewer's view of what the models do.
 
 ## Acceptance
@@ -107,15 +108,15 @@ New arenas, each with params for difficulty. All deterministic per seed, like th
 - [ ] Three new tracks, flown by the bundled model and train-4 g110 in the watch page (checked by
       eye).
 - [ ] The game can race every track (singleplayer picker, `TRACK=` on the server).
-- [ ] Seven new arenas, deterministic per seed, exact replay (tests); each checked by eye in the
+- [ ] Six new arenas, deterministic per seed, exact replay (tests); each checked by eye in the
       watch page.
 - [ ] Exam v2 in place; the bundled model, train-2 and train-4 g110 re-examined.
 - [ ] Baseline runs recorded in `HISTORY.md`.
 
-## Not in M4
+## Not in M5
 
-- **Obstacle sensors** ("whiskers") or any new model inputs: M5. M4 measures the gap; M5 closes it.
-- Curriculum training (arena schedules within one run): M5. M4 trains one arena per run.
+- New sensors: M4 settles which obstacle sensing models get; M5 uses it.
+- Curriculum training (arena schedules within one run): M6. M5 trains one arena per run.
 - **Moving obstacles.** The game has none, so training on them would not help racing. Dropped from
   the roadmap's tier 3.
 - A track editor UI. Tracks are written as JSON and checked in the watch page.
@@ -126,8 +127,7 @@ New arenas, each with params for difficulty. All deterministic per seed, like th
 
 | Question | Default in this plan |
 | --- | --- |
-| Should obstacle sensors come before the tier-2 arenas (swap with M5)? | No: build content first; tier-2 baselines then show how much sensors are needed. |
-| Change the respawn rule (e.g. face the next checkpoint) to break crash loops? | Not in M4: it is a game-design change for players; decide separately. |
+| Change the respawn rule (e.g. face the next checkpoint) to break crash loops? | Not in M5: it is a game-design change for players; decide separately. |
 | Who designs the tracks? | I draft them in JSON; you check them in the watch page. |
 | How many random tracks in exam v2? | 15 (about 3 s per model instead of 1.5 s). |
 | Should `demo` stay the game's default track? | Yes; the picker offers the others. |
@@ -136,9 +136,9 @@ New arenas, each with params for difficulty. All deterministic per seed, like th
 
 - **Hand-designed tracks may be unfair or broken** (a checkpoint behind a wall, a corridor narrower
   than a ship). Validation catches the obvious; the watch page catches the rest.
-- **Tier-2 arenas may be unlearnable** with today's inputs, so their runs show nothing but failure.
-  That is the expected result and the input to M5, not a reason to stop.
+- **Tier-2 arenas may still be too hard** with M4's sensing. Their baselines show it; M6 can follow
+  up with capacity or curriculum experiments.
 - **Exam v2 breaks comparisons** with M2/M3 numbers. Mitigated by versioning the exam and re-examining
   the reference models.
-- **Scope:** seven arenas, three tracks and a picker is a lot. If it runs long, tier 3
-  (`race-legs`) moves to M5.
+- **Scope:** six arenas, three tracks and a picker is a lot. If it runs long, tier 3
+  (`race-legs`) moves to M6.
