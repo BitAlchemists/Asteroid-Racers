@@ -1427,3 +1427,110 @@ Built as a worker fork in worktree `ar-s2` (branch `s2-speed`). Each step was re
     `Entity` constructor ignores `id`). Reverted; the tests now assign unique ids.
   - The first `heldOutEvery` version skipped flights on the server's generator, which changed
     training from g1 on. The worker test caught it, and held-out flights got their own generator.
+### 2026-11-13 — M5 training side: tiered arenas, watch page arena mode, baseline runs
+
+Approved by the user as the rest of M5 after M4 closed. M5 is done.
+
+- **Commits:**
+  - `85c9577` the `chain` arena (landed first, for M6's lookahead input) and arena tiers;
+  - `32e8fe7` arenas `stop`, `turn-and-go`, `corridor`, `field` and `race-legs`, plus the watch
+    page's arena mode;
+  - `bc7d510` the six baseline plans `experiments/m5-base-<arena>.md`;
+  - this entry's commit: the reports, the plan, the roadmap and `doc/experiments.md` (an arena
+    table).
+- **The arenas** (`packages/server/src/ai/tier-arenas.ts`, opt-in by name, deterministic per
+  seed; defaults in `doc/experiments.md`):
+  - tier 1: `stop` (a target counts only below `maxSpeed`), `turn-and-go` (the ship starts fast,
+    nose first, away from its target) and `chain` (3–5 targets per episode, legs turning by up to
+    `turn` degrees);
+  - tier 2: `corridor` (a bent corridor of asteroid walls; the direct line hits a wall) and
+    `field` (a chain through a dense field, about as dense as point-to-point with 80 asteroids).
+    Both give each episode its own grid cell, because a scenario's obstacles are shared by all its
+    episodes;
+  - tier 3: `race-legs` (consecutive checkpoints of a registry track, `random` by default, among
+    its asteroids).
+  - `Arena.tier` is set on point-to-point and rock-in-line (0) and on the new arenas. legacy has
+    none.
+- **Respawn rule:** episodes can say `respawn: "last-target"`. With `crashMode: "respawn"` a crash
+  then puts the ship on the last target reached, at rest, with that target's `orientation`, as
+  the race does. Only `race-legs` uses it; absent, nothing changes.
+- **Tests:** 25 new ones: determinism, params validation, obstacles clear of starts and targets,
+  corridor walls blocking the direct line, field lanes, `maxSpeed` and start velocity in flight,
+  and the respawn rule. The existing arenas, curriculum, exam and fixture tests stay byte-identical
+  (param helpers moved to `arena-params.ts` unchanged).
+- **Watch page arena mode:** the track list has a "Training arenas" group (with tiers). Pick an
+  arena, edit its params as JSON, set the seed, generation and crash mode, and the page builds
+  the scenario exactly as a training run would (`arenaReplaySource`, collisions on, `frames`
+  600). URL: `watch.html?arena=<name>&params=<JSON>&seed=<s>&g=<g>&crash=end`. Bad params show
+  the arena's error. Checked in the built-in browser for chain, corridor, field, race-legs and
+  turn-and-go, and for stop as far as its page loads.
+- **Baseline runs (step 7):** Evo Lab measurements `m5-base-<arena>`, approved by me under the
+  user's M5 approval. The M4 default setup (task v2 scoring, lineCheck, `parents: 10`, curriculum
+  success 0.6, exam v2 every 25 generations), one arena per run, seeds 1–5, g150. Runs train-330
+  to train-359 ran beside m4-e9-confirm within the runner's budget of 20. The default curriculum
+  levels name rock-in-line and point-to-point, so each arena got three levels of its own, ending
+  at its defaults (see the plans). Results at g150 (mean over 5 seeds, `success` and `heldOut`
+  are on the level each run reached):
+
+  | Arena | success | heldOut | level (of 2) | exam ×10⁵ | exam checkpoints | finished | exam crashes |
+  | --- | --- | --- | --- | --- | --- | --- | --- |
+  | stop | 1.00 | 1.00 | 2.0 | 2.86 | 0.70 | 0.65 | 2,510 |
+  | turn-and-go | 1.00 | 0.98 | 2.0 | 3.08 | 0.67 | 0.58 | 3,372 |
+  | chain | 1.00 | 1.00 | 2.0 | 3.50 | 0.63 | 0.53 | 1,758 |
+  | corridor | 0.28 | 0.07 | 0.8 | 5.35 | 0.43 | 0.32 | 1,892 |
+  | field | 0.11 | 0.08 | 0.4 | 3.81 | 0.60 | 0.39 | 1,504 |
+  | race-legs | 0.20 | 0.15 | 1.6 | 5.81 | 0.38 | 0.25 | 812 |
+
+  For scale: the M4 default setup on its own task (m4-e9-confirm, g150, 10 seeds) has exam 1.25 ×
+  10⁵, checkpoints 0.87, finished 0.82, crashes 1,134.
+- **Crashes on the arena itself** (training does not report them): I flew the g150 winners
+  through 10 fresh scenarios of their arena at its hardest level, with a scratch script that is
+  not committed.
+  - stop, chain: every seed reaches every target, no crashes.
+  - turn-and-go: 4 seeds reach every target, one reaches 95 %; no crashes.
+  - corridor: reached 0–26 % (mean 8 %), 0.3–1.0 crashes per episode.
+  - field: reached 0–23 %, no seed finishes a chain, 0.5–3.7 crashes per episode.
+  - race-legs: seed 3 reaches 88 %; the other four reach 0 % with 0.3–0.8 crashes per episode.
+- **The M4 default model, zero-shot:** the ten m4-e9-confirm winners at g151 on the same
+  scenarios (mean reached, crashes per episode). The bundled model is in brackets.
+
+  | Arena | reached | crashes per episode |
+  | --- | --- | --- |
+  | stop | 0.02 (0.10) | 0 |
+  | turn-and-go | 0.53 (0) | 0 |
+  | chain | 0.78 (0.53) | 0 |
+  | corridor | 0.13 (0) | 2.2 (3.2) |
+  | field | 0.46 (0.25) | 6.9 (8.0) |
+  | race-legs | 0.92 (0.74) | 1.4 (2.6) |
+
+- **What the models can and cannot do:**
+  - Braking, turning around and chains are learned completely within 50 generations. On its own
+    each skill transfers only partly to racing: the exam is 2–3× worse than the M4 setup's.
+  - The M4 default model cannot brake: 2 % of the stop targets, because it flies through targets
+    at speed. It turns around about half the time.
+  - Corridors and dense fields stay unsolved at 150 generations. In the corridor a typical winner
+    flies at the target until the inner wall is in its line check, then drifts and parks against
+    that wall. In the episodes I watched, it never went round the bend.
+  - **Finding — the distance integral punishes reaching an intermediate target.** In race-legs,
+    four of five seeds climbed to 3-leg episodes and then fell to 0 % success. In the watch page,
+    seed 1's winner orbits just outside the first checkpoint for the whole episode. Reaching that
+    checkpoint would earn 1,000, but the distance to the next one (500–1,000 units for the rest
+    of up to 27 s) costs far more under `scoring.distance`. So hovering next to the first target
+    beats taking it, unless the whole chain can be finished quickly. In `chain` (no obstacles)
+    the models finish quickly, so the trap does not bite. In `field` and `race-legs` it does.
+    This is a reward problem for M6 phase 2 (rewards): `scoring.progress`, a per-target distance
+    reset or time-to-target are candidates.
+- **Decisions:**
+  - `race-legs` defaults to the `random` track, so the exam's fixed tracks stay out of training.
+  - The baselines include `race-legs` (30 runs, the user's cap); the plan named tier 1 and 2 only.
+- **Deviations from the plan** (recorded in its changes section):
+  - 5 seeds per arena as Evo Lab measurements instead of one run each;
+  - per-arena curriculum levels;
+  - the plugin does not show tiers or descriptions yet; the watch page does.
+- **Mistakes:**
+  - In the worktree, one Python edit wrote CRLF line endings and one dropped the `Arena`
+    interface. Both were fixed before the first commit.
+  - Two sessions closed M5 in parallel (the coordinator's overlap, acknowledged by the parent). The
+    other session's closing docs were removed again in 8c1461a. Its baseline table is kept in the
+    plan, with two corrections: the exam is the 102-race exam v2, not 17 races, and the arenas
+    were also checked by eye in the watch page.

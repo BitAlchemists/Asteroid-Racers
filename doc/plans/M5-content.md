@@ -1,8 +1,9 @@
 # M5 — Content
 
-Status: 🟡 game side started 2026-11-13 (approved by the user while M4 continues). Liked by the
-user on 2026-11-13, then moved behind M4 (perception), so that models can see obstacles before they
-train on obstacle-heavy content. The training side (arenas, exam, baselines) waits until M4 is done.
+Status: ✅ done 2026-11-13. Liked by the user on 2026-11-13, then moved behind M4 (perception), so
+that models can see obstacles before they train on obstacle-heavy content. The game side (steps
+1–3) started early with the user's OK while M4 continued; the training side (steps 4, 5, 7) was
+built after M4 closed.
 Roadmap: [`../ROADMAP.md`](../ROADMAP.md)
 
 ## Goal
@@ -119,11 +120,27 @@ Phase 1 (game side):
 
 Phase 2 (after M4):
 
-- [ ] Steps 4, 5 and 7 committed, `npm run check` green, CI green.
-- [ ] Six new arenas, deterministic per seed, exact replay (tests); each checked by eye in the
-      watch page.
+- [x] Steps 4, 5 and 7 committed, `npm run check` green. CI not checked: nothing was pushed.
+- [x] Six new arenas, deterministic per seed, exact replay (tests); each checked by eye in the
+      watch page (`stop` only as far as its page loads: it has no obstacles to check).
 - [ ] ~~Exam v2 in place; the bundled model, train-2 and train-4 g110 re-examined.~~ Moved to M4.
-- [ ] Baseline runs recorded in `HISTORY.md`.
+- [x] Baseline runs recorded in `HISTORY.md` (Evo Lab measurements `m5-base-<arena>`, 5 seeds
+      each, reports in `experiments/`).
+
+### Baseline results (M4 default setup per arena, 5 seeds, g150; each arena with its own 3-level curriculum)
+
+| Arena | Difficulty | Level-ups (per seed) | Training success g150 | Held-out g150 | 102-race exam checkpoints |
+| --- | --- | --- | --- | --- | --- |
+| `stop` | easy | all 5 reach level 2 by g11–23 | 1.00 | 1.00 | 0.70 (sd 0.09) |
+| `turn-and-go` | easy | all 5 reach level 2 by g13–19 | 1.00 | 0.98 | 0.67 (sd 0.08) |
+| `chain` | easy | all 5 reach level 2 by g11–16 | 1.00 | 1.00 | 0.63 (sd 0.19) |
+| `race-legs` | medium | level 1 by g4–9 (all), level 2 for 3 of 5 (g12–32) | 0.20 (sd 0.45) | 0.15 | 0.38 (sd 0.35) |
+| `corridor` | hard | level 1 for 4 of 5 (g41–109) | 0.28 (sd 0.29) | 0.07 | 0.43 (sd 0.42) |
+| `field` | hardest | level 1 for 2 of 5 (g22, g88) | 0.11 (sd 0.16) | 0.08 | 0.60 (sd 0.17) |
+
+Training on one easy arena alone gives weaker racers (exam v2: 0.63–0.70 of checkpoints) than M4's
+default setup (0.87 at g150 in m4-e9-confirm, same exam): single arenas are building blocks for a
+curriculum (M6 2.6), not replacements.
 
 ## Not in M5
 
@@ -168,3 +185,20 @@ Phase 2 (after M4):
   - **Frozen yardstick:** M4 compares runs on the exam (`demo`, `short`, random tracks). So the
     code tracks stay as they are, the new tracks do not enter the exam or training, and step 1's
     "load `demo` and `short` from files" became a test that the file format can express them.
+- **2026-11-13, phase 2 (training side) built** (approved by the user after M4 closed):
+  - **Respawn rule for `race-legs`:** an episode is several consecutive legs, so a crash must
+    respawn at the last checkpoint reached, not at the episode start. Episodes get an optional
+    `respawn: "last-target"` (and targets an optional respawn `orientation`); absent, nothing
+    changes. Not a game-rule change: the race already respawns there.
+  - **Episodes with obstacles get their own cells:** `corridor` and `field` place each episode's
+    walls or field in its own grid cell, since a scenario's obstacles are shared by all its
+    episodes.
+  - **`race-legs` defaults to the `random` track**, so the exam's fixed tracks stay out of training
+    unless a config names them.
+  - **Tier and description** are on the arena registry and shown in the watch page's track list
+    and status line. The Evo Lab plugin does not show them yet.
+  - **Step 7 setup:** the user asked for the current default setup (task v2 scoring, lineCheck,
+    `curriculum: { success: 0.6 }`, `parents: 10`) as Evo Lab measurements with 5 seeds instead of
+    one run per arena. The default curriculum levels name rock-in-line and point-to-point, so each
+    arena gets its own three levels (easier → its defaults). `race-legs` was measured too (30 runs
+    in total, within the cap the user set).

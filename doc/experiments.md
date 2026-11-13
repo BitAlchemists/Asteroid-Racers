@@ -237,3 +237,22 @@ Details in evo-lab's `docs/profiling.md`.
   here), so it has no effect for us today. Whole-process alternative: `--cpu-prof
   --cpu-prof-dir=profiles` as node flags in the method `command`; `lab hotspots` reads the result.
 - `lab machine reload --yes`: restart the machine runner on new Evo Lab code without stopping runs.
+
+## Arenas (M5)
+
+`arenas` in a training config is not a switch, but the arena names are opt-in content: a config
+names the arenas it trains on (`packages/server/src/ai/arenas.ts`, `tier-arenas.ts`). Defaults in
+brackets; `frames` defaults to the config's `frames` (600).
+
+| Tier | Arena | What it asks for | Params |
+| --- | --- | --- | --- |
+| 0 | `point-to-point`, `rock-in-line` | one target per episode (rocks on the line) | see the code |
+| 1 | `stop` | brake: a target counts only below `maxSpeed` | `episodes` [8], `distance` [300, 1200], `radius` [60], `maxSpeed` [100], `frames` per episode |
+| 1 | `turn-and-go` | turn around: start moving fast away from the target | `episodes` [8], `distance` [300, 1200], `radius` [50], `speed` [200, 400], `spread` [45]°, `frames` per episode |
+| 1 | `chain` | 3–5 targets per episode, legs turning from the last | `episodes` [6], `targets` [3, 5], `distance` [300, 900], `turn` [0, 120]°, `radius` [50], `frames` per target |
+| 2 | `corridor` | target at the end of a bent corridor of asteroid walls | `episodes` [4], `segments` [2, 3], `length` [400, 700], `bend` [40, 100]°, `width` [260], `rockRadius` [30, 45], `radius` [50], `frames` per episode |
+| 2 | `field` | a chain through a dense field | `episodes` [4], `targets` [3, 5], `distance` [400, 800], `turn` [0, 90]°, `radius` [60], `density` [10] per 10⁶ units², `rockRadius` [30, 70], `margin` [500], `lane` [0], `frames` per target |
+| 3 | `race-legs` | consecutive checkpoints of a race track; crashes respawn at the last one | `tracks` [["random"]], `episodes` [6], `legs` [3], `frames` per leg |
+
+The watch page flies any of them (`watch.html?arena=<name>&params=<JSON>&seed=<run seed>&g=<gen>`),
+built exactly as in a training run with that seed at that generation.

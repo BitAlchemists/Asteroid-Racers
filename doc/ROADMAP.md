@@ -104,10 +104,11 @@ Done 2026-11-13: 1.55× (one run) and 1.66× (10 runs) training ship-steps/s, ex
 Evo Lab gate bit-identical. Batched network passes skipped (under the 3 % bar). New switch
 `heldOutEvery: N`.
 
-### M5 — Content 🟡 (game side)
+### M5 — Content ✅
 
 Plan: [`plans/M5-content.md`](plans/M5-content.md). Game side (track files, three tracks, track
-picker) started 2026-11-13 with the user's OK; the training side waits for M4.
+picker) and training side (six tiered arenas, the watch page's arena mode, baseline runs) done
+2026-11-13.
 
 - A track file format, three hand-designed tracks (`slalom`, `gauntlet`, `canyon`) and a track
   picker in the game.
