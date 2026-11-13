@@ -1,6 +1,6 @@
 # Experiment: m6-2-7-heldout-level
 
-Status: DRAFT — needs the curriculum-v2 code (in progress); not created in Evo Lab. M6, phase 2, experiment 2.7 (level-aware held-out).
+Status: DRAFT — curriculum-v2 code is in (87c3331); not created in Evo Lab. M6, phase 2, experiment 2.7 (level-aware held-out).
 
 Held-out scenarios that follow the current curriculum level, so progress shows early. Mostly a measurement change: it should not change training at all (a check that it is byte-identical in the training state), and its value is in the reported metric.
 
@@ -66,9 +66,9 @@ Held-out scenarios that follow the current curriculum level, so progress shows e
   },
   "switches": [
     {
-      "key": "heldOutLevel",
-      "on": "current",
-      "note": "PLACEHOLDER — final syntax from the curriculum-v2 code"
+      "key": "curriculum.heldOutCurrent",
+      "on": true,
+      "note": "also fly the held-out scenarios of the level flown; reported as heldOutCurrent / heldOutCurrentSuccess"
     }
   ],
   "design": "one-at-a-time",

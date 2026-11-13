@@ -1,8 +1,8 @@
 # Experiment: m6-2-5-thresholds
 
-Status: DRAFT — needs the curriculum-v2 code (in progress); not created in Evo Lab. M6, phase 2, experiment 2.5 (level-up thresholds).
+Status: DRAFT — curriculum-v2 code is in (87c3331); not created in Evo Lab. M6, phase 2, experiment 2.5 (level-up thresholds).
 
-0.6 against 0.8 is a value change on a baseline key (not a valid switch); the planned comparison is an adaptive threshold (new code) against the fixed 0.6. Key name and parameters are set by the curriculum-v2 code.
+0.6 against 0.8 is a value change on a baseline key (not a valid switch); the comparison is the plateau rule (`curriculum.plateau: {}`, defaults floor 0.5, patience 10, alpha 0.2, minGain 0.02) against the fixed 0.6 rule alone. The arm keeps `success: 0.6` from the baseline, so the run moves up on whichever rule fires first. A plateau-alone arm (`success: 1` plus a large `streak`) would change baseline keys and is not a valid switch; it is left out.
 
 ```json experiment
 {
@@ -66,11 +66,9 @@ Status: DRAFT — needs the curriculum-v2 code (in progress); not created in Evo
   },
   "switches": [
     {
-      "key": "curriculum.adaptive",
-      "on": {
-        "target": 0.65
-      },
-      "note": "PLACEHOLDER — final syntax from the curriculum-v2 code"
+      "key": "curriculum.plateau",
+      "on": {},
+      "note": "plateau rule with defaults (floor 0.5, patience 10, alpha 0.2, minGain 0.02), next to the baseline's fixed success 0.6 rule"
     }
   ],
   "design": "one-at-a-time",

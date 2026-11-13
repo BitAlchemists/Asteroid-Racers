@@ -1,8 +1,8 @@
 # Experiment: m6-2-6-tiered-curriculum
 
-Status: DRAFT — needs the curriculum-v2 code (in progress); not created in Evo Lab. M6, phase 2, experiment 2.6 (tiered arenas).
+Status: DRAFT — curriculum-v2 code is in (87c3331); not created in Evo Lab. M6, phase 2, experiment 2.6 (tiered arenas).
 
-Levels made of M5's tiered arenas (stop, turn-and-go → chain, corridor → field, race-legs → the race task) instead of levels that only add rocks. Needs curriculum levels that switch arenas (curriculum-v2 code).
+Levels made of M5's tiered arenas (stop, turn-and-go → chain, corridor → field, race-legs → the race task) instead of levels that only add rocks. Levels: stop, turn-and-go, chain, corridor, field, race-legs, then the v2 task (rock-in-line 2 rocks + point-to-point 80 asteroids, as in the baseline). Order is M5's tier order (tier 1 stop/turn-and-go, tier 2 chain/corridor/field, tier 3 race-legs); M5 baseline results (`m5-base-*`) were not final when this was drafted (no `experiments/m5-*.report.md`; race-legs and corridor still running), so they did not inform the order. Episodes per level follow the M5 baselines. The baseline's `success: 0.6` and default `streak` apply to every level.
 
 ```json experiment
 {
@@ -67,8 +67,87 @@ Levels made of M5's tiered arenas (stop, turn-and-go → chain, corridor → fie
   "switches": [
     {
       "key": "curriculum.levels",
-      "on": "PLACEHOLDER — tiered levels in the curriculum-v2 syntax",
-      "note": "levels over different arenas"
+      "on": [
+        {
+          "arenas": [
+            {
+              "name": "stop",
+              "params": {
+                "episodes": 16
+              }
+            }
+          ]
+        },
+        {
+          "arenas": [
+            {
+              "name": "turn-and-go",
+              "params": {
+                "episodes": 16
+              }
+            }
+          ]
+        },
+        {
+          "arenas": [
+            {
+              "name": "chain",
+              "params": {
+                "episodes": 6
+              }
+            }
+          ]
+        },
+        {
+          "arenas": [
+            {
+              "name": "corridor",
+              "params": {
+                "episodes": 8
+              }
+            }
+          ]
+        },
+        {
+          "arenas": [
+            {
+              "name": "field",
+              "params": {
+                "episodes": 6
+              }
+            }
+          ]
+        },
+        {
+          "arenas": [
+            {
+              "name": "race-legs",
+              "params": {
+                "episodes": 8
+              }
+            }
+          ]
+        },
+        {
+          "arenas": [
+            {
+              "name": "rock-in-line",
+              "params": {
+                "episodes": 16,
+                "rocks": 2
+              }
+            },
+            {
+              "name": "point-to-point",
+              "params": {
+                "episodes": 8,
+                "asteroids": 80
+              }
+            }
+          ]
+        }
+      ],
+      "note": "7 tiered levels, easy to hard (M5 tier order), the last is the v2 task as in the baseline"
     }
   ],
   "design": "one-at-a-time",
