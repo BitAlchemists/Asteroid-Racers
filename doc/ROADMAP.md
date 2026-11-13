@@ -54,7 +54,8 @@ CI green on `13d7240`. Best racer so far: train-4 g110 (exam 3,579, finishes 6 o
 
 ### M3 — Visibility 🟡
 
-Plan: [`plans/M3-visibility.md`](plans/M3-visibility.md), approved 2026-11-13
+Plan: [`plans/M3-visibility.md`](plans/M3-visibility.md), approved 2026-11-13. All steps are done and the
+acceptance items are ticked, except CI, which runs only after a push
 
 - One replay viewer that re-simulates any flight exactly (model + scenario + seed), used in two
   places:

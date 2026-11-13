@@ -301,3 +301,20 @@ Plan: [`plans/M3-visibility.md`](plans/M3-visibility.md), approved by the user (
   - Arenas with rocks on the direct line would force avoidance.
   - The exam needs more random tracks, so one trap weighs less.
   - Promoting g110 into the game should wait until a model can avoid rocks.
+
+### Checked with the browser pane visible
+
+- The watch page plays: the bundled model finishes `short` in 4.5 s, as the exam measured. On
+  `demo` it heads north into the upper-left asteroid block instead of east down the corridor and
+  crashes there again and again.
+- A train-5 snapshot loaded through the watch page's file input flies `demo`.
+- The Evo Lab plugin plays train-5's episodes on the overview camera with its full controls bar.
+- Bugs found and fixed (`503946b` and the commit after it):
+  - entity ids restart in every replay's world, so after switching flights the view drew the new
+    track with the previous track's shapes (checkpoints looked like asteroids); nodes are now rebuilt
+    per replay;
+  - after the finish every checkpoint now shows as cleared;
+  - the viewer's `.bar` class collided with Evo Lab's own `.bar` style, which squeezed the controls
+    to 80 × 12 px; the viewer's classes are now prefixed `ar-`.
+- The animation could not be checked while the pane was hidden: the browser pauses animation frames
+  for a hidden page. Everything else above was checked then.

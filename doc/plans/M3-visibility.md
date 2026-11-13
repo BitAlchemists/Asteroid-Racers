@@ -115,9 +115,9 @@ Each step ends with `npm run check` green and its own commit.
 - [x] A replayed training winner reproduces the run's recorded best score exactly; a replayed exam
       flight reproduces the exam's flight result exactly (tests).
 - [x] Snapshots with traces leave `result.json` and exact resume unchanged (tests).
-- [ ] In Evo Lab, a new training run's generations and an exam's flights can be watched, the
+- [x] In Evo Lab, a new training run's generations and an exam's flights can be watched, the
       filmstrip shows path thumbnails, and leaving the page leaks nothing (checked in the browser).
-- [ ] The watch page flies the bundled model and a snapshot file on every track (checked in the
+- [x] The watch page flies the bundled model and a snapshot file on every track (checked in the
       browser).
 - [x] Findings from step 6 recorded in `HISTORY.md`.
 

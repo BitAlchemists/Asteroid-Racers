@@ -27,12 +27,12 @@ const CSS = `
 .ar-replay{position:relative;width:100%;height:100%;min-height:200px;background:#000;color:#cfe;font:12px/1.4 system-ui,sans-serif;overflow:hidden;outline:none}
 .ar-replay:focus-visible{box-shadow:inset 0 0 0 2px #4af}
 .ar-replay canvas{position:absolute;inset:0;width:100%!important;height:100%!important;display:block}
-.ar-replay .hud{position:absolute;left:8px;top:6px;right:8px;pointer-events:none;text-shadow:0 0 3px #000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ar-replay .bar{position:absolute;left:0;right:0;bottom:0;display:flex;gap:6px;align-items:center;padding:6px 8px;background:rgba(0,0,0,.65);flex-wrap:wrap}
+.ar-replay .ar-hud{position:absolute;left:8px;top:6px;right:8px;pointer-events:none;text-shadow:0 0 3px #000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ar-replay .ar-bar{position:absolute;left:0;right:0;bottom:0;display:flex;gap:6px;align-items:center;padding:6px 8px;background:rgba(0,0,0,.65);flex-wrap:wrap}
 .ar-replay button,.ar-replay select{background:#123;color:#cfe;border:1px solid #345;border-radius:4px;padding:2px 8px;font:inherit;cursor:pointer;min-height:24px}
 .ar-replay button:hover{background:#234}
 .ar-replay input[type=range]{flex:1;min-width:80px}
-.ar-replay .seg{max-width:220px}
+.ar-replay .ar-seg{max-width:220px}
 `;
 
 function ensureStyle(doc: Document): void {
@@ -65,7 +65,7 @@ export async function mountReplayViewer(
 ): Promise<ReplayViewer> {
   ensureStyle(parent.ownerDocument);
   const root = el("div", { className: "ar-replay", tabIndex: 0 }, parent);
-  const hud = el("div", { className: "hud" }, root);
+  const hud = el("div", { className: "ar-hud" }, root);
   const controller = new ReplayController(source, {
     autoplay: options.autoplay ?? true,
     speed: options.speed ?? 1,
@@ -106,7 +106,7 @@ export async function mountReplayViewer(
   let cameraButton: HTMLButtonElement | undefined;
   let sliding = false;
   if (!options.compact) {
-    const bar = el("div", { className: "bar" }, root);
+    const bar = el("div", { className: "ar-bar" }, root);
     const button = (text: string, title: string, onClick: () => void) => {
       const b = el("button", { textContent: text, title, type: "button" }, bar);
       listen(b, "click", () => {
@@ -119,7 +119,7 @@ export async function mountReplayViewer(
     play = button("⏸", "Play/pause (space)", () => controller.toggle());
     button("⏭", "Next (→)", () => void controller.next());
     button("↺", "Restart (r)", () => void controller.restart());
-    segmentSelect = el("select", { className: "seg", title: "Episode or flight" }, bar);
+    segmentSelect = el("select", { className: "ar-seg", title: "Episode or flight" }, bar);
     source.segments.forEach((label, i) =>
       el("option", { value: String(i), textContent: label }, segmentSelect),
     );
