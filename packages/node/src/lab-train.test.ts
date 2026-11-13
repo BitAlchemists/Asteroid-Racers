@@ -104,6 +104,35 @@ describe("evo-lab worker (protocol v1)", () => {
     expect(existsSync(join(dir, "luke.txt"))).toBe(true);
   }, 60_000);
 
+  it("saves the winner as gens/gNNNN.json every snapshotEvery generations and names it on the gen event", async () => {
+    const dir = newRun({ ...CONFIG, snapshotEvery: 2 });
+    expect(await run(dir, ["--to", "5"])).toBe(0);
+    const gens = events(dir).filter((e) => e.type === "gen");
+    expect(gens.map((e) => e.snapshot ?? null)).toEqual([
+      null,
+      "gens/g0002.json",
+      null,
+      "gens/g0004.json",
+      "gens/g0005.json",
+    ]);
+    const last = JSON.parse(readFileSync(join(dir, "gens", "g0005.json"), "utf8")) as Record<string, unknown>;
+    const res = JSON.parse(result(dir)) as Record<string, unknown>;
+    expect(last).toMatchObject({ format: "asteroid-racers/model-snapshot/v1", g: 5, score: res.bestScore });
+    expect(last.model).toEqual(res.winner);
+
+    // Snapshots don't change the result.
+    const plain = newRun({ ...CONFIG, snapshotEvery: 0 });
+    expect(await run(plain, ["--to", "5"])).toBe(0);
+    const { config: _a, ...withSnapshots } = res;
+    const { config: _b, ...without } = JSON.parse(result(plain)) as Record<string, unknown>;
+    expect(without).toEqual(withSnapshots);
+    expect(
+      events(plain)
+        .filter((e) => e.snapshot)
+        .map((e) => e.g),
+    ).toEqual([5]);
+  }, 60_000);
+
   it("--every K checkpoints every K generations and always at the end", async () => {
     const dir = newRun();
     expect(await run(dir, ["--to", "5", "--every", "2"])).toBe(0);

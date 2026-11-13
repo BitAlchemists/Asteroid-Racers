@@ -9,7 +9,15 @@
  * Exact resume: the checkpoint holds the winner and both random generators, so resuming from g and
  * running to G gives a result.json byte-identical to an uninterrupted run to G.
  */
-import { appendFileSync, existsSync, readFileSync, renameSync, statSync, writeFileSync } from "node:fs";
+import {
+  appendFileSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  renameSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { setImmediate as yieldToEventLoop } from "node:timers/promises";
@@ -41,6 +49,8 @@ import {
 const PROTOCOL = 1;
 const CHECKPOINT = "ckpt.json";
 const CHECKPOINT_FORMAT = "asteroid-racers/train-ckpt/v2";
+/** Format of the per-generation winner files in RUN_DIR/gens/ (read by the exam method). */
+export const SNAPSHOT_FORMAT = "asteroid-racers/model-snapshot/v1";
 /** Generations to run when the run has no `--to`. */
 const DEFAULT_GENERATIONS = 200;
 
@@ -61,6 +71,8 @@ export interface TrainConfig {
   crashMode: CrashMode;
   /** Held-out scenarios per arena, flown by each winner only. */
   heldOut: number;
+  /** Save the winner as RUN_DIR/gens/gNNNN.json every this many generations (and always the last). 0 = only the last. */
+  snapshotEvery: number;
 }
 
 interface Checkpoint {
@@ -134,6 +146,20 @@ async function atomicWrite(file: string, text: string): Promise<void> {
   }
 }
 
+/** Same as atomicWrite, synchronously: a snapshot must exist before the event that names it. */
+function atomicWriteSync(file: string, text: string): void {
+  const temp = `${file}.tmp`;
+  writeFileSync(temp, text);
+  for (let attempt = 0; ; attempt++) {
+    try {
+      renameSync(temp, file);
+      return;
+    } catch (error) {
+      if (attempt >= 1000) throw error;
+    }
+  }
+}
+
 function intArg(value: unknown, name: string, min: number): number | undefined {
   if (value === undefined || value === true) return undefined;
   const n = Number(value);
@@ -183,9 +209,12 @@ function readConfig(): TrainConfig {
     collisions: oneOf(raw.collisions, "collisions", ["none", "obstacles", "all"] as const, "none"),
     crashMode: oneOf(raw.crashMode, "crashMode", ["end", "respawn"] as const, "end"),
     heldOut: (raw.heldOut as number | undefined) ?? 0,
+    snapshotEvery: (raw.snapshotEvery as number | undefined) ?? 10,
   };
   if (!Number.isInteger(config.heldOut) || config.heldOut < 0)
     throw new Error("config.heldOut must be an integer ≥ 0");
+  if (!Number.isInteger(config.snapshotEvery) || config.snapshotEvery < 0)
+    throw new Error("config.snapshotEvery must be an integer ≥ 0");
   if (!Number.isInteger(config.sample) || config.sample < 2)
     throw new Error("config.sample must be an integer ≥ 2");
   if (!Number.isInteger(config.frames) || config.frames < 1)
@@ -272,6 +301,20 @@ async function main(): Promise<void> {
     const cpu = process.cpuUsage(genStartCpu);
     const wall = (performance.now() - genStartWall) / 1000;
     const cpuSec = (cpu.user + cpu.system) / 1e6;
+    let snapshot: string | undefined;
+    if (g === to || (config.snapshotEvery > 0 && g % config.snapshotEvery === 0)) {
+      snapshot = `gens/g${String(g).padStart(4, "0")}.json`;
+      mkdirSync(join(runDir, "gens"), { recursive: true });
+      atomicWriteSync(
+        join(runDir, snapshot),
+        JSON.stringify({
+          format: SNAPSHOT_FORMAT,
+          g,
+          score: report.bestScore,
+          model: report.winner.toJson(),
+        }),
+      );
+    }
     emit("gen", {
       g,
       metrics: {
@@ -286,6 +329,7 @@ async function main(): Promise<void> {
       phases: { simulate: { wall, cpu: cpuSec } },
       cpuSec,
       rssMiB: Math.round(process.memoryUsage().rss / 2 ** 20),
+      ...(snapshot === undefined ? {} : { snapshot }),
     });
     // Called between generations: both generators are exactly where the next generation starts.
     if (g % every === 0 || g === to) pending.push(writeCheckpoint());

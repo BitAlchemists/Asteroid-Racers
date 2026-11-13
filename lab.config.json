@@ -34,7 +34,8 @@
         "scoring": { "distance": 1, "success": 0, "time": 0, "crashes": 0 },
         "collisions": "none",
         "crashMode": "end",
-        "heldOut": 0
+        "heldOut": 0,
+        "snapshotEvery": 10
       },
       "seeded": true,
       "defaultSeed": 2026,
