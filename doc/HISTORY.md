@@ -409,3 +409,31 @@ continued as train-12..16). Report: [`experiments/m4-e1-noise-floor.report.md`](
 One-at-a-time: blind baseline vs `whiskers`, `sectors`, `nearest`, `lineCheck`; seeds 1 to 5; screen
 at 50, final at 150; decision on `exam` (2 × paired SE, `minEffect` 10,000, 4 of 5 seeds). The gate
 uses E1's first-look runs.
+
+### E2 result (m4-e2-sensors, closed)
+
+Report: [`experiments/m4-e2-sensors.report.md`](../experiments/m4-e2-sensors.report.md). The baseline
+gate passed: all 5 blind baseline runs reproduced (stateHash g1–g5), so the sensor code changed
+nothing for blind models.
+
+| sensor | g50 (screen) | g150 |
+| --- | --- | --- |
+| `lineCheck` | better: −40,300, 5/5 seeds | −18,800, 2/5 seeds: no clear difference (g100: −30,700, 4/5) |
+| `whiskers` | +700, no clear difference | screened out |
+| `sectors` | +7,200, no clear difference | screened out |
+| `nearest` | +20,500 (tends worse), no clear difference | screened out |
+
+- **`lineCheck` at g150 vs blind** (same seeds):
+  - exam crashes 392 vs 611 (fewer in 4/5 seeds);
+  - training success 80 % vs 68 %; held-out success 63 % vs 54 %.
+  - The exam score is too noisy for the rule.
+- **New best racer:** `lineCheck` seed 3 (train-54): exam 19,170, 87 % of race checkpoints, 88 % of
+  races finished, 136 crashes. Every blind model crashed 515–766 times.
+- **Whiskers at g50** crash less than blind (268–497 vs 455–743), but some barely race (train-28: 12 %
+  of checkpoints, nothing finished). Seeing makes some models cautious rather than skilful.
+- **Reading:**
+  - the sensors that add many inputs (7–9) did not help at today's network size, and the one that
+    adds 2 did. That fits a capacity limit (4-10-8-6-4-2, and more mutated weights per child), which
+    is what the user suspected;
+  - the exam is very noisy at 5 seeds;
+  - 150 generations may be short for richer inputs.
