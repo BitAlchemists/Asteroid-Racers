@@ -156,6 +156,11 @@ export class ExamReplay implements Replay {
     return this.proxy.movable;
   }
 
+  get start(): { x: number; y: number } | undefined {
+    const portal = this.server.raceController?.start;
+    return portal && { x: portal.position.x, y: portal.position.y };
+  }
+
   /** The next race checkpoint (the finish last). */
   get target(): Entity | undefined {
     const race = this.server.raceController!;

@@ -28,6 +28,7 @@ const CSS = `
 .ar-replay:focus-visible{box-shadow:inset 0 0 0 2px #4af}
 .ar-replay canvas{position:absolute;inset:0;width:100%!important;height:100%!important;display:block}
 .ar-replay .ar-hud{position:absolute;left:8px;top:6px;right:8px;pointer-events:none;text-shadow:0 0 3px #000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ar-replay .ar-hud .ar-goal{color:#fe6}
 .ar-replay .ar-bar{position:absolute;left:0;right:0;bottom:0;display:flex;gap:6px;align-items:center;padding:6px 8px;background:rgba(0,0,0,.65);flex-wrap:wrap}
 .ar-replay button,.ar-replay select{background:#123;color:#cfe;border:1px solid #345;border-radius:4px;padding:2px 8px;font:inherit;cursor:pointer;min-height:24px}
 .ar-replay button:hover{background:#234}
@@ -56,7 +57,7 @@ function el<K extends keyof HTMLElementTagNameMap>(
 /**
  * Mounts a replay viewer into `parent`: a PixiJS canvas with a HUD line and (unless compact) a
  * controls bar. Keyboard shortcuts work only while the viewer has focus: space play/pause, ← →
- * previous/next segment, + − speed, c camera, s sensors, r restart, mouse wheel zoom.
+ * previous/next segment, + − speed, c camera, s sensors, t all targets, r restart, mouse wheel zoom.
  */
 export async function mountReplayViewer(
   parent: HTMLElement,
@@ -105,6 +106,7 @@ export async function mountReplayViewer(
   let slider: HTMLInputElement | undefined;
   let cameraButton: HTMLButtonElement | undefined;
   let sensorsButton: HTMLButtonElement | undefined;
+  let targetsButton: HTMLButtonElement | undefined;
   let sliding = false;
   if (!options.compact) {
     const bar = el("div", { className: "ar-bar" }, root);
@@ -130,6 +132,7 @@ export async function mountReplayViewer(
     listen(speedSelect, "change", () => controller.setSpeed(Number(speedSelect!.value)));
     cameraButton = button("", "Camera (c)", () => toggleCamera());
     sensorsButton = button("Sensors", "Show sensors (s)", () => toggleSensors());
+    targetsButton = button("All targets", "Show the other episodes' targets too (t)", () => toggleTargets());
     slider = el("input", { type: "range", min: "0", value: "0", title: "Time" }, bar);
     listen(slider, "input", () => (sliding = true));
     listen(slider, "change", () => {
@@ -144,6 +147,9 @@ export async function mountReplayViewer(
   const toggleSensors = () => {
     if (ui.view) ui.view.showSensors = !ui.view.showSensors;
   };
+  const toggleTargets = () => {
+    if (ui.view) ui.view.showAllTargets = !ui.view.showAllTargets;
+  };
 
   listen<KeyboardEvent>(root, "keydown", (e) => {
     const actions: Record<string, () => void> = {
@@ -156,6 +162,7 @@ export async function mountReplayViewer(
       c: () => toggleCamera(),
       r: () => void controller.restart(),
       s: () => toggleSensors(),
+      t: () => toggleTargets(),
     };
     const action = actions[e.key];
     if (!action || (e.target as HTMLElement).tagName === "SELECT") return;
@@ -188,6 +195,13 @@ export async function mountReplayViewer(
       `${options.title ? `${options.title} · ` : ""}${label} · ${s.seconds.toFixed(1)} s · ` +
       `${what} ${s.reached}/${s.total} · crashes ${s.crashes}${s.done ? " · done" : ""}` +
       `${controller.speed !== 1 ? ` · ${controller.speed}×` : ""}`;
+    const goal = el("div", { className: "ar-goal" }, hud);
+    goal.textContent =
+      s.done && s.reached >= s.total
+        ? `goal reached: all ${s.total} ${what}`
+        : s.kind === "episode"
+          ? `goal: fly from the white cross to the yellow target without crashing · ${s.reached} of ${s.total} reached`
+          : `goal: race through the checkpoints in order, next one yellow · ${s.reached} of ${s.total} reached`;
     if (play) play.textContent = controller.playing && !replay.done ? "⏸" : "▶";
     if (segmentSelect && document.activeElement !== segmentSelect)
       segmentSelect.value = String(controller.segment);
@@ -195,6 +209,7 @@ export async function mountReplayViewer(
     if (cameraButton && ui.view)
       cameraButton.textContent = ui.view.camera === "follow" ? "Follow" : "Overview";
     if (sensorsButton && ui.view) sensorsButton.style.opacity = ui.view.showSensors ? "1" : "0.5";
+    if (targetsButton && ui.view) targetsButton.style.opacity = ui.view.showAllTargets ? "1" : "0.5";
     if (slider && !sliding) {
       slider.max = String(controller.segmentLength);
       slider.value = String(controller.segmentFrame);

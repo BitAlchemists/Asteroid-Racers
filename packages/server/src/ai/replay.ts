@@ -41,6 +41,8 @@ export interface Replay {
   readonly ship: Movable | undefined;
   /** What the ship flies to now. */
   readonly target: Entity | undefined;
+  /** Where the current episode or race starts (and a crash respawns), for drawing. */
+  readonly start?: { x: number; y: number };
   status(): ReplayStatus;
   /** What the model's obstacle sensors see now, in world coordinates (empty without sensors). */
   sensors?(): SensorPrimitive[];
@@ -130,6 +132,11 @@ export class ArenaReplay implements Replay {
 
   get target(): Entity | undefined {
     return this.script.currentTarget;
+  }
+
+  get start(): { x: number; y: number } | undefined {
+    const episode = this.script.episodes[Math.min(this.script.episodeIndex, this.script.episodes.length - 1)];
+    return episode && { x: episode.spec.start.position.x, y: episode.spec.start.position.y };
   }
 
   /** Finished episodes, plus the one being flown. */

@@ -44,6 +44,8 @@ export class ReplayView {
   private readonly sensorLayer = new Graphics();
   /** A screen-size dot on the ship, so it stays visible when the camera is far out. */
   private readonly shipMarker = new Graphics();
+  /** The goal: a dashed line from the ship to its target, the target's fill, the start marker. */
+  private readonly goalLayer = new Graphics();
   /** World scale the checkpoint rings were last drawn for (their line width stays ~2 px on screen). */
   private ringScale = 0;
   private readonly trailPoints: number[] = [];
@@ -54,11 +56,16 @@ export class ReplayView {
   camera: CameraMode = "follow";
   /** Draw the model's obstacle sensors (when it has any). */
   showSensors = true;
+  /**
+   * Draw the targets of the other episodes too. In a training arena all episodes' targets exist at
+   * once; only the current one matters, so the others are hidden by default.
+   */
+  showAllTargets = false;
 
   constructor(private readonly app: Application) {
     this.stars.alpha = 0.6;
     app.stage.addChild(this.stars, this.world);
-    this.world.addChild(this.trail, this.sensorLayer);
+    this.world.addChild(this.goalLayer, this.trail, this.sensorLayer);
   }
 
   /** Forget the trail (new segment, seek). */
@@ -119,12 +126,14 @@ export class ReplayView {
           node.ring.circle(0, 0, entity.radius).stroke({ color, width: Math.max(1, 2 / this.ringScale) });
           node.ring.alpha = race || entity === target ? 1 : 0.35;
         }
+        node.root.visible = Boolean(race) || entity === target || this.showAllTargets;
       }
       if (entity instanceof Movable && entity.type === EntityType.SHIP)
         node.body.alpha = entity.canMove ? 1 : 0.35;
     }
     this.updateTrail(replay.ship);
     this.updateCamera(replay);
+    this.updateGoal(replay, target);
     this.updateSensors(replay);
     const ship = replay.ship;
     this.shipMarker.clear();
@@ -195,8 +204,47 @@ export class ReplayView {
   }
 
   /**
+   * Makes the goal obvious: the current target filled yellow with a thick ring, a dashed yellow line
+   * from the ship to it, and a white cross where the episode starts (and a crash respawns). Sizes
+   * stay constant on screen.
+   */
+  private updateGoal(replay: Replay, target: Entity | undefined): void {
+    const g = this.goalLayer;
+    g.clear();
+    const px = 1 / (this.world.scale.x || 1);
+    const start = replay.start;
+    if (start) {
+      const r = 9 * px;
+      g.moveTo(start.x - r, start.y - r)
+        .lineTo(start.x + r, start.y + r)
+        .moveTo(start.x - r, start.y + r)
+        .lineTo(start.x + r, start.y - r)
+        .stroke({ color: Color.White, width: 2 * px, alpha: 0.8 });
+    }
+    if (!target) return;
+    const { x: tx, y: ty } = target.position;
+    g.circle(tx, ty, target.radius).fill({ color: Color.Yellow, alpha: 0.18 });
+    g.circle(tx, ty, target.radius + 3 * px).stroke({ color: Color.Yellow, width: 3 * px, alpha: 0.95 });
+    const ship = replay.ship;
+    if (!ship) return;
+    const { x: sx, y: sy } = ship.position;
+    const dx = tx - sx;
+    const dy = ty - sy;
+    const length = Math.hypot(dx, dy) - target.radius;
+    if (length <= 0) return;
+    const ux = dx / Math.hypot(dx, dy);
+    const uy = dy / Math.hypot(dx, dy);
+    const dash = 12 * px;
+    for (let t = 0; t < length; t += 2 * dash) {
+      const e = Math.min(length, t + dash);
+      g.moveTo(sx + ux * t, sy + uy * t).lineTo(sx + ux * e, sy + uy * e);
+    }
+    g.stroke({ color: Color.Yellow, width: 1.5 * px, alpha: 0.55 });
+  }
+
+  /**
    * Unlit sensor segments faint grey, lit ones (an obstacle found there) orange-red, picked rocks
-   * as a yellow outline. Line widths stay constant on screen.
+   * as an orange-red outline (yellow is the target). Line widths stay constant on screen.
    */
   private updateSensors(replay: Replay): void {
     const g = this.sensorLayer;
@@ -219,7 +267,7 @@ export class ReplayView {
       if (p.kind !== "rock") continue;
       g.circle(p.x, p.y, p.r + 4 * px);
     }
-    g.stroke({ color: Color.Yellow, width: 2 * px, alpha: 0.9 });
+    g.stroke({ color: Color.OrangeRed, width: 2 * px, alpha: 0.9 });
     this.world.addChild(g); // above the trail and the entities added since
   }
 
