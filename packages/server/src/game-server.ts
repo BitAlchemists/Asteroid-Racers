@@ -20,7 +20,7 @@ import type { IClientProxy, IGameServer, IServerService } from "./contracts";
 import { TICK_SECONDS, type GameLoop } from "./game-loop";
 import { RaceController } from "./race-controller";
 import { seededRandom, type Random } from "./random";
-import { SceneController } from "./scene-controller";
+import { TRACKS, type Track } from "./tracks";
 
 const log = getLogger("GameServer");
 
@@ -127,12 +127,14 @@ export class GameServer implements IGameServer {
 
   /** Builds the demo world: scene 2 with its corridor race. */
   prepareDemoConfiguration(): this {
-    SceneController.createScene2(this.world, this.random);
+    return this.loadTrack(TRACKS.demo!);
+  }
 
+  /** Builds `track`'s world and race into this (empty) server with the server's random generator. */
+  loadTrack(track: Track, random: Random = this.random): this {
     const race = new RaceController(this);
-    SceneController.createRace2(this.world, race);
+    track.build(this.world, race, random);
     this.useRace(race);
-
     this.crashDetector.passiveEntities.push(...this.world.passiveCollisionEntities);
     return this;
   }

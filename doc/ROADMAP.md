@@ -41,9 +41,9 @@ Make the trainer generic enough that new courses, inputs and scoring are config 
 **Done when** the legacy course runs as an arena with results that match train-1 within noise, and a
 second arena (point-to-point) runs from config alone.
 
-### M2 — Measurement ⬜
+### M2 — Measurement 🟡
 
-Plan: [`plans/M2-measurement.md`](plans/M2-measurement.md) (waiting for approval)
+Plan: [`plans/M2-measurement.md`](plans/M2-measurement.md), approved 2026-11-13
 
 - **Race exam:** an Evo Lab evaluate-only method. It flies a model through the real race tracks and
   reports checkpoints reached, finish time and crashes.
