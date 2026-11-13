@@ -94,15 +94,16 @@ Training runs at about 1,000 game ticks/s per run (about 14 µs CPU per ship-ste
 remove the overheads, and prove with Evo Lab's bench and gate that results stay bit-identical while
 ticks/s at least double. Runs in the gaps between M4's experiments.
 
-### M5 — Content ⬜
+### M5 — Content 🟡 (game side)
 
-Plan: [`plans/M5-content.md`](plans/M5-content.md) (liked by the user; final OK after M4)
+Plan: [`plans/M5-content.md`](plans/M5-content.md). Game side (track files, three tracks, track
+picker) started 2026-11-13 with the user's OK; the training side waits for M4.
 
 - A track file format, three hand-designed tracks (`slalom`, `gauntlet`, `canyon`) and a track
   picker in the game.
 - Tiered training arenas: tier 1 `stop`, `turn-and-go`, `chain`; tier 2 `corridor`, `field`;
   tier 3 `race-legs`. Moving obstacles are dropped: the game has none.
-- Race exam v2 with the new tracks and 15 random tracks, so a single crash loop weighs less.
+- ~~Race exam v2~~: moved to M4 (step 8).
 
 ### M6 — Experiments ⬜
 

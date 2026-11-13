@@ -1,8 +1,9 @@
 # M5 — Content
 
-Status: ⬜ not started. Liked by the user on 2026-11-13, then moved behind M4 (perception), so that
-models can see obstacles before they train on obstacle-heavy content. Needs a final OK before work
-begins, after M4. Roadmap: [`../ROADMAP.md`](../ROADMAP.md)
+Status: 🟡 game side started 2026-11-13 (approved by the user while M4 continues). Liked by the
+user on 2026-11-13, then moved behind M4 (perception), so that models can see obstacles before they
+train on obstacle-heavy content. The training side (arenas, exam, baselines) waits until M4 is done.
+Roadmap: [`../ROADMAP.md`](../ROADMAP.md)
 
 ## Goal
 
@@ -30,6 +31,9 @@ sensing comes first, in M4 (perception).
 
 ## Steps
 
+**Phase 1 (game side, now):** steps 1–3. **Phase 2 (after M4):** steps 4, 5 and 7; step 6 moved
+to M4. See "Changes to this plan".
+
 Each step ends with `npm run check` green and its own commit.
 
 ### 1. Track file format
@@ -41,10 +45,12 @@ Each step ends with `npm run check` green and its own commit.
   and join the existing track registry next to the code tracks.
 - Validation with clear errors: checkpoints not inside asteroids, portal clear, at least one
   checkpoint.
-- `demo` and `short` are exported to files and loaded from there, so the format covers what exists.
-  A test checks that the file version builds the same world as the code version.
-- A small export helper (`npm run track -- export <name>`) writes any registry track to a file, as
-  a starting point for new tracks.
+- `demo`, `short` and `random` stay in code and are not touched: M4's experiments compare runs on
+  the exam, which flies them. Instead, a test writes `short` and `demo` in the file format (with
+  seeded asteroid belts) and checks that they build the same worlds as the code versions, so the
+  format covers what exists.
+- ~~A small export helper (`npm run track -- export <name>`)~~ dropped: the code tracks' asteroids
+  are random per seed, so an export would freeze one seed. New tracks are written by hand.
 
 ### 2. Three new hand-designed tracks
 
@@ -85,7 +91,7 @@ New arenas, each with params for difficulty. All deterministic per seed, like th
 - The watch page gets an arena mode: pick an arena, its params and a seed, and fly a model through
   its episodes. This is how new arenas get checked by eye while designing them.
 
-### 6. Race exam v2
+### 6. Race exam v2 (moved to M4, step 8)
 
 - The default exam becomes: `demo`, `short`, `slalom`, `gauntlet`, `canyon`, plus **15** random
   tracks (instead of 5), so one trap weighs less.
@@ -102,15 +108,21 @@ New arenas, each with params for difficulty. All deterministic per seed, like th
 
 ## Acceptance
 
-- [ ] Steps 1–6 committed, `npm run check` green, CI green.
-- [ ] Track files: `demo` and `short` from files build the same worlds as from code (test);
-      invalid files fail with clear errors (tests).
-- [ ] Three new tracks, flown by the bundled model and train-4 g110 in the watch page (checked by
-      eye).
+Phase 1 (game side):
+
+- [ ] Steps 1–3 committed, `npm run check` green.
+- [ ] Track files: `demo` and `short` in the file format build the same worlds as from code (test);
+      invalid files fail with clear errors (tests); `demo`, `short` and `random` unchanged (test).
+- [ ] Three new tracks, flown by the bundled model and a trained model in the watch page (checked by
+      eye). They are not in the exam or in training.
 - [ ] The game can race every track (singleplayer picker, `TRACK=` on the server).
+
+Phase 2 (after M4):
+
+- [ ] Steps 4, 5 and 7 committed, `npm run check` green, CI green.
 - [ ] Six new arenas, deterministic per seed, exact replay (tests); each checked by eye in the
       watch page.
-- [ ] Exam v2 in place; the bundled model, train-2 and train-4 g110 re-examined.
+- [ ] ~~Exam v2 in place; the bundled model, train-2 and train-4 g110 re-examined.~~ Moved to M4.
 - [ ] Baseline runs recorded in `HISTORY.md`.
 
 ## Not in M5
@@ -142,3 +154,17 @@ New arenas, each with params for difficulty. All deterministic per seed, like th
   the reference models.
 - **Scope:** six arenas, three tracks and a picker is a lot. If it runs long, tier 3
   (`race-legs`) moves to M6.
+
+## Changes to this plan
+
+- **2026-11-13, game side started early** (approved by the user while M4 continues):
+  - **Exam v2 moved into M4** (step 8): M4 owns the race exam now, so step 6 is no longer part of
+    M5.
+  - **Training waits:** M4 already has a staged curriculum (step 7b), so the tiered training
+    arenas (steps 4–5) and the baseline runs (step 7) wait until M4 is done and its sensing is
+    chosen.
+  - **This phase** covers the track file format, the three hand-designed tracks (`slalom`,
+    `gauntlet`, `canyon`) and the track picker in the game (steps 1–3).
+  - **Frozen yardstick:** M4 compares runs on the exam (`demo`, `short`, random tracks). So the
+    code tracks stay as they are, the new tracks do not enter the exam or training, and step 1's
+    "load `demo` and `short` from files" became a test that the file format can express them.
