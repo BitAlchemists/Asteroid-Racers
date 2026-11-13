@@ -437,3 +437,21 @@ nothing for blind models.
     is what the user suspected;
   - the exam is very noisy at 5 seeds;
   - 150 generations may be short for richer inputs.
+
+### Sensor check after E2 (asked by the user)
+
+- **The sensors fire where there are rocks.** I recorded the model inputs in replays of the training
+  scenarios and of exam races:
+  - whiskers: non-zero 59–87 % of ticks in training, 90–100 % in the exam;
+  - sectors: 84–100 % and 93–100 %;
+  - lineCheck: 30 % in rock-in-line and 0 % in point-to-point, because scattered rocks rarely sit in
+    the corridor to the target; 5–43 % in the exam;
+  - nearest: always non-zero, because empty slots read 1.
+- **The best model uses its sensor.** train-54 g150 re-flew the full exam and matched the recorded
+  result (125 of 143 checkpoints, 136 crashes). With the lineCheck inputs forced to 0 it reached 75
+  checkpoints with 596 crashes, which is blind-model level.
+- **Why a later generation can be worse:** training scenarios are redrawn every generation from
+  (seed, generation). The parent is re-scored on the new scenarios, and the best of 100 on one set
+  is often a lucky child. The exam is never optimised directly.
+- **Noise:** at g150 the paired exam differences of lineCheck vs blind ranged from −10,600 to
+  +65,700, which is bimodal across seeds. The paired crash difference is steadier: 219 ± 200.
