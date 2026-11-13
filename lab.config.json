@@ -3,19 +3,56 @@
   "binding": [
     "packages/shared/src/**/*.ts",
     "packages/server/src/**/*.ts",
-    "packages/node/src/lab-train.ts",
-    "scripts/lab-train.mjs",
+    "packages/server/src/ai/models/*.json",
+    "packages/node/src/lab-*.ts",
+    "scripts/lab-*.mjs",
     "!**/*.test.ts"
   ],
   "metrics": {
-    "score": { "direction": "min", "label": "Best score (lower is better)" },
-    "mean": { "direction": "min", "label": "Mean score of the generation" },
-    "worst": { "direction": "min", "label": "Worst score of the generation" },
-    "success": { "direction": "max", "label": "Share of training targets the winner reached" },
-    "heldOut": { "direction": "min", "label": "Winner's score on held-out scenarios" },
-    "heldOutSuccess": { "direction": "max", "label": "Share of held-out targets the winner reached" }
+    "score": {
+      "direction": "min",
+      "label": "Best score (lower is better)"
+    },
+    "mean": {
+      "direction": "min",
+      "label": "Mean score of the generation"
+    },
+    "worst": {
+      "direction": "min",
+      "label": "Worst score of the generation"
+    },
+    "success": {
+      "direction": "max",
+      "label": "Share of training targets the winner reached"
+    },
+    "heldOut": {
+      "direction": "min",
+      "label": "Winner's score on held-out scenarios"
+    },
+    "heldOutSuccess": {
+      "direction": "max",
+      "label": "Share of held-out targets the winner reached"
+    },
+    "exam": {
+      "direction": "min",
+      "label": "Race exam score (lower is better)"
+    },
+    "examCheckpoints": {
+      "direction": "max",
+      "label": "Share of race checkpoints reached"
+    },
+    "examFinished": {
+      "direction": "max",
+      "label": "Share of exam races finished"
+    },
+    "examCrashes": {
+      "direction": "min",
+      "label": "Crashes during the exam"
+    }
   },
-  "leaderboard": { "metrics": ["score"] },
+  "leaderboard": {
+    "metrics": ["score"]
+  },
   "methods": {
     "train": {
       "command": ["node", "scripts/lab-train.mjs"],
@@ -30,8 +67,18 @@
           "hidden": [10, 8, 6, 4],
           "outputs": "thrustTurn"
         },
-        "arenas": [{ "name": "legacy", "params": {} }],
-        "scoring": { "distance": 1, "success": 0, "time": 0, "crashes": 0 },
+        "arenas": [
+          {
+            "name": "legacy",
+            "params": {}
+          }
+        ],
+        "scoring": {
+          "distance": 1,
+          "success": 0,
+          "time": 0,
+          "crashes": 0
+        },
         "collisions": "none",
         "crashMode": "end",
         "heldOut": 0,
@@ -40,6 +87,23 @@
       "seeded": true,
       "defaultSeed": 2026,
       "resumable": true
+    },
+    "exam": {
+      "command": ["node", "scripts/lab-exam.mjs"],
+      "config": {
+        "model": null,
+        "tracks": ["demo", "short"],
+        "randomTracks": 5,
+        "timeLimitSeconds": 180,
+        "weights": {
+          "checkpoint": 1000,
+          "second": 1,
+          "distance": 0.01
+        },
+        "seed": 1
+      },
+      "seeded": false,
+      "resumable": false
     }
   }
 }

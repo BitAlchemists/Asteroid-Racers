@@ -9,20 +9,19 @@
  * Exact resume: the checkpoint holds the winner and both random generators, so resuming from g and
  * running to G gives a result.json byte-identical to an uninterrupted run to G.
  */
-import {
-  appendFileSync,
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  renameSync,
-  statSync,
-  writeFileSync,
-} from "node:fs";
+import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { setImmediate as yieldToEventLoop } from "node:timers/promises";
 import { parseArgs } from "node:util";
 import { Level, setLogLevel } from "@ar/shared";
+import {
+  atomicWrite,
+  atomicWriteSync,
+  dependencyVersions as dependencyVersions_,
+  eventLog,
+  PROTOCOL,
+} from "./lab-common";
 import {
   AI_TRAINING_FRAMES,
   AI_TRAINING_SAMPLE_SIZE,
@@ -46,7 +45,6 @@ import {
   type ScoringWeights,
 } from "@ar/server";
 
-const PROTOCOL = 1;
 const CHECKPOINT = "ckpt.json";
 const CHECKPOINT_FORMAT = "asteroid-racers/train-ckpt/v2";
 /** Format of the per-generation winner files in RUN_DIR/gens/ (read by the exam method). */
@@ -99,66 +97,13 @@ const { values } = parseArgs({
 });
 
 const runDir = resolve(String(values.out ?? process.env.LAB_RUN_DIR ?? "."));
-const eventsFile = join(runDir, "events.jsonl");
 /** Project root: --root, LAB_ROOT, or three levels up from this file. Inputs are resolved against it. */
 const projectRoot = resolve(
   String(values.root ?? process.env.LAB_ROOT ?? join(dirname(fileURLToPath(import.meta.url)), "../../..")),
 );
 
-/** Versions that could change results without changing our bound sources; stored per run by evo-lab. */
-function dependencyVersions(): Record<string, string | null> {
-  const versionOf = (pkg: string): string | null => {
-    try {
-      const json = JSON.parse(
-        readFileSync(join(projectRoot, "node_modules", pkg, "package.json"), "utf8"),
-      ) as {
-        version?: string;
-      };
-      return json.version ?? null;
-    } catch {
-      return null;
-    }
-  };
-  return {
-    node: process.version,
-    tsx: versionOf("tsx"),
-    "@bufbuild/protobuf": versionOf("@bufbuild/protobuf"),
-    trainer: CHECKPOINT_FORMAT,
-  };
-}
-
-function emit(type: string, fields: Record<string, unknown> = {}): void {
-  appendFileSync(eventsFile, `${JSON.stringify({ type, t: Date.now() / 1000, ...fields })}\n`);
-}
-
-/** temp + rename, retried briefly because a reader may hold the target open on Windows. */
-async function atomicWrite(file: string, text: string): Promise<void> {
-  const temp = `${file}.tmp`;
-  writeFileSync(temp, text);
-  for (let attempt = 0; ; attempt++) {
-    try {
-      renameSync(temp, file);
-      return;
-    } catch (error) {
-      if (attempt >= 20) throw error;
-      await new Promise((r) => setTimeout(r, 50));
-    }
-  }
-}
-
-/** Same as atomicWrite, synchronously: a snapshot must exist before the event that names it. */
-function atomicWriteSync(file: string, text: string): void {
-  const temp = `${file}.tmp`;
-  writeFileSync(temp, text);
-  for (let attempt = 0; ; attempt++) {
-    try {
-      renameSync(temp, file);
-      return;
-    } catch (error) {
-      if (attempt >= 1000) throw error;
-    }
-  }
-}
+const emit = eventLog(runDir);
+const dependencyVersions = () => dependencyVersions_(projectRoot, { trainer: CHECKPOINT_FORMAT });
 
 function intArg(value: unknown, name: string, min: number): number | undefined {
   if (value === undefined || value === true) return undefined;
@@ -226,11 +171,6 @@ function readConfig(): TrainConfig {
 }
 
 async function main(): Promise<void> {
-  // Terminate a line torn by a kill during the previous attempt, so the next event parses.
-  if (existsSync(eventsFile) && statSync(eventsFile).size > 0) {
-    const text = readFileSync(eventsFile, "utf8");
-    if (!text.endsWith("\n")) appendFileSync(eventsFile, "\n");
-  }
   setLogLevel("", Level.WARNING);
 
   const config = readConfig();

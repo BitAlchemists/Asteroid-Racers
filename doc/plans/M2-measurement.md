@@ -65,9 +65,10 @@ Each step ends with `npm run check` green and its own commit.
 ### 3. Snapshots in training runs
 
 - The training worker saves the winner every K generations: `snapshotEvery` in the config (default
-  10, and always the last generation) writes `RUN_DIR/models/g0010.json` and so on.
-- The `gen` event names the snapshot file, so Evo Lab's generation index lists it. First I'll check
-  with the Evo Lab session how the protocol wants snapshots reported.
+  10, and always the last generation) writes `RUN_DIR/gens/g0010.json` and so on. _(Changed during
+  M2: the plan said `models/`; `gens/` is where Evo Lab looks for snapshots.)_
+- The `gen` event names the snapshot file (`snapshot: "gens/g0010.json"`), so Evo Lab's generation
+  index lists it. (Confirmed with the Evo Lab session.)
 - Snapshots must not change `result.json` or exact resume. Resuming may rewrite the snapshot for
   the generation it restarts from; the content is identical.
 
@@ -82,10 +83,13 @@ Each step ends with `npm run check` green and its own commit.
   run's snapshots). The metrics are `exam` (the exam score), `examCheckpoints` (share reached),
   `examFinished` (share of flights finished) and `examCrashes`. Evo Lab can then plot the race exam
   along a run with no new UI.
-- How a method reads another run's files (`imports`? a path under the lab directory?) is the open
-  point. I'll ask the Evo Lab session before building it. If there is no clean way, the fallback is
-  passing a model file path.
-- Resumable per examined generation, same rules as training: a `ckpt*` file and exact resume.
+- Input from another run: Evo Lab's evaluation-only runs. Enqueue with `inputRun` and `inputGens`
+  (`all`, `last` or a list); the runner passes `--input-run <dir>` and `--input-gens`. The exam reads
+  the source's `gens/` snapshots, or the winner in its `result.json` for runs from before snapshots.
+  The input run and its result hash are part of the exam run's identity. `g` = the source generation.
+  _(Resolved with the Evo Lab session.)_
+- ~~Resumable per examined generation.~~ _(Changed during M2: not resumable. An exam takes about
+  1.5 s per model, and a rerun gives the same result, so a checkpoint adds nothing.)_
 
 ### 5. Exam CLI
 
@@ -105,8 +109,8 @@ Each step ends with `npm run check` green and its own commit.
 ## Acceptance
 
 - [ ] Steps 1–5 committed, `npm run check` green, CI green.
-- [ ] Same model, config and seed give the same exam result twice, byte for byte. Exact resume of
-      an exam run is tested, including after a kill.
+- [ ] Same model, config and seed give the same exam result twice, byte for byte. (Exact resume
+      dropped: the exam method is not resumable; see step 4.)
 - [ ] Training runs write snapshots; `result.json` and exact resume are unchanged by them (tested).
 - [ ] An Evo Lab exam of a run's snapshots shows the exam metrics per generation.
 - [ ] Baseline table (bundled, train-1, train-2, train-3) recorded in `HISTORY.md`.
