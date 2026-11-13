@@ -118,6 +118,8 @@ export interface TrainingServiceOptions {
    * resumed run stands (default 0). Absent = always `arenas`.
    */
   curriculum?: CurriculumConfig & { level?: number; streakCount?: number };
+  /** Re-evaluate the best `top` candidates plus the parents on about `episodes` extra scenarios. */
+  reevaluate?: { top: number; episodes: number };
   maxGenerations?: number;
   /** Number of the first generation (default 1; a resumed run passes g + 1). */
   firstGeneration?: number;
@@ -170,6 +172,7 @@ export function registerAITrainingService(
     ...(options.onGeneration === undefined ? {} : { onGeneration: options.onGeneration }),
     ...(options.parents === undefined ? {} : { parents: options.parents }),
     ...(options.initRange === undefined ? {} : { initRange: options.initRange }),
+    ...(options.reevaluate ? { reevaluate: options.reevaluate } : {}),
     ...(options.curriculum
       ? {
           curriculum: {
@@ -180,6 +183,7 @@ export function registerAITrainingService(
             streak: options.curriculum.streak,
             level: options.curriculum.level ?? 0,
             streakCount: options.curriculum.streakCount ?? 0,
+            ...(options.curriculum.keepEasy === undefined ? {} : { keepEasy: options.curriculum.keepEasy }),
           },
         }
       : {}),

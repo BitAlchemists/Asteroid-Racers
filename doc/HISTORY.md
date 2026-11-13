@@ -1038,3 +1038,46 @@ separate worktree (`m5-content`).
   don't affect training.
 - **Left for after M4:** tiered arenas (step 4), the watch page's arena mode (step 5), baseline runs
   (step 7). Exam v2 is now M4's.
+### M4 step 8 (a), (c), (d), (f): re-evaluation, curriculum mixing, Gaussian and linear tests
+
+Approved by the user ("Approve, start step 8"). Built on branch `step8-selection` in its own
+worktree, then fast-forwarded into main. All switches are absent by default; the baseline fixtures
+and all earlier tests pass unchanged.
+
+- **(a) `reevaluate: { top, episodes }`:**
+  - **Finalists:** the best `top` of the training round, plus the previous generation's parents (so
+    with `parents: 10` and `top: 5` up to 15 finalists).
+  - **Extra round:** the finalists fly about `episodes` extra scenarios from a new seed stream
+    (`SCENARIO_STREAM.reevaluate`, derived from seed, arena index and generation, so no new random
+    state). Episodes are split over the arenas in proportion to their `episodes` params, at least 1
+    each. With a curriculum, the extra round is on the current level, without mixed-in episodes.
+  - **Selection:** finalists are re-ordered by the sum of both rounds and come first; everyone else
+    keeps the training order behind them. The winner and the `parents` kept are the first ones of
+    that order.
+  - **Unchanged:** the reported `score` stays the winner's training-round score; held-out and the
+    exam are unchanged.
+  - **New gen metrics:** `reevalScore` and `reevalSuccess`, the winner's extra round alone.
+  - **Curriculum:** level-ups are judged on the winner's current-level training episodes plus its
+    extra round.
+  - **Replay:** the extra-round episodes are not in snapshots and cannot be replayed in the viewer.
+    The training episodes still replay exactly.
+  - **Cost:** at most one extra 24-episode round with about 6 ships, about 14,400 more ticks per
+    generation (against about 101,500), so about +5–10 % wall time. Not yet measured in a real run.
+- **(f) `curriculum.keepEasy`:**
+  - From level 1 on, each arena with a numeric `episodes` param keeps n − k episodes on the current
+    level, with k = round(keepEasy × n). It gets an extra run of k episodes from one earlier level,
+    picked uniformly from 0..level−1 with a seed from (seed, keepEasy stream, arena, generation).
+  - The extra runs come after the regular ones, so regular arenas keep their scenario seeds. Arenas
+    without an `episodes` param (`legacy`) are not mixed.
+  - Level-ups count only the current-level episodes.
+  - Snapshots record the mixed arenas (`trainingArenas` in the report), so the viewer replays them;
+    a test shows a replay of a mixed-in easy run gives the recorded reached and crash counts. The
+    plugin's level badge falls back to the `level` metric.
+- **(c):** a test that `rate: 1` changes every weight, plus a worker test that
+  `mutation: { kind: "gaussian", sigma: 0.03, rate: 1 }` is deterministic and resumes exactly. No
+  code change was needed.
+- **(d):** a worker test that `hidden: []` trains (a [inputs, 2] network with one weight layer),
+  resumes exactly, and replays its recorded episodes. No code change was needed.
+- **Tests:** a worker test per switch (exact resume with equal per-generation hashes; re-evaluation
+  changes the run; levels 0, 1, 2, 2 with mixing; the snapshot arenas), plus four config validation
+  cases.

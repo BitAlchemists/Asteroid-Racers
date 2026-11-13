@@ -6,7 +6,15 @@ import type { Random } from "../random";
 import { AIGameClient } from "./ai-game-client";
 import { ArenaScript, type CrashMode, type PlacedEpisode } from "./arena-script";
 import { sameSpec, type ModelSpec } from "./model-spec";
-import { heldOutScenarios, trainingScenarios, type ArenaRun, type Scenario } from "./arenas";
+import {
+  heldOutScenarios,
+  mixEasyEpisodes,
+  reevaluationScenarios,
+  trainingScenarios,
+  type ArenaConfig,
+  type ArenaRun,
+  type Scenario,
+} from "./arenas";
 import type { ModelStore } from "./model-store";
 import { MajorTom } from "./network";
 import {
@@ -150,6 +158,13 @@ export interface GenerationReport {
   parents: MajorTom[];
   /** With a curriculum: the level this generation flew, and the level and streak for the next one. */
   curriculum?: { level: number; nextLevel: number; streak: number };
+  /** With `reevaluate`: the winner's score and success share on the re-evaluation scenarios alone. */
+  reevaluation?: { score: number; success: number };
+  /**
+   * With curriculum mixing: the arena runs this generation flew (regular runs, then the easy ones),
+   * as configs, so a replay builds the same scenarios. Absent when no episodes were mixed.
+   */
+  trainingArenas?: ArenaConfig[];
   sampleSize: number;
   gameSeconds: number;
 }
@@ -183,7 +198,16 @@ export interface TrainingOptions {
     streak: number;
     level: number;
     streakCount: number;
+    /** Share of each arena's episodes from an earlier level (see `mixEasyEpisodes`; absent = 0). */
+    keepEasy?: number;
   };
+  /**
+   * Re-evaluation against the winner's curse: the best `top` candidates plus the previous parents fly
+   * about `episodes` extra scenarios (their own seed stream, derived from the seed and generation),
+   * and the order among them, so the winner and the kept parents, follows the sum of both rounds.
+   * Absent = selection on the training round alone.
+   */
+  reevaluate?: { top: number; episodes: number };
   /** Every candidate flies every arena, one arena after the other. */
   arenas: readonly ArenaRun[];
   /** Run seed: scenario seeds are derived from it, the stream, the arena index and the generation. */
@@ -237,9 +261,16 @@ export class TrainingDirector extends AIDirector {
   /** Generations in a row whose winner reached the curriculum's success share. */
   private streak: number;
 
-  /** The arena runs the next generation trains on. */
-  private get trainingRuns(): readonly ArenaRun[] {
-    return this.options.curriculum?.levels[this.level] ?? this.options.arenas;
+  /** The previous generation's parents (empty before the first generation). */
+  private lastParents: readonly MajorTom[] = [];
+
+  /** The arena runs generation `g` trains on, and how many of them are on the current level. */
+  private runsFor(g: number): { runs: readonly ArenaRun[]; hard: number } {
+    const curriculum = this.options.curriculum;
+    if (!curriculum) return { runs: this.options.arenas, hard: this.options.arenas.length };
+    if (curriculum.keepEasy === undefined)
+      return { runs: curriculum.levels[this.level]!, hard: curriculum.levels[this.level]!.length };
+    return mixEasyEpisodes(curriculum.levels, this.level, curriculum.keepEasy, this.options.scenarioSeed, g);
   }
 
   start(): void {
@@ -258,7 +289,7 @@ export class TrainingDirector extends AIDirector {
 
   /** The training scenarios of generation `g` (1-based), one per arena. */
   scenariosFor(g: number): Scenario[] {
-    return trainingScenarios(this.trainingRuns, this.options.scenarioSeed, g);
+    return trainingScenarios(this.runsFor(g).runs, this.options.scenarioSeed, g);
   }
 
   private async trainLoop(): Promise<void> {
@@ -272,6 +303,7 @@ export class TrainingDirector extends AIDirector {
   createCandidates(): MajorTom[] {
     const { store, networkName, layout, spec, sampleSize, mutate, random } = this.options;
     const parents = store.load(networkName);
+    this.lastParents = parents ?? [];
     if (!parents || parents.length === 0) {
       trainLog.info(`no networks named ${networkName} yet, starting with ${sampleSize} random ones`);
       return Array.from({ length: sampleSize }, (_, i) =>
@@ -353,11 +385,20 @@ export class TrainingDirector extends AIDirector {
     const startedAt = this.server?.gameTime ?? 0;
     const g = this.generation + 1;
     const candidates = this.createCandidates();
-    const scenarios = this.scenariosFor(g);
+    const { runs, hard } = this.runsFor(g);
+    const scenarios = trainingScenarios(runs, this.options.scenarioSeed, g);
     const { records, paths } = await this.flyWithPaths(candidates, scenarios);
     if (this.stopped) return;
+    /** Episode records on the current level (mixed-in easy episodes come after them). */
+    const hardEpisodes = scenarios.slice(0, hard).reduce((n, s) => n + s.episodes.length, 0);
 
-    const scored = candidates
+    let scored: {
+      network: MajorTom;
+      records: EpisodeRecord[];
+      paths: number[][];
+      score: number;
+      reeval?: EpisodeRecord[];
+    }[] = candidates
       .map((network, i) => ({
         network,
         records: records[i]!,
@@ -365,6 +406,29 @@ export class TrainingDirector extends AIDirector {
         score: scoreEpisodes(records[i]!, this.scoring, this.tickSeconds),
       }))
       .sort((a, b) => a.score - b.score);
+
+    const reevaluate = this.options.reevaluate;
+    if (reevaluate) {
+      // Finalists: the best `top` of the training round plus the previous parents, in training order.
+      const finalists = scored.filter((s, i) => i < reevaluate.top || this.lastParents.includes(s.network));
+      const reevalRuns = this.options.curriculum
+        ? this.options.curriculum.levels[this.level]!
+        : this.options.arenas;
+      const extra = reevaluationScenarios(reevalRuns, this.options.scenarioSeed, g, reevaluate.episodes);
+      const reevalRecords = await this.fly(
+        finalists.map((s) => s.network),
+        extra,
+      );
+      if (this.stopped) return;
+      const total = finalists.map(
+        (s, i) => s.score + scoreEpisodes(reevalRecords[i]!, this.scoring, this.tickSeconds),
+      );
+      const order = finalists
+        .map((s, i) => ({ s: { ...s, reeval: reevalRecords[i]! }, total: total[i]!, i }))
+        .sort((a, b) => a.total - b.total || a.i - b.i)
+        .map((x) => x.s);
+      scored = [...order, ...scored.filter((s) => !finalists.includes(s))];
+    }
     const best = scored[0]!;
     best.network.name = "Winner from last round";
     const parents = scored.slice(0, this.options.parents ?? 1).map((s) => s.network);
@@ -385,7 +449,10 @@ export class TrainingDirector extends AIDirector {
     const plan = this.options.curriculum;
     if (plan) {
       const level = this.level;
-      this.streak = successRate(best.records) >= plan.success ? this.streak + 1 : 0;
+      // Judged on the current level only (mixed-in easy episodes do not count), and with
+      // re-evaluation on both rounds.
+      const judged = [...best.records.slice(0, hardEpisodes), ...(best.reeval ?? [])];
+      this.streak = successRate(judged) >= plan.success ? this.streak + 1 : 0;
       if (this.streak >= plan.streak && this.level < plan.levels.length - 1) {
         this.level++;
         this.streak = 0;
@@ -400,7 +467,7 @@ export class TrainingDirector extends AIDirector {
       worstScore: scored.at(-1)!.score,
       success: successRate(best.records),
       trace: buildTraces(
-        this.options.arenas.map((run) => run.arena.name),
+        runs.map((run) => run.arena.name),
         scenarios,
         best.records,
         best.paths,
@@ -409,6 +476,18 @@ export class TrainingDirector extends AIDirector {
       winner: best.network,
       parents,
       ...(curriculum ? { curriculum } : {}),
+      ...(best.reeval
+        ? {
+            reevaluation: {
+              score: scoreEpisodes(best.reeval, this.scoring, this.tickSeconds),
+              success: successRate(best.reeval),
+            },
+          }
+        : {}),
+      // Mixed-in easy runs come after the regular ones: record the runs so a replay matches.
+      ...(runs.length !== hard
+        ? { trainingArenas: runs.map((run) => ({ name: run.arena.name, params: { ...run.params } })) }
+        : {}),
       sampleSize: scored.length,
       gameSeconds: (this.server?.gameTime ?? 0) - startedAt,
     };

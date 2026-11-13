@@ -449,6 +449,150 @@ describe("evo-lab worker (protocol v1)", () => {
     expect(res.config.curriculum).toMatchObject({ success: 0.6, streak: 1 });
   }, 120_000);
 
+  /** Runs `config` to 4 in one go and as 2 + resume to 4; both must give the same result and hashes. */
+  async function exactResume(config: object): Promise<string> {
+    const straight = newRun(config);
+    expect(await run(straight, ["--to", "4"])).toBe(0);
+    const resumed = newRun(config);
+    expect(await run(resumed, ["--to", "2"])).toBe(0);
+    expect(await run(resumed, ["--resume", "--to", "4"])).toBe(0);
+    expect(result(resumed)).toBe(result(straight));
+    const hashes = (dir: string) =>
+      events(dir)
+        .filter((e) => e.type === "gen")
+        .map((e) => e.stateHash);
+    expect(hashes(resumed)).toEqual(hashes(straight));
+    return straight;
+  }
+
+  /** Replays a training snapshot's arena `index` and returns (reached, crashes) per episode, and the trace's. */
+  async function replayEpisodes(
+    dir: string,
+    g: number,
+    index: number,
+    config: { frames: number; collisions: string; crashMode?: string; arenas: unknown },
+  ) {
+    const snap = JSON.parse(
+      readFileSync(join(dir, "gens", `g${String(g).padStart(4, "0")}.json`), "utf8"),
+    ) as {
+      arenas?: unknown;
+      model: NetworkJson;
+      trace: { episodes: { reached: number; crashes: number }[] }[];
+    };
+    const replay = await ArenaReplay.create({
+      model: MajorTom.fromJson(snap.model),
+      arenas: parseArenas(snap.arenas ?? config.arenas),
+      frames: config.frames,
+      collisions: config.collisions as "obstacles",
+      crashMode: (config.crashMode ?? "end") as "end",
+      seed: 7,
+      g,
+      arenaIndex: index,
+    });
+    while (!replay.done) replay.step(200);
+    const replayed = replay.records.map((r) => [r.reached, r.crashes]);
+    replay.dispose();
+    return { replayed, traced: snap.trace[index]!.episodes.map((e) => [e.reached, e.crashes]) };
+  }
+
+  it("reevaluate switch: re-scored finalists pick the winner, exact resume, metrics on gen events", async () => {
+    const config = {
+      sample: 8,
+      frames: 60,
+      arenas: [{ name: "point-to-point", params: { episodes: 2, asteroids: 10 } }],
+      collisions: "obstacles",
+      parents: 2,
+      reevaluate: { top: 2, episodes: 3 },
+    };
+    const dir = await exactResume(config);
+    const gens = events(dir).filter((e) => e.type === "gen");
+    for (const e of gens) {
+      const m = e.metrics as { reevalScore?: number; reevalSuccess?: number };
+      expect(typeof m.reevalScore).toBe("number");
+      expect(m.reevalSuccess).toBeGreaterThanOrEqual(0);
+    }
+    const res = JSON.parse(result(dir)) as { config: Record<string, unknown> };
+    expect(res.config.reevaluate).toEqual({ top: 2, episodes: 3 });
+    // It changes selection: the same run without the switch takes a different path.
+    const { reevaluate: _off, ...plain } = config;
+    const without = newRun(plain);
+    expect(await run(without, ["--to", "4"])).toBe(0);
+    const hashes = (d: string) =>
+      events(d)
+        .filter((e) => e.type === "gen")
+        .map((e) => e.stateHash);
+    expect(hashes(without)).not.toEqual(hashes(dir));
+  }, 180_000);
+
+  it("curriculum keepEasy: earlier-level episodes are mixed in after a level-up, replay and resume stay exact", async () => {
+    const config = {
+      sample: 6,
+      frames: 60,
+      arenas: [
+        { name: "point-to-point", params: { episodes: 2, distance: [10, 20] } },
+        { name: "rock-in-line", params: { episodes: 4 } },
+      ],
+      collisions: "obstacles",
+      // The point-to-point episode on the current level is always reached (1 of 3 judged episodes).
+      curriculum: {
+        levels: [
+          { "rock-in-line": { rocks: 0 } },
+          { "rock-in-line": { rocks: 1 } },
+          { "rock-in-line": { rocks: 2 } },
+        ],
+        success: 0.3,
+        streak: 1,
+        keepEasy: 0.5,
+      },
+    };
+    const dir = await exactResume(config);
+    const levels = events(dir)
+      .filter((e) => e.type === "gen")
+      .map((e) => (e.metrics as { level: number }).level);
+    expect(levels).toEqual([0, 1, 2, 2]);
+    const snap = (g: number) =>
+      JSON.parse(readFileSync(join(dir, "gens", `g000${g}.json`), "utf8")) as {
+        arenas: { name: string; params: { episodes: number; rocks?: number } }[];
+        trace: { episodes: unknown[] }[];
+      };
+    // Level 0 mixes nothing (the plain level arenas); level 2 has 1 + 2 regular and 1 + 2 easy episodes.
+    expect(snap(1).arenas).toHaveLength(2);
+    const g3 = snap(3).arenas;
+    expect(g3.map((a) => [a.name, a.params.episodes])).toEqual([
+      ["point-to-point", 1],
+      ["rock-in-line", 2],
+      ["point-to-point", 1],
+      ["rock-in-line", 2],
+    ]);
+    expect(g3[1]!.params.rocks).toBe(2);
+    expect([0, 1]).toContain(g3[3]!.params.rocks);
+    expect(snap(3).trace).toHaveLength(4);
+    // A replay of the mixed-in easy rock-in-line run matches what training recorded.
+    const { replayed, traced } = await replayEpisodes(dir, 3, 3, config);
+    expect(replayed).toEqual(traced);
+    const res = JSON.parse(result(dir)) as { config: { curriculum: { keepEasy: number } } };
+    expect(res.config.curriculum.keepEasy).toBe(0.5);
+  }, 180_000);
+
+  it("standard Gaussian mutation (all weights, sigma 0.03) and a linear policy: deterministic, exact resume, replay", async () => {
+    const arenas = [{ name: "point-to-point", params: { episodes: 2, asteroids: 5 } }];
+    const gaussian = {
+      sample: 6,
+      frames: 60,
+      arenas,
+      collisions: "obstacles",
+      mutation: { kind: "gaussian", sigma: 0.03, rate: 1 },
+    };
+    await exactResume(gaussian);
+    const linear = { sample: 6, frames: 60, arenas, collisions: "obstacles", hidden: [] };
+    const dir = await exactResume(linear);
+    const res = JSON.parse(result(dir)) as { winner: { input_neurons_count: number; layers: number[][][] } };
+    expect(res.winner.layers).toHaveLength(1); // inputs → outputs, no hidden layer
+    expect(res.winner.layers[0]).toHaveLength(2);
+    const { replayed, traced } = await replayEpisodes(dir, 4, 0, linear);
+    expect(replayed).toEqual(traced);
+  }, 180_000);
+
   it("exam switch: race metrics on every N-th generation, results and resume unchanged", async () => {
     const exam = { every: 2, tracks: ["short"], randomTracks: 1, timeLimitSeconds: 10 };
     const withExam = newRun({ ...CONFIG, exam });
@@ -524,6 +668,10 @@ describe("evo-lab worker (protocol v1)", () => {
       [{ curriculum: { levels: [{}, { moon: {} }] } }, /not in config.arenas/],
       [{ curriculum: { success: 2 } }, /curriculum.success/],
       [{ curriculum: { pace: 1 } }, /unknown config.curriculum keys/],
+      [{ curriculum: { keepEasy: 1 } }, /keepEasy/],
+      [{ reevaluate: { top: 0 } }, /reevaluate.top/],
+      [{ reevaluate: { episodes: 2.5 } }, /reevaluate.episodes/],
+      [{ reevaluate: { rounds: 2 } }, /unknown config.reevaluate keys/],
       [{ sensors: { nearest: { horizon: 1 } } }, /unknown parameter/],
     ] as const) {
       const dir = newRun(config);

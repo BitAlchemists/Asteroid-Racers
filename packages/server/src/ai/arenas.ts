@@ -220,7 +220,7 @@ export function arenaByName(name: string): Arena {
 }
 
 /** Seed streams, so training and held-out scenarios never share seeds. */
-export const SCENARIO_STREAM = { training: 1, heldOut: 2 } as const;
+export const SCENARIO_STREAM = { training: 1, heldOut: 2, reevaluate: 3, keepEasy: 4 } as const;
 
 /**
  * A 32-bit seed from a list of integers (FNV-1a over their bytes, then a murmur finalizer). Lets every
@@ -286,6 +286,11 @@ export interface CurriculumConfig {
   levels: Record<string, ArenaParams>[];
   success: number;
   streak: number;
+  /**
+   * Share of each arena's episodes drawn from an earlier level once the run is past level 0
+   * (absent = 0: all episodes on the current level). See {@link mixEasyEpisodes}.
+   */
+  keepEasy?: number;
 }
 
 /** The default levels: a clear line of sight first, then more and more rocks (the v2 task last). */
@@ -309,6 +314,7 @@ export function parseCurriculum(raw: unknown, arenas: readonly ArenaConfig[]): C
     levels = DEFAULT_CURRICULUM_LEVELS,
     success = 0.8,
     streak = 3,
+    keepEasy,
     ...rest
   } = raw as Record<string, unknown>;
   if (Object.keys(rest).length > 0)
@@ -319,6 +325,8 @@ export function parseCurriculum(raw: unknown, arenas: readonly ArenaConfig[]): C
     throw new Error("config.curriculum.streak must be an integer ≥ 1");
   if (!Array.isArray(levels) || levels.length < 2)
     throw new Error("config.curriculum.levels must be a list of at least 2 levels");
+  if (keepEasy !== undefined && (typeof keepEasy !== "number" || !(keepEasy > 0 && keepEasy < 1)))
+    throw new Error("config.curriculum.keepEasy must be in (0, 1)");
   const names = new Set(arenas.map((a) => a.name));
   const parsed = levels.map((level: unknown, i) => {
     if (typeof level !== "object" || level === null || Array.isArray(level))
@@ -333,7 +341,72 @@ export function parseCurriculum(raw: unknown, arenas: readonly ArenaConfig[]): C
     }
     return level as Record<string, ArenaParams>;
   });
-  return { levels: parsed.map((l) => ({ ...l })), success, streak: streak as number };
+  return {
+    levels: parsed.map((l) => ({ ...l })),
+    success,
+    streak: streak as number,
+    ...(keepEasy === undefined ? {} : { keepEasy }),
+  };
+}
+
+/**
+ * Curriculum mixing: the arena runs of one generation at `level`, with about `keepEasy` of each
+ * arena's episodes moved to an earlier level. Each arena with a numeric `episodes` param keeps
+ * `n − k` episodes on the current level, k = round(keepEasy × n), and gets an extra run with `k`
+ * episodes at an earlier level, picked uniformly from 0..level−1 with a seed derived from
+ * (seed, keepEasy stream, arena index, generation). The extra runs come after the regular ones, so
+ * the regular runs keep their arena index (and their scenario seed stream). Arenas without a numeric
+ * `episodes` param (e.g. `legacy`), k = 0 or k = n stay as they are. `hard` is the number of runs on
+ * the current level (the first `hard` runs).
+ */
+export function mixEasyEpisodes(
+  levels: readonly (readonly ArenaRun[])[],
+  level: number,
+  keepEasy: number,
+  seed: number,
+  g: number,
+): { runs: ArenaRun[]; hard: number } {
+  const current = levels[level]!;
+  if (level === 0 || !(keepEasy > 0)) return { runs: [...current], hard: current.length };
+  const regular: ArenaRun[] = [];
+  const easy: ArenaRun[] = [];
+  current.forEach((run, a) => {
+    const n = run.params.episodes;
+    const k = typeof n === "number" ? Math.round(keepEasy * n) : 0;
+    if (typeof n !== "number" || k < 1 || k >= n) {
+      regular.push(run);
+      return;
+    }
+    const earlier = Math.floor(seededRandom(deriveSeed(seed, SCENARIO_STREAM.keepEasy, a, g))() * level);
+    const from = levels[earlier]![a]!;
+    regular.push({ arena: run.arena, params: { ...run.params, episodes: n - k } });
+    easy.push({ arena: from.arena, params: { ...from.params, episodes: k } });
+  });
+  return { runs: [...regular, ...easy], hard: regular.length };
+}
+
+/**
+ * Re-evaluation scenarios of generation `g`: one per arena, from their own seed stream, with about
+ * `episodes` episodes in total, split over the arenas in proportion to their `episodes` params
+ * (at least 1 each). Arenas without a numeric `episodes` param fly their scenario as configured.
+ * Fixed arenas (e.g. `legacy`) give their fixed course again.
+ */
+export function reevaluationScenarios(
+  runs: readonly ArenaRun[],
+  seed: number,
+  g: number,
+  episodes: number,
+): Scenario[] {
+  const counted = runs.map((run) => (typeof run.params.episodes === "number" ? run.params.episodes : 0));
+  const total = counted.reduce((a, b) => a + b, 0);
+  return runs.map((run, a) => {
+    const n = counted[a]!;
+    const params =
+      n > 0 && total > 0
+        ? { ...run.params, episodes: Math.max(1, Math.round((episodes * n) / total)) }
+        : run.params;
+    return run.arena.generate(seededRandom(deriveSeed(seed, SCENARIO_STREAM.reevaluate, a, g)), params);
+  });
 }
 
 /** The arena configs of one curriculum level: each arena's params with the level's overrides on top. */

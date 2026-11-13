@@ -144,7 +144,7 @@ that null result before testing more:
 Every item is a switch, absent = byte-identical (fixtures, exact resume, Evo Lab gate), with tests
 per switch, like step 6.
 
-**(a) Re-evaluate the top children.**
+**(a) Re-evaluate the top children.** ✅ built 2026-11-13 (see HISTORY)
 - Config: `reevaluate: { top: 5, episodes: 24 }`.
 - After scoring a generation, the top `top` children plus the parent fly `episodes` extra fresh
   scenarios, seeded from (seed, generation, a new stream).
@@ -168,14 +168,14 @@ per switch, like step 6.
 - Old 17-race exam numbers stay comparable only with each other; reports say which exam was used.
 - Source: Agarwal et al. 2021 (rliable); Colas et al. 2018; Ha & Schmidhuber 2018.
 
-**(c) Standard Gaussian mutation.**
+**(c) Standard Gaussian mutation.** ✅ built 2026-11-13 (see HISTORY)
 - No new code: `mutation: { kind: "gaussian", sigma: 0.03, rate: 1 }` already works (`rate` is
   accepted in (0, 1]).
 - Step 8 only adds a test that `rate: 1` touches every weight.
 - Optional annealing (`sigmaEnd`, linear over the run) is a later switch if E6 points that way.
 - Source: Such et al. 2017; Salimans et al. 2017.
 
-**(d) Network shape.**
+**(d) Network shape.** ✅ built 2026-11-13 (see HISTORY)
 - `hidden: [16]` works today.
 - A linear policy is `hidden: []`. The config check accepts it, and `layoutFor` with `MajorTom`
   gives a [inputs, 2] network with tanh outputs (checked by hand 2026-11-13). Step 8 adds a worker
@@ -191,7 +191,7 @@ per switch, like step 6.
   make exact, time-to-target is the fallback.
 - Source: Ng et al. 1999; Togelius & Lucas 2005.
 
-**(f) Curriculum mixing.**
+**(f) Curriculum mixing.** ✅ built 2026-11-13 (see HISTORY)
 - `curriculum.keepEasy: 0.25` (absent = 0): after a level-up, about a quarter of each arena's
   episodes come from earlier levels (chosen deterministically from seed and generation).
 - With `reevaluate`, level-ups are judged on the re-evaluated success.

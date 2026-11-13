@@ -24,6 +24,11 @@ An experiment answers one question by comparing **arms** (the baseline config, p
   - `initRange`: range of the random starting weights (default 1);
   - `crashLimit`: with `crashMode: "respawn"`, an episode ends at its N-th crash and the rest is
     charged like a `crashMode: "end"` crash (integer ≥ 1; no effect with `end`).
+  - `reevaluate`: `{ "top": 5, "episodes": 24 }`: the best `top` candidates plus the previous
+    parents fly about `episodes` extra fresh scenarios; winner and kept parents follow the sum of
+    both rounds (gen metrics `reevalScore`, `reevalSuccess`);
+  - `curriculum.keepEasy`: e.g. `0.25`: after level 0, that share of each arena's episodes comes
+    from an earlier level (snapshots then record the mixed arenas).
 - A switch key may not appear in the method's default config in `lab.config.json` (that is why the
   `model` block is not there).
 - **The decision metric is `exam`** (the race exam score, lower is better), produced inside training

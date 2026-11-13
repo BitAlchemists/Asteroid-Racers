@@ -108,6 +108,11 @@ export interface TrainConfig {
    */
   curriculum?: CurriculumConfig;
   /**
+   * Switch: the best `top` candidates plus the previous parents fly about `episodes` extra fresh
+   * scenarios; the winner and the kept parents follow the sum of both rounds. Absent = off.
+   */
+  reevaluate?: { top: number; episodes: number };
+  /**
    * Switch: every `every` generations (and at the last), the winner flies the race exam; its
    * metrics go on that generation's `gen` event. The rest is an exam config (defaults filled in).
    */
@@ -188,6 +193,19 @@ function parseMutation(raw: unknown): { kind: "gaussian"; sigma: number; rate?: 
   return { kind, sigma, ...(rate === undefined ? {} : { rate }) };
 }
 
+function parseReevaluate(raw: unknown): { top: number; episodes: number } {
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw))
+    throw new Error("config.reevaluate must be an object ({ top?, episodes? })");
+  const { top = 5, episodes = 24, ...rest } = raw as Record<string, unknown>;
+  if (Object.keys(rest).length > 0)
+    throw new Error(`unknown config.reevaluate keys ${Object.keys(rest).join(", ")}`);
+  if (!Number.isInteger(top) || (top as number) < 1)
+    throw new Error("config.reevaluate.top must be an integer ≥ 1");
+  if (!Number.isInteger(episodes) || (episodes as number) < 1)
+    throw new Error("config.reevaluate.episodes must be an integer ≥ 1");
+  return { top: top as number, episodes: episodes as number };
+}
+
 function readConfig(): TrainConfig {
   const file = values.config === undefined ? undefined : resolve(runDir, String(values.config));
   const raw =
@@ -224,6 +242,7 @@ function readConfig(): TrainConfig {
     ...(raw.parents === undefined ? {} : { parents: raw.parents as number }),
     ...(raw.initRange === undefined ? {} : { initRange: raw.initRange as number }),
     ...(raw.crashLimit === undefined ? {} : { crashLimit: raw.crashLimit as number }),
+    ...(raw.reevaluate === undefined ? {} : { reevaluate: parseReevaluate(raw.reevaluate) }),
     ...(raw.curriculum === undefined
       ? {}
       : { curriculum: parseCurriculum(raw.curriculum, parseArenas(raw.arenas)) }),
@@ -373,7 +392,10 @@ async function main(): Promise<void> {
           trace: report.trace,
           // With a curriculum, the arenas this generation flew, so a replay builds the same scenarios.
           ...(config.curriculum && flownLevel !== undefined
-            ? { arenas: applyLevel(config.arenas, config.curriculum.levels[flownLevel]!) }
+            ? {
+                arenas:
+                  report.trainingArenas ?? applyLevel(config.arenas, config.curriculum.levels[flownLevel]!),
+              }
             : {}),
         }),
       );
@@ -387,6 +409,9 @@ async function main(): Promise<void> {
         ? {}
         : { heldOut: report.heldOutScore, heldOutSuccess: report.heldOutSuccess }),
       ...(flownLevel === undefined ? {} : { level: flownLevel }),
+      ...(report.reevaluation === undefined
+        ? {}
+        : { reevalScore: report.reevaluation.score, reevalSuccess: report.reevaluation.success }),
       // Speed (timing data: never in result.json or stateHash).
       ticks,
       tps: wall > 0 ? Math.round(ticks / wall) : undefined,
@@ -469,6 +494,7 @@ async function main(): Promise<void> {
         : {}),
       ...(config.initRange === undefined ? {} : { initRange: config.initRange }),
       ...(config.crashLimit === undefined ? {} : { crashLimit: config.crashLimit }),
+      ...(config.reevaluate === undefined ? {} : { reevaluate: config.reevaluate }),
       random: mutationRandom,
       firstGeneration: startG + 1,
       maxGenerations: to - startG,

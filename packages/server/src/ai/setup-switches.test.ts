@@ -98,6 +98,15 @@ describe("Gaussian mutation", () => {
     expect(flips).toBeGreaterThan(0.2 * (n - unchanged)); // 0.1 with σ 0.2 crosses 0 about 31 % of the time
   });
 
+  it("rate 1 changes every weight (the standard all-weights form)", () => {
+    const model = MajorTom.random([4, 6, 2], seededRandom(2), "All");
+    const before = model.weights.flatMap((l) => [...l]);
+    model.mutate(1, 0.03, mutateGaussian, seededRandom(3));
+    const after = model.weights.flatMap((l) => [...l]);
+    expect(after.every((w, i) => w !== before[i])).toBe(true);
+    expect(Math.max(...after.map((w, i) => Math.abs(w - before[i]!)))).toBeLessThan(0.2); // σ 0.03
+  });
+
   it("starting weights follow initRange", () => {
     const model = MajorTom.random([4, 8, 2], seededRandom(1), "Wide", undefined, 3);
     const all = model.weights.flatMap((l) => [...l]);
