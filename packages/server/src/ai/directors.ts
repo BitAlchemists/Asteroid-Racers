@@ -18,7 +18,7 @@ import {
   type Scenario,
 } from "./arenas";
 import type { ModelStore } from "./model-store";
-import { MajorTom } from "./network";
+import { MajorTom, type CrossoverKind } from "./network";
 import {
   LEGACY_SCORING,
   scoreEpisodes,
@@ -191,6 +191,12 @@ export interface TrainingOptions {
   /** Range of the random starting weights of the first generation (default 1). */
   initRange?: number;
   /**
+   * Crossover (needs `parents` > 1): each child is, with probability `rate`, its parent crossed
+   * with another parent (drawn uniformly from the others) before it mutates. All draws come from
+   * `random`. Absent or rate 0 = mutation only.
+   */
+  crossover?: { kind: CrossoverKind; rate: number };
+  /**
    * A staged curriculum: the arena runs of every level (`arenas` is ignored for training, held-out
    * scenarios use the last level). `level` and `streak` are where the run stands (for resume).
    */
@@ -327,11 +333,18 @@ export class TrainingDirector extends AIDirector {
     }
     const candidates: MajorTom[] = [];
     const childrenEach = Math.floor((sampleSize - parents.length) / parents.length);
+    const crossover = this.options.crossover;
+    const crossing = crossover !== undefined && crossover.rate > 0 && parents.length > 1;
     let index = 0;
-    for (const parent of parents) {
+    for (const [p, parent] of parents.entries()) {
       candidates.push(parent);
       for (let i = 0; i < childrenEach; i++) {
         const child = parent.clone();
+        if (crossing && random() < crossover.rate) {
+          let mate = Math.floor(random() * (parents.length - 1));
+          if (mate >= p) mate++;
+          child.crossover(parents[mate]!, crossover.kind, random);
+        }
         child.name = `Major Tom #${index++}`;
         child.generation = parent.generation + 1;
         mutate(child, random);

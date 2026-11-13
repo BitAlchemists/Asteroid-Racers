@@ -114,6 +114,8 @@ export interface TrainingServiceOptions {
   parents?: number;
   /** Range of the random starting weights (default 1). */
   initRange?: number;
+  /** Crossover between parents (needs `parents` > 1); see {@link TrainingOptions.crossover}. */
+  crossover?: { kind: "uniform" | "layer"; rate: number };
   /**
    * A staged curriculum over `arenas` (see {@link CurriculumConfig}); `level` and `streak` say where a
    * resumed run stands (default 0). Absent = always `arenas`.
@@ -176,6 +178,7 @@ export function registerAITrainingService(
     ...(options.parents === undefined ? {} : { parents: options.parents }),
     ...(options.initRange === undefined ? {} : { initRange: options.initRange }),
     ...(options.reevaluate ? { reevaluate: options.reevaluate } : {}),
+    ...(options.crossover ? { crossover: options.crossover } : {}),
     ...(options.perception ? { perception: options.perception } : {}),
     ...(options.curriculum
       ? {

@@ -113,6 +113,11 @@ export interface TrainConfig {
   mutation?: { kind: "gaussian"; sigma: number; rate?: number };
   /** Switch: models kept per generation, best first ((μ + λ) selection). Absent = 1. */
   parents?: number;
+  /**
+   * Switch (needs `parents` ≥ 2): with probability `rate` a child is its parent crossed with
+   * another parent (`uniform`: per weight, `layer`: per whole layer), then mutated. Absent = none.
+   */
+  crossover?: { kind: "uniform" | "layer"; rate: number };
   /** Switch: range of the random starting weights. Absent = 1. */
   initRange?: number;
   /**
@@ -211,6 +216,19 @@ function parseMutation(raw: unknown): { kind: "gaussian"; sigma: number; rate?: 
   return { kind, sigma, ...(rate === undefined ? {} : { rate }) };
 }
 
+function parseCrossover(raw: unknown): { kind: "uniform" | "layer"; rate: number } {
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw))
+    throw new Error('config.crossover must be an object ({ kind: "uniform" | "layer", rate? })');
+  const { kind, rate = 0.5, ...rest } = raw as Record<string, unknown>;
+  if (Object.keys(rest).length > 0)
+    throw new Error(`unknown config.crossover keys ${Object.keys(rest).join(", ")}`);
+  if (kind !== "uniform" && kind !== "layer")
+    throw new Error('config.crossover.kind must be "uniform" or "layer"');
+  if (typeof rate !== "number" || !(rate >= 0 && rate <= 1))
+    throw new Error("config.crossover.rate must be in [0, 1]");
+  return { kind, rate };
+}
+
 function parseReevaluate(raw: unknown): { top: number; episodes: number } {
   if (typeof raw !== "object" || raw === null || Array.isArray(raw))
     throw new Error("config.reevaluate must be an object ({ top?, episodes? })");
@@ -261,6 +279,7 @@ function readConfig(): TrainConfig {
     ...(raw.inputNoise === undefined ? {} : { inputNoise: raw.inputNoise as number }),
     ...(raw.mutation === undefined ? {} : { mutation: parseMutation(raw.mutation) }),
     ...(raw.parents === undefined ? {} : { parents: raw.parents as number }),
+    ...(raw.crossover === undefined ? {} : { crossover: parseCrossover(raw.crossover) }),
     ...(raw.initRange === undefined ? {} : { initRange: raw.initRange as number }),
     ...(raw.crashLimit === undefined ? {} : { crashLimit: raw.crashLimit as number }),
     ...(raw.reevaluate === undefined ? {} : { reevaluate: parseReevaluate(raw.reevaluate) }),
@@ -287,6 +306,8 @@ function readConfig(): TrainConfig {
       (config.sample - config.parents) % config.parents !== 0)
   )
     throw new Error("config.parents must be an integer ≥ 1 that divides sample − parents");
+  if (config.crossover !== undefined && (config.parents ?? 1) < 2)
+    throw new Error("config.crossover needs config.parents ≥ 2");
   if (config.initRange !== undefined && (typeof config.initRange !== "number" || !(config.initRange > 0)))
     throw new Error("config.initRange must be a number > 0");
   if (config.crashLimit !== undefined && (!Number.isInteger(config.crashLimit) || config.crashLimit < 1))
@@ -527,6 +548,7 @@ async function main(): Promise<void> {
       mutationStrength: config.mutationStrength,
       ...(config.mutation ? { mutation: config.mutation } : {}),
       ...(config.parents === undefined ? {} : { parents: config.parents }),
+      ...(config.crossover === undefined ? {} : { crossover: config.crossover }),
       ...(config.curriculum && curriculum
         ? { curriculum: { ...config.curriculum, level: curriculum.level, streakCount: curriculum.streak } }
         : {}),

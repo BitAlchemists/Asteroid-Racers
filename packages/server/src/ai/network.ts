@@ -10,6 +10,9 @@ function copySpec(spec: ModelSpec): ModelSpec {
   };
 }
 
+/** How {@link MajorTom.crossover} combines two parents: per weight or per whole layer. */
+export type CrossoverKind = "uniform" | "layer";
+
 /** Weights are initialised uniformly in [-INITIAL_WEIGHT_RANGE, +INITIAL_WEIGHT_RANGE]. */
 export const INITIAL_WEIGHT_RANGE = 1;
 
@@ -154,6 +157,25 @@ export class MajorTom {
     for (const layer of this.weights) {
       for (let i = 0; i < layer.length; i++) layer[i] = mutator(layer[i]!, rate, strength, random);
     }
+    return this;
+  }
+
+  /**
+   * Crossover with `other` (same layout), in place: `uniform` takes each weight from `other` with
+   * probability ½ (one draw per weight), `layer` takes each whole layer from `other` with
+   * probability ½ (one draw per layer).
+   */
+  crossover(other: MajorTom, kind: CrossoverKind, random: Random): this {
+    if (other.layout.length !== this.layout.length || other.layout.some((n, i) => n !== this.layout[i]))
+      throw new Error("crossover needs two networks with the same layout");
+    this.weights.forEach((layer, l) => {
+      const theirs = other.weights[l]!;
+      if (kind === "layer") {
+        if (random() < 0.5) layer.set(theirs);
+        return;
+      }
+      for (let i = 0; i < layer.length; i++) if (random() < 0.5) layer[i] = theirs[i]!;
+    });
     return this;
   }
 

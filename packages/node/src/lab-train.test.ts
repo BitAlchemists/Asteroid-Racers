@@ -709,6 +709,36 @@ describe("evo-lab worker (protocol v1)", () => {
     expect(strip(short)).not.toEqual(strip(plain));
   }, 240_000);
 
+  it("crossover switch: deterministic, kill-and-resume, replay; rate 0 = absent", async () => {
+    const base = {
+      sample: 8,
+      frames: 60,
+      arenas: [{ name: "point-to-point", params: { episodes: 2, asteroids: 5 } }],
+      collisions: "obstacles",
+      mutation: { kind: "gaussian", sigma: 0.2 },
+      parents: 2,
+    };
+    for (const kind of ["uniform", "layer"]) {
+      const config = { ...base, crossover: { kind, rate: 0.5 } };
+      const dir = await killResume(config);
+      expect(JSON.parse(result(dir)).config.crossover).toEqual({ kind, rate: 0.5 });
+      const { replayed, traced } = await replayEpisodes(dir, 6, 0, config);
+      expect(replayed).toEqual(traced);
+    }
+    const strip = (d: string) => {
+      const { config: _c, ...rest } = JSON.parse(result(d)) as Record<string, unknown>;
+      return rest;
+    };
+    const plain = newRun(base);
+    expect(await run(plain, ["--to", "3"])).toBe(0);
+    const zero = newRun({ ...base, crossover: { kind: "uniform", rate: 0 } });
+    expect(await run(zero, ["--to", "3"])).toBe(0);
+    expect(strip(zero)).toEqual(strip(plain));
+    const crossed = newRun({ ...base, crossover: { kind: "uniform", rate: 1 } });
+    expect(await run(crossed, ["--to", "3"])).toBe(0);
+    expect(strip(crossed)).not.toEqual(strip(plain));
+  }, 240_000);
+
   it("exam switch: race metrics on every N-th generation, results and resume unchanged", async () => {
     const exam = { every: 2, tracks: ["short"], randomTracks: 1, timeLimitSeconds: 10 };
     const withExam = newRun({ ...CONFIG, exam });
@@ -795,6 +825,10 @@ describe("evo-lab worker (protocol v1)", () => {
       [{ inputDelay: 2.5 }, /config.inputDelay/],
       [{ inputNoise: -0.1 }, /config.inputNoise/],
       [{ exam: { inputDelay: 1.5 } }, /exam.inputDelay/],
+      [{ crossover: { kind: "uniform" } }, /needs config.parents/],
+      [{ sample: 10, parents: 2, crossover: { kind: "blend" } }, /crossover.kind/],
+      [{ sample: 10, parents: 2, crossover: { kind: "layer", rate: 2 } }, /crossover.rate/],
+      [{ sample: 10, parents: 2, crossover: { kind: "layer", mix: 1 } }, /unknown config.crossover keys/],
     ] as const) {
       const dir = newRun(config);
       expect(await run(dir, ["--to", "1"])).not.toBe(0);

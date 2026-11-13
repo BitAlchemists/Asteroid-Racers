@@ -49,6 +49,12 @@ An experiment answers one question by comparing **arms** (the baseline config, p
     (`examRobust`, `examRobustCheckpoints`, `examRobustFinished`, `examRobustCrashes`). The exam's
     noise stream is fixed per race (from the race seed), so every model meets the same noise. In the
     `exam` method the keys make the exam itself the perturbed one.
+  - `crossover` (M6): `{ "kind": "uniform" | "layer", "rate": 0.5 }` (rate default 0.5, in [0, 1]);
+    needs `parents` ≥ 2. Each child of parent p is, with probability `rate`, p crossed with another
+    parent drawn uniformly from the rest (`uniform`: each weight from the mate with probability ½;
+    `layer`: each whole layer from the mate with probability ½), then mutated as usual. All draws
+    come from the mutation generator (saved in the checkpoint); children per parent stay
+    (sample − parents) / parents. Rate 0 = absent.
 - A switch key may not appear in the method's default config in `lab.config.json` (that is why the
   `model` block is not there).
 - **The decision metric is `exam`** (the race exam score, lower is better), produced inside training
