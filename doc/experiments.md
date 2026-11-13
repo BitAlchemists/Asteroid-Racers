@@ -58,3 +58,17 @@ The plans in `experiments/` are versioned in git. Evo Lab's working copies under
 
 A 150-generation run of the standard baseline takes about 15 minutes, plus about 3 s per exam
 (16 exams). Runs execute in parallel on the machine runner.
+
+## Reusing stored baseline runs (Evo Lab `next` 779ff56 and later)
+
+Set `"baseline": {"runs": [...], "reuse": true}` in new plans. Per seed, the baseline arm then uses:
+
+1. the stored run, if the task and the code binding are the same (continued from its checkpoint
+   if it is short of `final.gen`);
+2. else the gate check run of that seed, continued to `screen.gen`. This is the usual case after
+   switch code was added;
+3. else a fresh run.
+
+Fallbacks are listed in the experiment's `reuse.fallbacks` and in `screening.md`. The machine runner
+picks up new Evo Lab code only after it restarts while idle, so experiments approved before that
+still re-run their baseline. `screen.gen` now warns only below 10.
