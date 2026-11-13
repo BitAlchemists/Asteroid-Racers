@@ -3,12 +3,7 @@ import type { Replay } from "@ar/server";
 import { Container, Graphics, type Application } from "pixi.js";
 import { Color } from "../render/colors";
 import { StarField } from "../render/scenery";
-import {
-  createArrows,
-  createFinishCircle,
-  drawAsteroid,
-  drawSpaceship,
-} from "../render/shapes";
+import { createArrows, createFinishCircle, drawAsteroid, drawSpaceship } from "../render/shapes";
 
 export type CameraMode = "follow" | "overview";
 
