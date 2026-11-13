@@ -140,7 +140,7 @@ function readConfig(): TrainConfig {
     collisions: oneOf(raw.collisions, "collisions", ["none", "obstacles", "all"] as const, "none"),
     crashMode: oneOf(raw.crashMode, "crashMode", ["end", "respawn"] as const, "end"),
     heldOut: (raw.heldOut as number | undefined) ?? 0,
-    snapshotEvery: (raw.snapshotEvery as number | undefined) ?? 10,
+    snapshotEvery: (raw.snapshotEvery as number | undefined) ?? 1,
   };
   if (!Number.isInteger(config.heldOut) || config.heldOut < 0)
     throw new Error("config.heldOut must be an integer ≥ 0");

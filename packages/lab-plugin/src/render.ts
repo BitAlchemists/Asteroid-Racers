@@ -188,8 +188,11 @@ export function thumb(el: HTMLElement, data: unknown, ctx: PluginContext): void 
     return;
   }
   const canvas = document.createElement("canvas");
-  canvas.width = Math.round((ctx.width ?? 120) * devicePixelRatio);
-  canvas.height = Math.round((ctx.height ?? 90) * devicePixelRatio);
+  // evo-lab may pass 0 for thumbnails: fall back to the element's size, then to 120 × 90.
+  const width = (ctx.width ?? 0) > 0 ? ctx.width! : el.clientWidth || 120;
+  const height = (ctx.height ?? 0) > 0 ? ctx.height! : el.clientHeight || Math.round(width * 0.75);
+  canvas.width = Math.round(width * devicePixelRatio);
+  canvas.height = Math.round(height * devicePixelRatio);
   canvas.style.cssText = "display:block;width:100%;height:100%";
   el.append(canvas);
   paint(canvas, drawings);
@@ -295,6 +298,7 @@ export function render(el: HTMLElement, data: unknown, ctx: PluginContext): () =
         segment: first,
         title,
         compact: ctx.mode === "compare",
+        camera: "overview",
       });
       if (closed) viewer.destroy();
     } catch (error) {

@@ -82,7 +82,7 @@
         "collisions": "none",
         "crashMode": "end",
         "heldOut": 0,
-        "snapshotEvery": 10
+        "snapshotEvery": 1
       },
       "seeded": true,
       "defaultSeed": 2026,
