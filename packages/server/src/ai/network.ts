@@ -199,22 +199,27 @@ export class MajorTom {
     if (inputs.length !== this.inputCount) {
       throw new Error(`expected ${this.inputCount} inputs, got ${inputs.length}`);
     }
-    const first = this.activations[0]!;
+    const activations = this.activations;
+    const bias = this.biasOutput;
+    const first = activations[0]!;
     for (let i = 0; i < first.length; i++) first[i] = inputs[i]!;
 
-    for (let l = 1; l < this.layout.length; l++) {
-      const previous = this.activations[l - 1]!;
-      const current = this.activations[l]!;
+    // Same operations in the same order as ever (bias first, then the inputs by index), with the
+    // lookups hoisted out of the loops.
+    let previous = first;
+    for (let l = 1; l < activations.length; l++) {
+      const current = activations[l]!;
       const weights = this.weights[l - 1]!;
-      const stride = previous.length + 1;
-      for (let n = 0; n < current.length; n++) {
-        const row = n * stride;
-        let sum = weights[row]! * this.biasOutput;
-        for (let i = 0; i < previous.length; i++) sum += weights[row + 1 + i]! * previous[i]!;
+      const width = previous.length;
+      const stride = width + 1;
+      for (let n = 0, row = 0; n < current.length; n++, row += stride) {
+        let sum = weights[row]! * bias;
+        for (let i = 0; i < width; i++) sum += weights[row + 1 + i]! * previous[i]!;
         current[n] = Math.tanh(sum);
       }
+      previous = current;
     }
-    return this.activations[this.activations.length - 1]!;
+    return previous;
   }
 
   mutate(rate: number, strength: number, mutator: WeightMutator, random: Random): this {

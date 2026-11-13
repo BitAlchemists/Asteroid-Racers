@@ -60,7 +60,13 @@ export class AIGameClient implements IGameClient {
     this.proxy = new ServerProxy(this);
     if (connection instanceof LocalServerConnection && connection.direct) {
       const direct = connection;
-      direct.directShipSink = (ship) => this.updateEntity(ship);
+      direct.directShipSink = (ship) => {
+        // The usual case: no hook and the ship is known, so copy straight from the server's object
+        // (copyFrom copies the vectors). Otherwise take a copy first, as the message path does.
+        const known = this.onEntityUpdate ? undefined : this.entities.get(ship.id);
+        if (known) known.copyFrom(ship);
+        else this.updateEntity(ship.clone());
+      };
       this.move = (input) => {
         if (direct.connected) direct.directInput(input);
       };

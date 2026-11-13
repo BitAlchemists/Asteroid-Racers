@@ -118,7 +118,10 @@ export class LocalServerConnection implements ServerConnection {
   private readonly options: Required<LocalConnectionOptions>;
   /** The server side of the current link (for the direct input path). */
   private serverProxy: ClientProxy | undefined;
-  /** Receives the own ship on a direct link (set by the bot). */
+  /**
+   * Receives the own ship on a direct link (set by the bot). It gets the server's own object: it must
+   * copy what it keeps and never change it.
+   */
   directShipSink: ((movable: Movable) => void) | undefined;
 
   constructor(
@@ -174,9 +177,9 @@ export class LocalServerConnection implements ServerConnection {
     );
     this.serverProxy = proxy;
     if (this.direct) {
-      // Same as ENTITY(snapshot) → ServerProxy → updateEntity(snapshot.clone()): the bot gets a copy.
+      // Stands in for ENTITY(snapshot) → ServerProxy → updateEntity(snapshot.clone()); the sink copies.
       proxy.directOwnShip = (movable) => {
-        if (link.open) this.directShipSink?.(movable.clone());
+        if (link.open) this.directShipSink?.(movable);
       };
     }
     this.server.connectClient(proxy);
