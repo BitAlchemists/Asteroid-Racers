@@ -59,7 +59,7 @@
   "speed": {
     "concurrency": [
       1,
-      10
+      4
     ],
     "repeats": 3
   },

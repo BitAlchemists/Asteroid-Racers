@@ -1,6 +1,6 @@
 # S1 — Training speed
 
-Status: 🟡 in progress (written and approved 2026-11-13). Roadmap: [`../ROADMAP.md`](../ROADMAP.md)
+Status: ✅ done 2026-11-13 (written and approved the same day; step 5 not done, it is optional). Roadmap: [`../ROADMAP.md`](../ROADMAP.md)
 
 A side track next to M4. It changes no results, only how fast we get them.
 
@@ -92,12 +92,13 @@ keep their exact order (no reassociation, no fused shortcuts).
 
 ## Acceptance
 
-- [ ] `ticks` and `tps` on every `gen` event; `result.json` unchanged (fixtures).
-- [ ] A bench workload and a stored baseline record.
-- [ ] A hotspot report before and after, summarised in `HISTORY.md`.
-- [ ] Gate: bit-identical, speed-up ≥ 2× ticks/s per run at concurrency 10 (or the measured
-      speed-up recorded if it falls short, with the reason).
-- [ ] `npm run check` green; nothing pushed without asking.
+- [x] `ticks` and `tps` on every `gen` event; `result.json` unchanged (fixtures).
+- [x] A bench workload and a stored baseline record (quality run only, see the changes below).
+- [x] A hotspot report before and after, summarised in `HISTORY.md`.
+- [x] Gate: bit-identical, speed-up ≥ 2× ticks/s per run at concurrency 10 (or the measured
+      speed-up recorded if it falls short, with the reason). Gate class bit-identical; speed measured
+      as a paired A/B at concurrency 1 and 4 instead (about 4×), see the changes below.
+- [x] `npm run check` green; nothing pushed without asking.
 
 ## Not in S1
 
@@ -125,3 +126,24 @@ keep their exact order (no reassociation, no fused shortcuts).
 | --- | --- |
 | Is ≥ 2× realistic? | Unknown until the profile; 14 µs per ship-step suggests large overheads. If the profile shows little to gain, S1 stops after step 2 with a note. |
 | Run S1 now or after M4? | Now, in the gaps: profiling while E3 runs, bench between experiments. E4 waits for S1 only if S1 is close to done. |
+
+## Changes to this plan
+
+- 2026-11-13, step 1: the bench workload runs from train-64's g50 checkpoint to **g56** (not g55),
+  so five steady generations remain after the first one (which includes start-up). Its quality
+  check is **one run with seed 8**, not seeds 1–5: a from-checkpoint workload continues the source
+  run, which fixes its seed (Evo Lab's bench, contract A10). Correctness is judged on the
+  `stateHash` of every generation, so `minSeeds` is 1.
+- 2026-11-13, step 1: the measured ticks per generation are about **101,500**, not the estimated
+  21,600 (episodes run up to their own time limits and the held-out episodes are flown by one
+  ship), so `tps` is about 5× the plan's "1,000 ticks/s" estimate. The per-ship-step cost is
+  therefore lower than estimated; the relative speed-up is what counts.
+- 2026-11-13, steps 1 and 4 (user's change of instructions, relayed by the parent session): S1
+  must not block other work, and E3b held all 20 runner slots. So:
+  - the bench speed steps use concurrency **1 and 4** (not 10), and the queued baseline speed run
+    (train-108) was stopped; the stored baseline record holds the quality run only (train-87);
+  - correctness went through Evo Lab: candidate quality run train-109 on the merged code, gated
+    against the baseline record: **bit-identical**;
+  - speed was measured as a **paired A/B outside the runner** (the commit before the merge against
+    the merge, same workload to g54, A and B alternating, 3 repeats at concurrency 1 and 4, machine
+    load logged before every step), not with the bench's speed steps.

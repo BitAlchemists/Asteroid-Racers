@@ -1,0 +1,25 @@
+rep=1 side=A c=1 load_before=97% busy=busy 20
+tps median 3913 all 3548,3913,4375
+rep=1 side=A c=4 load_before=84% busy=busy 18
+tps median 4182 all 3555,3614,3870,3897,4069,4095,4182,4192,4929,4970,5059,5076
+rep=1 side=B c=1 load_before=23% busy=busy 11
+tps median 25654 all 24054,25654,25952
+rep=1 side=B c=4 load_before=19% busy=busy 11
+tps median 21813 all 20159,20446,20863,20913,21561,21655,21813,21969,22072,22243,22407,22484
+rep=2 side=A c=1 load_before=25% busy=busy 11
+tps median 6516 all 6406,6516,6935
+rep=2 side=A c=4 load_before=28% busy=busy 10
+tps median 5382 all 5199,5216,5262,5276,5279,5362,5382,5514,5527,5592,5646,5863
+rep=2 side=B c=1 load_before=39% busy=busy 10
+tps median 26066 all 24694,26066,26654
+rep=2 side=B c=4 load_before=29% busy=busy 10
+tps median 22682 all 21163,21554,21701,21792,22571,22644,22682,22794,23121,23308,23388,23416
+rep=3 side=A c=1 load_before=38% busy=busy 10
+tps median 7011 all 6980,7011,7639
+rep=3 side=A c=4 load_before=21% busy=busy 8
+tps median 7387 all 7280,7301,7305,7322,7337,7345,7387,7396,7851,7853,7889,7891
+rep=3 side=B c=1 load_before=23% busy=busy 2
+tps median 32124 all 30447,32124,32158
+rep=3 side=B c=4 load_before=17% busy=busy 0
+tps median 29546 all 27632,27897,27980,28044,28991,29481,29546,29628,29846,29887,29982,29991
+AB_DONE rc=0

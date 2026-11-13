@@ -671,3 +671,94 @@ Runs: screen train-57..66, final train-67..76 (seeds 1–10). Task v2 with lineC
   switch (about 60 runs instead of 50). Still a draft: not created in Evo Lab.
 - `doc/experiments.md` lists the switch.
 - **Commit:** one commit, "M4: crashLimit switch (crash cap per episode, adopted after E3)".
+
+## 2026-11-13 — S1: training speed (side track, done)
+
+Plan: [`plans/S1-training-speed.md`](plans/S1-training-speed.md), approved by the user. Done by a
+subagent next to M4's experiments.
+
+| Commit    | What                                                                                   |
+| --------- | -------------------------------------------------------------------------------------- |
+| `f127ac7` | S1.1: `ticks` and `tps` metrics on every `gen` event (not in result.json or stateHash); bench workload `experiments/bench/train-v2.json` |
+| `bb74f86` | S1.2: `experiments/bench/cpuprofile-to-labprof.mjs` (node `--cpu-prof` → Evo Lab `hotspots` input) |
+| `3b021fa` | S1.3: the speed-ups (bit-identical)                                                    |
+| (this)    | S1.4: gate and A/B results, workload at concurrency 1 and 4, hotspot report, docs      |
+
+**Measured, not estimated.** A generation of the task v2 setup is about **101,500 game ticks**
+(the plan guessed 21,600: episodes run to their own limits, and held-out episodes are flown by one
+ship). Before S1 a run did about 5,000–7,000 ticks/s with other runs on the machine.
+
+**Hotspots before** (`node --cpu-prof`, train-64 g50 → g53, share of sampled CPU, self time):
+`ObstacleGrid.near` 9.4 %, `Vector2.distanceTo` (collisions, 100 ships × ~110 rocks per tick)
+9.1 %, protobuf encoding (`ensureCapacity` 8.2 %, `finish` 4.5 %, `BinaryReader` 4.3 %, plus
+`create`/`toBinary`/`fromBinary` helpers): about 30 % in total for messages that never leave the
+process, `network.activate` 4.6 %, `firstOnLine` (lineCheck) 4.4 %, `broadcastUpdates` 3.1 %
+self (37 % cumulative: the own-ship update of every bot every tick), GC 3.3 %.
+
+**Hotspots after** (same workload, `experiments/bench/hotspots-s1.txt`): sampled CPU per
+generation 21.4 s → 5.1 s (× 0.24). Top now: `network.activate` 15 %, `near` 14 %,
+`detectCollisions` 9.5 %, `preUpdate` (inlined controller) 8.5 %, `broadcastUpdates` 4.9 %,
+`firstOnLine` 4.2 %, GC 3.4 %. Protobuf encoding is gone from the profile.
+
+**What changed (S1.3),** all exact by construction and checked against stored hashes:
+- in-process receivers read the payload message the sender built; bytes only for the wire;
+- own-ship ENTITY messages carry a snapshot that the receiver copies (instead of
+  `toNet`/protobuf/`fromNet`);
+- no closure per message in the sync local link; no per-tick sort of entity ranks when nothing is
+  broadcast;
+- collisions: an exact per-axis shortcut before `hypot` (`hypot ≥ max(|dx|, |dy|)`);
+- obstacle grid: compressed-row cells and stamp deduplication (tested against the old grid,
+  including equal ids, duplicates and a sparse world); lineCheck without per-rock allocations.
+
+**Correctness (Evo Lab).** Baseline record `lab/profiles/train-v2/baseline-caec82f274b8.json`
+(quality run train-87, code before S1.3). Candidate train-109 on the merged code:
+`candidate-25c5d32c7da3.json`. Gate: **bit-identical** (stateHash equal at g51–g56, score and
+exam metrics equal). Locally also: result.json bytes equal (sha256 `5915a9ef…`).
+
+**Speed: paired A/B outside the runner** (commit `b4fcbb5` before the merge = A, `3b021fa` = B;
+train-64 g50 → g54, seed 8; median `tps` of g52–g54 over all copies; A and B alternating,
+CPU load and busy runner slots logged before each step):
+
+| repeat | load (busy slots) | c1 A → B | c4 A → B |
+| --- | --- | --- | --- |
+| 1 | A 97 % (20) / B 20 % (11) | 3,913 → 25,654 | 4,182 → 21,813 |
+| 2 | 25–39 % (10–11), both sides | 6,516 → 26,066 (4.0×) | 5,382 → 22,682 (4.2×) |
+| 3 | A 38 % (10) / B 17–23 % (0–2) | 7,011 → 32,124 | 7,387 → 29,546 |
+
+Repeat 2 is the only one with the same load on both sides: **about 4× ticks/s per run** at
+concurrency 1 and 4. Repeats 1 and 3 had the load change between A and B (E3b's runs ended), so
+they overstate the gain. The Evo Lab bench runs show the same direction under different loads:
+train-87 2,670–4,959 tps (20 busy slots), train-109 11,544–12,892 tps.
+
+**Decisions and deviations** (also in the plan's "Changes"):
+- the workload runs to g56 with one quality seed (8): a from-checkpoint workload keeps the source
+  run's seed;
+- by the user's change of instructions (S1 must not block other work, E3b held all 20 slots):
+  bench speed steps at concurrency 1 and 4, the queued baseline speed run train-108 stopped, the
+  baseline record holds the quality run only, and speed was measured as the A/B above. No
+  concurrency-10 figure; step 5 (scaling) not done.
+- Optimisations were developed in a worktree (`../asteroid-racers-s1`, branch `s1-speed`) and
+  merged fast-forward after rebasing onto main twice (main moved: curriculum, viewer, crashLimit).
+- Real runs started on the new code will show the speed in their `tps` metric; none had started
+  when this entry was written.
+
+**Mistakes:**
+- I started the candidate bench with `lab bench` under a 60 s `timeout`. The bench job lived in
+  that CLI process, so killing it left the status file "running" with a dead `serverPid` after
+  train-109 finished. I recorded the candidate and ran the gate with Evo Lab's profile module
+  directly (`recordExperiment`, `compareExperiments`, `saveGate`); `lab gate` on the two records
+  gives the same class.
+- The first edit of `lab-train.ts` went through Python on Windows and turned the file into CRLF;
+  converted back before the commit.
+
+**Evo Lab friction (for the Evo Lab session):**
+- `hotspots` reads only labprof cProfile exports; Node workers need a converter for `.cpuprofile`
+  (ours is `experiments/bench/cpuprofile-to-labprof.mjs`).
+- `lab bench` started from the CLI runs the job in the CLI process: when the CLI dies, the job dies
+  silently and the status stays "running".
+- A bench step whose run is stopped fails the whole bench, and nothing is saved; `record --save`
+  then rebuilds from all `bench:<id>:` runs (mixing code versions when both sides exist).
+- Bench speed steps queue behind a full budget for as long as other experiments hold it; there is
+  no way to run them at a lower priority or outside the slots.
+- `lab status` warns that the runner runs other evo-lab code than the client (7115b68d21c2 vs
+  a1c2ec48e999).
