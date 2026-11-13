@@ -54,9 +54,13 @@ CI green on `13d7240`. Best racer so far: train-4 g110 (exam 3,579, finishes 6 o
 
 ### M3 — Visibility ⬜
 
-- **Watch page:** an in-game spectator mode. Pick a model (bundled, file or Evo Lab run snapshot) and
-  an arena or track, then watch it fly with a free or follow camera.
-- An Evo Lab renderer plugin, so a run's snapshots can be replayed from the Evo Lab UI.
+Plan: [`plans/M3-visibility.md`](plans/M3-visibility.md) (waiting for approval)
+
+- One replay viewer that re-simulates any flight exactly (model + scenario + seed), used in two
+  places:
+  - an **Evo Lab renderer plugin** (the main way to watch): any generation of a training run, any
+    exam flight, path thumbnails in the filmstrip;
+  - an in-game **watch page**: the bundled model or a model file on any track.
 
 ### M4 — Content ⬜
 

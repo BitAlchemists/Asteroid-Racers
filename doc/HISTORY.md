@@ -226,3 +226,20 @@ snapshots every 10. exam-5 examined all 15 snapshots.
   Our training worker does not read `--import` yet.
 - Pushed to `main` at the user's request; CI passed on `13d7240` (run 43412565833), including the
   new exam step. M2 is done.
+
+## 2026-11-13 — M3 plan
+
+- The user asked whether the watch page belongs in Evo Lab. My answer: mostly yes, as a renderer
+  plugin, built from one replay viewer that the game's watch page reuses. Replays re-simulate
+  instead of recording, which works because everything is deterministic.
+- Asked the Evo Lab session about renderer plugins and read its contract (`docs/contract-v1-draft.md`
+  section C, `examples/toy/ui/render.js`):
+  - a Vite output folder works and is not part of the run binding;
+  - the plugin may run its own PixiJS app, but must clean up completely;
+  - thumbnails must be static pictures;
+  - exam runs can find their source model through the manifest's `inputRun`.
+- Wrote [`plans/M3-visibility.md`](plans/M3-visibility.md), waiting for the user's OK. New in it
+  compared to the roadmap: path traces in training snapshots and exam snapshots, so thumbnails need
+  no simulation.
+- Also from the Evo Lab session: `js/lablib.mjs`, a ready-made helper for Node workers. We keep our
+  own workers for now and look at it again in M5 (for `--import`).
