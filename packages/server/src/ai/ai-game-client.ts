@@ -40,6 +40,8 @@ export class AIGameClient implements IGameClient {
   onEntityUpdate: ((entity: Entity) => void) | undefined;
   onJoinRace: ((portalId: number) => void) | undefined;
   onNextCheckpoint: ((checkpoint: Entity | undefined) => void) | undefined;
+  /** The bot's own ship crashed. */
+  onCrash: (() => void) | undefined;
 
   private pendingConnect: { resolve: () => void; reject: (error: Error) => void } | undefined;
 
@@ -114,6 +116,7 @@ export class AIGameClient implements IGameClient {
   handleCollision(entityId: number): void {
     const entity = this.entities.get(entityId);
     if (entity instanceof Movable) entity.canMove = false;
+    if (entity !== undefined && entity === this.ship) this.onCrash?.();
   }
 
   joinRace(portalId: number): void {

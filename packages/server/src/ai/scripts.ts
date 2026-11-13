@@ -81,7 +81,7 @@ export abstract class Script {
     const client = this.client;
     if (client) {
       client.vehicle = undefined;
-      client.onEntityUpdate = client.onJoinRace = client.onNextCheckpoint = undefined;
+      client.onEntityUpdate = client.onJoinRace = client.onNextCheckpoint = client.onCrash = undefined;
       client.disconnect();
       this.host.destroyClient(client);
     }

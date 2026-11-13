@@ -1,12 +1,21 @@
-import { getLogger } from "@ar/shared";
-import type { IGameServer, IServerService } from "../contracts";
+import { Checkpoint, CheckpointState, Entity, EntityType, getLogger } from "@ar/shared";
+import type { CollisionMode, IGameServer, IServerService } from "../contracts";
 import { GameServer } from "../game-server";
 import { LocalServerConnection, type LocalConnectionOptions } from "../local-connection";
-import type { Random } from "../random";
+import { seededRandom, type Random } from "../random";
 import { AIGameClient } from "./ai-game-client";
+import { ArenaScript, type CrashMode, type PlacedEpisode } from "./arena-script";
+import { deriveSeed, SCENARIO_STREAM, type Arena, type ArenaParams, type Scenario } from "./arenas";
 import type { BrainStore } from "./brain-store";
 import { MajorTom } from "./network";
-import { ScriptState, type RaceTargetTrainingScript, type Script, type ScriptHost } from "./scripts";
+import {
+  LEGACY_SCORING,
+  scoreEpisodes,
+  successRate,
+  type EpisodeRecord,
+  type ScoringWeights,
+} from "./scoring";
+import { ScriptState, type Script, type ScriptHost } from "./scripts";
 
 /**
  * Runs bot scripts inside a game server: bots connect in-process, step their vehicle controllers
@@ -119,15 +128,28 @@ export class DemoDirector extends AIDirector {
 const trainLog = getLogger("services.ai.TrainingDirector");
 
 export interface GenerationReport {
+  /** 1-based number of this generation within the run (continues after a resume). */
   generation: number;
   /** Generation number stored in the winning brain (continues across runs). */
   brainGeneration: number;
   bestScore: number;
   meanScore: number;
   worstScore: number;
+  /** Share of training targets the winner reached (0..1). */
+  success: number;
+  /** The winner's score on the held-out scenarios (when there are any). */
+  heldOutScore?: number;
+  /** Share of held-out targets the winner reached (0..1). */
+  heldOutSuccess?: number;
   winner: MajorTom;
   sampleSize: number;
   gameSeconds: number;
+}
+
+/** One arena of the training set, with its params. */
+export interface ArenaRun {
+  arena: Arena;
+  params: ArenaParams;
 }
 
 export interface TrainingOptions {
@@ -136,29 +158,60 @@ export interface TrainingOptions {
   layout: readonly number[];
   /** Brains per generation, all flown simultaneously. */
   sampleSize: number;
-  scriptFactory: (network: MajorTom) => RaceTargetTrainingScript;
   /** Applied to every offspring of the previous winner. */
   mutate: (network: MajorTom, random: Random) => void;
+  /** Drives mutation and the first random brains. */
   random: Random;
+  /** Every candidate flies every arena, one arena after the other. */
+  arenas: readonly ArenaRun[];
+  /** Run seed: scenario seeds are derived from it, the stream, the arena index and the generation. */
+  scenarioSeed: number;
+  /** Held-out scenarios per arena: fixed for the whole run, flown by the winner only, never used for selection. */
+  heldOut?: number;
+  scoring?: ScoringWeights;
+  collisions?: CollisionMode;
+  crashMode?: CrashMode;
+  /** Number of the first generation this director runs (default 1; a resumed run passes g + 1). */
+  firstGeneration?: number;
   /** Stop after this many generations (default: run forever). */
   maxGenerations?: number;
   onGeneration?: (report: GenerationReport) => void;
 }
 
+/** A scenario placed in the world: its obstacles and checkpoints exist until `remove()`. */
+interface PlacedScenario {
+  episodes: PlacedEpisode[];
+  remove(): void;
+}
+
 /**
  * Neuro-evolution: each generation the best brain from the store (or random ones, the first time) is
- * cloned and mutated into `sampleSize` candidates, all fly the training course at once, and the one
- * with the lowest score is saved as the new winner.
+ * cloned and mutated into `sampleSize` candidates. All candidates fly each arena's scenario at once,
+ * one arena after the other; the lowest total score wins and is saved for the next generation.
  */
 export class TrainingDirector extends AIDirector {
   private stopped = false;
-  private generation = 0;
+  private generation: number;
   private running: Promise<void> | undefined;
+  private readonly scoring: ScoringWeights;
+  private readonly heldOutScenarios: Scenario[];
 
   constructor(readonly options: TrainingOptions) {
-    // Training bots are ghosts (no crashes) and get their messages synchronously so they react in the
-    // same frame even when the server runs flat out.
-    super({ delivery: "sync", collisions: "none" });
+    // Bots get their messages synchronously so they react in the same frame even when the server runs
+    // flat out, and never respawn on their own: the arena script decides what a crash means.
+    super({ delivery: "sync", collisions: options.collisions ?? "none", autoRespawn: false });
+    if (options.arenas.length === 0) throw new Error("training needs at least one arena");
+    this.generation = (options.firstGeneration ?? 1) - 1;
+    this.scoring = options.scoring ?? { ...LEGACY_SCORING };
+    const heldOut = options.heldOut ?? 0;
+    this.heldOutScenarios = options.arenas.flatMap((run, a) =>
+      Array.from({ length: heldOut }, (_, k) =>
+        run.arena.generate(
+          seededRandom(deriveSeed(options.scenarioSeed, SCENARIO_STREAM.heldOut, a, k)),
+          run.params,
+        ),
+      ),
+    );
   }
 
   start(): void {
@@ -175,9 +228,21 @@ export class TrainingDirector extends AIDirector {
     this.stopAll();
   }
 
+  /** The training scenarios of generation `g` (1-based), one per arena. */
+  scenariosFor(g: number): Scenario[] {
+    return this.options.arenas.map((run, a) =>
+      run.arena.generate(
+        seededRandom(
+          deriveSeed(this.options.scenarioSeed, SCENARIO_STREAM.training, a, run.arena.fixed ? 0 : g),
+        ),
+        run.params,
+      ),
+    );
+  }
+
   private async trainLoop(): Promise<void> {
-    const max = this.options.maxGenerations ?? Infinity;
-    while (!this.stopped && this.generation < max) {
+    let remaining = this.options.maxGenerations ?? Infinity;
+    while (!this.stopped && remaining-- > 0) {
       await this.runGeneration();
     }
   }
@@ -205,28 +270,94 @@ export class TrainingDirector extends AIDirector {
     return candidates;
   }
 
+  /** Flies `networks` through `scenarios` (one after the other) and returns each network's episode records. */
+  async fly(networks: readonly MajorTom[], scenarios: readonly Scenario[]): Promise<EpisodeRecord[][]> {
+    const records = networks.map((): EpisodeRecord[] => []);
+    for (const scenario of scenarios) {
+      if (this.stopped) break;
+      const placed = this.place(scenario);
+      try {
+        const scripts = networks.map(
+          (network) => new ArenaScript(network, placed.episodes, this.options.crashMode, this.tickSeconds),
+        );
+        await Promise.all(scripts.map((script) => this.runScript(script)));
+        scripts.forEach((script, i) => records[i]!.push(...script.records));
+      } finally {
+        placed.remove();
+      }
+    }
+    return records;
+  }
+
+  private get tickSeconds(): number {
+    return this.server?.tickSeconds ?? 0.015;
+  }
+
+  private place(scenario: Scenario): PlacedScenario {
+    const server = this.server;
+    if (!server) throw new Error("director is not attached to a server");
+    const obstacles = scenario.obstacles.map((o) => {
+      const rock = new Entity({ type: EntityType.ASTEROID, position: o.position.clone(), radius: o.radius });
+      server.addObstacle(rock);
+      return rock;
+    });
+    const checkpoints: Checkpoint[] = [];
+    const episodes = scenario.episodes.map((spec) => ({
+      spec,
+      targets: spec.targets.map((t) => {
+        const checkpoint = new Checkpoint({ position: t.position.clone(), radius: t.radius });
+        checkpoint.state = CheckpointState.FUTURE;
+        server.spawnEntity(checkpoint);
+        checkpoints.push(checkpoint);
+        return checkpoint;
+      }),
+    }));
+    return {
+      episodes,
+      remove: () => {
+        for (const rock of obstacles) server.removeObstacle(rock);
+        for (const checkpoint of checkpoints) server.despawnEntity(checkpoint);
+      },
+    };
+  }
+
   private async runGeneration(): Promise<void> {
     const startedAt = this.server?.gameTime ?? 0;
+    const g = this.generation + 1;
     const candidates = this.createCandidates();
-    const scripts = candidates.map((network) => this.options.scriptFactory(network));
-    // Score from evaluators: run all flights at once and collect when each ends.
-    await Promise.all(scripts.map((script) => this.runScript(script)));
+    const records = await this.fly(candidates, this.scenariosFor(g));
     if (this.stopped) return;
 
-    const scored = scripts
-      .map((script) => ({ network: script.network, score: script.evaluator.finalScore }))
+    const scored = candidates
+      .map((network, i) => ({
+        network,
+        records: records[i]!,
+        score: scoreEpisodes(records[i]!, this.scoring, this.tickSeconds),
+      }))
       .sort((a, b) => a.score - b.score);
     const best = scored[0]!;
     best.network.name = "Winner from last round";
     this.options.store.save(this.options.networkName, [best.network]);
 
-    this.generation++;
+    let heldOut: { heldOutScore: number; heldOutSuccess: number } | undefined;
+    if (this.heldOutScenarios.length > 0) {
+      const [winnerRecords] = await this.fly([best.network], this.heldOutScenarios);
+      if (this.stopped) return;
+      heldOut = {
+        heldOutScore: scoreEpisodes(winnerRecords!, this.scoring, this.tickSeconds),
+        heldOutSuccess: successRate(winnerRecords!),
+      };
+    }
+
+    this.generation = g;
     const report: GenerationReport = {
-      generation: this.generation,
+      generation: g,
       brainGeneration: best.network.generation,
       bestScore: best.score,
       meanScore: scored.reduce((sum, s) => sum + s.score, 0) / scored.length,
       worstScore: scored.at(-1)!.score,
+      success: successRate(best.records),
+      ...heldOut,
       winner: best.network,
       sampleSize: scored.length,
       gameSeconds: (this.server?.gameTime ?? 0) - startedAt,
@@ -236,14 +367,5 @@ export class TrainingDirector extends AIDirector {
         `mean ${report.meanScore.toFixed(0)} over ${report.sampleSize}`,
     );
     this.options.onGeneration?.(report);
-  }
-
-  /** Evaluate every running flight before the scripts step (Dart order). */
-  override postUpdate(dt: number): void {
-    for (const script of this.scripts) {
-      if (script.state === ScriptState.RUNNING)
-        (script as RaceTargetTrainingScript).evaluator.evaluate(script as RaceTargetTrainingScript, dt);
-    }
-    super.postUpdate(dt);
   }
 }

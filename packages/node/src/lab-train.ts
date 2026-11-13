@@ -216,7 +216,7 @@ async function main(): Promise<void> {
   };
 
   const onGeneration = (report: GenerationReport): void => {
-    g = startG + report.generation;
+    g = report.generation;
     winner = report.winner;
     bestScore = report.bestScore;
     const cpu = process.cpuUsage(genStartCpu);
@@ -243,6 +243,7 @@ async function main(): Promise<void> {
       mutationRate: config.mutationRate,
       mutationStrength: config.mutationStrength,
       random: mutationRandom,
+      firstGeneration: startG + 1,
       maxGenerations: to - startG,
       onGeneration,
     });

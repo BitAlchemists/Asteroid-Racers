@@ -1,15 +1,22 @@
 import { Vector2 } from "@ar/shared";
+import type { CollisionMode } from "../contracts";
 import { GameServer } from "../game-server";
 import { seededRandom, type Random } from "../random";
+import type { CrashMode } from "./arena-script";
+import { arenaByName, legacyArena, type ArenaParams } from "./arenas";
 import { MemoryBrainStore, type BrainStore } from "./brain-store";
 import defaultBrain from "./brains/default-brain.json";
 import { DemoDirector, TrainingDirector, type GenerationReport } from "./directors";
 import { QuadraticSumOfDistanceToTargetsEvaluator } from "./evaluators";
 import { mutateRelative, type MajorTom, type NetworkJson } from "./network";
+import type { ScoringWeights } from "./scoring";
 import { RaceTargetScript, RespawnTargetTrainingScript } from "./scripts";
 import { TargetGenerator } from "./target-generator";
 
 export * from "./ai-game-client";
+export * from "./arena-script";
+export * from "./arenas";
+export * from "./scoring";
 export * from "./brain-store";
 export * from "./directors";
 export * from "./evaluators";
@@ -78,47 +85,73 @@ export function createTrainingServer(seed = 1): GameServer {
   return new GameServer({ random: seededRandom(seed), entityUpdatesPerTick: 0, sendOwnShipEveryTick: true });
 }
 
+/** An arena by name, as it appears in a training config. */
+export interface ArenaConfig {
+  name: string;
+  params?: ArenaParams;
+}
+
 export interface TrainingServiceOptions {
   store: BrainStore;
   networkName?: string;
   layout?: readonly number[];
   sampleSize?: number;
+  /** Default `frames` param for every arena (frames per target in `legacy`, per episode elsewhere). */
   framesPerTarget?: number;
   /** Chance that a single weight mutates (default 0.1). */
   mutationRate?: number;
   /** Relative size of a weight mutation (default 1 = up to ±100 %). */
   mutationStrength?: number;
   maxGenerations?: number;
-  /** Builds the course, then drives mutation. Pass a seeded one for reproducible training. */
+  /** Number of the first generation (default 1; a resumed run passes g + 1). */
+  firstGeneration?: number;
+  /** Drives mutation and the first random brains. Pass a seeded one for reproducible training. */
   random?: Random;
+  /** Default: the original course only. */
+  arenas?: readonly ArenaConfig[];
+  /** Seed the scenarios are derived from (default 1). */
+  scenarioSeed?: number;
+  /** Held-out scenarios per arena (default 0). */
+  heldOut?: number;
+  /** Default: the original evaluator (distance only). */
+  scoring?: ScoringWeights;
+  /** Default `none` (ghosts). */
+  collisions?: CollisionMode;
+  /** Default `end`. */
+  crashMode?: CrashMode;
   onGeneration?: (report: GenerationReport) => void;
 }
 
-/** Evolves brains on the training course around the origin (Dart registerAITrainingService). */
+/** Evolves brains on the given arenas (by default the original course, like Dart registerAITrainingService). */
 export function registerAITrainingService(
   server: GameServer,
   options: TrainingServiceOptions,
 ): TrainingDirector {
   const random = options.random ?? server.random;
-  const course = TargetGenerator.fluxCompensator(server, random);
-  const framesPerTarget = options.framesPerTarget ?? AI_TRAINING_FRAMES;
+  const frames = options.framesPerTarget ?? AI_TRAINING_FRAMES;
   const mutationRate = options.mutationRate ?? MUTATION_RATE;
   const mutationStrength = options.mutationStrength ?? MUTATION_STRENGTH;
+  const arenas = (options.arenas ?? [{ name: legacyArena.name }]).map((a) => ({
+    arena: arenaByName(a.name),
+    params: { frames, ...a.params },
+  }));
   const director = new TrainingDirector({
     store: options.store,
     networkName: options.networkName ?? DEFAULT_BRAIN_NAME,
     layout: options.layout ?? DEFAULT_LAYOUT,
     sampleSize: options.sampleSize ?? AI_TRAINING_SAMPLE_SIZE,
     random,
+    arenas,
+    scenarioSeed: options.scenarioSeed ?? 1,
+    ...(options.heldOut === undefined ? {} : { heldOut: options.heldOut }),
+    ...(options.scoring === undefined ? {} : { scoring: options.scoring }),
+    ...(options.collisions === undefined ? {} : { collisions: options.collisions }),
+    ...(options.crashMode === undefined ? {} : { crashMode: options.crashMode }),
+    ...(options.firstGeneration === undefined ? {} : { firstGeneration: options.firstGeneration }),
     ...(options.maxGenerations === undefined ? {} : { maxGenerations: options.maxGenerations }),
     ...(options.onGeneration === undefined ? {} : { onGeneration: options.onGeneration }),
     mutate: (network: MajorTom, rnd: Random) =>
       network.mutate(mutationRate, mutationStrength, mutateRelative, rnd),
-    scriptFactory: (network) =>
-      new RespawnTargetTrainingScript(network, course, new QuadraticSumOfDistanceToTargetsEvaluator(), {
-        spawn: Vector2.zero(),
-        maxFramesPerTarget: framesPerTarget,
-      }),
   });
   server.registerService(director);
   return director;
