@@ -8,6 +8,7 @@ import { AIDirector } from "./directors";
 import type { MajorTom } from "./network";
 import { startScript, type Replay, type ReplayStatus } from "./replay";
 import { RaceTargetScript } from "./scripts";
+import { addPathPoint, PATH_EVERY } from "./trace";
 
 /** Weights of the exam score (lower is better). */
 export interface ExamWeights {
@@ -54,8 +55,26 @@ export interface FlightResult {
   score: number;
 }
 
+/** One exam flight as drawn in a thumbnail. */
+export interface FlightTrace {
+  track: string;
+  seed: number;
+  /** [x, y, radius] per race checkpoint: the portal first, the finish last. */
+  checkpoints: [number, number, number][];
+  /** Flat [x0, y0, x1, y1, …], a point every {@link EXAM_PATH_EVERY} frames. */
+  path: number[];
+  reached: number;
+  finished: boolean;
+  crashes: number;
+}
+
+/** Exam flights are long (up to 3 minutes): a path point every 20 frames (0.3 s). */
+export const EXAM_PATH_EVERY = 2 * PATH_EVERY;
+
 export interface ExamResult {
   flights: FlightResult[];
+  /** Paths of the flights, for drawing (kept out of result files). */
+  traces: FlightTrace[];
   /** Sum of the flights' scores. */
   score: number;
   /** Share of all checkpoints reached (0..1). */
@@ -89,6 +108,8 @@ export class ExamReplay implements Replay {
   frame = 0;
   crashes = 0;
   finishedAt: number | undefined;
+  /** The ship's path (flat [x, y, …], a point every EXAM_PATH_EVERY frames and the last position). */
+  readonly path: number[] = [];
   readonly maxFrames: number;
 
   private constructor(
@@ -161,9 +182,32 @@ export class ExamReplay implements Replay {
 
   step(frames = 1): void {
     for (let i = 0; i < frames && !this.done; i++) {
+      const ship = this.proxy.movable;
+      if (ship && this.frame % EXAM_PATH_EVERY === 0)
+        addPathPoint(this.path, ship.position.x, ship.position.y);
       this.server.tick();
       this.frame++;
     }
+  }
+
+  trace(): FlightTrace {
+    const ship = this.proxy.movable;
+    const path = [...this.path];
+    if (ship) addPathPoint(path, ship.position.x, ship.position.y);
+    const round = (v: number) => Math.round(v * 10) / 10;
+    return {
+      track: this.track,
+      seed: this.seed,
+      checkpoints: this.server.raceController!.checkpoints.map((c) => [
+        round(c.position.x),
+        round(c.position.y),
+        round(c.radius),
+      ]),
+      path,
+      reached: this.reached,
+      finished: this.finishedAt !== undefined,
+      crashes: this.crashes,
+    };
   }
 
   result(weights: ExamWeights): FlightResult {
@@ -203,11 +247,21 @@ export async function examFlight(
   timeLimitSeconds: number,
   weights: ExamWeights,
 ): Promise<FlightResult> {
+  return (await examFlightWithTrace(model, trackName, seed, timeLimitSeconds, weights)).result;
+}
+
+async function examFlightWithTrace(
+  model: MajorTom,
+  trackName: string,
+  seed: number,
+  timeLimitSeconds: number,
+  weights: ExamWeights,
+): Promise<{ result: FlightResult; trace: FlightTrace }> {
   const replay = await ExamReplay.create(model, trackName, seed, timeLimitSeconds);
   while (!replay.done) replay.step();
-  const result = replay.result(weights);
+  const out = { result: replay.result(weights), trace: replay.trace() };
   replay.dispose();
-  return result;
+  return out;
 }
 
 /** The flights of an exam: each named track once, then `randomTracks` random tracks. */
@@ -223,11 +277,16 @@ export function examFlights(config: ExamConfig): { track: string; seed: number }
 
 export async function runExam(model: MajorTom, config: ExamConfig = DEFAULT_EXAM): Promise<ExamResult> {
   const flights: FlightResult[] = [];
-  for (const { track, seed } of examFlights(config))
-    flights.push(await examFlight(model, track, seed, config.timeLimitSeconds, config.weights));
+  const traces: FlightTrace[] = [];
+  for (const { track, seed } of examFlights(config)) {
+    const flight = await examFlightWithTrace(model, track, seed, config.timeLimitSeconds, config.weights);
+    flights.push(flight.result);
+    traces.push(flight.trace);
+  }
   const total = flights.reduce((n, f) => n + f.totalCheckpoints, 0);
   return {
     flights,
+    traces,
     score: flights.reduce((s, f) => s + f.score, 0),
     checkpoints: total === 0 ? 0 : flights.reduce((n, f) => n + f.checkpoints, 0) / total,
     finished: flights.length === 0 ? 0 : flights.filter((f) => f.finished).length / flights.length,

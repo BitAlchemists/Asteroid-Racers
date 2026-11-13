@@ -17,6 +17,7 @@ import {
   type ScoringWeights,
 } from "./scoring";
 import { ScriptState, type Script, type ScriptHost } from "./scripts";
+import { buildTraces, type ArenaTrace } from "./trace";
 
 /**
  * Runs bot scripts inside a game server: bots connect in-process, step their vehicle controllers
@@ -138,6 +139,8 @@ export interface GenerationReport {
   worstScore: number;
   /** Share of training targets the winner reached (0..1). */
   success: number;
+  /** The winner's flights through this generation's training scenarios, for drawing. */
+  trace: ArenaTrace[];
   /** The winner's score on the held-out scenarios (when there are any). */
   heldOutScore?: number;
   /** Share of held-out targets the winner reached (0..1). */
@@ -256,7 +259,16 @@ export class TrainingDirector extends AIDirector {
 
   /** Flies `networks` through `scenarios` (one after the other) and returns each network's episode records. */
   async fly(networks: readonly MajorTom[], scenarios: readonly Scenario[]): Promise<EpisodeRecord[][]> {
+    return (await this.flyWithPaths(networks, scenarios)).records;
+  }
+
+  /** Like {@link fly}, plus each network's path per episode. */
+  async flyWithPaths(
+    networks: readonly MajorTom[],
+    scenarios: readonly Scenario[],
+  ): Promise<{ records: EpisodeRecord[][]; paths: number[][][] }> {
     const records = networks.map((): EpisodeRecord[] => []);
+    const paths = networks.map((): number[][] => []);
     for (const scenario of scenarios) {
       if (this.stopped) break;
       const placed = this.place(scenario);
@@ -265,12 +277,15 @@ export class TrainingDirector extends AIDirector {
           (network) => new ArenaScript(network, placed.episodes, this.options.crashMode, this.tickSeconds),
         );
         await Promise.all(scripts.map((script) => this.runScript(script)));
-        scripts.forEach((script, i) => records[i]!.push(...script.records));
+        scripts.forEach((script, i) => {
+          records[i]!.push(...script.records);
+          paths[i]!.push(...script.paths);
+        });
       } finally {
         placed.remove();
       }
     }
-    return records;
+    return { records, paths };
   }
 
   private get tickSeconds(): number {
@@ -286,13 +301,15 @@ export class TrainingDirector extends AIDirector {
     const startedAt = this.server?.gameTime ?? 0;
     const g = this.generation + 1;
     const candidates = this.createCandidates();
-    const records = await this.fly(candidates, this.scenariosFor(g));
+    const scenarios = this.scenariosFor(g);
+    const { records, paths } = await this.flyWithPaths(candidates, scenarios);
     if (this.stopped) return;
 
     const scored = candidates
       .map((network, i) => ({
         network,
         records: records[i]!,
+        paths: paths[i]!,
         score: scoreEpisodes(records[i]!, this.scoring, this.tickSeconds),
       }))
       .sort((a, b) => a.score - b.score);
@@ -318,6 +335,12 @@ export class TrainingDirector extends AIDirector {
       meanScore: scored.reduce((sum, s) => sum + s.score, 0) / scored.length,
       worstScore: scored.at(-1)!.score,
       success: successRate(best.records),
+      trace: buildTraces(
+        this.options.arenas.map((run) => run.arena.name),
+        scenarios,
+        best.records,
+        best.paths,
+      ),
       ...heldOut,
       winner: best.network,
       sampleSize: scored.length,

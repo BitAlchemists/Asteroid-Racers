@@ -119,6 +119,11 @@ describe("evo-lab worker (protocol v1)", () => {
     const res = JSON.parse(result(dir)) as Record<string, unknown>;
     expect(last).toMatchObject({ format: "asteroid-racers/model-snapshot/v1", g: 5, score: res.bestScore });
     expect(last.model).toEqual(res.winner);
+    // A trace of the winner's episodes, for thumbnails: one arena (legacy), 16 episodes with paths.
+    const trace = last.trace as { arena: string; episodes: { path: number[]; targets: unknown[] }[] }[];
+    expect(trace.map((a) => a.arena)).toEqual(["legacy"]);
+    expect(trace[0]!.episodes).toHaveLength(16);
+    expect(trace[0]!.episodes.every((e) => e.path.length >= 4 && e.targets.length === 1)).toBe(true);
 
     // Snapshots don't change the result.
     const plain = newRun({ ...CONFIG, snapshotEvery: 0 });

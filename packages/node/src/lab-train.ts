@@ -238,6 +238,7 @@ async function main(): Promise<void> {
           g,
           score: report.bestScore,
           model: report.winner.toJson(),
+          trace: report.trace,
         }),
       );
     }

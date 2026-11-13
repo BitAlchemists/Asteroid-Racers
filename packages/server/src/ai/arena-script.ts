@@ -4,6 +4,7 @@ import type { AIGameClient } from "./ai-game-client";
 import type { MajorTom } from "./network";
 import type { EpisodeRecord } from "./scoring";
 import { Script, ScriptState } from "./scripts";
+import { addPathPoint, PATH_EVERY } from "./trace";
 
 /** What to do when the ship crashes: `end` the episode (the rest of it is charged), or `respawn` at its start. */
 export type CrashMode = "end" | "respawn";
@@ -21,6 +22,9 @@ export interface PlacedEpisode {
  */
 export class ArenaScript extends Script {
   readonly records: EpisodeRecord[] = [];
+  /** The ship's path per finished episode (flat [x, y, …], a point every PATH_EVERY frames). */
+  readonly paths: number[][] = [];
+  private path: number[] = [];
   private episode = -1;
   private targetIndex = 0;
   private frames = 0;
@@ -73,6 +77,7 @@ export class ArenaScript extends Script {
     const distance = ship.position.distanceTo(target.position);
     record.distance += (distance + Math.abs(ship.rotationSpeed)) * dt;
     record.frames++;
+    if ((record.frames - 1) % PATH_EVERY === 0) addPathPoint(this.path, ship.position.x, ship.position.y);
 
     if (this.crashed) {
       this.crashed = false;
@@ -100,7 +105,13 @@ export class ArenaScript extends Script {
   }
 
   private nextEpisode(): void {
-    if (this.record) this.records.push(this.record);
+    if (this.record) {
+      this.records.push(this.record);
+      const ship = this.client?.ship;
+      if (ship) addPathPoint(this.path, ship.position.x, ship.position.y);
+      this.paths.push(this.path);
+      this.path = [];
+    }
     this.record = undefined;
     this.episode++;
     const episode = this.episodes[this.episode];

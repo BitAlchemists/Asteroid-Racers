@@ -8,6 +8,7 @@ import { MemoryModelStore } from "./model-store";
 import { MajorTom, type NetworkJson } from "./network";
 import { ArenaReplay } from "./replay";
 import { scoreEpisodes, type ScoringWeights } from "./scoring";
+import type { ArenaTrace } from "./trace";
 import type { CollisionMode } from "../contracts";
 
 interface Setup {
@@ -21,7 +22,7 @@ interface Setup {
 /** Trains a few generations in-process and returns each generation's winner and best score. */
 async function train(setup: Setup, seed: number, generations: number) {
   const server = createTrainingServer(seed);
-  const winners: { g: number; model: NetworkJson; best: number }[] = [];
+  const winners: { g: number; model: NetworkJson; best: number; trace: ArenaTrace[] }[] = [];
   const director = registerAITrainingService(server, {
     store: new MemoryModelStore(),
     sampleSize: 8,
@@ -33,7 +34,8 @@ async function train(setup: Setup, seed: number, generations: number) {
     collisions: setup.collisions,
     crashMode: setup.crashMode,
     scoring: setup.scoring,
-    onGeneration: (r) => winners.push({ g: r.generation, model: r.winner.toJson(), best: r.bestScore }),
+    onGeneration: (r) =>
+      winners.push({ g: r.generation, model: r.winner.toJson(), best: r.bestScore, trace: r.trace }),
   });
   await server.start();
   let done = false;
@@ -46,12 +48,13 @@ async function train(setup: Setup, seed: number, generations: number) {
   return winners;
 }
 
-async function replayScore(setup: Setup, seed: number, g: number, model: NetworkJson): Promise<number> {
+async function replayFlight(setup: Setup, seed: number, g: number, model: NetworkJson) {
   const replay = await ArenaReplay.create({ model: MajorTom.fromJson(model), seed, g, ...setup });
   while (!replay.done) replay.step(50);
   const score = scoreEpisodes(replay.records, setup.scoring, replay.server.tickSeconds);
+  const paths = replay.script.paths;
   replay.dispose();
-  return score;
+  return { score, paths };
 }
 
 describe("ArenaReplay", () => {
@@ -90,7 +93,14 @@ describe("ArenaReplay", () => {
     "replaying a generation's winner reproduces its recorded best score exactly: %s",
     async (_name, setup) => {
       const winners = await train(setup, 5, 3);
-      for (const w of winners) expect(await replayScore(setup, 5, w.g, w.model)).toBe(w.best);
+      for (const w of winners) {
+        const replayed = await replayFlight(setup, 5, w.g, w.model);
+        expect(replayed.score).toBe(w.best);
+        // The trace in the report is the winner's flight: the replay draws the same paths.
+        const episodes = w.trace.flatMap((a) => a.episodes);
+        expect(episodes.map((e) => e.path)).toEqual(replayed.paths);
+        expect(episodes.every((e) => e.path.length >= 4)).toBe(true);
+      }
     },
     120_000,
   );

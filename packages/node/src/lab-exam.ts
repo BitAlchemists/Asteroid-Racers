@@ -10,7 +10,7 @@
  * names what to examine ("bundled", the model that ships with the game). The exam is deterministic,
  * so it is not resumable: a rerun produces the same result.
  */
-import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
@@ -24,9 +24,11 @@ import {
   type ExamConfig,
   type NetworkJson,
 } from "@ar/server";
-import { atomicWrite, dependencyVersions, eventLog, PROTOCOL } from "./lab-common";
+import { atomicWrite, atomicWriteSync, dependencyVersions, eventLog, PROTOCOL } from "./lab-common";
 
 const EXAM_FORMAT = "asteroid-racers/exam/v1";
+/** Per examined generation: the flights with their paths, for the evo-lab renderer plugin. */
+const EXAM_SNAPSHOT_FORMAT = "asteroid-racers/exam-snapshot/v1";
 
 export interface ExamRunConfig extends ExamConfig {
   /** What to examine when the run has no input run: "bundled". */
@@ -149,11 +151,24 @@ async function main(): Promise<void> {
   for (const { g, model } of list) {
     const startWall = performance.now();
     const startCpu = process.cpuUsage();
-    const exam = await runExam(model, config);
+    const { traces, ...exam } = await runExam(model, config);
     const cpu = process.cpuUsage(startCpu);
     const cpuSec = (cpu.user + cpu.system) / 1e6;
+    const snapshot = `gens/g${String(g).padStart(4, "0")}.json`;
+    mkdirSync(join(runDir, "gens"), { recursive: true });
+    atomicWriteSync(
+      join(runDir, snapshot),
+      JSON.stringify({
+        format: EXAM_SNAPSHOT_FORMAT,
+        sourceRun: source,
+        g,
+        score: exam.score,
+        flights: traces,
+      }),
+    );
     emit("gen", {
       g,
+      snapshot,
       metrics: {
         exam: exam.score,
         examCheckpoints: exam.checkpoints,

@@ -18,6 +18,7 @@ export * from "./ai-game-client";
 export * from "./arena-script";
 export * from "./arenas";
 export * from "./scoring";
+export * from "./trace";
 export * from "./model-store";
 export * from "./model-spec";
 export * from "./directors";

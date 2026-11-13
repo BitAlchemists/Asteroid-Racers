@@ -108,12 +108,30 @@ describe("evo-lab exam worker", () => {
         .map((e) => e.g);
     };
     expect(await gensOf("all")).toEqual([2, 4, 5]);
+
+    // One exam snapshot per examined generation, named on its gen event; paths stay out of result.json.
+    const dir = newRun(FAST);
+    expect(await run(dir, ["--input-run", source, "--input-gens", "4"])).toBe(0);
+    const gen = events(dir).find((e) => e.type === "gen")!;
+    expect(gen.snapshot).toBe("gens/g0004.json");
+    const snap = JSON.parse(readFileSync(join(dir, "gens", "g0004.json"), "utf8")) as {
+      format: string;
+      sourceRun: string;
+      flights: { track: string; path: number[]; checkpoints: unknown[] }[];
+    };
+    expect(snap).toMatchObject({
+      format: "asteroid-racers/exam-snapshot/v1",
+      sourceRun: expect.stringMatching(/^train-/),
+    });
+    expect(snap.flights.map((f) => f.track)).toEqual(["short", "random"]);
+    expect(snap.flights.every((f) => f.path.length >= 4 && f.checkpoints.length >= 3)).toBe(true);
+    expect(result(dir)).not.toContain('"path"');
     expect(await gensOf("last")).toEqual([5]);
     expect(await gensOf("4,2")).toEqual([2, 4]);
 
-    const dir = newRun(FAST);
-    expect(await run(dir, ["--input-run", source, "--input-gens", "3"])).not.toBe(0);
-    expect(String(events(dir).at(-1)!.message)).toMatch(/no model for generation 3/);
+    const bad = newRun(FAST);
+    expect(await run(bad, ["--input-run", source, "--input-gens", "3"])).not.toBe(0);
+    expect(String(events(bad).at(-1)!.message)).toMatch(/no model for generation 3/);
   }, 120_000);
 
   it("is deterministic, and names the source run by its id, not its path", async () => {
