@@ -4,7 +4,8 @@
     "packages/shared/src/**/*.ts",
     "packages/server/src/**/*.ts",
     "packages/node/src/lab-train.ts",
-    "scripts/lab-train.mjs"
+    "scripts/lab-train.mjs",
+    "!**/*.test.ts"
   ],
   "metrics": {
     "score": { "direction": "min", "label": "Best score (lower is better)" },
