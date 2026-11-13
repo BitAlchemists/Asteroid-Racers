@@ -1,0 +1,68 @@
+{
+  "kind": "evolution",
+  "id": "train-v2",
+  "version": 1,
+  "method": "train",
+  "config": {
+    "sample": 100,
+    "frames": 600,
+    "mutationRate": 0.1,
+    "mutationStrength": 1,
+    "generations": 150,
+    "arenas": [
+      {
+        "name": "rock-in-line",
+        "params": {
+          "episodes": 16,
+          "rocks": 2
+        }
+      },
+      {
+        "name": "point-to-point",
+        "params": {
+          "episodes": 8,
+          "asteroids": 80
+        }
+      }
+    ],
+    "scoring": {
+      "distance": 1,
+      "success": 1000,
+      "time": 0,
+      "crashes": 3000
+    },
+    "collisions": "obstacles",
+    "crashMode": "respawn",
+    "heldOut": 6,
+    "snapshotEvery": 1,
+    "exam": {
+      "every": 10,
+      "randomTracks": 15
+    },
+    "sensors": {
+      "lineCheck": {}
+    }
+  },
+  "to": 56,
+  "fromRun": "train-64",
+  "fromGen": 50,
+  "quality": {
+    "score": {
+      "direction": "min",
+      "rel": 0.05
+    },
+    "success": {
+      "direction": "max",
+      "abs": 0.05
+    }
+  },
+  "speed": {
+    "concurrency": [
+      1,
+      10
+    ],
+    "repeats": 3
+  },
+  "noise": 0.15,
+  "minSeeds": 1
+}

@@ -1,6 +1,6 @@
 # S1 — Training speed
 
-Status: ⬜ planned (written 2026-11-13, waiting for approval). Roadmap: [`../ROADMAP.md`](../ROADMAP.md)
+Status: 🟡 in progress (written and approved 2026-11-13). Roadmap: [`../ROADMAP.md`](../ROADMAP.md)
 
 A side track next to M4. It changes no results, only how fast we get them.
 

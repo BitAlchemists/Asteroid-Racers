@@ -88,7 +88,10 @@ describe("evo-lab worker (protocol v1)", () => {
       mean: expect.any(Number),
       worst: expect.any(Number),
       success: expect.any(Number),
+      ticks: expect.any(Number),
+      tps: expect.any(Number),
     });
+    expect((gen.metrics as { ticks: number }).ticks).toBeGreaterThan(0);
     expect(gen.metrics).not.toHaveProperty("heldOut");
     expect(ev[0]).toMatchObject({ protocol: 1, method: "train", seed: 7, to: 3, resume: false });
     expect(ev[0]!.versions).toMatchObject({
@@ -101,6 +104,7 @@ describe("evo-lab worker (protocol v1)", () => {
     const res = JSON.parse(result(dir)) as Record<string, unknown>;
     expect(res).toMatchObject({ method: "train", seed: 7, generations: 3 });
     expect(result(dir)).not.toMatch(/ar-lab-run|\d{4}-\d\d-\d\dT/); // no paths, no timestamps
+    expect(result(dir)).not.toMatch(/"ticks"|"tps"/); // speed stays out of the result
     expect(existsSync(join(dir, "luke.txt"))).toBe(true);
   }, 60_000);
 

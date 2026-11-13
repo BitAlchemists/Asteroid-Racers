@@ -79,9 +79,9 @@ by experiment, how a model should sense obstacles:
 - experiments: noise floor, sensor comparison, learner fixes, sensors again, network capacity.
   E1 and E2 are done; the plan was rewritten after E2.
 
-### S1 — Training speed ⬜ (side track)
+### S1 — Training speed 🟡 (side track)
 
-Plan: [`plans/S1-training-speed.md`](plans/S1-training-speed.md), waiting for approval
+Plan: [`plans/S1-training-speed.md`](plans/S1-training-speed.md), approved 2026-11-13, in progress
 
 Training runs at about 1,000 game ticks/s per run (about 14 µs CPU per ship-step). Profile it,
 remove the overheads, and prove with Evo Lab's bench and gate that results stay bit-identical while
