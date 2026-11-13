@@ -10,7 +10,8 @@
     "train": "tsx src/train.ts",
     "bot": "tsx src/bot.ts",
     "exam": "tsx src/exam.ts",
-    "experiment": "tsx src/experiment.ts"
+    "experiment": "tsx src/experiment.ts",
+    "iqm": "tsx src/iqm.ts"
   },
   "dependencies": {
     "@ar/shared": "*",

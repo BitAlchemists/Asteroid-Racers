@@ -121,8 +121,8 @@ describe("arenas", () => {
 
 describe("scoring", () => {
   const records: EpisodeRecord[] = [
-    { targets: 1, reached: 1, frames: 100, crashes: 0, distance: 50 },
-    { targets: 2, reached: 0, frames: 200, crashes: 1, distance: 300 },
+    { targets: 1, reached: 1, frames: 100, crashes: 0, distance: 50, progress: 400 },
+    { targets: 2, reached: 0, frames: 200, crashes: 1, distance: 300, progress: -20 },
   ];
 
   it("is a weighted sum of distance, missed targets, seconds and crashes", () => {
@@ -131,6 +131,15 @@ describe("scoring", () => {
     expect(scoreEpisodes(records, { distance: 0, success: 0, time: 10, crashes: 0 }, 0.015)).toBeCloseTo(45);
     expect(scoreEpisodes(records, { distance: 0, success: 0, time: 0, crashes: 7 }, 0.015)).toBe(7);
     expect(successRate(records)).toBeCloseTo(1 / 3);
+  });
+
+  it("progress is a reward: subtracted per unit flown towards the target; absent or 0 changes nothing", () => {
+    const base = { distance: 1, success: 0, time: 0, crashes: 0 };
+    expect(scoreEpisodes(records, { ...base, progress: 2 }, 0.015)).toBe(350 - 2 * 380);
+    expect(scoreEpisodes(records, { ...base, progress: 0 }, 0.015)).toBe(350);
+    expect(parseScoring({ distance: 1 })).toEqual(base); // no progress key unless set
+    expect(parseScoring({ distance: 1, progress: 3 })).toEqual({ ...base, progress: 3 });
+    expect(() => parseScoring({ progress: -1 })).toThrow(/progress/);
   });
 
   it("parses config weights: missing terms are 0, unknown or negative ones are errors", () => {

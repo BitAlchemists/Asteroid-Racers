@@ -29,6 +29,8 @@ export class ArenaScript extends Script {
   private targetIndex = 0;
   private frames = 0;
   private crashed = false;
+  /** Distance to the current target on the previous frame (undefined after a start, respawn or new target). */
+  private lastDistance: number | undefined;
   private record: EpisodeRecord | undefined;
 
   constructor(
@@ -81,6 +83,8 @@ export class ArenaScript extends Script {
 
     const distance = ship.position.distanceTo(target.position);
     record.distance += (distance + Math.abs(ship.rotationSpeed)) * dt;
+    if (this.lastDistance !== undefined) record.progress += this.lastDistance - distance;
+    this.lastDistance = distance;
     record.frames++;
     if ((record.frames - 1) % PATH_EVERY === 0) addPathPoint(this.path, ship.position.x, ship.position.y);
 
@@ -96,11 +100,13 @@ export class ArenaScript extends Script {
       }
       // respawn: back to the start; the clock keeps running
       this.placeShip(episode.spec);
+      this.lastDistance = undefined;
     } else {
       const maxSpeed = episode.spec.targets[this.targetIndex]?.maxSpeed;
       if (distance < target.radius && (maxSpeed === undefined || ship.velocity.length <= maxSpeed)) {
         record.reached++;
         this.targetIndex++;
+        this.lastDistance = undefined;
         if (this.targetIndex >= episode.targets.length) this.nextEpisode();
         else if (this.vehicle) this.vehicle.target = this.currentTarget;
         return;
@@ -127,7 +133,15 @@ export class ArenaScript extends Script {
     this.targetIndex = 0;
     this.frames = 0;
     this.crashed = false;
-    this.record = { targets: episode.targets.length, reached: 0, frames: 0, crashes: 0, distance: 0 };
+    this.lastDistance = undefined;
+    this.record = {
+      targets: episode.targets.length,
+      reached: 0,
+      frames: 0,
+      crashes: 0,
+      distance: 0,
+      progress: 0,
+    };
     this.placeShip(episode.spec);
     if (this.vehicle) this.vehicle.target = this.currentTarget;
     if (episode.targets.length === 0) this.nextEpisode();

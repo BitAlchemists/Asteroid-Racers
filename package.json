@@ -24,7 +24,8 @@
     "train": "npm run train -w @ar/node --",
     "bot": "npm run bot -w @ar/node --",
     "exam": "npm run exam -w @ar/node --",
-    "experiment": "npm run experiment -w @ar/node --"
+    "experiment": "npm run experiment -w @ar/node --",
+    "iqm": "npm run iqm -w @ar/node --"
   },
   "devDependencies": {
     "@bufbuild/buf": "^1.75.0",

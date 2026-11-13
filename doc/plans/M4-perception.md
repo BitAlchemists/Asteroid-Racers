@@ -154,7 +154,7 @@ per switch, like step 6.
 - Cost: one extra round of 24 episodes with 6 ships per generation, about +10–20 % wall time.
 - Source: Such et al. 2017 (top 10 re-evaluated on 30 episodes); Jin & Branke 2005.
 
-**(b) Exam v2 for decisions: more races, robust statistics.**
+**(b) Exam v2 for decisions: more races, robust statistics.** ✅ (2026-11-13: no exam code needed; `npm run iqm` built. A 102-race exam takes about 6 s, against 1 s for 17.)
 - The exam already takes `randomTracks`. Decisions use `exam: { every: 25, randomTracks: 100 }`:
   102 races, every 25 generations and always at the last one.
 - Cost, from today's numbers: 17 races take about 1.6 s with S1's speed-ups (train-250), so 102
@@ -182,7 +182,7 @@ per switch, like step 6.
   test: train, resume and replay with `hidden: []`.
 - Source: Mania et al. 2018.
 
-**(e) A progress term in scoring.**
+**(e) A progress term in scoring.** ✅ (2026-11-13: `scoring.progress`, see `doc/experiments.md`.)
 - A new scoring weight `progress` (absent = 0 = today). Per frame it adds
   `−progress × (d(t−1) − d(t))`, the reduction of distance to the current target: potential-based
   shaping with Φ = −distance.

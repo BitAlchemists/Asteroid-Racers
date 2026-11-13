@@ -72,3 +72,40 @@ Set `"baseline": {"runs": [...], "reuse": true}` in new plans. Per seed, the bas
 Fallbacks are listed in the experiment's `reuse.fallbacks` and in `screening.md`. The machine runner
 picks up new Evo Lab code only after it restarts while idle, so experiments approved before that
 still re-run their baseline. `screen.gen` now warns only below 10.
+
+## Robust comparison: `npm run iqm`
+
+For decisions from E5 on, compare arms by the interquartile mean (IQM) over seeds, with paired
+bootstrap 95 % CIs (Agarwal et al. 2021):
+
+```
+npm run iqm -- <experiment-id> [--metric exam] [--gen 150] [--effect 10000]
+npm run iqm -- --base train-1,train-2,... --arm train-11,train-12,... [--metric ...] [--gen ...]
+```
+
+- **Experiment mode:** all runs labelled `exp:<id>/<arm>` count (check runs excluded). A
+  continuation run belongs to the arm of the run it continues, and per arm and seed the newest run
+  with that generation is used.
+- **Lists** given with `--base`/`--arm` are paired in order (same seed at the same position).
+- **Output per arm:**
+  - the IQM;
+  - the IQM effect (arm − baseline) with its CI, and the mean paired difference with its CI;
+  - seeds better;
+  - the smallest mean effect these seeds can detect (α 0.05, power 0.8);
+  - with `--effect`, the seeds needed to detect that effect.
+- **Determinism:** the bootstrap uses a fixed seed, so the output is the same every time.
+- **Exam v2** is just config: `exam: { every: 25, randomTracks: 100 }` (102 races, about 6 s).
+  Exam scores are sums over races, so a 102-race score is about 6× a 17-race one. Compare only like
+  with like.
+
+## Scoring key `progress`
+
+`scoring.progress` is a weight ≥ 0, absent = off, and absent configs stay byte-identical.
+
+- **What it rewards:** distance flown towards the current target. Per frame the episode record
+  adds the reduction in distance (negative when flying away); a respawn or a new target restarts
+  the count. The score subtracts `progress × record.progress`.
+- **Scale:** per target the term telescopes to start distance − end distance, at most the leg
+  length (600–1,400 units in rock-in-line). The distance term is about 5,000–8,000 unit-seconds per
+  9-second episode. So `progress: 1` is worth about one missed target (1,000) per fully flown leg,
+  and `progress: 3`–`5` makes it a real share of the score.

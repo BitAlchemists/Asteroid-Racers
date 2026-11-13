@@ -12,6 +12,12 @@ export interface EpisodeRecord {
    * After an episode-ending crash, the rest of the time limit is charged at the crash distance.
    */
   distance: number;
+  /**
+   * Distance flown towards the current target, in units: the sum over frames of the reduction in
+   * distance to it (negative when flying away). Potential-based (Φ = −distance), so per target it
+   * telescopes to start distance − end distance. Respawns and target switches do not count.
+   */
+  progress: number;
 }
 
 /** Weights of the score terms. The score is a weighted sum; lower is better. */
@@ -24,6 +30,11 @@ export interface ScoringWeights {
   time: number;
   /** Per crash. */
   crashes: number;
+  /**
+   * Reward per unit of {@link EpisodeRecord.progress} (subtracted from the score). Absent = 0, and
+   * absent from configs that do not set it, so older results stay byte-identical.
+   */
+  progress?: number;
 }
 
 /** The original evaluator (QuadraticSumOfDistanceToTargets): distance only. */
@@ -32,9 +43,10 @@ export const LEGACY_SCORING: Readonly<ScoringWeights> = { distance: 1, success: 
 export function parseScoring(raw: unknown): ScoringWeights {
   if (raw === undefined) return { ...LEGACY_SCORING };
   if (typeof raw !== "object" || raw === null) throw new Error("scoring must be an object of weights");
-  const weights = { ...LEGACY_SCORING, distance: 0 };
+  const weights: ScoringWeights = { ...LEGACY_SCORING, distance: 0 };
   for (const [key, value] of Object.entries(raw)) {
-    if (!(key in weights)) throw new Error(`unknown scoring term ${JSON.stringify(key)}`);
+    if (!(key in weights) && key !== "progress")
+      throw new Error(`unknown scoring term ${JSON.stringify(key)}`);
     if (typeof value !== "number" || !Number.isFinite(value) || value < 0)
       throw new Error(`scoring.${key} must be a number ≥ 0`);
     weights[key as keyof ScoringWeights] = value;
@@ -54,6 +66,7 @@ export function scoreEpisodes(
       weights.success * (r.targets - r.reached) +
       weights.time * r.frames * tickSeconds +
       weights.crashes * r.crashes;
+    if (weights.progress) score -= weights.progress * r.progress;
   }
   return score;
 }

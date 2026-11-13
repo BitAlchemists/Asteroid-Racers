@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { seededRandom } from "../random";
-import type { ArenaConfig } from "./arenas";
+import { resolveArenas, trainingScenarios, type ArenaConfig } from "./arenas";
 import type { CrashMode } from "./arena-script";
 import { DEFAULT_EXAM, ExamReplay, examFlight } from "./exam";
 import { bundledModels, createTrainingServer, DEFAULT_MODEL_NAME, registerAITrainingService } from "./index";
@@ -71,6 +71,34 @@ async function replayFlight(setup: Setup, seed: number, g: number, model: Networ
   return { score, paths };
 }
 
+describe("progress record", () => {
+  it("telescopes to start distance − end distance when nothing interrupts the episode", async () => {
+    const setup: Setup = {
+      arenas: [{ name: "point-to-point", params: { episodes: 3, distance: [600, 900] } }],
+      frames: 120,
+      collisions: "none",
+      crashMode: "end",
+      scoring: { distance: 1, success: 0, time: 0, crashes: 0, progress: 1 },
+    };
+    const model = MajorTom.random([4, 6, 2], seededRandom(3));
+    const replay = await ArenaReplay.create({ model, seed: 5, g: 1, ...setup });
+    while (!replay.done) replay.step(50);
+    const scenario = trainingScenarios(resolveArenas(setup.arenas, setup.frames), 5, 1)[0]!;
+    replay.records.forEach((record, e) => {
+      expect(record.reached).toBe(0); // a 120-frame random flight does not reach a target 600+ away
+      const target = scenario.episodes[e]!.targets[0]!.position;
+      const start = scenario.episodes[e]!.start.position;
+      const path = replay.script.paths[e]!;
+      const end = { x: path[path.length - 2]!, y: path[path.length - 1]! };
+      const expected =
+        Math.hypot(target.x - start.x, target.y - start.y) - Math.hypot(target.x - end.x, target.y - end.y);
+      // Within one tick of motion: the record starts after the first physics step.
+      expect(Math.abs(record.progress - expected)).toBeLessThan(5);
+    });
+    replay.dispose();
+  });
+});
+
 describe("ArenaReplay", () => {
   it.each<[string, Setup]>([
     [
@@ -113,6 +141,16 @@ describe("ArenaReplay", () => {
         crashMode: "respawn",
         scoring: { distance: 1, success: 1000, time: 0, crashes: 500 },
         sensors: parseSensors({ whiskers: {}, sectors: {}, nearest: {}, lineCheck: {} }),
+      },
+    ],
+    [
+      "rock-in-line with respawns and a progress reward",
+      {
+        arenas: [{ name: "rock-in-line", params: { episodes: 3 } }],
+        frames: 200,
+        collisions: "obstacles",
+        crashMode: "respawn",
+        scoring: { distance: 1, success: 1000, time: 0, crashes: 500, progress: 4 },
       },
     ],
     [

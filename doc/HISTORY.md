@@ -942,3 +942,33 @@ train-87 2,670–4,959 tps (20 busy slots), train-109 11,544–12,892 tps.
   no collapse. Step 8's IQM and bootstrap statistics will re-check it.
 - **Correction:** the E4b agent reported commits aa6a2a8 and a19c230 as coming from "another
   session". They were mine, from the parent session.
+### M4 step 8 (b) and (e): exam v2 statistics and the progress term
+
+- **(b) Exam v2:** no exam code was needed; `exam: { every: 25, randomTracks: 100 }` already works.
+  Measured on train-250's g150 winner: 17 races take 1.0 s, 102 races take 6.0 s.
+- **`npm run iqm`** (`packages/node/src/iqm.ts`, `iqm-stats.ts`, with tests on synthetic data):
+  - IQM per arm;
+  - paired bootstrap 95 % CIs of the IQM effect and of the mean difference;
+  - win fraction, detectable effect and seeds needed;
+  - deterministic.
+- **Old verdicts re-checked with it** (exam score, lower is better; effect = arm − baseline):
+  - **E4 at g100:**
+    - `curriculum.success` +23,600 [7,300, 35,900] and `horizon` +15,500 [3,200, 27,000]: worse,
+      as before;
+    - `parents` −320 [−16,300, 9,700], `encoding` +7,500, `crashLimit` +9,300, `mutation` +9,200:
+      their CIs include 0, as before.
+    - With 10 seeds the detectable effect is about 14,000–36,000, so effects of 10,000 are below
+      what E4 could see. 20–40 seeds would be needed, 130 for `mutation`.
+  - **E4 at g150:** `success 0.6` +4,500 [−16,400, 15,000] and `horizon` +5,900 [−21,800, 31,800]:
+    no clear difference, as before.
+  - **E3b at g150** (curriculum train-110..119 vs E3 train-67..76): IQM 22,260 vs 104,140, effect
+    −81,900 [−119,600, −15,200]. Exam checkpoints IQM 0.85 vs 0.30, effect +0.56 [0.09, 0.82].
+    Crashes 143 vs 173, effect −30 [−124, 55]. The win holds; the crash difference is within noise.
+  - **E3b at g100:** −11,800 [−37,900, 3,800]: not clear, as before.
+- **(e) `scoring.progress`:** each episode record now carries `progress`, the distance flown
+  towards the current target. Respawns and new targets restart the count; it is potential-based
+  with Φ = −distance. The score subtracts `progress × record.progress`.
+  - Absent from configs unless set, so result files stay byte-identical (the fixtures pass).
+  - Tests: score arithmetic and parsing; the record telescopes to start − end distance on
+    uninterrupted episodes; ArenaReplay reproduces training scores with `progress: 4`.
+  - The time-to-target fallback was not needed.
