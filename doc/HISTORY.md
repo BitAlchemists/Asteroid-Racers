@@ -972,3 +972,69 @@ train-87 2,670–4,959 tps (20 busy slots), train-109 11,544–12,892 tps.
   - Tests: score arithmetic and parsing; the record telescopes to start − end distance on
     uninterrupted episodes; ArenaReplay reproduces training scores with `progress: 4`.
   - The time-to-target fallback was not needed.
+
+### 2026-11-13 — M5 game side: track files, three tracks, track picker
+
+Started with the user's OK while M4 runs (plan: `plans/M5-content.md`, phase 1). Worked in a
+separate worktree (`m5-content`).
+
+- **Commits:**
+  - `837a27f` plan: game side started; exam v2 moved to M4; training side waits for M4;
+  - `9795a0f` step 1: track file format, loader with validation, tests;
+  - `18a2adb` step 2: `slalom`, `gauntlet`, `canyon`;
+  - `7b54893` step 3: track picker, `TRACK=`, watch page track select.
+  - (Hashes before the rebase onto main; the landed hashes are in `git log`.)
+- **Format** `asteroid-racers/track/v1` (`packages/server/src/track-file.ts`), files in
+  `packages/server/src/tracks/*.json`, bundled with explicit imports and registered after the code
+  tracks:
+  - race: start, checkpoints (optional radius), finish; headings in degrees on screen (0 = up,
+    clockwise), optional: a point faces the next one;
+  - fixed asteroids `[x, y, radius]`, seeded belts (as the code tracks use), arrows `[x, y, heading]`;
+  - validation names the field: unknown keys, wrong types, no checkpoints, a race point or the world
+    spawn (0, 0) overlapping a rock or a belt, a file name that doesn't match, a name taken by a code
+    track.
+- **Frozen yardstick kept:** `demo`, `short`, `random`, the exam, the arenas and training are
+  untouched. Tests:
+  - fingerprints of `demo`, `short` and `random` for seeds 1–3, recorded and cross-checked against
+    the main checkout before the change;
+  - `short` and `demo` written in the file format build the same worlds as the code tracks;
+  - the default exam flies only `demo`, `short` and `random`.
+- **Tracks** (written by a small generator script, checked in as JSON; fixed rocks, so the same
+  world for every seed):
+  - `slalom`: 8 checkpoints at x = ±300 every 500 units, a pole rock on the centre line level with
+    each checkpoint, overshoot markers outside, loose side fields; nothing on the direct legs.
+  - `gauntlet`: 6 legs of 1,100–1,700 units with 12 rocks on or beside the direct line (one gate of
+    two rocks), plus scattered decoration at least 300 units off the line.
+  - `canyon`: a smoothed 5,900-unit corridor, 300 wide, two-layer rock walls (checked for holes),
+    turns both ways, 7 checkpoints, arrows before the bends, a back wall behind the start.
+- **How models do** (exam rules, 180 s, seeds 1 and 2):
+
+  | track | bundled | train-116 (E3b seed 7, g139 winner) | train-113 (E3b seed 4) |
+  | --- | --- | --- | --- |
+  | demo (reference) | 0/6, 25–30 crashes | finished 96 s, 3 crashes | finished 69 s, 1 crash |
+  | slalom | 1/9, hovers | finished 39–40 s, 7 crashes | finished 57 s, 7 crashes |
+  | gauntlet | finished 87–91 s, 2–3 crashes | seed 1 finished 40 s; seed 2 2/6, 42 crashes | 2/6, 28–29 crashes |
+  | canyon | 0/8, 92 crashes | finished 22–23 s, 6 crashes | finished 29–30 s, 6 crashes |
+
+  The gauntlet does what it is for: train-116 on seed 2 crash-loops at the gate on leg 3, the
+  respawn seed alone decides whether it gets through. In the canyon the trained models cut the
+  inside of bends and hit the inner wall, then get through.
+- **Picker:** the start page lists every track and sets `?track=` on the singleplayer and watch
+  links (remembered in localStorage); singleplayer takes `?track=`; the Node server takes
+  `TRACK=<name>`; the watch page has a Track select (race exam or one track) and `?track=`.
+- **Verified:** `npm run check` green at every commit; in the browser pane (worktree dev server):
+  the menu, singleplayer on `canyon` (player and bot race, no console errors), the watch page with
+  train-116 on all three tracks. The watch page's gauntlet seed 2 replay matched the headless
+  flight exactly (2/6, 42 crashes).
+- **Bug found and fixed:** the watch page could mount two viewers when two changes came quickly
+  (`show()` is async and did not check for a newer call). Seen while switching track and seed.
+- **Deviations from the plan:** `demo` and `short` stay in code instead of being loaded from files,
+  and the export helper is dropped (their rocks are random per seed; M4's yardstick must not move).
+  Tests show the format can express both. The tracks were checked with train-116/113 instead of
+  train-4 g110, the best racers now.
+- **Note:** `lab.config.json`'s binding covers `packages/server/src/**/*.ts`, so the new
+  `track-file.ts` and the changed `tracks.ts` change the binding hash, although training results
+  are unchanged (fingerprint and fixture tests). The track JSON files are not in the binding; they
+  don't affect training.
+- **Left for after M4:** tiered arenas (step 4), the watch page's arena mode (step 5), baseline runs
+  (step 7). Exam v2 is now M4's.

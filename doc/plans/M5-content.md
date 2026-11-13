@@ -110,12 +110,12 @@ New arenas, each with params for difficulty. All deterministic per seed, like th
 
 Phase 1 (game side):
 
-- [ ] Steps 1–3 committed, `npm run check` green.
-- [ ] Track files: `demo` and `short` in the file format build the same worlds as from code (test);
+- [x] Steps 1–3 committed, `npm run check` green.
+- [x] Track files: `demo` and `short` in the file format build the same worlds as from code (test);
       invalid files fail with clear errors (tests); `demo`, `short` and `random` unchanged (test).
-- [ ] Three new tracks, flown by the bundled model and a trained model in the watch page (checked by
+- [x] Three new tracks, flown by the bundled model and a trained model in the watch page (checked by
       eye). They are not in the exam or in training.
-- [ ] The game can race every track (singleplayer picker, `TRACK=` on the server).
+- [x] The game can race every track (singleplayer picker, `TRACK=` on the server).
 
 Phase 2 (after M4):
 
