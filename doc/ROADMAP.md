@@ -63,7 +63,7 @@ CI green on `ab90101`
     exam flight, path thumbnails in the filmstrip;
   - an in-game **watch page**: the bundled model or a model file on any track.
 
-### M4 — Perception 🟡
+### M4 — Perception ✅
 
 Plan: [`plans/M4-perception.md`](plans/M4-perception.md), approved 2026-11-13
 

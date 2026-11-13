@@ -1,7 +1,6 @@
 # M4 — Perception
 
-Status: 🟡 in progress (approved 2026-11-13; rewritten 2026-11-13 after E2, see "Changes to this
-plan"). Roadmap: [`../ROADMAP.md`](../ROADMAP.md)
+Status: ✅ done 2026-11-13 (approved 2026-11-13; rewritten after E2 and after the research; closed early by agreement, the open experiments moved to M6). Roadmap: [`../ROADMAP.md`](../ROADMAP.md)
 
 ## Goal
 

@@ -1195,3 +1195,17 @@ no tool. Measured:
   agent), then M4 ✅ in the roadmap and plan.
 - **Also seen:** the runner was running M5 experiments (`m5-base-chain`, `m5-base-corridor`) during
   E9, started by the M5 agent.
+
+### M4 closed
+
+- **M4 is closed.** Step 8 landed (0506788, 7311e1e), and E9 confirmed the default setup to g300 (d84a52b).
+- **The default setup:** task v2 + lineCheck + `curriculum: { success: 0.6 }` + `parents: 10`.
+- **Against blind models (E1):**
+  - the old 17-race exam: about 18,300 vs 66,400; finished 84 % vs 39 %;
+  - the 102-race exam at g300 (E9): IQM 86 % checkpoints, 82 % finished, held-out success 0.69.
+- **Plateau:** g150 → g300 brings no exam gain.
+- **Best model:** train-327 g300 (seed 8): 94.5 % checkpoints, 91 % finished. Not promoted (the user's
+  call).
+- **Finding for M6:** the best models are "spin and pulse" controllers. The turn output is pinned at
+  −1 (full-rate spin), and thrust pulses when roughly facing the target; they don't steer. This is a
+  reward/behaviour question for M6 phase 2, e.g. a rotation cost or a smoothness term.
