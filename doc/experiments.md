@@ -21,7 +21,9 @@ An experiment answers one question by comparing **arms** (the baseline config, p
     `targetDistanceSoft`, `forwardSpeed`, `sideSpeed` (about −1..1, no jump behind the ship);
   - `mutation`: `{ "kind": "gaussian", "sigma": 0.2 }` (optional `rate`, default `mutationRate`);
   - `parents`: models kept per generation, (μ + λ); `sample − parents` must divide by `parents`;
-  - `initRange`: range of the random starting weights (default 1).
+  - `initRange`: range of the random starting weights (default 1);
+  - `crashLimit`: with `crashMode: "respawn"`, an episode ends at its N-th crash and the rest is
+    charged like a `crashMode: "end"` crash (integer ≥ 1; no effect with `end`).
 - A switch key may not appear in the method's default config in `lab.config.json` (that is why the
   `model` block is not there).
 - **The decision metric is `exam`** (the race exam score, lower is better), produced inside training

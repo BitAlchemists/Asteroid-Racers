@@ -36,6 +36,11 @@ export class ArenaScript extends Script {
     readonly episodes: readonly PlacedEpisode[],
     private readonly crashMode: CrashMode = "end",
     private readonly tickSeconds = 0.015,
+    /**
+     * With `respawn`: the episode ends at this crash (counted per episode) and the rest of it is
+     * charged like an `end` crash. Default: no limit. With `end` every crash already ends the episode.
+     */
+    private readonly crashLimit = Infinity,
   ) {
     super(network);
   }
@@ -82,7 +87,7 @@ export class ArenaScript extends Script {
     if (this.crashed) {
       this.crashed = false;
       record.crashes++;
-      if (this.crashMode === "end") {
+      if (this.crashMode === "end" || record.crashes >= this.crashLimit) {
         const remaining = Math.max(0, episode.spec.timeLimitFrames + 1 - record.frames);
         record.distance += distance * remaining * this.tickSeconds;
         record.frames += remaining;

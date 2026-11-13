@@ -298,6 +298,7 @@ async function sourceFor(
       frames: typeof config.frames === "number" ? config.frames : 600,
       collisions: (config.collisions as CollisionMode | undefined) ?? "none",
       crashMode: (config.crashMode as CrashMode | undefined) ?? "end",
+      ...(typeof config.crashLimit === "number" ? { crashLimit: config.crashLimit } : {}),
       seed,
       g: ctx.g,
     }),

@@ -642,3 +642,32 @@ Runs: screen train-57..66, final train-67..76 (seeds 1–10). Task v2 with lineC
   - exam-6: the panel works for exam flights (4 inputs);
   - key `i` toggles the panel.
 - `npm run check` green (231 tests).
+
+### 2026-11-13 — M4: `crashLimit` switch (crash cap adopted)
+
+- **Decision:** the user approved item 1 of the PROPOSED plan amendment after E3 (the crash cap).
+  The plan marks it ADOPTED; items 2 (`parents: 10` as default) and 3 (read g100 too) stay
+  proposals.
+- **`crashLimit: N` switch** (integer ≥ 1, absent = no limit = the old behaviour), built on branch
+  `crash-limit` in its own worktree (S1 and the viewer agent work in main), then fast-forwarded:
+  - with `crashMode: "respawn"` an episode ends at its N-th crash; the rest of its time is charged
+    at the crash distance, exactly as `crashMode: "end"` charges it (same code path in
+    `ArenaScript`);
+  - with `crashMode: "end"` it is accepted and changes nothing (every crash already ends the
+    episode); a test shows the records are identical. Chosen over rejecting the combination, so
+    the switch can sit on any baseline without a config error;
+  - wired through `TrainingServiceOptions` → `TrainingOptions` → `ArenaScript`; it applies to
+    training and held-out episodes. The exam is not affected (its own flights and rules);
+  - `ArenaReplay` / `arenaReplaySource` take it, and the Evo Lab plugin passes `config.crashLimit`,
+    so replays fly the episodes exactly as trained. The plugin was rebuilt in main after landing.
+- **Tests:** unit (a rock on the start: `crashLimit: 1` + respawn gives exactly the `end` records;
+  `crashLimit: 3` ends both episodes at 3 crashes with the whole time charged; `end` + limit =
+  `end`); replay (a dense-rock setup with `crashLimit: 2` replays every winner to its recorded score,
+  and without the option the replay scores differently); worker (deterministic, kill-and-resume
+  equal to an uninterrupted run, winners never exceed the limit and some hit it, and the stateHash
+  sequence differs from the same run without the switch); config validation (`0`, `1.5`). The
+  stored baseline fixtures are unchanged (byte-identical with the switch absent).
+- **E4 draft** (`experiments/m4-e4-learner.md`) gets `crashLimit: 3` as a fifth one-at-a-time
+  switch (about 60 runs instead of 50). Still a draft: not created in Evo Lab.
+- `doc/experiments.md` lists the switch.
+- **Commit:** one commit, "M4: crashLimit switch (crash cap per episode, adopted after E3)".

@@ -98,6 +98,11 @@ export interface TrainConfig {
   /** Switch: range of the random starting weights. Absent = 1. */
   initRange?: number;
   /**
+   * Switch: with `crashMode: "respawn"`, an episode ends at its N-th crash and the rest is charged
+   * like an `end` crash (at the crash distance). With `end` it changes nothing. Absent = no limit.
+   */
+  crashLimit?: number;
+  /**
    * Switch: a staged curriculum over `arenas` (`{ levels, success, streak }`, defaults filled in):
    * a clear line of sight first, more rocks as the winner gets good. Absent = always `arenas`.
    */
@@ -218,6 +223,7 @@ function readConfig(): TrainConfig {
     ...(raw.mutation === undefined ? {} : { mutation: parseMutation(raw.mutation) }),
     ...(raw.parents === undefined ? {} : { parents: raw.parents as number }),
     ...(raw.initRange === undefined ? {} : { initRange: raw.initRange as number }),
+    ...(raw.crashLimit === undefined ? {} : { crashLimit: raw.crashLimit as number }),
     ...(raw.curriculum === undefined
       ? {}
       : { curriculum: parseCurriculum(raw.curriculum, parseArenas(raw.arenas)) }),
@@ -238,6 +244,8 @@ function readConfig(): TrainConfig {
     throw new Error("config.parents must be an integer ≥ 1 that divides sample − parents");
   if (config.initRange !== undefined && (typeof config.initRange !== "number" || !(config.initRange > 0)))
     throw new Error("config.initRange must be a number > 0");
+  if (config.crashLimit !== undefined && (!Number.isInteger(config.crashLimit) || config.crashLimit < 1))
+    throw new Error("config.crashLimit must be an integer ≥ 1");
   if (
     config.hidden !== undefined &&
     (!Array.isArray(config.hidden) || !config.hidden.every((n) => Number.isInteger(n) && n >= 1))
@@ -460,6 +468,7 @@ async function main(): Promise<void> {
         ? { curriculum: { ...config.curriculum, level: curriculum.level, streakCount: curriculum.streak } }
         : {}),
       ...(config.initRange === undefined ? {} : { initRange: config.initRange }),
+      ...(config.crashLimit === undefined ? {} : { crashLimit: config.crashLimit }),
       random: mutationRandom,
       firstGeneration: startG + 1,
       maxGenerations: to - startG,

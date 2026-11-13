@@ -319,6 +319,61 @@ describe("evo-lab worker (protocol v1)", () => {
     expect(hashes(resumed)).toEqual(hashes(straight));
   }, 120_000);
 
+  it("crashLimit switch: deterministic, exact resume after a kill, and it changes the run", async () => {
+    const config = {
+      // Dense rocks and strong random weights: the winners crash several times per episode.
+      sample: 8,
+      frames: 400,
+      initRange: 3,
+      arenas: [{ name: "point-to-point", params: { episodes: 3, asteroids: 150 } }],
+      collisions: "obstacles",
+      crashMode: "respawn",
+      crashLimit: 2,
+      scoring: { distance: 1, success: 1000, crashes: 0 },
+      heldOut: 1,
+    };
+    const straight = newRun(config);
+    expect(await run(straight, ["--to", "6"])).toBe(0);
+    const again = newRun(config);
+    expect(await run(again, ["--to", "6"])).toBe(0);
+    expect(result(again)).toBe(result(straight));
+    expect((JSON.parse(result(straight)) as { config: unknown }).config).toMatchObject({ crashLimit: 2 });
+    // No episode of any winner goes past the limit, and some end at it.
+    const crashes = events(straight)
+      .filter((e) => e.type === "gen")
+      .flatMap((gen) => {
+        const file = join(straight, String(gen.snapshot));
+        const snap = JSON.parse(readFileSync(file, "utf8")) as {
+          trace: { episodes: { crashes: number }[] }[];
+        };
+        return snap.trace.flatMap((a) => a.episodes.map((e) => e.crashes));
+      });
+    expect(Math.max(...crashes)).toBe(2);
+
+    const killed = newRun(config);
+    const worker = start(killed, ["--to", "6"]);
+    const deadline = Date.now() + 60_000;
+    while (!events(killed).some((e) => e.type === "checkpoint" && (e.g ?? 0) >= 2)) {
+      if (Date.now() > deadline) throw new Error("no checkpoint");
+      await new Promise((r) => setTimeout(r, 10));
+    }
+    worker.child.kill("SIGKILL");
+    await worker.exited;
+    expect(events(killed).some((e) => e.type === "done")).toBe(false);
+    expect(await run(killed, ["--resume", "--to", "6"])).toBe(0);
+    expect(result(killed)).toBe(result(straight));
+
+    // The switch does something: without it the same seed runs differently.
+    const { crashLimit: _limit, ...unlimited } = config;
+    const off = newRun(unlimited);
+    expect(await run(off, ["--to", "6"])).toBe(0);
+    const hashes = (dir: string) =>
+      events(dir)
+        .filter((e) => e.type === "gen")
+        .map((e) => e.stateHash);
+    expect(hashes(off)).not.toEqual(hashes(straight));
+  }, 180_000);
+
   it("curriculum switch: levels go up with success, exact resume holds, snapshots replay the right level", async () => {
     // Targets 10–20 units from the start (inside the 50-unit target radius): every episode succeeds,
     // so with streak 1 the run climbs one level per generation.
@@ -463,6 +518,8 @@ describe("evo-lab worker (protocol v1)", () => {
       [{ mutation: { kind: "gaussian", sigma: 0 } }, /sigma/],
       [{ sample: 10, parents: 3 }, /parents/],
       [{ initRange: -1 }, /initRange/],
+      [{ crashLimit: 0 }, /crashLimit/],
+      [{ crashLimit: 1.5 }, /crashLimit/],
       [{ curriculum: { levels: [{}] } }, /at least 2 levels/],
       [{ curriculum: { levels: [{}, { moon: {} }] } }, /not in config.arenas/],
       [{ curriculum: { success: 2 } }, /curriculum.success/],

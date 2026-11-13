@@ -18,6 +18,7 @@ interface Setup {
   frames: number;
   collisions: CollisionMode;
   crashMode: CrashMode;
+  crashLimit?: number;
   scoring: ScoringWeights;
   sensors?: SensorSpec[];
 }
@@ -36,6 +37,7 @@ async function train(setup: Setup, seed: number, generations: number) {
     arenas: setup.arenas,
     collisions: setup.collisions,
     crashMode: setup.crashMode,
+    ...(setup.crashLimit === undefined ? {} : { crashLimit: setup.crashLimit }),
     scoring: setup.scoring,
     ...(setup.sensors
       ? {
@@ -92,6 +94,17 @@ describe("ArenaReplay", () => {
       },
     ],
     [
+      "point-to-point with dense asteroids, crashes respawn, crashLimit 2",
+      {
+        arenas: [{ name: "point-to-point", params: { episodes: 4, asteroids: 120 } }],
+        frames: 200,
+        collisions: "obstacles",
+        crashMode: "respawn",
+        crashLimit: 2,
+        scoring: { distance: 1, success: 1000, time: 0, crashes: 0 },
+      },
+    ],
+    [
       "point-to-point with asteroids, a model with whiskers, sectors, nearest and lineCheck",
       {
         arenas: [{ name: "point-to-point", params: { episodes: 2, asteroids: 25 } }],
@@ -123,6 +136,14 @@ describe("ArenaReplay", () => {
         const episodes = w.trace.flatMap((a) => a.episodes);
         expect(episodes.map((e) => e.path)).toEqual(replayed.paths);
         expect(episodes.every((e) => e.path.length >= 4)).toBe(true);
+        if (setup.crashLimit !== undefined)
+          expect(episodes.every((e) => e.crashes <= setup.crashLimit!)).toBe(true);
+      }
+      if (setup.crashLimit !== undefined) {
+        // The cap did fire, and the replay needs the option: without it the winners score differently.
+        const { crashLimit: _limit, ...unlimited } = setup;
+        const scores = await Promise.all(winners.map((w) => replayFlight(unlimited, 5, w.g, w.model)));
+        expect(scores.some((s, i) => s.score !== winners[i]!.best)).toBe(true);
       }
     },
     120_000,

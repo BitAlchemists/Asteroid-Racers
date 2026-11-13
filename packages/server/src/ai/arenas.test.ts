@@ -169,6 +169,32 @@ describe("ArenaScript (via TrainingDirector.fly)", () => {
     const [ghost] = await flyOnce(scenario, { collisions: "none" });
     expect(ghost!.crashes).toBe(0);
   });
+
+  it("crashLimit ends a `respawn` episode at its N-th crash, charged like `end`", async () => {
+    // A rock right on the start: the ship crashes on its first frame and after every respawn.
+    const scenario: Scenario = {
+      obstacles: [{ position: new Vector2(0, 0), radius: 30 }],
+      episodes: [episode(new Vector2(0, 1000), 20, 50), episode(new Vector2(1000, 0), 20, 50)],
+    };
+    const crash = { collisions: "obstacles" as const };
+    const ended = await flyOnce(scenario, { ...crash, crashMode: "end" });
+    const unlimited = await flyOnce(scenario, { ...crash, crashMode: "respawn" });
+    expect(unlimited[0]!.crashes).toBeGreaterThan(3);
+
+    // At the first crash: exactly the `end` record (the same charge for the rest of the episode).
+    expect(await flyOnce(scenario, { ...crash, crashMode: "respawn", crashLimit: 1 })).toEqual(ended);
+
+    // At the third: three crashes, the whole time limit charged, and the next episode still flown.
+    const capped = await flyOnce(scenario, { ...crash, crashMode: "respawn", crashLimit: 3 });
+    expect(capped).toHaveLength(2);
+    for (const record of capped) {
+      expect(record).toMatchObject({ reached: 0, crashes: 3, frames: 51 });
+      expect(record.distance).toBeGreaterThan(900 * 51 * 0.015);
+    }
+
+    // With `end` every crash already ends the episode: the limit changes nothing.
+    expect(await flyOnce(scenario, { ...crash, crashMode: "end", crashLimit: 3 })).toEqual(ended);
+  });
 });
 
 describe("TrainingDirector with arenas", () => {

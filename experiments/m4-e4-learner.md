@@ -1,8 +1,8 @@
 # Experiment: m4-e4-learner
 
 M4 perception, E4 (DRAFT, not created in Evo Lab). Do the setup switches from step 6 (encoding v2,
-Gaussian mutation, (μ + λ) selection with 10 parents, time-to-impact lineCheck) make better racers
-than today's learner, each on its own?
+Gaussian mutation, (μ + λ) selection with 10 parents, time-to-impact lineCheck) and the crash cap
+(`crashLimit: 3`, added after E3) make better racers than today's learner, each on its own?
 
 > **TODO before approval: choose the baseline from E3b's result.**
 > - If E3b adopts the curriculum: add `"curriculum": {}` to the baseline config below and set
@@ -15,8 +15,8 @@ than today's learner, each on its own?
 ```json experiment
 {
   "id": "m4-e4-learner",
-  "question": "Does each of encoding v2, Gaussian mutation, 10 parents and a time-to-impact lineCheck (alone) lower the race exam score at generation 150 compared with today's learner (lineCheck models, task v2, seeds 1-10)?",
-  "hypothesis": "parents 10 helps most (it keeps good racers through unlucky generations, see E3's collapse); Gaussian mutation and encoding v2 help; time-to-impact helps fast models avoid rocks.",
+  "question": "Does each of encoding v2, Gaussian mutation, 10 parents, a time-to-impact lineCheck and a crash cap of 3 per episode (alone) lower the race exam score at generation 150 compared with today's learner (lineCheck models, task v2, seeds 1-10)?",
+  "hypothesis": "parents 10 helps most (it keeps good racers through unlucky generations, see E3's collapse); Gaussian mutation and encoding v2 help; time-to-impact helps fast models avoid rocks; crashLimit 3 keeps one crash-loop draw from deciding a generation.",
   "method": "train",
   "baseline": {
     "config": {
@@ -38,7 +38,8 @@ than today's learner, each on its own?
     { "key": "encoding", "on": "v2", "note": "targetSin, targetCos, targetDistanceSoft, forwardSpeed, sideSpeed (about -1..1)" },
     { "key": "mutation", "on": { "kind": "gaussian", "sigma": 0.2 }, "note": "unbiased, signs can flip; rate = mutationRate 0.1" },
     { "key": "parents", "on": 10, "note": "(10 + 90): the best 10 survive, 9 children each" },
-    { "key": "sensors.lineCheck.horizon", "on": 2, "note": "closeness by time to impact, 2 s horizon, range 2,500" }
+    { "key": "sensors.lineCheck.horizon", "on": 2, "note": "closeness by time to impact, 2 s horizon, range 2,500" },
+    { "key": "crashLimit", "on": 3, "note": "an episode ends at its 3rd crash, the rest charged like crashMode end" }
   ],
   "design": "one-at-a-time",
   "seeds": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
@@ -57,7 +58,9 @@ E3 showed that today's learner loses good racers: after g100, 5 of 10 seeds coll
 hovering (see `m4-e3-noise-floor-v2.report.md` and HISTORY). The likely cause is a single parent
 re-scored on freshly drawn scenarios: one draw with a crash loop makes the racer score worse than a
 passive child, and the racer is gone. `parents: 10` should keep racers in the pool. The other
-switches target the learner itself (input scale, sign flips) and the sensor.
+switches target the learner itself (input scale, sign flips) and the sensor. `crashLimit: 3`
+attacks the same collapse from the other side: an episode ends at its third crash, so one
+crash-loop draw costs at most 3 × 3,000 in crash cost instead of 47 × 3,000.
 
 ## Baseline
 
@@ -66,8 +69,8 @@ depending on E3b. The gate re-runs the stored baseline runs to g5 and compares `
 
 ## Runs
 
-4 switch arms + baseline, 10 seeds each, to g50 (screen), informative arms continued to g150. About
-50 runs; Evo Lab re-runs the baseline arm itself (see HISTORY, Evo Lab friction).
+5 switch arms + baseline, 10 seeds each, to g50 (screen), informative arms continued to g150. About
+60 runs; Evo Lab re-runs the baseline arm itself (see HISTORY, Evo Lab friction).
 
 ## Decision rule
 

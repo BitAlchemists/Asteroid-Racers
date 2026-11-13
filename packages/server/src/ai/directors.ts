@@ -193,6 +193,8 @@ export interface TrainingOptions {
   scoring?: ScoringWeights;
   collisions?: CollisionMode;
   crashMode?: CrashMode;
+  /** With `respawn`: an episode ends at its N-th crash, charged like `end` (default: no limit). */
+  crashLimit?: number;
   /** Number of the first generation this director runs (default 1; a resumed run passes g + 1). */
   firstGeneration?: number;
   /** Stop after this many generations (default: run forever). */
@@ -317,7 +319,14 @@ export class TrainingDirector extends AIDirector {
       const placed = this.place(scenario);
       try {
         const scripts = networks.map(
-          (network) => new ArenaScript(network, placed.episodes, this.options.crashMode, this.tickSeconds),
+          (network) =>
+            new ArenaScript(
+              network,
+              placed.episodes,
+              this.options.crashMode,
+              this.tickSeconds,
+              this.options.crashLimit,
+            ),
         );
         await Promise.all(scripts.map((script) => this.runScript(script)));
         scripts.forEach((script, i) => {

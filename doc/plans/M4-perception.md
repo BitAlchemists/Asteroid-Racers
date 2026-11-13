@@ -82,6 +82,7 @@ reproduces the stored baseline results byte for byte (existing fixtures and the 
 | `mutation: { kind: "gaussian", sigma, rate }` | absent = relative | Adds N(0, σ) to a weight with probability `rate`. Unbiased, and signs can flip. Default σ 0.2. |
 | `parents: μ` | absent = 1 | (μ + λ) selection: the best μ of the generation are kept, each gets (sample − μ) / μ children. |
 | `initRange` | absent = 1 | Range of the random starting weights. |
+| `crashLimit: N` | absent = no limit | Integer ≥ 1. With `crashMode: "respawn"`, an episode ends at its N-th crash and the rest of its time is charged at the crash distance, exactly as `crashMode: "end"` charges it. With `end` it changes nothing (every crash already ends the episode). Applies to training and held-out episodes and to their replays; the exam has its own rules. Added 2026-11-13 after E3 (see "Changes to this plan"). |
 | Sensor `horizon: s` | absent = distance | `whiskers`, `sectors` and `lineCheck` report closeness by time to impact: 1 − time ÷ horizon, where time = distance ÷ closing speed. Closing speed counts as at least 100 units/s, so a resting ship still sees nearby rocks. The value is still 0 for nothing and 1 for touching; the default range becomes 2,500. |
 
 - **`nearest` padding:** with `nearest: { flag: 1 }` every slot gets a leading "present" input, and
@@ -148,8 +149,8 @@ not adopted.
    `curriculum: {}`, seeds 1–10. E3's runs are the stored baseline (the gate re-runs them to g5).
    Screen at g50, final at g150, decision on `exam` as usual. If the curriculum wins, it becomes
    part of the baseline for E4.
-5. **E4 learner (one-at-a-time):** against the E3 or E3b baseline, switches `encoding`, `mutation`, `parents`
-   and `lineCheck.horizon: 2`. Screen at g50, final at g150. Winners join the baseline. If two or
+5. **E4 learner (one-at-a-time):** against the E3 or E3b baseline, switches `encoding`, `mutation`, `parents`,
+   `lineCheck.horizon: 2` and `crashLimit: 3`. Screen at g50, final at g150. Winners join the baseline. If two or
    more win, a confirmation run of them together follows (one arm, 10 seeds).
 6. **E5 sensors again (one-at-a-time):** on the E4 setup, add `whiskers`, `sectors` (both with a
    `horizon` if E4 adopted it) and `nearest` (with `flag: 1`), one at a time. Does richer sensing
@@ -252,6 +253,9 @@ Experiments may be added or changed as results come in; each change goes into th
     1. **A crash cap** (new switch, e.g. `crashLimit: 3`): an episode ends after N crashes (the
        rest charged at the crash distance, as `crashMode: "end"` does). One crash-loop draw then
        costs at most N × 3,000 per episode instead of 47 × 3,000. Test it as a fifth switch in E4.
+       **ADOPTED** (user approved 2026-11-13): implemented as the `crashLimit` switch (step 6
+       table) and added to E4 as a fifth one-at-a-time switch (`crashLimit: 3`). Items 2 and 3
+       are still proposals.
     2. **`parents: 10` as the likely default.** It is already an E4 switch; if it wins, it joins
        the baseline for E5 and E6.
     3. **Read the g100 column too.** Experiment reports already show it. A setup that wins at

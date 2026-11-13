@@ -93,6 +93,8 @@ export interface ArenaReplayOptions {
   frames: number;
   collisions: CollisionMode;
   crashMode: CrashMode;
+  /** The config's `crashLimit` switch (absent = no limit). */
+  crashLimit?: number;
   /** The run's seed (scenario seeds derive from it). */
   seed: number;
   /** Generation whose scenarios to fly (1-based). */
@@ -130,7 +132,7 @@ export class ArenaReplay implements Replay {
     server.registerService(director);
     await server.start();
     const placed = placeScenario(server, scenario);
-    const script = new ArenaScript(o.model, placed.episodes, o.crashMode, server.tickSeconds);
+    const script = new ArenaScript(o.model, placed.episodes, o.crashMode, server.tickSeconds, o.crashLimit);
     const { running, proxy } = await startScript(director, script);
     return new ArenaReplay(server, script, proxy, running);
   }
