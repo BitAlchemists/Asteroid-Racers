@@ -92,6 +92,14 @@ Training runs at about 1,000 game ticks/s per run (about 14 µs CPU per ship-ste
 remove the overheads, and prove with Evo Lab's bench and gate that results stay bit-identical while
 ticks/s at least double. Runs in the gaps between M4's experiments.
 
+### S2 — Training speed, round 2 🟡 (side track)
+
+Plan: [`plans/S2-training-speed-2.md`](plans/S2-training-speed-2.md), approved by the user 2026-11-13
+
+The ranked speed-ups from the performance analysis: a training fast path for bots, a faster
+`lineCheck` query, a collision grid, batched network passes. Goal ≥ 1.4× training ship-steps/s and
+about 1.6× faster exams, bit-identical.
+
 ### M5 — Content 🟡 (game side)
 
 Plan: [`plans/M5-content.md`](plans/M5-content.md). Game side (track files, three tracks, track
