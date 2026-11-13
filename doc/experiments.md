@@ -1,0 +1,50 @@
+# Experiments
+
+How we compare model variants: as [Evo Lab experiments](../../../../worktrees/claude/evo-lab/next/docs/experiments.md)
+(evo-lab's `docs/experiments.md`). This page is the short version for this project.
+
+## The idea
+
+An experiment answers one question by comparing **arms** (the baseline config, plus one or more
+**switches** turned on) on the **same seeds**, and decides with a rule written down before the runs.
+
+- **Switches are config keys that are absent when off.** With every switch off, the code must
+  reproduce the baseline byte for byte. Evo Lab checks this first (the **baseline gate**): it re-runs
+  the stored baseline runs and compares the per-generation `stateHash`. Our switches so far:
+  - `sensors`: obstacle sensors, e.g. `{ "whiskers": {} }` or
+    `{ "lineCheck": { "range": 800 } }` (see `parseSensors` in `packages/server/src/ai/sensors.ts`);
+  - `hidden`: hidden layer sizes, e.g. `[16, 12, 8]`.
+- A switch key may not appear in the method's default config in `lab.config.json` (that is why the
+  `model` block is not there).
+- **The decision metric is `exam`** (the race exam score, lower is better), produced inside training
+  runs by the `exam` config (`{ "every": 10, "randomTracks": 15 }`). Report `examCrashes` and
+  `examCheckpoints` alongside.
+
+## Workflow
+
+1. Draft: `npm run experiment -- draft <id> [--design one-at-a-time|leave-one-out|factorial|measurement]`
+   writes `experiments/<id>.md` with the standard M4 baseline config. Fill in the question,
+   hypothesis, switches, baseline runs and decision rule.
+2. Register: `node <evo-lab>/bin/lab.js exp new experiments/<id>.md` (copies the plan into
+   `lab/experiments/<id>/`, where Evo Lab keeps its state).
+3. Approve: `lab exp approve <id> --by <name>`. Editing the plan afterwards sends it back to draft.
+4. Advance: `lab exp advance <id> --wait` (gate → screen runs → continuations → report). Watch it in
+   the Evo Lab UI (Experiments).
+5. Sign off: `lab exp close <id> --by <name> --reason "<decision>"`.
+6. Record: copy `report.md` next to the plan as `experiments/<id>.report.md`, and write the result
+   into `doc/HISTORY.md`.
+
+The plans in `experiments/` are versioned in git. Evo Lab's working copies under `lab/` are not.
+
+## Defaults we use
+
+- 5 seeds (1 to 5), screen at generation 50, final at 150.
+- Decision: `exam` at 150, paired effect beyond 2 × paired standard error, at least 4 of 5 seeds
+  moving the same way, and at least the `minEffect` that the noise-floor measurement (E1)
+  suggests.
+- Gate: prefix mode at generation 5 (cheap, thanks to `stateHash`).
+
+## Costs
+
+A 150-generation run of the standard baseline takes about 15 minutes, plus about 3 s per exam
+(16 exams). Runs execute in parallel on the machine runner.

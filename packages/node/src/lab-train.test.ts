@@ -159,6 +159,14 @@ describe("evo-lab worker (protocol v1)", () => {
     expect(result(resumed)).toBe(result(straight));
     const hellos = events(resumed).filter((e) => e.type === "hello");
     expect(hellos.map((e) => e.resume)).toEqual([false, true]);
+    // The per-generation state hash (evo-lab's baseline gate) is the same sequence either way.
+    const hashes = (dir: string) =>
+      events(dir)
+        .filter((e) => e.type === "gen")
+        .map((e) => [e.g, e.stateHash, e.stateHashRepr]);
+    expect(hashes(resumed)).toEqual(hashes(straight));
+    expect(new Set(hashes(straight).map((h) => h[1])).size).toBe(5);
+    expect(hashes(straight)[0]![2]).toBe("asteroid-racers/state-v1");
   }, 120_000);
 
   it.each([

@@ -9,6 +9,7 @@
  * Exact resume: the checkpoint holds the winner and both random generators, so resuming from g and
  * running to G gives a result.json byte-identical to an uninterrupted run to G.
  */
+import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -51,6 +52,8 @@ import {
 
 const CHECKPOINT = "ckpt.json";
 const CHECKPOINT_FORMAT = "asteroid-racers/train-ckpt/v2";
+/** What `stateHash` on gen events is computed from (evo-lab's baseline gate compares it per generation). */
+const STATE_HASH_REPR = "asteroid-racers/state-v1";
 /** Format of the per-generation winner files in RUN_DIR/gens/ (read by the exam method). */
 export const SNAPSHOT_FORMAT = "asteroid-racers/model-snapshot/v1";
 /** Generations to run when the run has no `--to`. */
@@ -294,8 +297,21 @@ async function main(): Promise<void> {
         ? {}
         : { heldOut: report.heldOutScore, heldOutSuccess: report.heldOutSuccess }),
     };
+    // The full training state after this generation: the winner (exact doubles in JSON), its score and
+    // both generators. Equal hashes per generation = the same run (evo-lab's baseline gate).
+    const stateHash = createHash("sha256")
+      .update(
+        JSON.stringify({
+          winner: report.winner.toJson(),
+          bestScore: report.bestScore,
+          rng: { mutation: mutationRandom.state, server: serverRandom.state },
+        }),
+      )
+      .digest("hex");
     const genEvent = {
       g,
+      stateHash,
+      stateHashRepr: STATE_HASH_REPR,
       metrics,
       phases: { simulate: { wall, cpu: cpuSec } } as Record<string, { wall: number; cpu: number }>,
       cpuSec,

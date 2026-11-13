@@ -5,3 +5,4 @@ package-lock.json
 doc
 packages/server/src/ai/models
 packages/node/src/fixtures
+experiments
