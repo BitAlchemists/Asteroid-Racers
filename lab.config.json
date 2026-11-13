@@ -170,6 +170,150 @@
       "label": "Winner spin",
       "description": "Mean |turn output| of the winner (1 = always turning at full rate).",
       "group": "Training"
+    },
+    "skillStop": {
+      "direction": "max",
+      "label": "Skill: Stop",
+      "description": "Skills exam: share of targets reached on fixed scenarios of stop: arrive below the speed limit (braking). The same scenarios for every model (seeded from the exam seed).",
+      "unit": "share 0-1",
+      "group": "Skills",
+      "sparse": true
+    },
+    "skillStopCrashes": {
+      "direction": "min",
+      "label": "Crashes: Stop",
+      "description": "Skills exam: crashes per episode on stop: arrive below the speed limit (braking).",
+      "unit": "per episode",
+      "group": "Skills",
+      "sparse": true
+    },
+    "skillTurnAndGo": {
+      "direction": "max",
+      "label": "Skill: Turn and go",
+      "description": "Skills exam: share of targets reached on fixed scenarios of turn-and-go: start fast, facing away, then reach the target. The same scenarios for every model (seeded from the exam seed).",
+      "unit": "share 0-1",
+      "group": "Skills",
+      "sparse": true
+    },
+    "skillTurnAndGoCrashes": {
+      "direction": "min",
+      "label": "Crashes: Turn and go",
+      "description": "Skills exam: crashes per episode on turn-and-go: start fast, facing away, then reach the target.",
+      "unit": "per episode",
+      "group": "Skills",
+      "sparse": true
+    },
+    "skillChain": {
+      "direction": "max",
+      "label": "Skill: Chain",
+      "description": "Skills exam: share of targets reached on fixed scenarios of chain: 3-5 targets in a row, each leg turning. The same scenarios for every model (seeded from the exam seed).",
+      "unit": "share 0-1",
+      "group": "Skills",
+      "sparse": true
+    },
+    "skillChainCrashes": {
+      "direction": "min",
+      "label": "Crashes: Chain",
+      "description": "Skills exam: crashes per episode on chain: 3-5 targets in a row, each leg turning.",
+      "unit": "per episode",
+      "group": "Skills",
+      "sparse": true
+    },
+    "skillCorridor": {
+      "direction": "max",
+      "label": "Skill: Corridor",
+      "description": "Skills exam: share of targets reached on fixed scenarios of corridor: reach a target round the bends of an asteroid corridor. The same scenarios for every model (seeded from the exam seed).",
+      "unit": "share 0-1",
+      "group": "Skills",
+      "sparse": true
+    },
+    "skillCorridorCrashes": {
+      "direction": "min",
+      "label": "Crashes: Corridor",
+      "description": "Skills exam: crashes per episode on corridor: reach a target round the bends of an asteroid corridor.",
+      "unit": "per episode",
+      "group": "Skills",
+      "sparse": true
+    },
+    "skillField": {
+      "direction": "max",
+      "label": "Skill: Field",
+      "description": "Skills exam: share of targets reached on fixed scenarios of field: a chain of targets through a dense asteroid field. The same scenarios for every model (seeded from the exam seed).",
+      "unit": "share 0-1",
+      "group": "Skills",
+      "sparse": true
+    },
+    "skillFieldCrashes": {
+      "direction": "min",
+      "label": "Crashes: Field",
+      "description": "Skills exam: crashes per episode on field: a chain of targets through a dense asteroid field.",
+      "unit": "per episode",
+      "group": "Skills",
+      "sparse": true
+    },
+    "skillRaceLegs": {
+      "direction": "max",
+      "label": "Skill: Race legs",
+      "description": "Skills exam: share of targets reached on fixed scenarios of race-legs: consecutive checkpoints of a real race track. The same scenarios for every model (seeded from the exam seed).",
+      "unit": "share 0-1",
+      "group": "Skills",
+      "sparse": true
+    },
+    "skillRaceLegsCrashes": {
+      "direction": "min",
+      "label": "Crashes: Race legs",
+      "description": "Skills exam: crashes per episode on race-legs: consecutive checkpoints of a real race track.",
+      "unit": "per episode",
+      "group": "Skills",
+      "sparse": true
+    },
+    "skillRock1": {
+      "direction": "max",
+      "label": "Skill: Rock in line",
+      "description": "Skills exam: share of targets reached on fixed scenarios of rock-in-line with 1 rock across the direct line. The same scenarios for every model (seeded from the exam seed).",
+      "unit": "share 0-1",
+      "group": "Skills",
+      "sparse": true
+    },
+    "skillRock1Crashes": {
+      "direction": "min",
+      "label": "Crashes: Rock in line",
+      "description": "Skills exam: crashes per episode on rock-in-line with 1 rock across the direct line.",
+      "unit": "per episode",
+      "group": "Skills",
+      "sparse": true
+    },
+    "skillRock2": {
+      "direction": "max",
+      "label": "Skill: Two rocks in line",
+      "description": "Skills exam: share of targets reached on fixed scenarios of rock-in-line with 2 rocks across the direct line. The same scenarios for every model (seeded from the exam seed).",
+      "unit": "share 0-1",
+      "group": "Skills",
+      "sparse": true
+    },
+    "skillRock2Crashes": {
+      "direction": "min",
+      "label": "Crashes: Two rocks in line",
+      "description": "Skills exam: crashes per episode on rock-in-line with 2 rocks across the direct line.",
+      "unit": "per episode",
+      "group": "Skills",
+      "sparse": true
+    },
+    "skillField80": {
+      "direction": "max",
+      "label": "Skill: 80 rocks",
+      "description": "Skills exam: share of targets reached on fixed scenarios of point-to-point among 80 scattered asteroids. The same scenarios for every model (seeded from the exam seed).",
+      "unit": "share 0-1",
+      "group": "Skills",
+      "sparse": true
+    },
+    "skillField80Crashes": {
+      "direction": "min",
+      "label": "Crashes: 80 rocks",
+      "description": "Skills exam: crashes per episode on point-to-point among 80 scattered asteroids.",
+      "unit": "per episode",
+      "group": "Skills",
+      "sparse": true
     }
   },
   "leaderboard": {

@@ -26,7 +26,8 @@
     "exam": "npm run exam -w @ar/node --",
     "experiment": "npm run experiment -w @ar/node --",
     "iqm": "npm run iqm -w @ar/node --",
-    "scripted": "npm run scripted -w @ar/node --"
+    "scripted": "npm run scripted -w @ar/node --",
+    "skills": "npm run skills -w @ar/node --"
   },
   "devDependencies": {
     "@bufbuild/buf": "^1.75.0",

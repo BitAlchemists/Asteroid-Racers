@@ -388,3 +388,7 @@ so (`CLAUDE.md`).
   policy / heading output) is added to phase 3.
 - **2026-11-13, 3.4 code built:** the `controller` switch, `residual` and `heading`. It is
   pulled forward into batch A (2.1, 2.2, 2.8, 3.4), as agreed with the user.
+- **2026-11-13, skills exam** (user agreed): `exam.skills` reports a per-arena skill profile at
+  every exam (`skill<Arena>`, `skill<Arena>Crashes`), and `npm run skills` profiles stored models.
+  From batch A on, every phase-2 and later report includes the skill profile. It is the main
+  evidence for 2.4 (forgetting) and 2.6 (what the tiered curriculum teaches).

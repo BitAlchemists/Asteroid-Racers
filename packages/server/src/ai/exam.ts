@@ -1,3 +1,4 @@
+import { parseSkillsConfig, type SkillsConfig } from "./skills";
 import type { Entity, Movable } from "@ar/shared";
 import type { IClientProxy } from "../contracts";
 import { GameServer } from "../game-server";
@@ -39,6 +40,11 @@ export interface ExamConfig {
   inputDelay?: number;
   /** Robustness exam: Gaussian noise on every input, from a stream fixed per flight. */
   inputNoise?: number;
+  /**
+   * Skills exam (M6): every model also flies fixed scenarios of each training arena on its own
+   * (see skills.ts), reported as `skill<Arena>` metrics. Absent = no skills exam.
+   */
+  skills?: SkillsConfig;
 }
 
 /** The exam's perturbation, or undefined when it has none (delay and noise absent or 0). */
@@ -360,6 +366,7 @@ export function parseExamConfig(raw: unknown): ExamConfig {
     // Robustness keys: present only when given, so other configs stay as they were.
     ...(r.inputDelay === undefined ? {} : { inputDelay: r.inputDelay as number }),
     ...(r.inputNoise === undefined ? {} : { inputNoise: r.inputNoise as number }),
+    ...(r.skills === undefined ? {} : { skills: parseSkillsConfig(r.skills) }),
   };
   if (config.inputDelay !== undefined && (!Number.isInteger(config.inputDelay) || config.inputDelay < 0))
     throw new Error("exam.inputDelay must be an integer ≥ 0");

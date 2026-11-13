@@ -1032,6 +1032,60 @@ describe("evo-lab worker (protocol v1)", () => {
     expect(ck.cmaes.lambda).toBe(4 + Math.floor(3 * Math.log(30)));
   }, 240_000);
 
+  it("skills exam: skill metrics at every exam, training and resume unchanged, deterministic", async () => {
+    const config = {
+      sample: 6,
+      frames: 60,
+      arenas: [{ name: "point-to-point", params: { episodes: 2, asteroids: 10 } }],
+      collisions: "obstacles",
+      crashMode: "respawn",
+    };
+    const exam = {
+      every: 2,
+      tracks: ["short"],
+      randomTracks: 0,
+      timeLimitSeconds: 5,
+      skills: { episodes: 1 },
+    };
+    const withSkills = newRun({ ...config, exam });
+    expect(await run(withSkills, ["--to", "3"])).toBe(0);
+    const metricsOf = (dir: string, g: number) =>
+      events(dir)
+        .filter((e) => e.type === "gen" && e.g === g)
+        .at(-1)!.metrics as Record<string, number>;
+    const keys = ["Stop", "TurnAndGo", "Chain", "Corridor", "Field", "RaceLegs", "Rock1", "Rock2", "Field80"];
+    for (const g of [2, 3]) {
+      const m = metricsOf(withSkills, g);
+      for (const k of keys) {
+        expect(m[`skill${k}`]).toBeGreaterThanOrEqual(0);
+        expect(m[`skill${k}`]).toBeLessThanOrEqual(1);
+        expect(m[`skill${k}Crashes`]).toBeGreaterThanOrEqual(0);
+      }
+    }
+    expect(metricsOf(withSkills, 1).skillStop).toBeUndefined();
+    // Training is untouched: same stateHash every generation and same result as the plain exam.
+    const plainExam = newRun({ ...config, exam: { ...exam, skills: undefined } });
+    expect(await run(plainExam, ["--to", "3"])).toBe(0);
+    const hashes = (dir: string) =>
+      events(dir)
+        .filter((e) => e.type === "gen")
+        .map((e) => e.stateHash);
+    expect(hashes(withSkills)).toEqual(hashes(plainExam));
+    const strip = (dir: string) => {
+      const { config: _c, ...rest } = JSON.parse(result(dir)) as Record<string, unknown>;
+      return rest;
+    };
+    expect(strip(withSkills)).toEqual(strip(plainExam));
+    // Deterministic and resumable: the same skill values after a kill and resume.
+    const resumed = newRun({ ...config, exam });
+    expect(await run(resumed, ["--to", "2"])).toBe(0);
+    expect(await run(resumed, ["--resume", "--to", "3"])).toBe(0);
+    expect(result(resumed)).toBe(result(withSkills));
+    expect(metricsOf(resumed, 3)).toMatchObject(
+      Object.fromEntries(Object.entries(metricsOf(withSkills, 3)).filter(([k]) => k.startsWith("skill"))),
+    );
+  }, 180_000);
+
   it("exam switch: race metrics on every N-th generation, results and resume unchanged", async () => {
     const exam = { every: 2, tracks: ["short"], randomTracks: 1, timeLimitSeconds: 10 };
     const withExam = newRun({ ...CONFIG, exam });
@@ -1121,6 +1175,8 @@ describe("evo-lab worker (protocol v1)", () => {
       [{ sensors: { sonar: {} } }, /unknown sensor/],
       [{ hidden: [0] }, /hidden/],
       [{ exam: { every: 0 } }, /exam.every/],
+      [{ exam: { skills: { episodes: 0 } } }, /exam.skills.episodes/],
+      [{ exam: { skills: { arenas: [] } } }, /unknown exam.skills keys/],
       [{ exam: { tracks: ["moon"] } }, /unknown track/],
       [{ brain: { inputs: ["sonar"] } }, /unknown model inputs/], // old key name still read
       [{ encoding: "v9" }, /config.encoding/],

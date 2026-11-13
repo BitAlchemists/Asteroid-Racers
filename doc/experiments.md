@@ -281,3 +281,22 @@ brackets; `frames` defaults to the config's `frames` (600).
 
 The watch page flies any of them (`watch.html?arena=<name>&params=<JSON>&seed=<run seed>&g=<gen>`),
 built exactly as in a training run with that seed at that generation.
+
+## Skills exam
+
+`exam: { ..., "skills": {} }` (optional `episodes`, default 8) makes every exam also fly fixed
+scenarios of each training arena on its own. The arenas: `stop`, `turn-and-go`, `chain`,
+`corridor`, `field`, `race-legs`, rock-in-line with 1 and with 2 rocks, and point-to-point with 80
+asteroids.
+
+- **Metrics:** `skill<Arena>` (share of targets reached) and `skill<Arena>Crashes` (crashes per
+  episode), in the "Skills" group, for example `skillStop` and `skillCorridorCrashes`.
+- **Same scenarios for every model:** they are seeded from the exam seed only. They use the run's
+  collisions, crash mode and crash limit.
+- **Training is untouched:** each arena flies on its own server, so the `stateHash` and
+  `result.json` are unchanged.
+- **Cost:** about 0.15 s per model with 8 episodes, on top of the exam.
+- **Standalone `exam` method:** the same key works there, with the M4 default physics (obstacles,
+  respawn, 600 frames).
+- **Profile of stored models:** `npm run skills -- --run train-310..train-319 --gen 150` prints the
+  profile without retraining.

@@ -52,6 +52,8 @@ import {
   examPerception,
   plainExam,
   runExam,
+  runSkills,
+  skillMetrics,
   type ExamConfig,
   parseScoring,
   type ArenaConfig,
@@ -629,6 +631,24 @@ async function main(): Promise<void> {
           wall: (performance.now() - startWall) / 1000,
           cpu: (examCpu.user + examCpu.system) / 1e6,
         };
+        if (exam.skills) {
+          // Each skill flies on its own server: training state is untouched.
+          const skillsWall = performance.now();
+          const skillsCpu = process.cpuUsage();
+          const skills = await runSkills(examModel, exam.skills, {
+            seed: exam.seed,
+            frames: config.frames,
+            collisions: config.collisions,
+            crashMode: config.crashMode,
+            ...(config.crashLimit === undefined ? {} : { crashLimit: config.crashLimit }),
+          });
+          Object.assign(metrics, skillMetrics(skills));
+          const cpu = process.cpuUsage(skillsCpu);
+          genEvent.phases.skills = {
+            wall: (performance.now() - skillsWall) / 1000,
+            cpu: (cpu.user + cpu.system) / 1e6,
+          };
+        }
       }
       emit("gen", genEvent);
       if (ckpt) await writeCheckpoint(ckpt);

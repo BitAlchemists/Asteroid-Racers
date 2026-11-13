@@ -21,6 +21,8 @@ import {
   MajorTom,
   parseExamConfig,
   runExam,
+  runSkills,
+  skillMetrics,
   type ExamConfig,
   type NetworkJson,
 } from "@ar/server";
@@ -152,6 +154,15 @@ async function main(): Promise<void> {
     const startWall = performance.now();
     const startCpu = process.cpuUsage();
     const { traces, ...exam } = await runExam(model, config);
+    // Skills exam (optional): the M4 default physics (obstacles collide, crashes respawn, 600 frames).
+    const skills = config.skills
+      ? await runSkills(model, config.skills, {
+          seed: config.seed,
+          frames: 600,
+          collisions: "obstacles",
+          crashMode: "respawn",
+        })
+      : undefined;
     const cpu = process.cpuUsage(startCpu);
     const cpuSec = (cpu.user + cpu.system) / 1e6;
     const snapshot = `gens/g${String(g).padStart(4, "0")}.json`;
@@ -174,12 +185,19 @@ async function main(): Promise<void> {
         examCheckpoints: exam.checkpoints,
         examFinished: exam.finished,
         examCrashes: exam.crashes,
+        ...(skills ? skillMetrics(skills) : {}),
       },
       phases: { exam: { wall: (performance.now() - startWall) / 1000, cpu: cpuSec } },
       cpuSec,
       rssMiB: Math.round(process.memoryUsage().rss / 2 ** 20),
     });
-    examined.push({ g, model: model.name, modelGeneration: model.generation, ...exam });
+    examined.push({
+      g,
+      model: model.name,
+      modelGeneration: model.generation,
+      ...exam,
+      ...(skills ? { skills } : {}),
+    });
   }
 
   // Deterministic result: no times, pids or paths.

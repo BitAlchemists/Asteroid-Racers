@@ -43,6 +43,7 @@ export * from "./model-spec";
 export * from "./directors";
 export * from "./exam";
 export * from "./replay";
+export * from "./skills";
 export * from "./evaluators";
 export * from "./network";
 export * from "./obstacle-grid";

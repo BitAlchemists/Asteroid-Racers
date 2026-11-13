@@ -1554,3 +1554,33 @@ Approved by the user as the rest of M5 after M4 closed. M5 is done.
   heading costs nothing extra. A whole run is estimated at roughly +15–20 % (not measured).
 - **For batch A:** the residual arm at `scale: 0.5`. Optionally a second arm at `scale: 1`, letting
   the network fully override the scripted turn.
+### Skills exam
+
+- **`exam.skills`:** at every exam the winner also flies fixed scenarios of 9 skills (the six M5
+  arenas, rock-in-line with 1 and 2 rocks, point-to-point with 80 asteroids). It reports
+  `skill<Arena>` (share reached) and `skill<Arena>Crashes` (per episode), declared in
+  lab.config.json (group Skills, sparse).
+  - Each skill flies on its own server (an ArenaReplay), so training is untouched: a test shows the
+    same stateHash and result.json with and without it, plus exact resume.
+  - It costs about 0.15 s per model (8 episodes per skill).
+- **`npm run skills`:** profiles stored models without retraining.
+- **Deviation from the brief:** metric names are `skillStop` and the like, not `skill.stop`, to keep
+  metric keys free of dots. Plugin replay of skill scenarios was skipped: they are ArenaReplays of
+  known arena configs and seeds, so this can be added later.
+- **E9's default models at g150** (10 seeds, 8 episodes per skill), mean share reached and crashes
+  per episode:
+
+  | Skill | Reached | Crashes per episode |
+  | --- | --- | --- |
+  | Stop | 0 % | 0.0 |
+  | Turn and go | 66 % | 0.0 |
+  | Chain | 76 % | 0.0 |
+  | Corridor | 14 % | 1.9 |
+  | Field | 49 % | 5.7 |
+  | Race legs | 88 % | 2.2 |
+  | Rock in line | 64 % | 0.3 |
+  | Two rocks in line | 40 % | 0.9 |
+  | 80 rocks | 73 % | 0.3 |
+
+  The models never brake (0 % on stop), rarely get round the bend in corridors, and crash a lot in
+  dense fields.
