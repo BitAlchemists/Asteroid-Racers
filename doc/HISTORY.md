@@ -898,3 +898,36 @@ train-87 2,670–4,959 tps (20 busy slots), train-109 11,544–12,892 tps.
   - Switch code for steps 1–4 can be built before M4 ends.
 - **M5 game side started** (user approved): track format, three tracks, track picker. It works in
   its own worktree, and the exam, existing tracks and training arenas stay unchanged.
+
+### E4 signed off; E4b confirmation (parents 10 + curriculum success 0.6)
+
+- **E4 closed** in Evo Lab (user decision): no switch wins. `parents: 10` and
+  `curriculum.success: 0.6` went to a combined confirmation; lineCheck `horizon` and Gaussian
+  mutation are dropped.
+- **E4b `m4-e4b-confirm`:**
+  - leave-one-out with two switches (baseline, `full`, each alone), seeds 1–10, all arms to g150;
+  - the screen is at g150 and `final` at 151, because Evo Lab requires `final.gen` > `screen.gen`;
+  - plan and report in `experiments/`; gate passed (train-230..239 identical to train-98..107,
+    stateHash g1–g5); 40 runs (train-240..279, continuations train-280..).
+
+  | arm | g | exam | crashes | checkpoints | finished | success | held-out | levels by seed (0–4) |
+  | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+  | baseline | 100 | 25,466 | 161 | 0.83 | 0.79 | 0.61 | 0.46 | 1,4,1,4,1,1,4,1,1,1 |
+  | baseline | 150 | 32,727 | 147 | 0.78 | 0.71 | 0.68 | 0.49 | 1,4,4,4,2,1,4,3,2,1 |
+  | full (both) | 100 | 31,835 | 183 | 0.79 | 0.74 | 0.70 | 0.56 | 1,4,4,4,4,4,1,1,4,1 |
+  | full (both) | 150 | 18,268 | 147 | 0.88 | 0.84 | 0.73 | 0.60 | 1,4,4,4,4,4,4,3,4,1 |
+  | success 0.6 only | 150 | 29,896 | 148 | 0.80 | 0.75 | 0.60 | 0.49 | 2,4,4,4,4,3,4,1,4,4 |
+  | parents 10 only | 150 | 32,835 | 175 | 0.78 | 0.72 | 0.77 | 0.60 | 1,4,4,4,4,4,2,4,4,1 |
+
+- **Decision at g150:**
+  - `full` vs baseline: −14,460 (2 × se 18,250), 5 of 10 seeds better, so no clear difference. The
+    rule is not met; crashes are equal (147).
+  - Contribution of parents, given success 0.6 (`full` vs success 0.6 only): −11,630 (2 × se
+    10,030), 8 of 10 seeds better, so better.
+  - Contribution of success 0.6, given parents 10: −14,570 (2 × se 19,480), no clear difference.
+  - Parents alone vs baseline: +108, no effect. The two switches seem to help only together.
+- **Collapse:** none in any arm (exam checkpoints < 10 % at g150 after having been ≥ 50 %).
+- **Speed:** median `tps` per arm 11,300–14,100, with up to 20 runs in parallel.
+- **Mistake:** I committed the small plan fix (`final.gen` 151) before running `npm run check`.
+  The check run right after passed (doc-only change), but the order broke the rule.
+- **Not signed off:** adoption is the user's decision.
