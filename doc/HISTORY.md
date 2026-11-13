@@ -455,3 +455,33 @@ nothing for blind models.
   is often a lucky child. The exam is never optimised directly.
 - **Noise:** at g150 the paired exam differences of lineCheck vs blind ranged from −10,600 to
   +65,700, which is bimodal across seeds. The paired crash difference is steadier: 219 ± 200.
+
+### M4 plan rewritten after E2 (agreed with the user)
+
+- **Why:**
+  - The user asked whether the model size is right, whether the basic inputs are well formatted,
+    why the whiskers range is 600, how whiskers and sectors differ, and whether the numbers should
+    be bigger.
+  - A review of all training and config parameters against the physics and measured flights found:
+    - angle inputs jump behind the ship;
+    - the velocity angle is noise when slow;
+    - inputs are small;
+    - relative mutation almost never flips a weight's sign and drifts weights toward 0;
+    - a single parent is replaced by lucky children;
+    - crashes are cheap (500 against about 5,000 distance cost per episode);
+    - training rocks are about 5× sparser than in the exam;
+    - a 600 sensor range covers only speeds up to about 600 units/s (models reach 900–1,500).
+- **Measured** (train-54, train-48, train-52 at g150):
+  - speed median 200–300 units/s, p90 470–640, maximum 900–1,500;
+  - two of the three models never used more than 90 % thrust.
+- **New plan:**
+  - step 6, setup switches (absent = off): `encoding: "v2"`, Gaussian `mutation`, `parents`,
+    `initRange`, sensor `mode: "time"`, `nearest.pad: "flag"`;
+  - step 7, task v2 by decision: crash cost 3,000, 2 rocks in line, 80 scattered, 16 + 8 episodes,
+    6 held-out, seeds 1–10;
+  - experiments E3 noise floor v2, E4 learner, E5 sensors again, E6 capacity, E7 confirmation.
+- **Scope:** network size and part of the mutation and selection work moved from M6 to M4
+  (roadmap updated).
+- **Mistake:** when the user asked about model size, I answered with a proposal and a scheduling
+  question instead of a direct recommendation. The user had to ask again. The recommendation is
+  yes: change the layers, in E6, after the setup fixes.

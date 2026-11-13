@@ -1,6 +1,7 @@
 # M4 — Perception
 
-Status: 🟡 in progress (approved 2026-11-13). Roadmap: [`../ROADMAP.md`](../ROADMAP.md)
+Status: 🟡 in progress (approved 2026-11-13; rewritten 2026-11-13 after E2, see "Changes to this
+plan"). Roadmap: [`../ROADMAP.md`](../ROADMAP.md)
 
 ## Goal
 
@@ -10,7 +11,9 @@ so M4 is built as experiments:
 1. a **harness**: switchable model variants compared on matched seeds by their race-exam score, using
    Evo Lab's experiments;
 2. **candidate sensors**, each a switch;
-3. **experiments** that pick the sensing (and the network size it needs) by a decision rule written
+3. a **training setup that can learn from sensors**: input encoding, mutation, selection and the
+   training task, reviewed and fixed where it holds learning back;
+4. **experiments** that pick the sensing and the network size it needs, by a decision rule written
    down before the runs.
 
 Done means a sensing setup that measurably cuts crashes and improves the race exam over today's
@@ -20,144 +23,172 @@ blind models, chosen by experiment, and the default for M5's content work.
 
 M3 showed the exam's biggest failure: **crash loops**. A rock lies on the straight line between two
 checkpoints, the model flies into it, respawns at the last checkpoint and repeats it 35 to 68 times.
-Today's inputs are target angle, target distance, velocity angle and speed, so nothing tells a model
-that a rock is there. Obstacle-heavy content (M5's `gauntlet`, `corridor`, `field`) would mostly
+Without sensors nothing tells a model that a rock is there. Obstacle-heavy content (M5) would mostly
 measure that blindness.
 
-## Today
+## Where we are (after E2)
 
-- Model inputs come from a registry (`INPUTS` in `model-spec.ts`); a model's JSON lists the inputs it
-  uses. Adding an input is one registry entry, but inputs see only the ship and the current target.
-- The bot keeps a copy of the world from server messages, but **drops asteroids** (it "doesn't care"
-  about them). Collisions run on the server.
-- Arenas: `legacy`, `point-to-point` (asteroids anywhere, optional). No arena forces avoidance.
-- The race exam is a separate Evo Lab method, so a training run has no race metric of its own.
-- Evo Lab experiments (from its `docs/experiments.md`):
-  - **switches:** a new idea is a config key. Off means absent from the config, and with every
-    switch off the code must reproduce the baseline byte for byte. A **baseline gate** re-runs stored
-    baseline runs first and blocks the experiment on any difference.
-  - **designs:** matched seeds per arm; one-at-a-time, leave-one-out or factorial (up to 6
-    switches), or a pure measurement over seeds.
-  - **decision:** a screen generation, continuation of the informative arms, and a decision rule
-    (paired effect per seed beyond k × noise). Then a report and an explicit sign-off.
-  - A switch key may not appear in the method's default config in `lab.config.json`.
+Steps 1–5 are done; E1 and E2 are closed (details in `HISTORY.md`).
+
+- **E1 noise floor:** blind models at g150: exam 66,400 ± 28,200 over 5 seeds; crashes 611 ± 108.
+- **E2 sensors, one at a time:**
+  - `lineCheck` (2 inputs) was clearly better at g50 and g100. At g150 it missed the decision rule
+    (2 of 5 seeds), but it cut exam crashes in 4 of 5 seeds.
+  - `whiskers`, `sectors` and `nearest` (7–9 inputs) showed no clear difference at g50.
+- **The sensors work.** They fire where there are rocks. The best model (train-54) falls back to
+  blind-model crashes (596 instead of 136) when its lineCheck inputs are zeroed.
+- **The review after E2 found problems in the training setup itself.** Fixing them first makes the
+  sensor and capacity questions fair:
+
+| Area | Today | Problem |
+| --- | --- | --- |
+| Angle inputs | half turns, −1..1 | jump from +1 to −1 directly behind the ship |
+| Velocity inputs | angle + speed | the angle is noise when the ship is slow |
+| Distance inputs | ÷ 1000, no ceiling | 0–4 in the exam; typical values are small |
+| Input scale | speed mostly 0.2–0.3, lineCheck mostly 0–0.4 | small inputs need large weights |
+| Mutation | weight × (1 ± U(0,1)), rate 0.1 | a weight's sign almost never flips; weights drift toward 0 on average |
+| Selection | 1 parent + 99 children, 12 fresh episodes per generation | a lucky child replaces a good parent; scores jump between generations |
+| Crash cost | 500 per crash, against about 5,000 distance cost per episode | crashing through is cheap |
+| Training rocks | 1 rock in line; 20 scattered over about 3,000 × 3,000 | the exam's random tracks are about 5× denser |
+| Held-out | 2 scenarios | too few to read |
+| Sensor range | whiskers and sectors 600 | dodging takes about 1 s, so 600 only covers speeds up to about 600 units/s; models reach 900–1,500 in the exam |
+| Hidden layers | 10-8-6-4 | a narrow funnel for 30 inputs |
+| Seeds | 5 | exam differences between seeds are bimodal (−10,600 to +65,700 at g150) |
+
+Physics behind the numbers: there is no drag, thrust is 400 units/s², and turning is at most
+5 rad/s (a half turn takes 0.63 s). Measured speeds: median 200–300, p90 470–640, maximum 900–1,500.
 
 ## Steps
 
-Each step ends with `npm run check` green and its own commit.
+Each step ends with `npm run check` green and its own commit. Steps 1–5 are done (see Acceptance).
 
-### 1. Obstacles in the model's view
+### 1–5. Done
 
-- The bot keeps asteroids in its world copy. Sensors read what the client knows, as a player sees
-  the screen; they never read the server's state.
-- A spatial grid of obstacles on the client, so a sensor query costs about the same with 20 or 500
-  asteroids.
-- Input functions get the obstacles in their context (`InputContext.obstacles`).
-- Byte-identical baseline: with no sensors configured, training results do not change (test against
-  a stored result).
+1. Obstacles in the model's view: the bot keeps asteroids, a spatial grid, byte-identical baseline.
+2. Candidate sensors: `whiskers`, `sectors`, `nearest`, `lineCheck`, each a switch, drawn in the
+   viewer; `hidden` as a switchable key.
+3. `rock-in-line` arena; `crashMode: "respawn"`.
+4. The race exam inside training runs (`exam` switch).
+5. The harness: experiment plans in `experiments/`, `doc/experiments.md`, `stateHash` for the gate.
 
-### 2. Candidate sensors (each a switch)
+### 6. Training setup switches
 
-All angles relative to the ship's nose, distances scaled to 0..1 by a range, deterministic.
-Parameters (count, range) are part of the switch value.
+Every item is a config key that is **absent when off**. With all of them absent, training
+reproduces the stored baseline results byte for byte (existing fixtures and the Evo Lab gate).
 
-| Sensor | Inputs | Idea |
+| Key | Values | What it does |
 | --- | --- | --- |
-| `whiskers` | N rays (e.g. 7 over ±90°), 1 − distance / range to the first obstacle hit | Classic ray sensors; cheap; can miss small rocks between rays. |
-| `sectors` | N sectors around the ship, nearest obstacle edge per sector | Like whiskers, but covers whole areas. |
-| `nearest` | the k nearest obstacles: angle, distance, radius | Precise, but which rock is "nearest" jumps around. |
-| `lineCheck` | the first obstacle on the path to the target: distance along it, sideways offset | Aimed directly at crash loops. |
+| `encoding: "v2"` | absent = today | Angles as sin and cos (no jump behind the ship). Velocity as forward and sideways speed in the ship's frame, ÷ 500. Target distance squashed: `d / (d + 500)`. Inputs then use about −1..1. Stored in the model spec, so the game feeds models correctly. |
+| `mutation: { kind: "gaussian", sigma, rate }` | absent = relative | Adds N(0, σ) to a weight with probability `rate`. Unbiased, and signs can flip. Default σ 0.2. |
+| `parents: μ` | absent = 1 | (μ + λ) selection: the best μ of the generation are kept, each gets (sample − μ) / μ children. |
+| `initRange` | absent = 1 | Range of the random starting weights. |
+| Sensor `mode: "time"` | absent = distance | `whiskers`, `sectors` and `lineCheck` report closeness in time to impact (distance ÷ closing speed, capped at `horizon` s, default 2) instead of distance. The value is still 0 for nothing and 1 for touching. |
 
-- Config: `sensors: { whiskers: { count: 7, spread: 180, range: 600 } }` and so on, absent by default.
-  The worker appends the sensors' inputs to the model spec, so model files record them and the
-  game's bots feed them correctly.
-- `hidden` for capacity experiments becomes a switchable top-level key (`hidden`, absent = the
-  model's default), because Evo Lab rejects switches on keys in the method's default config. The
-  `model` block leaves the defaults in `lab.config.json`; the worker keeps the same defaults.
-- The replay viewer draws a model's sensors (rays, sectors, the nearest rocks), so we can see what a
-  model sees.
+- **`nearest` padding:** an empty slot reads (0, 0, 0) with an added "present" flag, so "no rock"
+  differs from "a rock far ahead". This is a format change, so it ships as `nearest: { pad: "flag" }`
+  (absent = today).
+- Tests cover each switch: determinism, exact resume, spec round trip, and that the game's bot feeds
+  a v2 model the same inputs as the trainer.
+- The viewer and the Evo Lab plugin keep working with v2 models (rebuild the plugin).
 
-### 3. An arena that demands avoidance
+### 7. Training task v2 (config values, no new code)
 
-- `rock-in-line` (moved here from the content milestone): each episode puts one or more rocks on or
-  near the direct line to the target, with params for count, size and offset. Optional extra
-  scattered asteroids.
-- Crashes respawn at the episode start (`crashMode: "respawn"`), like the game, so crash loops show
-  up in training as they do in races.
+The training task is ordinary config: scoring weights, arena parameters, `heldOut`. These are changed
+by decision, not by a screen, because they change what is measured:
 
-### 4. Race metrics inside training runs
+- `scoring.crashes` 500 → **3,000**, so a crash costs more than a detour around the rock.
+- `rock-in-line`: `rocks` 1 → **2**; `point-to-point`: `asteroids` 20 → **80**, closer to the exam's
+  density.
+- Episodes 8 + 4 → **16 + 8** per generation (less luck in selection).
+- `heldOut` 2 → **6**.
+- **Seeds 1–10** from here on.
 
-- Optional `exam` in the training config (`exam: { every: 10, randomTracks: 15 }`): every N
-  generations, and always at the last one, the winner flies the race exam. The `gen` event gets
-  `exam`, `examCheckpoints`, `examFinished` and `examCrashes`. This makes experiment decisions about
-  racing possible.
-- The exam does not touch training state, so `result.json` and exact resume stay unchanged (tested).
-  Cost: about 3 s per exam with 15 random tracks.
+The numbers are working defaults, checked once with a short run (a crash costs more than a detour; a
+generation takes under 15 s). If the check fails, the plan is edited and the history says why.
 
-### 5. The harness: experiment plans
+### 8. Experiments (revised)
 
-- Experiments live in `lab/experiments/<id>/plan.md` (Evo Lab's format), created through its API or
-  the `lab` CLI. A short guide in `doc/experiments.md` covers how we write them: baseline config,
-  switches, seeds, screen and final generations, decision rule.
-- A small helper (`npm run experiment -- draft <id>`) writes a plan skeleton with our usual baseline
-  config, so starting a new comparison takes minutes.
-- Fresh baseline runs with the M4 code (needed for the gate), seeds 1 to 5.
+Each experiment is approved before it runs. **Decision:** the paired exam effect (`exam`, lower is
+better) at the final generation, beyond 2 × paired noise and `minEffect`, with ≥ 80 % of seeds
+better. Exam crashes are always reported. A switch that wins on exam but raises crashes is flagged,
+not adopted.
 
-### 6. Experiments
+1. **E1 noise floor** ✅ (blind, task v1).
+2. **E2 sensors** ✅ (task v1, 5 seeds): `lineCheck` better early and fewer crashes; the others not
+   at today's size.
+3. **E3 noise floor v2 (measurement):** the task v2 config with `lineCheck`, seeds 1–10, g150. This
+   gives the new baseline, its spread and `minEffect`, and is the gate baseline for E4–E6.
+4. **E4 learner (one-at-a-time):** against E3's baseline, switches `encoding`, `mutation`, `parents`
+   and `lineCheck.mode: "time"`. Screen at g50, final at g150. Winners join the baseline. If two or
+   more win, a confirmation run of them together follows (one arm, 10 seeds).
+5. **E5 sensors again (one-at-a-time):** on the E4 setup, add `whiskers`, `sectors` (both
+   `mode: "time"` if E4 adopted it) and `nearest` (flag padding), one at a time. Does richer sensing
+   pay off once the learner is fixed?
+6. **E6 capacity (multi-level switch `hidden`):** on the E5 setup, `[16]`, `[32]`, `[16,16]` and
+   `[32,32]` against 10-8-6-4. Optional arm: a pretrained start (a trained model with new inputs
+   added as zero weights), if E5 adopts a new sensor.
+7. **E7 confirmation:** the chosen setup trained to g300, re-examined, and watched in the viewer on
+   the crash-loop tracks. Then it is a candidate for the game (your call, per `CLAUDE.md`).
 
-Each is approved before it runs. The decision metric is `exam` (lower is better) at the final
-generation, with crash counts reported alongside.
-
-1. **E1 noise floor (measurement):** the baseline config over seeds 1 to 5, exam every 10
-   generations. How much do exam scores vary between seeds? This sets `minEffect` for the others.
-2. **E2 sensor comparison (one-at-a-time):** `whiskers`, `sectors`, `nearest` and `lineCheck`, each
-   against the blind baseline, on `rock-in-line` + point-to-point with asteroids. Screen at 50,
-   final at 150. Decision: a sensor wins if its paired exam effect beats k × noise and `minEffect`,
-   and it lowers exam crashes.
-3. **E3 capacity (one-at-a-time):** the E2 winner with bigger hidden layers (e.g. `[16, 12, 8]`,
-   `[24, 16]`) against the E2 winner as is.
-4. **E4 confirmation:** the chosen setup trained longer (300 generations), re-examined, and watched
-   in the viewer on the crash-loop tracks. Then it is a candidate for the game (your call, per
-   `CLAUDE.md`).
+Budget: about 10 runs (E3) + 50 (E4) + 30 (E5) + 50 (E6) + 10 (E7). At about 20 minutes per run
+(the v2 task doubles the episodes) and 5 parallel slots, that is about 12 hours of wall time, run in
+the background, one experiment at a time.
 
 Experiments may be added or changed as results come in; each change goes into the history.
 
 ## Acceptance
 
-- [ ] Steps 1–5 committed, `npm run check` green, CI green.
-- [ ] With no sensors, training reproduces a stored baseline result byte for byte (test and Evo Lab
-      gate).
-- [ ] Four sensors, deterministic, drawn in the viewer, exact replay with sensors (tests).
-- [ ] `rock-in-line` arena and the in-training exam metric in place (tests).
-- [ ] E1–E3 run through Evo Lab experiments with approved plans, reports and sign-offs; E4 done.
-- [ ] A chosen sensing setup recorded in `HISTORY.md` and the roadmap, with its exam and crash
-      numbers against the blind baseline.
+- [x] Steps 1–5 committed with `npm run check` green. (CI: pending; nothing has been pushed yet.)
+- [x] With no sensors, training reproduces a stored baseline result byte for byte (test, and the
+      Evo Lab gate in E2).
+- [x] Four sensors, deterministic, drawn in the viewer, exact replay with sensors (tests).
+- [x] `rock-in-line` arena and the in-training exam metric in place (tests).
+- [x] E1 and E2 run through Evo Lab experiments with plans, reports and sign-offs.
+- [ ] Step 6 committed: every setup switch absent = byte-identical baseline; tests per switch.
+- [ ] Step 7: task v2 checked and recorded.
+- [ ] E3–E6 run with approved plans, reports and sign-offs; E7 done.
+- [ ] A chosen setup (sensing, encoding, learner, network size) recorded in `HISTORY.md` and the
+      roadmap, with its exam and crash numbers against the blind baseline.
+- [ ] CI green after the user asks for a push.
 
 ## Not in M4
 
 - Track files, new tracks, the track picker and the other arenas: M5.
-- Lookahead to the next checkpoint, curriculum, mutation strategy: M6.
-- Changing the game's respawn rule.
-- Shipping a model into the game (decided by you after E4).
+- Lookahead to the next checkpoint, curriculum, crossover, rate and strength schedules: M6.
+- Changing the game's physics (thrust, turn rate, ship size) or respawn rule.
+- Shipping a model into the game (decided by you after E7).
 
 ## Open questions
 
 | Question | Default in this plan |
 | --- | --- |
 | Are sensors fair, given human players see the screen but have no rays? | Allowed: they read only what the client knows (the visible world). Revisit before a model ships into the game. |
-| What counts as "measurably better"? | Paired exam effect beyond 2 × noise and E1's `minEffect`, and fewer exam crashes, on 5 seeds. |
-| How many seeds per arm? | 5 (Evo Lab recommends 3 to 5). |
-| Budget: E2 is 5 arms × 5 seeds × 150 generations: 25 runs of about 11 minutes, 4–5 CPU-hours. | Fine on the machine runner in the background (about an hour of wall time with parallel slots). |
+| What counts as "measurably better"? | Paired exam effect beyond 2 × noise and `minEffect`, ≥ 80 % of 10 seeds, crashes not worse. |
+| Should crashes be the decision metric instead of the exam score? | No: exam stays primary; crashes are reported and can veto. Their paired noise is far lower, so they are the first thing to look at. |
+| Are the task v2 numbers right (crash cost 3,000, density, episodes)? | Working defaults; checked once in step 7, changed with a history note if wrong. |
 
 ## Risks
 
-- **Byte-identical baseline** is strict: any change in the bot's message handling (now keeping
-  asteroids) could shift a floating-point step. Caught by the test and the gate; fixed before
-  anything else runs.
-- **Speed:** sensors add work per bot and frame (100 bots × rays × nearby rocks). The spatial grid
-  keeps it local; generation time is measured with and without sensors.
-- **No sensor wins clearly**, e.g. because the network is too small to use the new inputs, or
-  training is too short. E3 covers capacity; longer runs are a follow-up. A null result is recorded
-  as such.
-- **Exam noise** may hide real effects (crash loops make it jumpy). 15 random tracks and 5 seeds
-  should help; E1 measures how much.
+- **Byte-identical baseline** with five new switches: any switch that leaks into the default path
+  breaks the gate. Caught by the fixtures and the gate before experiments run.
+- **The game must feed v2 models correctly**: the encoding lives in the model spec, and a test
+  compares the game bot's inputs with the trainer's.
+- **Cost doubles** with the v2 task. If a run takes much longer than 20 minutes, episodes go back
+  to 12 + 6, noted in the history.
+- **Too many changes at once:** the task (step 7) changes by decision, the learner (E4) by
+  experiment. E3 re-measures the baseline, so later effects are not confused with the task change.
+- **No sensor or size wins clearly.** A null result is recorded as such; `lineCheck` stays the
+  default.
+
+## Changes to this plan
+
+- **2026-11-13, after E2** (asked by the user):
+  - **Why:** E2 left the richer sensors untested in a fair setting. The user asked whether the
+    model size is right and whether the inputs and training parameters are sensible. The review
+    found the problems in the table above.
+  - **Added:** step 6 (setup switches) and step 7 (task v2).
+  - **Experiments:** E3 became a new noise floor; E4 (learner), E5 (sensors again) and E6
+    (capacity) are new; confirmation became E7.
+  - **Scope:** network size and part of the mutation and selection work moved here from M6. The
+    old E3 capacity design (`[16, 12, 8]`, `[24, 16]`) was replaced by E6.
+  - **Seeds:** 5 → 10.

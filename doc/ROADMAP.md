@@ -74,7 +74,10 @@ by experiment, how a model should sense obstacles:
   check), a `rock-in-line` arena that demands avoidance, and an exam metric inside training runs;
 - a variant harness on Evo Lab experiments: matched seeds, a baseline gate, a decision rule on the
   race exam;
-- experiments: noise floor, sensor comparison, network capacity for the winner.
+- a training setup that can learn from sensors (input encoding, mutation, selection, the
+  training task), fixed after the E2 review;
+- experiments: noise floor, sensor comparison, learner fixes, sensors again, network capacity.
+  E1 and E2 are done; the plan was rewritten after E2.
 
 ### M5 — Content ⬜
 
@@ -92,8 +95,8 @@ Each one is an Evo Lab experiment, compared against a baseline on the race exam:
 
 1. Curriculum (tiered arenas) vs the current single course.
 2. Inputs: lookahead to the next target and beyond (obstacle sensing is M4).
-3. Network size and shape.
-4. Mutation and population strategy (rate and strength schedules, (μ+λ), crossover).
+3. Mutation and population strategy beyond M4 (rate and strength schedules, crossover). Network
+   size, Gaussian mutation and (μ+λ) selection moved to M4.
 5. Latency and robustness (delayed inputs, noise).
 
 ## Open questions
