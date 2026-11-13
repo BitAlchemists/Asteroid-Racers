@@ -25,7 +25,14 @@ import {
   type TrainingServiceOptions,
 } from "./index";
 import { MajorTom } from "./network";
-import { LEGACY_SCORING, parseScoring, scoreEpisodes, successRate, type EpisodeRecord } from "./scoring";
+import {
+  LEGACY_SCORING,
+  meanTurn,
+  parseScoring,
+  scoreEpisodes,
+  successRate,
+  type EpisodeRecord,
+} from "./scoring";
 
 async function drive(server: GameServer, director: TrainingDirector): Promise<void> {
   await server.start();
@@ -126,9 +133,42 @@ describe("arenas", () => {
 
 describe("scoring", () => {
   const records: EpisodeRecord[] = [
-    { targets: 1, reached: 1, frames: 100, crashes: 0, distance: 50, progress: 400 },
-    { targets: 2, reached: 0, frames: 200, crashes: 1, distance: 300, progress: -20 },
+    {
+      targets: 1,
+      reached: 1,
+      frames: 100,
+      crashes: 0,
+      distance: 50,
+      progress: 400,
+      rotation: 6,
+      flownFrames: 100,
+    },
+    {
+      targets: 2,
+      reached: 0,
+      frames: 200,
+      crashes: 1,
+      distance: 300,
+      progress: -20,
+      rotation: 9,
+      flownFrames: 100,
+    },
   ];
+
+  it("scoring.rotation charges turning per radian; absent leaves the score unchanged", () => {
+    const base = { distance: 0, success: 0, time: 0, crashes: 0 };
+    expect(scoreEpisodes(records, base, 0.015)).toBe(0);
+    expect(scoreEpisodes(records, { ...base, rotation: 10 }, 0.015)).toBe(150);
+    expect(parseScoring({ rotation: 20 })).toMatchObject({ rotation: 20 });
+    expect(parseScoring({ distance: 1 })).not.toHaveProperty("rotation");
+    expect(() => parseScoring({ rotation: -1 })).toThrow(/≥ 0/);
+  });
+
+  it("meanTurn: mean |turn output| over the frames flown (1 = always turning at full rate)", () => {
+    // 15 rad over 200 flown frames of 15 ms = 3 s, at max 5 rad/s → 15 / 15 = 1.
+    expect(meanTurn(records, 0.015, 5)).toBeCloseTo(1, 12);
+    expect(meanTurn([], 0.015, 5)).toBe(0);
+  });
 
   it("is a weighted sum of distance, missed targets, seconds and crashes", () => {
     expect(scoreEpisodes(records, LEGACY_SCORING, 0.015)).toBe(350);

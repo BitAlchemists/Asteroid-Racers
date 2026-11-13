@@ -18,6 +18,13 @@ export interface EpisodeRecord {
    * telescopes to start distance − end distance. Respawns and target switches do not count.
    */
   progress: number;
+  /**
+   * Turning done, in radians: ∫ |rotation speed| dt over the frames flown (not over the time charged
+   * after an episode-ending crash). Full-rate spinning (5 rad/s) for a 9 s episode is 45 rad.
+   */
+  rotation: number;
+  /** Frames actually flown (frames minus the time charged after an episode-ending crash). */
+  flownFrames: number;
 }
 
 /** Weights of the score terms. The score is a weighted sum; lower is better. */
@@ -35,6 +42,11 @@ export interface ScoringWeights {
    * absent from configs that do not set it, so older results stay byte-identical.
    */
   progress?: number;
+  /**
+   * Cost per radian of {@link EpisodeRecord.rotation}: discourages constant spinning. Absent = 0, and
+   * absent from configs that do not set it, so older results stay byte-identical.
+   */
+  rotation?: number;
 }
 
 /** The original evaluator (QuadraticSumOfDistanceToTargets): distance only. */
@@ -45,7 +57,7 @@ export function parseScoring(raw: unknown): ScoringWeights {
   if (typeof raw !== "object" || raw === null) throw new Error("scoring must be an object of weights");
   const weights: ScoringWeights = { ...LEGACY_SCORING, distance: 0 };
   for (const [key, value] of Object.entries(raw)) {
-    if (!(key in weights) && key !== "progress")
+    if (!(key in weights) && key !== "progress" && key !== "rotation")
       throw new Error(`unknown scoring term ${JSON.stringify(key)}`);
     if (typeof value !== "number" || !Number.isFinite(value) || value < 0)
       throw new Error(`scoring.${key} must be a number ≥ 0`);
@@ -67,8 +79,27 @@ export function scoreEpisodes(
       weights.time * r.frames * tickSeconds +
       weights.crashes * r.crashes;
     if (weights.progress) score -= weights.progress * r.progress;
+    if (weights.rotation) score += weights.rotation * r.rotation;
   }
   return score;
+}
+
+/**
+ * How much of the time the ship turns at full rate, 0..1: the mean |turn output| over the frames
+ * flown, i.e. rotation ÷ (maxRotationSpeed × seconds). A "spin and pulse" controller reads about 1.
+ */
+export function meanTurn(
+  records: readonly EpisodeRecord[],
+  tickSeconds: number,
+  maxRotationSpeed: number,
+): number {
+  let rotation = 0;
+  let frames = 0;
+  for (const r of records) {
+    rotation += r.rotation;
+    frames += r.flownFrames;
+  }
+  return frames > 0 ? rotation / (maxRotationSpeed * frames * tickSeconds) : 0;
 }
 
 /** Share of all targets that were reached (0..1). */

@@ -25,12 +25,14 @@ import type { ModelStore } from "./model-store";
 import { CmaEs, flatWeights, setFlatWeights, type CmaEsJson, type CmaEsOptions } from "./cmaes";
 import { MajorTom, type CrossoverKind } from "./network";
 import {
+  meanTurn,
   LEGACY_SCORING,
   scoreEpisodes,
   successRate,
   type EpisodeRecord,
   type ScoringWeights,
 } from "./scoring";
+import { MAX_BOT_ROTATION_SPEED } from "./target-vehicle-controller";
 import { ScriptState, type Script, type ScriptHost } from "./scripts";
 import { buildTraces, type ArenaTrace } from "./trace";
 
@@ -154,6 +156,8 @@ export interface GenerationReport {
   worstScore: number;
   /** Share of training targets the winner reached (0..1). */
   success: number;
+  /** The winner's mean |turn output| over its training flights, 0..1 (1 = always spinning at full rate). */
+  spin: number;
   /** The winner's flights through this generation's training scenarios, for drawing. */
   trace: ArenaTrace[];
   /** The winner's score on the held-out scenarios (when there are any). */
@@ -599,6 +603,7 @@ export class TrainingDirector extends AIDirector {
       meanScore: scored.reduce((sum, s) => sum + s.score, 0) / scored.length,
       worstScore: scored.at(-1)!.score,
       success: successRate(best.records),
+      spin: meanTurn(best.records, this.tickSeconds, MAX_BOT_ROTATION_SPEED),
       trace: buildTraces(
         runs.map((run) => run.arena.name),
         scenarios,

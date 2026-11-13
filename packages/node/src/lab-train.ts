@@ -540,6 +540,7 @@ async function main(): Promise<void> {
       mean: report.meanScore,
       worst: report.worstScore,
       success: report.success,
+      spin: report.spin,
       ...(report.heldOutScore === undefined
         ? {}
         : { heldOut: report.heldOutScore, heldOutSuccess: report.heldOutSuccess }),

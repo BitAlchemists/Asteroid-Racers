@@ -89,9 +89,11 @@ export class ArenaScript extends Script {
 
     const distance = ship.position.distanceTo(target.position);
     record.distance += (distance + Math.abs(ship.rotationSpeed)) * dt;
+    record.rotation += Math.abs(ship.rotationSpeed) * dt;
     if (this.lastDistance !== undefined) record.progress += this.lastDistance - distance;
     this.lastDistance = distance;
     record.frames++;
+    record.flownFrames++;
     if ((record.frames - 1) % PATH_EVERY === 0) addPathPoint(this.path, ship.position.x, ship.position.y);
 
     if (this.crashed) {
@@ -147,6 +149,8 @@ export class ArenaScript extends Script {
       crashes: 0,
       distance: 0,
       progress: 0,
+      rotation: 0,
+      flownFrames: 0,
     };
     this.placeShip(episode.spec);
     if (this.vehicle) {

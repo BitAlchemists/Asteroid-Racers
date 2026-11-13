@@ -154,6 +154,16 @@ describe("ArenaReplay", () => {
       },
     ],
     [
+      "rock-in-line with respawns and a rotation cost",
+      {
+        arenas: [{ name: "rock-in-line", params: { episodes: 3 } }],
+        frames: 200,
+        collisions: "obstacles",
+        crashMode: "respawn",
+        scoring: { distance: 1, success: 1000, time: 0, crashes: 500, rotation: 20 },
+      },
+    ],
+    [
       "the legacy course",
       {
         arenas: [{ name: "legacy" }],

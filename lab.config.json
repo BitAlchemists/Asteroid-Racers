@@ -96,6 +96,10 @@
     "shipSteps": {
       "direction": "min",
       "label": "Speed: ship-steps simulated in the generation (timing only)"
+    },
+    "spin": {
+      "label": "Spin: mean |turn output| of the winner (1 = always turning at full rate)",
+      "direction": "min"
     }
   },
   "leaderboard": {

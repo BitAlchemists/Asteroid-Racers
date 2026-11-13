@@ -1028,6 +1028,34 @@ describe("evo-lab worker (protocol v1)", () => {
     expect(examOf(resumed, 4)).toBe(examOf(withExam, 4));
   }, 180_000);
 
+  it("rotation cost and spin metric: spin on every gen event (0..1), scoring.rotation changes the run, resume exact", async () => {
+    const base = { sample: 6, frames: 60, arenas: [{ name: "point-to-point", params: { episodes: 2 } }] };
+    const plain = newRun(base);
+    expect(await run(plain, ["--to", "3"])).toBe(0);
+    const spins = events(plain)
+      .filter((e) => e.type === "gen")
+      .map((e) => (e.metrics as { spin: number }).spin);
+    expect(spins).toHaveLength(3);
+    for (const s of spins) {
+      expect(s).toBeGreaterThanOrEqual(0);
+      expect(s).toBeLessThanOrEqual(1);
+    }
+    const config = { ...base, scoring: { distance: 1, rotation: 50 } };
+    const straight = newRun(config);
+    expect(await run(straight, ["--to", "4"])).toBe(0);
+    const resumed = newRun(config);
+    expect(await run(resumed, ["--to", "2"])).toBe(0);
+    expect(await run(resumed, ["--resume", "--to", "4"])).toBe(0);
+    expect(result(resumed)).toBe(result(straight));
+    const hashes = (dir: string) =>
+      events(dir)
+        .filter((e) => e.type === "gen")
+        .map((e) => e.stateHash);
+    const withoutCost = newRun({ ...base, scoring: { distance: 1 } });
+    expect(await run(withoutCost, ["--to", "4"])).toBe(0);
+    expect(hashes(straight)).not.toEqual(hashes(withoutCost));
+  }, 120_000);
+
   it("rejects unknown arenas and bad config values before running", async () => {
     for (const [config, message] of [
       [{ arenas: [{ name: "moon" }] }, /unknown arena/],
@@ -1045,6 +1073,7 @@ describe("evo-lab worker (protocol v1)", () => {
       [{ mutation: { kind: "gaussian", sigma: 0 } }, /sigma/],
       [{ sample: 10, parents: 3 }, /parents/],
       [{ initRange: -1 }, /initRange/],
+      [{ scoring: { rotation: -1 } }, /scoring.rotation/],
       [{ optimizer: { kind: "nes" } }, /optimizer.kind/],
       [{ optimizer: { kind: "cmaes", population: 2 } }, /population/],
       [{ optimizer: { kind: "cmaes", sigma: 0 } }, /optimizer.sigma/],
