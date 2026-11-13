@@ -33,6 +33,7 @@ export * from "./ai-game-client";
 export * from "./arena-script";
 export * from "./arenas";
 export * from "./tier-arenas";
+export * from "./scripted-controller";
 export * from "./cmaes";
 export * from "./scoring";
 export * from "./sensors";

@@ -2,7 +2,7 @@
   "name": "asteroid-racers",
   "private": true,
   "type": "module",
-  "description": "Multiplayer space racing in the browser — Node.js/TypeScript port",
+  "description": "Multiplayer space racing in the browser \u00e2\u20ac\u201d Node.js/TypeScript port",
   "engines": {
     "node": ">=22"
   },
@@ -25,7 +25,8 @@
     "bot": "npm run bot -w @ar/node --",
     "exam": "npm run exam -w @ar/node --",
     "experiment": "npm run experiment -w @ar/node --",
-    "iqm": "npm run iqm -w @ar/node --"
+    "iqm": "npm run iqm -w @ar/node --",
+    "scripted": "npm run scripted -w @ar/node --"
   },
   "devDependencies": {
     "@bufbuild/buf": "^1.75.0",

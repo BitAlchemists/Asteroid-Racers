@@ -11,7 +11,8 @@
     "bot": "tsx src/bot.ts",
     "exam": "tsx src/exam.ts",
     "experiment": "tsx src/experiment.ts",
-    "iqm": "tsx src/iqm.ts"
+    "iqm": "tsx src/iqm.ts",
+    "scripted": "tsx src/scripted-baseline.ts"
   },
   "dependencies": {
     "@ar/shared": "*",

@@ -178,6 +178,30 @@ came from (the scoring). Two parts, in this order.
   - **2.1 is therefore a prerequisite for 2.6 and 3.1:** they run on 2.1's adopted scoring (or with
     the progress term in their baseline if 2.1 is still open).
 
+**Diagnostic: scripted steering baseline (2026-11-13, `npm run scripted`).** A hand-written
+controller (steer onto the velocity error, brake before the target, sidestep when `lineCheck` sees a
+rock) flew exactly the same evaluation as M4's best model train-327 g300 (seed 8): training
+scenarios g291–300 at the full task level, its held-out scenarios, and the 102-race exam. Per
+episode, lower is better:
+
+| | training score (ours) | targets | crashes | mean time to target | spin (|turn| > 0.9) |
+| --- | --- | --- | --- | --- | --- |
+| scripted | 8,707 | 160/240 | 339 | 4.04 s | 16 % |
+| train-327 g300 | 5,683 | 191/240 | 49 | 5.85 s | 100 % |
+
+- On the 135 training episodes both finished without a crash, the scripted controller scores
+  **2,186 vs 3,905** and arrives in **3.92 s vs 5.69 s**: our score already rewards steering speed
+  strongly (about 44 % per clean episode).
+- In the exam it finishes races in **29 s vs 66 s**, but reaches fewer checkpoints (87.3 % vs
+  94.5 %) and crashes more (1,243 vs 711), because its avoidance is crude.
+- The ranking does not flip under `time: 300` or `progress: 3`.
+- Another seed (train-325, seed 6) spins only 44 % of the time and is as fast as the scripted
+  controller on clean episodes, but crashes more: seeds find different trade-offs.
+- **Verdict: mainly a search problem (a local optimum), not a scoring problem.** Steering is worth a
+  lot under today's score, but the spinning lineage found good avoidance first and cannot reach
+  steering without passing through worse controllers. So 3.4 (start from steering) and 2.8 (push off
+  spinning) matter most; 2.3 (time pressure) matters less, because speed already pays.
+
 **Decision point 2:** the scoring weights, the curriculum rules and the level definitions. If more
 than 6 experiments are needed, 2a and 2b each get their own decision point.
 
@@ -188,8 +212,9 @@ than 6 experiments are needed, 2a and 2b each get their own decision point.
 | 3.1 | Lookahead | Does seeing the next legs make faster racers, trained with the `chain` arena, and which encoding learns better: the leg relative to the nose (`lookahead: 2`) or the turn at each target (`lookahead: { legs: 2, frame: "corner" }`)? | one-at-a-time, 2 arms (nose, corner), both against no lookahead | built (M6 step 1 and the corner frame, landed); `chain` arena (landed) |
 | 3.2 | Richer sensors | Do `whiskers`, `sectors` or `nearest` (`flag: 1`) next to `lineCheck` help on the stronger setup? | one-at-a-time, 3 arms | built (M4) |
 | 3.3 | Network size | Does a sensor that did not help in 3.2 pay off with more capacity (`hidden: [16]`, `[32]`), and is a linear network (`hidden: []`) enough for today's inputs? | one-at-a-time, only for the inputs where it matters | built |
+| 3.4 | Residual policy / heading output | Does starting from a competent scripted controller let evolution keep steering speed *and* learn avoidance, instead of settling on "spin and pulse"? | one-at-a-time, 2 arms: **residual** (the network's outputs are added, scaled, to the scripted controller's thrust/turn: `controller: { kind: "residual", scale: 0.5 }`); **heading** (the network outputs a desired heading offset and a throttle; a fixed P-controller turns towards it: `controller: { kind: "heading", gain: 3 }`) | **new code**: a `controller` switch (absent = today, byte-identical) stored in the model spec (`spec.controller`) so the game's bots feed it identically; reuses `scripted-controller.ts` (built for the diagnostic below) |
 
-**Decision point 3:** the inputs and the network size.
+**Decision point 3:** the inputs, the network size and the controller form.
 
 #### Phase 4: The learner: how evolution searches
 
@@ -357,3 +382,7 @@ so (`CLAUDE.md`).
   - 2.2 and 2.3 wait for value switches.
   - Phase 2's baseline is decided at decision point 1.
   - The race-legs reward trap makes 2.1 a prerequisite for 2.6 and 3.1.
+- **2026-11-13, scripted baseline and 3.4** (agreed with the user): a scripted steering controller
+  as a diagnostic (`npm run scripted`); its result (a search problem: steering pays under our score,
+  the learner is stuck in "spin and pulse") is recorded under phase 2, and experiment 3.4 (residual
+  policy / heading output) is added to phase 3.

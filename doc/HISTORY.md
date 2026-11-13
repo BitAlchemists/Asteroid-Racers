@@ -1333,3 +1333,24 @@ no tool. Measured:
   closes M5 itself. They are removed again in the next commit; its versions are authoritative. (My
   copy had wrongly said the arenas were not checked by eye and labelled the exam numbers 17-race;
   they are the 102-race exam v2.)
+### Scripted steering baseline: spin-and-pulse is a search problem
+
+- **Tool:** `npm run scripted` (`packages/node/src/scripted-baseline.ts`). The controller is
+  `packages/server/src/ai/scripted-controller.ts`, a pure policy plus a model adapter, so it runs
+  through the same training, held-out and exam code as any network. It is reusable for 3.4.
+- **Validation:** train-327 g300's exam result reproduced exactly (57,808, 94.5 %).
+- **Result** against train-327 g300, seed 8, training g291–300 at level 4, held-out and the
+  102-race exam:
+  - the scripted controller arrives 31 % faster on clean episodes (3.92 s vs 5.69 s, score 2,186 vs
+    3,905 per episode) and finishes exam races in 29 s vs 66 s;
+  - it crashes far more (training 339 vs 49; exam 1,243 vs 711), so it loses overall (8,707 vs
+    5,683 per training episode; exam 120,479 vs 57,808);
+  - the spin share is 16 % vs 100 %;
+  - the ranking holds under `time: 300` and `progress: 3`;
+  - train-325 (seed 6) spins 44 % of the time and matches the scripted speed, with more crashes.
+- **Verdict:** our score already rewards steering. The learner is stuck in a local optimum, with good
+  avoidance but spinning. Experiment 3.4 (residual policy / heading output) was added to the M6 plan,
+  and 2.8 (rotation cost) and 3.4 matter most.
+- **Tuning note:** the controller's dodge direction and cruise speed (450) were picked on 2
+  generations of the same scenarios, so it is a fair but not optimised baseline. Its avoidance only
+  sees the corridor to the target (`lineCheck`).
