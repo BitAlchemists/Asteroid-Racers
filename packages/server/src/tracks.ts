@@ -3,6 +3,9 @@ import type { RaceController } from "./race-controller";
 import type { Random } from "./random";
 import { generateAsteroidBelt, SceneController } from "./scene-controller";
 import { parseTrackFile, trackFromFile } from "./track-file";
+import canyon from "./tracks/canyon.json";
+import gauntlet from "./tracks/gauntlet.json";
+import slalom from "./tracks/slalom.json";
 
 /** Asteroids of the `random` track keep this much room around the start and every checkpoint. */
 const RANDOM_TRACK_CLEARANCE = 150;
@@ -58,7 +61,7 @@ const CODE_TRACKS: Readonly<Record<string, Track>> = {
  * Track files (`tracks/*.json`, format `asteroid-racers/track/v1`), bundled so the browser has them.
  * They are for the game and the watch page; the exam and training use only the tracks they name.
  */
-const TRACK_FILES: Readonly<Record<string, unknown>> = {};
+const TRACK_FILES: Readonly<Record<string, unknown>> = { slalom, gauntlet, canyon };
 
 /** Builds the file tracks; throws if a file is invalid or its name doesn't match its file name. */
 export function fileTracks(files: Readonly<Record<string, unknown>> = TRACK_FILES): Record<string, Track> {

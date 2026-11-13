@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { DEFAULT_EXAM, examFlights } from "./ai/exam";
 import { GameServer } from "./game-server";
 import { seededRandom } from "./random";
 import { trackByName, TRACKS } from "./tracks";
@@ -34,6 +35,22 @@ describe("tracks", () => {
     for (const rock of server.world.passiveCollisionEntities)
       for (const c of server.raceController!.checkpoints)
         expect(c.position.distanceTo(rock.position)).toBeGreaterThan(c.radius + rock.radius);
+  });
+
+  it("the track files are registered after the code tracks", () => {
+    expect(Object.keys(TRACKS)).toEqual(["demo", "short", "random", "slalom", "gauntlet", "canyon"]);
+  });
+
+  it.each(["slalom", "gauntlet", "canyon"])("%s is the same for every seed (no belts)", (name) => {
+    const layout = (s: GameServer) =>
+      [...s.world.entities.values()].map((e) => [e.type, e.position.x, e.position.y, e.radius]);
+    expect(layout(load(name, 1))).toEqual(layout(load(name, 2)));
+  });
+
+  it("the race exam flies only demo, short and random (new tracks stay out of the yardstick)", () => {
+    expect(new Set(examFlights(DEFAULT_EXAM).map((f) => f.track))).toEqual(
+      new Set(["demo", "short", "random"]),
+    );
   });
 
   it("rejects unknown names", () => {
