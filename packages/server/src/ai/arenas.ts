@@ -1,5 +1,7 @@
 import { Vector2 } from "@ar/shared";
 import { seededRandom, type Random } from "../random";
+import { between, numberParam, rangeParam, type ArenaParams } from "./arena-params";
+import { TIER_ARENAS } from "./tier-arenas";
 
 /** One place the ship has to fly to. */
 export interface TargetSpec {
@@ -27,7 +29,8 @@ export interface Scenario {
   episodes: EpisodeSpec[];
 }
 
-export type ArenaParams = Record<string, unknown>;
+export type { ArenaParams };
+export { numberParam };
 
 /**
  * A family of training scenarios. `generate` must use only `random` (no Math.random, no clock), so a
@@ -36,32 +39,15 @@ export type ArenaParams = Record<string, unknown>;
 export interface Arena {
   readonly name: string;
   readonly description: string;
+  /**
+   * Difficulty tier (M5): 0 = point to point, 1 = one flying skill (braking, turning, chains),
+   * 2 = obstacles to fly through, 3 = race-like. Absent for `legacy`.
+   */
+  readonly tier?: number;
   /** The same scenario every generation (the seed does not depend on the generation). */
   readonly fixed?: boolean;
   generate(random: Random, params: ArenaParams): Scenario;
 }
-
-/** Reads a number param, with a default and a range check. */
-export function numberParam(params: ArenaParams, key: string, fallback: number, min = -Infinity): number {
-  const value = params[key] ?? fallback;
-  if (typeof value !== "number" || !Number.isFinite(value) || value < min)
-    throw new Error(`arena param ${key} must be a number ≥ ${min}, got ${JSON.stringify(value)}`);
-  return value;
-}
-
-function rangeParam(params: ArenaParams, key: string, fallback: [number, number]): [number, number] {
-  const value = params[key] ?? fallback;
-  if (
-    !Array.isArray(value) ||
-    value.length !== 2 ||
-    !value.every((v) => typeof v === "number" && Number.isFinite(v)) ||
-    (value[0] as number) > (value[1] as number)
-  )
-    throw new Error(`arena param ${key} must be [min, max], got ${JSON.stringify(value)}`);
-  return value as [number, number];
-}
-
-const between = (random: Random, [min, max]: [number, number]) => min + random() * (max - min);
 
 /**
  * The original training course ("flux compensator"): targets at the center and three on each ring at
@@ -102,6 +88,7 @@ export const legacyArena: Arena = {
 export const pointToPointArena: Arena = {
   name: "point-to-point",
   description: "Fly from the origin to one random target per episode, optionally through asteroids",
+  tier: 0,
   generate(random, params) {
     const episodes = numberParam(params, "episodes", 8, 1);
     const distance = rangeParam(params, "distance", [300, 1500]);
@@ -149,6 +136,7 @@ export const pointToPointArena: Arena = {
 export const rockInLineArena: Arena = {
   name: "rock-in-line",
   description: "Point to point with rocks across the direct line: flying straight crashes",
+  tier: 0,
   generate(random, params) {
     const episodes = numberParam(params, "episodes", 8, 1);
     const distance = rangeParam(params, "distance", [600, 1400]);
@@ -210,6 +198,8 @@ export const ARENAS: Readonly<Record<string, Arena>> = {
   [legacyArena.name]: legacyArena,
   [pointToPointArena.name]: pointToPointArena,
   [rockInLineArena.name]: rockInLineArena,
+  // M5's tiered arenas: opt-in by name.
+  ...Object.fromEntries(TIER_ARENAS.map((arena) => [arena.name, arena])),
 };
 
 export function arenaByName(name: string): Arena {

@@ -17,6 +17,7 @@ import { TargetGenerator } from "./target-generator";
 export * from "./ai-game-client";
 export * from "./arena-script";
 export * from "./arenas";
+export * from "./tier-arenas";
 export * from "./scoring";
 export * from "./sensors";
 export * from "./trace";
