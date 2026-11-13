@@ -40,6 +40,8 @@ export class ReplayView {
   private readonly stars = new StarField(4000, 4000);
   private readonly nodes = new Map<number, Node>();
   private readonly trail = new Graphics();
+  /** What the model's obstacle sensors see, redrawn every frame above the trail. */
+  private readonly sensorLayer = new Graphics();
   /** A screen-size dot on the ship, so it stays visible when the camera is far out. */
   private readonly shipMarker = new Graphics();
   /** World scale the checkpoint rings were last drawn for (their line width stays ~2 px on screen). */
@@ -50,11 +52,13 @@ export class ReplayView {
   private shown: Replay | undefined;
   zoom = 0.6;
   camera: CameraMode = "follow";
+  /** Draw the model's obstacle sensors (when it has any). */
+  showSensors = true;
 
   constructor(private readonly app: Application) {
     this.stars.alpha = 0.6;
     app.stage.addChild(this.stars, this.world);
-    this.world.addChild(this.trail);
+    this.world.addChild(this.trail, this.sensorLayer);
   }
 
   /** Forget the trail (new segment, seek). */
@@ -121,6 +125,7 @@ export class ReplayView {
     }
     this.updateTrail(replay.ship);
     this.updateCamera(replay);
+    this.updateSensors(replay);
     const ship = replay.ship;
     this.shipMarker.clear();
     if (ship && this.world.scale.x < 0.4) {
@@ -187,6 +192,35 @@ export class ReplayView {
       }
       this.trail.stroke({ color: Color.LightBlue, width: 2 / this.world.scale.x, alpha: 0.6 });
     }
+  }
+
+  /**
+   * Unlit sensor segments faint grey, lit ones (an obstacle found there) orange-red, picked rocks
+   * as a yellow outline. Line widths stay constant on screen.
+   */
+  private updateSensors(replay: Replay): void {
+    const g = this.sensorLayer;
+    g.clear();
+    if (!this.showSensors || !replay.sensors) return;
+    const primitives = replay.sensors();
+    if (primitives.length === 0) return;
+    const px = 1 / (this.world.scale.x || 1);
+    for (const p of primitives) {
+      if (p.kind !== "segment" || p.lit) continue;
+      g.moveTo(p.x1, p.y1).lineTo(p.x2, p.y2);
+    }
+    g.stroke({ color: Color.LightGray, width: 1.5 * px, alpha: 0.25 });
+    for (const p of primitives) {
+      if (p.kind !== "segment" || !p.lit) continue;
+      g.moveTo(p.x1, p.y1).lineTo(p.x2, p.y2);
+    }
+    g.stroke({ color: Color.OrangeRed, width: 2 * px, alpha: 0.9 });
+    for (const p of primitives) {
+      if (p.kind !== "rock") continue;
+      g.circle(p.x, p.y, p.r + 4 * px);
+    }
+    g.stroke({ color: Color.Yellow, width: 2 * px, alpha: 0.9 });
+    this.world.addChild(g); // above the trail and the entities added since
   }
 
   private updateCamera(replay: Replay): void {

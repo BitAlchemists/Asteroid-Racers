@@ -56,7 +56,7 @@ function el<K extends keyof HTMLElementTagNameMap>(
 /**
  * Mounts a replay viewer into `parent`: a PixiJS canvas with a HUD line and (unless compact) a
  * controls bar. Keyboard shortcuts work only while the viewer has focus: space play/pause, ← →
- * previous/next segment, + − speed, c camera, r restart, mouse wheel zoom.
+ * previous/next segment, + − speed, c camera, s sensors, r restart, mouse wheel zoom.
  */
 export async function mountReplayViewer(
   parent: HTMLElement,
@@ -104,6 +104,7 @@ export async function mountReplayViewer(
   let speedSelect: HTMLSelectElement | undefined;
   let slider: HTMLInputElement | undefined;
   let cameraButton: HTMLButtonElement | undefined;
+  let sensorsButton: HTMLButtonElement | undefined;
   let sliding = false;
   if (!options.compact) {
     const bar = el("div", { className: "ar-bar" }, root);
@@ -128,6 +129,7 @@ export async function mountReplayViewer(
     for (const s of SPEEDS) el("option", { value: String(s), textContent: `${s}×` }, speedSelect);
     listen(speedSelect, "change", () => controller.setSpeed(Number(speedSelect!.value)));
     cameraButton = button("", "Camera (c)", () => toggleCamera());
+    sensorsButton = button("Sensors", "Show sensors (s)", () => toggleSensors());
     slider = el("input", { type: "range", min: "0", value: "0", title: "Time" }, bar);
     listen(slider, "input", () => (sliding = true));
     listen(slider, "change", () => {
@@ -138,6 +140,9 @@ export async function mountReplayViewer(
 
   const toggleCamera = () => {
     if (ui.view) ui.view.camera = ui.view.camera === "follow" ? "overview" : "follow";
+  };
+  const toggleSensors = () => {
+    if (ui.view) ui.view.showSensors = !ui.view.showSensors;
   };
 
   listen<KeyboardEvent>(root, "keydown", (e) => {
@@ -150,6 +155,7 @@ export async function mountReplayViewer(
       "-": () => controller.slower(),
       c: () => toggleCamera(),
       r: () => void controller.restart(),
+      s: () => toggleSensors(),
     };
     const action = actions[e.key];
     if (!action || (e.target as HTMLElement).tagName === "SELECT") return;
@@ -188,6 +194,7 @@ export async function mountReplayViewer(
     if (speedSelect && document.activeElement !== speedSelect) speedSelect.value = String(controller.speed);
     if (cameraButton && ui.view)
       cameraButton.textContent = ui.view.camera === "follow" ? "Follow" : "Overview";
+    if (sensorsButton && ui.view) sensorsButton.style.opacity = ui.view.showSensors ? "1" : "0.5";
     if (slider && !sliding) {
       slider.max = String(controller.segmentLength);
       slider.value = String(controller.segmentFrame);

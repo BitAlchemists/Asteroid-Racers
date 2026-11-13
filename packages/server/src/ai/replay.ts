@@ -9,6 +9,7 @@ import { AIDirector, placeScenario } from "./directors";
 import type { MajorTom } from "./network";
 import type { EpisodeRecord } from "./scoring";
 import { ScriptState, type Script } from "./scripts";
+import type { SensorPrimitive } from "./sensors";
 
 /** Where a replay stands, for a HUD. */
 export interface ReplayStatus {
@@ -41,6 +42,8 @@ export interface Replay {
   /** What the ship flies to now. */
   readonly target: Entity | undefined;
   status(): ReplayStatus;
+  /** What the model's obstacle sensors see now, in world coordinates (empty without sensors). */
+  sensors?(): SensorPrimitive[];
   /** Advances up to `frames` frames (stops early when done). */
   step(frames?: number): void;
   dispose(): void;
@@ -147,6 +150,10 @@ export class ArenaReplay implements Replay {
       seconds: (record?.frames ?? 0) * this.server.tickSeconds,
       done: this.done,
     };
+  }
+
+  sensors(): SensorPrimitive[] {
+    return this.script.vehicleController?.sensorPrimitives() ?? [];
   }
 
   step(frames = 1): void {

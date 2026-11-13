@@ -8,6 +8,7 @@ import { AIDirector } from "./directors";
 import type { MajorTom } from "./network";
 import { startScript, type Replay, type ReplaySource, type ReplayStatus } from "./replay";
 import { RaceTargetScript } from "./scripts";
+import type { SensorPrimitive } from "./sensors";
 import { addPathPoint, PATH_EVERY } from "./trace";
 
 /** Weights of the exam score (lower is better). */
@@ -178,6 +179,10 @@ export class ExamReplay implements Replay {
       seconds: this.frame * this.server.tickSeconds,
       done: this.done,
     };
+  }
+
+  sensors(): SensorPrimitive[] {
+    return this.script.vehicleController?.sensorPrimitives() ?? [];
   }
 
   step(frames = 1): void {

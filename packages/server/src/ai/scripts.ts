@@ -32,6 +32,11 @@ export abstract class Script {
 
   constructor(readonly network: MajorTom) {}
 
+  /** The bot's controller while the script runs (for viewers, e.g. to draw its sensors). */
+  get vehicleController(): TargetVehicleController | undefined {
+    return this.vehicle;
+  }
+
   async run(): Promise<void> {
     if (this.state !== ScriptState.READY) {
       log.warning(`run() called in state ${this.state}`);
