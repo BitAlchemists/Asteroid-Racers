@@ -809,3 +809,48 @@ train-87 2,670–4,959 tps (20 busy slots), train-109 11,544–12,892 tps.
 - **Decision:** the curriculum (`curriculum: {}`) joins the baseline for E4.
 - **Evo Lab:** E3b closed with the reason above. The screen rule stopped an arm whose effect only
   shows after its levels progress. For curriculum-style switches, a screen at g50 is too early.
+
+### E4 learner (m4-e4-learner): run, report saved, NOT signed off
+
+- **Plan** (commit 9c77011): baseline is E3b's winner (task v2 + lineCheck + `curriculum: {}`);
+  stored baseline runs train-98..107. Six one-at-a-time arms; seeds 1–10; screen g100; final g150.
+  Approved on the user's "Yes, start E4".
+- **Gate:** passed. All 10 baseline runs reproduced (stateHash g1–g5) on today's code, which
+  includes the S1 speed-ups, the viewer change and crashLimit.
+- **Screen at g100** (paired exam effect vs baseline, 2 × se, seeds better). Lower exam is better.
+
+| arm | exam | crashes | checkpoints | finished | success | heldOutSucc | effect (2se, better) | collapsed | levels (seeds 1–10) | tps median |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| baseline | 25,500 | 161 | 0.83 | 0.79 | 0.61 | 0.46 | – | 0 | 1,4,1,4,1,1,4,1,1,1 | 14,282 |
+| encoding v2 | 31,000 | 207 | 0.79 | 0.72 | 0.70 | 0.47 | +5,575 (13,974, 6/10) | 0 | 2,3,1,1,4,1,2,4,1,1 | 13,521 |
+| mutation gaussian 0.2 | 39,600 | 220 | 0.74 | 0.67 | 0.58 | 0.39 | +14,097 (25,551, 3/10) | 0 | 1,1,1,3,2,1,1,1,3,1 | 14,834 |
+| parents 10 | 23,900 | 177 | 0.84 | 0.80 | 0.73 | 0.59 | −1,540 (12,453, 3/10) | 0 | 1,4,4,4,4,4,1,3,3,1 | 13,932 |
+| lineCheck horizon 2 | 43,000 | 230 | 0.74 | 0.64 | 0.57 | 0.44 | +17,580 (10,037, 2/10): worse | 0 | 1,4,3,2,4,1,1,1,1,1 | 14,220 |
+| crashLimit 3 | 33,500 | 262 | 0.78 | 0.74 | 0.63 | 0.47 | +8,078 (14,145, 3/10) | 0 | 2,4,1,2,4,1,4,3,1,1 | 14,120 |
+| curriculum success 0.6 | 43,100 | 175 | 0.71 | 0.59 | 0.59 | 0.45 | +17,681 (10,978, 1/10): worse | 0 | 1,2,4,4,4,1,4,1,4,4 | 18,572 |
+
+- **Screen rule:** the two "worse" arms (horizon, success 0.6) were informative and continued, with
+  the baseline. The other four were screened out with no clear difference.
+- **Final g150:**
+
+| arm | exam | crashes | checkpoints | finished | success | heldOutSucc | effect (2se, better) | collapsed | levels | verdict |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| baseline | 32,700 | 147 | 0.78 | 0.71 | 0.68 | 0.49 | – | 0 | 1,4,4,4,2,1,4,3,2,1 | – |
+| lineCheck horizon 2 | 41,500 | 177 | 0.72 | 0.67 | 0.59 | 0.45 | +8,764 (29,157, 4/10) | 1 | 1,4,4,4,4,1,1,1,1,1 | no clear difference |
+| curriculum success 0.6 | 29,900 | 148 | 0.80 | 0.75 | 0.60 | 0.49 | −2,831 (12,289, 5/10) | 0 | 2,4,4,4,4,3,4,1,4,4 | no clear difference |
+
+  (Collapsed = exam checkpoints < 10 % at g150 after ≥ 50 % earlier.) The baseline's g150 values
+  equal E3b's continued curriculum runs, as expected.
+- **Reading:**
+  - No switch wins. Evo Lab's verdict is "no clear difference" for all six (four screened out at
+    g100).
+  - `curriculum.success: 0.6` got 8 of 10 seeds to level 3–4 by g150 (baseline: 5 of 10) without
+    hurting the exam at g150. It was worse at g100, while seeds were still climbing.
+  - `parents: 10` had the best g100 numbers (exam 23,900, held-out success 0.59, 6 seeds at level 4)
+    but was not continued: its effect is not beyond noise.
+  - Time-to-impact lineCheck is worse at g100 and not better at g150.
+  - No arm collapsed at g100, and only one seed collapsed at g150 (horizon arm). The curriculum
+    baseline seems to prevent E3's collapse on its own.
+- **Speed:** median 13,500–18,600 ticks/s per run with up to 20 runs in parallel; the whole E4 took
+  about 50 minutes of wall time.
+- **Not signed off:** adoption is the user's decision. Report: `experiments/m4-e4-learner.report.md`.
