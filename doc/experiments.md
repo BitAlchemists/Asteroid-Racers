@@ -34,6 +34,11 @@ An experiment answers one question by comparing **arms** (the baseline config, p
     sensors). Leg 1 runs from the current target to the one after it, leg 2 from there to the next.
     Sin/cos are the leg's direction relative to the ship's nose, the length is squashed like
     `targetDistanceSoft` (0.5 at 500). A missing target reads 0 on all four, `Present` included.
+    `{ "legs": 1 | 2, "frame": "corner" }` replaces the angle with the turn at each target:
+    `next2TurnSin/Cos` is the angle of leg 1 relative to the approach direction (ship → current
+    target), `next3TurnSin/Cos` the angle of leg 2 relative to leg 1 (straight on = sin 0, cos 1, the
+    sign convention of `targetSin`). It does not change when the ship turns in place. A plain number
+    is `{ legs: n, frame: "nose" }`.
     Training needs multi-target episodes (M5's `chain` arena); in races the bot reads the race's
     checkpoint chain (the same controller), so the exam and the game need no change.
   - `inputDelay` (M6): integer ≥ 0. The network sees the inputs of that many controller steps ago

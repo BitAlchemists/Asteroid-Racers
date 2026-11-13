@@ -663,6 +663,35 @@ describe("evo-lab worker (protocol v1)", () => {
     expect(replayed).toEqual(traced);
   }, 180_000);
 
+  it("lookahead corner frame: turn inputs in the spec, exact resume, replay", async () => {
+    const config = {
+      sample: 6,
+      frames: 60,
+      arenas: [{ name: "chain", params: { episodes: 2 } }],
+      collisions: "obstacles",
+      encoding: "v2",
+      lookahead: { legs: 2, frame: "corner" },
+    };
+    const dir = await exactResume(config);
+    const res = JSON.parse(result(dir)) as {
+      config: Record<string, unknown>;
+      winner: { spec: { inputs: string[] } };
+    };
+    expect(res.config.lookahead).toEqual({ legs: 2, frame: "corner" });
+    expect(res.winner.spec.inputs.slice(5)).toEqual([
+      "next2Present",
+      "next2TurnSin",
+      "next2TurnCos",
+      "next2DistanceSoft",
+      "next3Present",
+      "next3TurnSin",
+      "next3TurnCos",
+      "next3DistanceSoft",
+    ]);
+    const { replayed, traced } = await replayEpisodes(dir, 3, 0, config);
+    expect(replayed).toEqual(traced);
+  }, 180_000);
+
   it("inputDelay / inputNoise switches and the robustness exam: deterministic, kill-and-resume, replay, 0 = absent", async () => {
     const base = {
       sample: 6,
@@ -859,6 +888,8 @@ describe("evo-lab worker (protocol v1)", () => {
       [{ sensors: { nearest: { horizon: 1 } } }, /unknown parameter/],
       [{ lookahead: 3 }, /lookahead/],
       [{ lookahead: 0 }, /lookahead/],
+      [{ lookahead: { legs: 1, frame: "tail" } }, /lookahead.frame/],
+      [{ lookahead: { legs: 1, frame: "corner", depth: 1 } }, /unknown lookahead keys/],
       [{ inputDelay: -1 }, /config.inputDelay/],
       [{ inputDelay: 2.5 }, /config.inputDelay/],
       [{ inputNoise: -0.1 }, /config.inputNoise/],

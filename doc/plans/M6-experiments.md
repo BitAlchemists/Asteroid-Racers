@@ -169,7 +169,7 @@ than 6 experiments are needed, 2a and 2b each get their own decision point.
 
 | # | Name | Question | Design | Needs |
 | --- | --- | --- | --- | --- |
-| 3.1 | Lookahead | Does seeing the next 1–2 targets (`lookahead: 1 \| 2`) make faster racers, trained with the `chain` arena? | one-at-a-time, 2 arms | built (M6 step 1, landed); `chain` arena (landed) |
+| 3.1 | Lookahead | Does seeing the next legs make faster racers, trained with the `chain` arena, and which encoding learns better: the leg relative to the nose (`lookahead: 2`) or the turn at each target (`lookahead: { legs: 2, frame: "corner" }`)? | one-at-a-time, 2 arms (nose, corner), both against no lookahead | built (M6 step 1 and the corner frame, landed); `chain` arena (landed) |
 | 3.2 | Richer sensors | Do `whiskers`, `sectors` or `nearest` (`flag: 1`) next to `lineCheck` help on the stronger setup? | one-at-a-time, 3 arms | built (M4) |
 | 3.3 | Network size | Does a sensor that did not help in 3.2 pay off with more capacity (`hidden: [16]`, `[32]`), and is a linear network (`hidden: []`) enough for today's inputs? | one-at-a-time, only for the inputs where it matters | built |
 
@@ -319,3 +319,7 @@ so (`CLAUDE.md`).
   - 2.2 and 2.3 are separate configurations compared with `npm run iqm`, because Evo Lab refuses
     switches on keys already in the baseline or default config.
   - 2.5–2.7 wait for the curriculum-v2 code.
+- **2026-11-13, lookahead corner frame** (agreed with the user): experiment 3.1 tests two encodings
+  as two arms. The nose frame (built in step 1) gives the next leg's direction relative to the
+  ship's nose. The corner frame gives the turn at each target relative to the arrival direction,
+  which is the quantity that decides the racing line and is easier for a small network to learn.

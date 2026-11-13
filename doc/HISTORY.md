@@ -1230,3 +1230,16 @@ no tool. Measured:
     set.
   - 2.5–2.7 wait for the curriculum-v2 code.
 - **Commit:** see `git log` ("M6 phase 2 prep").
+### M6: lookahead corner frame
+
+- **New option** `lookahead: { legs: 1 | 2, frame: "corner" }`. The plain number form stays the nose
+  frame and is byte-identical.
+- **New inputs:** `next2TurnSin/Cos` (leg 1 relative to the approach direction ship → current target)
+  and `next3TurnSin/Cos` (leg 2 relative to leg 1); `Present` and `DistanceSoft` as before.
+- **Why:** the user asked which encoding a network learns more easily. The turn at the target is the
+  quantity that decides the racing line, and it does not change when the ship turns in place. The
+  nose frame does change, and to get the turn the network has to subtract angles.
+- Experiment 3.1 now has two arms, nose and corner, both against no lookahead.
+- **Tests:** straight, left and right corners and a U-turn; unchanged under ship rotation (the nose
+  frame changes); leg 2 relative to leg 1; missing legs; a worker run with exact resume and replay;
+  config validation.

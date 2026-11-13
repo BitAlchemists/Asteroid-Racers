@@ -114,6 +114,37 @@ function lookaheadLeg(k: number): {
   };
 }
 
+/**
+ * Corner-frame lookahead for leg `k`: the turn at the start of the leg, i.e. the angle of the leg
+ * relative to the direction the ship arrives from: for k = 1 the approach direction (ship → current
+ * target), for k = 2 leg 1's direction. Sine and cosine (0 turn = straight on: sin 0, cos 1; the sign
+ * convention of `targetSin`). Unlike the nose frame it does not change when the ship turns in place.
+ */
+function cornerTurn(k: number): { sin: (ctx: InputContext) => number; cos: (ctx: InputContext) => number } {
+  const turn = ({ ship, target, next }: InputContext): number | undefined => {
+    const to = next?.(k);
+    if (!to) return undefined;
+    const from = k === 1 ? target : next?.(k - 1);
+    if (!from) return undefined;
+    const before = k === 1 ? ship.position : k === 2 ? target : next?.(k - 2);
+    if (!before) return undefined;
+    // The arrival direction plays the role of the nose: relativeAngle measures from +y rotated by
+    // `orientation`, so the arrival direction's orientation is atan2(ay, ax) − π/2.
+    const reference = Math.atan2(from.y - before.y, from.x - before.x) - Math.PI / 2;
+    return Math.PI * relativeAngle(to.x - from.x, to.y - from.y, reference);
+  };
+  return {
+    sin: (ctx) => {
+      const a = turn(ctx);
+      return a === undefined ? 0 : Math.sin(a);
+    },
+    cos: (ctx) => {
+      const a = turn(ctx);
+      return a === undefined ? 0 : Math.cos(a);
+    },
+  };
+}
+
 /** Longest lookahead the `lookahead` switch offers (legs to `next2` and `next3`). */
 export const MAX_LOOKAHEAD = 2;
 
@@ -127,6 +158,9 @@ function lookaheadEntries(): Record<string, (ctx: InputContext) => number> {
     entries[`${prefix}Sin`] = leg.sin;
     entries[`${prefix}Cos`] = leg.cos;
     entries[`${prefix}DistanceSoft`] = leg.distanceSoft;
+    const corner = cornerTurn(k);
+    entries[`${prefix}TurnSin`] = corner.sin;
+    entries[`${prefix}TurnCos`] = corner.cos;
   }
   return entries;
 }
@@ -170,15 +204,32 @@ export const INPUTS: Readonly<Record<string, (ctx: InputContext) => number>> = {
   ...lookaheadEntries(),
 };
 
+/** The `lookahead` switch: a leg count (nose frame) or `{ legs, frame }`. */
+export type LookaheadConfig = number | { legs: number; frame: "nose" | "corner" };
+
 /**
- * The inputs the `lookahead: n` switch appends to a spec's inputs: for each of the next `n` legs,
- * `next{k+1}Present`, `…Sin`, `…Cos`, `…DistanceSoft`.
+ * The inputs the `lookahead` switch appends to a spec's inputs: for each of the next `legs` legs,
+ * `next{k+1}Present`, then the leg's angle (nose frame: `…Sin`, `…Cos`, relative to the ship's nose;
+ * corner frame: `…TurnSin`, `…TurnCos`, the turn relative to the arrival direction), then
+ * `…DistanceSoft`. A number `n` means `{ legs: n, frame: "nose" }`.
  */
-export function lookaheadInputs(n: number): string[] {
-  if (!Number.isInteger(n) || n < 1 || n > MAX_LOOKAHEAD)
-    throw new Error(`lookahead must be an integer from 1 to ${MAX_LOOKAHEAD}, got ${JSON.stringify(n)}`);
-  return Array.from({ length: n }, (_, i) =>
-    ["Present", "Sin", "Cos", "DistanceSoft"].map((f) => `next${i + 2}${f}`),
+export function lookaheadInputs(value: LookaheadConfig): string[] {
+  let legs: unknown = value;
+  let frame: unknown = "nose";
+  if (typeof value === "object" && value !== null && !Array.isArray(value)) {
+    const { legs: l, frame: f = "nose", ...rest } = value as Record<string, unknown>;
+    if (Object.keys(rest).length > 0)
+      throw new Error(`unknown lookahead keys ${Object.keys(rest).join(", ")}`);
+    legs = l;
+    frame = f;
+  }
+  if (!Number.isInteger(legs) || (legs as number) < 1 || (legs as number) > MAX_LOOKAHEAD)
+    throw new Error(`lookahead must be an integer from 1 to ${MAX_LOOKAHEAD}, got ${JSON.stringify(legs)}`);
+  if (frame !== "nose" && frame !== "corner")
+    throw new Error(`lookahead.frame must be "nose" or "corner", got ${JSON.stringify(frame)}`);
+  const angle = frame === "nose" ? ["Sin", "Cos"] : ["TurnSin", "TurnCos"];
+  return Array.from({ length: legs as number }, (_, i) =>
+    ["Present", ...angle, "DistanceSoft"].map((f) => `next${i + 2}${f}`),
   ).flat();
 }
 

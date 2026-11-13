@@ -115,3 +115,67 @@ describe("lookahead inputs", () => {
     replay.dispose();
   });
 });
+
+describe("corner-frame lookahead", () => {
+  const read = (name: string, c: Parameters<(typeof INPUTS)[string]>[0]) => INPUTS[name]!(c);
+  // The ship approaches the target at (0, 500) from the origin, i.e. along +y.
+  const target = new Vector2(0, 500);
+  const corner = (next: Vector2[], orientation = 0) => ({
+    ship: ship(orientation),
+    target,
+    next: (k: number) => next[k - 1],
+  });
+
+  it("names the frame in the inputs: TurnSin/TurnCos instead of Sin/Cos", () => {
+    expect(lookaheadInputs({ legs: 1, frame: "corner" })).toEqual([
+      "next2Present",
+      "next2TurnSin",
+      "next2TurnCos",
+      "next2DistanceSoft",
+    ]);
+    expect(lookaheadInputs({ legs: 2, frame: "nose" })).toEqual(lookaheadInputs(2));
+    expect(() => lookaheadInputs({ legs: 1, frame: "tail" } as never)).toThrow(/frame/);
+    expect(() => lookaheadInputs({ legs: 3, frame: "corner" })).toThrow(/lookahead/);
+    expect(() => lookaheadInputs({ legs: 1, frame: "corner", depth: 2 } as never)).toThrow(
+      /unknown lookahead keys/,
+    );
+  });
+
+  it("straight on reads sin 0, cos 1; a quarter turn reads |sin| 1 with the sign of targetSin; a U-turn cos −1", () => {
+    const straight = corner([new Vector2(0, 1000)]);
+    expect(read("next2TurnSin", straight)).toBeCloseTo(0, 12);
+    expect(read("next2TurnCos", straight)).toBeCloseTo(1, 12);
+    const right = corner([new Vector2(500, 500)]);
+    const left = corner([new Vector2(-500, 500)]);
+    expect(read("next2TurnCos", right)).toBeCloseTo(0, 12);
+    expect(Math.abs(read("next2TurnSin", right))).toBeCloseTo(1, 12);
+    expect(read("next2TurnSin", left)).toBeCloseTo(-read("next2TurnSin", right), 12);
+    // Same sign convention as targetSin: a turn towards +x reads like a target at +x seen from a ship facing +y.
+    expect(Math.sign(read("next2TurnSin", right))).toBe(
+      Math.sign(read("targetSin", { ship: ship(), target: new Vector2(500, 0) })),
+    );
+    const back = corner([new Vector2(0, 0)]);
+    expect(read("next2TurnCos", back)).toBeCloseTo(-1, 12);
+  });
+
+  it("does not change when the ship turns in place (the nose frame does)", () => {
+    const next = [new Vector2(500, 500), new Vector2(500, -500)];
+    for (const name of ["next2TurnSin", "next2TurnCos", "next3TurnSin", "next3TurnCos"]) {
+      const base = read(name, corner(next));
+      for (const orientation of [0.7, 2, -2.5, Math.PI])
+        expect(read(name, corner(next, orientation))).toBeCloseTo(base, 12);
+    }
+    expect(read("next2Cos", corner(next, Math.PI / 2))).not.toBeCloseTo(read("next2Cos", corner(next)), 3);
+  });
+
+  it("leg 2 is the turn at the next target relative to leg 1; missing legs read 0", () => {
+    // Leg 1 goes +x; leg 2 turns back towards −y: a quarter turn to the other side of leg 1's direction.
+    const ctx = corner([new Vector2(500, 500), new Vector2(500, -500)]);
+    expect(read("next3TurnCos", ctx)).toBeCloseTo(0, 12);
+    expect(Math.abs(read("next3TurnSin", ctx))).toBeCloseTo(1, 12);
+    const short = corner([new Vector2(500, 500)]);
+    expect(read("next3TurnSin", short)).toBe(0);
+    expect(read("next3TurnCos", short)).toBe(0);
+    expect(read("next2TurnCos", { ship: ship(), target })).toBe(0);
+  });
+});
