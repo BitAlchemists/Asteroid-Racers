@@ -318,3 +318,13 @@ Plan: [`plans/M3-visibility.md`](plans/M3-visibility.md), approved by the user (
     to 80 × 12 px; the viewer's classes are now prefixed `ar-`.
 - The animation could not be checked while the pane was hidden: the browser pauses animation frames
   for a hidden page. Everything else above was checked then.
+
+## 2026-11-13 — M4 plan
+
+- Wrote [`plans/M4-content.md`](plans/M4-content.md), waiting for the user's OK. Shaped by the M3
+  findings:
+  - a `gauntlet` track and a `rock-in-line` arena reproduce the crash-loop situation on purpose;
+  - exam v2 has 15 random tracks instead of 5, so one trap weighs less;
+  - tier-2 baselines are expected to show missing obstacle sensing as a ceiling, which is where
+    M5's sensor experiments start.
+- Dropped moving obstacles from the roadmap's tier 3, because the game has none.

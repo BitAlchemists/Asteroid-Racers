@@ -65,9 +65,13 @@ acceptance items are ticked, except CI, which runs only after a push
 
 ### M4 — Content ⬜
 
-- Tier 0–1 arenas: straight-line target, turn-and-go, stop on target, slalom.
-- A track file format, 3–4 hand-designed race tracks, and a track picker in the game.
-- Tier 2–3 arenas: asteroid fields, moving obstacles, full laps.
+Plan: [`plans/M4-content.md`](plans/M4-content.md) (waiting for approval)
+
+- A track file format, three hand-designed tracks (`slalom`, `gauntlet`, `canyon`) and a track
+  picker in the game.
+- Tiered training arenas: tier 1 `stop`, `turn-and-go`, `chain`; tier 2 `rock-in-line`, `corridor`,
+  `field`; tier 3 `race-legs`. Moving obstacles are dropped: the game has none.
+- Race exam v2 with the new tracks and 15 random tracks, so a single crash loop weighs less.
 
 ### M5 — Experiments ⬜
 
