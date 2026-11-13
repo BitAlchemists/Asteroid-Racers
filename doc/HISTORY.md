@@ -1278,3 +1278,29 @@ no tool. Measured:
     and separable);
   - the default population;
   - 7 validation cases.
+### M6 step 5: curriculum v2 code (experiments 2.5–2.7)
+
+- **Asked by the user:** "Phase 2 + CMA-ES". This entry covers the curriculum v2 part.
+- **Tiered levels (2.6):** a `curriculum.levels` entry may be `{ "arenas": [...] }`, which replaces
+  the arena list at that level, so M5's tier arenas can form the levels. It goes through
+  `applyLevel`, so snapshots, replays and the plugin's level badge work unchanged. `keepEasy`
+  wraps around an earlier level that has fewer arenas.
+- **Plateau rule (2.5):** `curriculum.plateau: { floor, patience, alpha, minGain }`, defaults 0.5,
+  10, 0.2, 0.02. The run moves up when a moving average of the judged success has not improved for
+  `patience` generations while at or above `floor`, in addition to the fixed threshold. The state is
+  in the checkpoint and the `stateHash`.
+- **Level-aware held-out (2.7):** `curriculum.heldOutCurrent: true` adds the `heldOutCurrent` and
+  `heldOutCurrentSuccess` metrics: held-out flights at the level flown. `heldOut` stays on the last
+  level.
+- **Tests:**
+  - tiered levels: levels 0, 1, 2, 2 with `chain` and `stop`; snapshot arenas; a replay of the
+    chain run matches; exact resume;
+  - plateau: levels 0, 0, 0, 1, 1, 1; the plateau state in the checkpoint; exact resume and equal
+    hashes;
+  - `heldOutCurrent`: metrics every generation, equal to `heldOut` on the last level; exact resume;
+  - units: tiered parsing and `applyLevel`, the keepEasy wrap, `stepPlateau`, defaults;
+  - plugin: the tiered level badge;
+  - 5 new validation cases.
+  - `npm run check` green (331 tests).
+- **Deviations from the step 5 text** (recorded in the plan): `curriculum.plateau` instead of
+  `success: "adaptive"`, and `keepEasy` instead of `curriculum.mix`.

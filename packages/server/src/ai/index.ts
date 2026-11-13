@@ -4,7 +4,14 @@ import type { CollisionMode } from "../contracts";
 import { GameServer } from "../game-server";
 import { seededRandom, type Random } from "../random";
 import type { CrashMode } from "./arena-script";
-import { applyLevel, legacyArena, resolveArenas, type ArenaConfig, type CurriculumConfig } from "./arenas";
+import {
+  applyLevel,
+  legacyArena,
+  resolveArenas,
+  type ArenaConfig,
+  type CurriculumConfig,
+  type PlateauState,
+} from "./arenas";
 import { MemoryModelStore, type ModelStore } from "./model-store";
 import { DEFAULT_HIDDEN, layoutFor, LEGACY_SPEC, type ModelSpec } from "./model-spec";
 import defaultModel from "./models/default-model.json";
@@ -129,7 +136,7 @@ export interface TrainingServiceOptions {
    * A staged curriculum over `arenas` (see {@link CurriculumConfig}); `level` and `streak` say where a
    * resumed run stands (default 0). Absent = always `arenas`.
    */
-  curriculum?: CurriculumConfig & { level?: number; streakCount?: number };
+  curriculum?: CurriculumConfig & { level?: number; streakCount?: number; plateauState?: PlateauState };
   /** Re-evaluate the best `top` candidates plus the parents on about `episodes` extra scenarios. */
   reevaluate?: { top: number; episodes: number };
   /** CMA-ES instead of the GA (`population`, `sigma`, `separable`); `state` resumes. Absent = the GA. */
@@ -219,6 +226,9 @@ export function registerAITrainingService(
             level: options.curriculum.level ?? 0,
             streakCount: options.curriculum.streakCount ?? 0,
             ...(options.curriculum.keepEasy === undefined ? {} : { keepEasy: options.curriculum.keepEasy }),
+            ...(options.curriculum.plateau ? { plateau: options.curriculum.plateau } : {}),
+            ...(options.curriculum.plateauState ? { plateauState: options.curriculum.plateauState } : {}),
+            ...(options.curriculum.heldOutCurrent ? { heldOutCurrent: true } : {}),
           },
         }
       : {}),

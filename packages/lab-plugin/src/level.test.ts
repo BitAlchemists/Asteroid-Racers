@@ -27,6 +27,17 @@ describe("curriculumLevel", () => {
     expect(curriculumLevel(config, undefined, { level: 7 })).toBeUndefined();
   });
 
+  it("recognises tiered levels (arena lists) in snapshots", () => {
+    const tier2 = [{ name: "chain", params: { episodes: 4 } }];
+    const config = {
+      arenas,
+      curriculum: { levels: [{ arenas: [{ name: "stop", params: { episodes: 4 } }] }, { arenas: tier2 }] },
+    };
+    // The worker writes applyLevel(...) of the flown level into the snapshot: the tier's arena list.
+    const flown = JSON.parse(JSON.stringify(applyLevel(parseArenas(arenas), { arenas: parseArenas(tier2) })));
+    expect(curriculumLevel(config, flown)).toEqual({ index: 1, count: 2 });
+  });
+
   it("is undefined without a curriculum (old runs and snapshots)", () => {
     expect(curriculumLevel({ arenas }, undefined, { level: 1 })).toBeUndefined();
     expect(curriculumLevel(undefined, undefined)).toBeUndefined();

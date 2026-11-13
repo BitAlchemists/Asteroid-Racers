@@ -29,6 +29,19 @@ An experiment answers one question by comparing **arms** (the baseline config, p
     both rounds (gen metrics `reevalScore`, `reevalSuccess`);
   - `curriculum.keepEasy`: e.g. `0.25`: after level 0, that share of each arena's episodes comes
     from an earlier level (snapshots then record the mixed arenas).
+  - Tiered levels (M6 2.6): a level may be `{ "arenas": [ { "name": "stop", "params": {...} }, ... ] }`,
+    which replaces the arena list at that level (param-override levels still work, and both kinds can
+    be mixed). With `keepEasy`, an arena takes its easy episodes from the earlier level's arena at the
+    same index, wrapping around when that level has fewer arenas.
+  - `curriculum.plateau` (M6 2.5): `{ "floor": 0.5, "patience": 10, "alpha": 0.2, "minGain": 0.02 }`
+    (defaults for `{}`). Besides the fixed `success`/`streak` rule, the run also moves up when an
+    exponential moving average (`alpha`) of the judged success has not beaten its best by more than
+    `minGain` for `patience` generations, while at or above `floor`. The state (`ema`, `best`,
+    `since`) is reset at every level-up and saved in the checkpoint and `stateHash`. To use the
+    plateau rule alone, set `success: 1` and a large `streak`.
+  - `curriculum.heldOutCurrent: true` (M6 2.7): the winner also flies the held-out scenarios of the
+    level it flew; reported as `heldOutCurrent` / `heldOutCurrentSuccess` next to `level`. `heldOut`
+    stays on the last level. On the last level both are the same flight.
   - `lookahead` (M6): `1` or `2`. Appends, per leg after the current target, `next{k+1}Present`,
     `…Sin`, `…Cos`, `…DistanceSoft` to the model's inputs (after `encoding`/`model.inputs`, before
     sensors). Leg 1 runs from the current target to the one after it, leg 2 from there to the next.

@@ -10,11 +10,15 @@ import {
   heldOutScenarios,
   mixEasyEpisodes,
   noiseSeed,
+  PLATEAU_START,
   reevaluationScenarios,
   SCENARIO_STREAM,
+  stepPlateau,
   trainingScenarios,
   type ArenaConfig,
   type ArenaRun,
+  type PlateauRule,
+  type PlateauState,
   type Scenario,
 } from "./arenas";
 import type { ModelStore } from "./model-store";
@@ -156,11 +160,14 @@ export interface GenerationReport {
   heldOutScore?: number;
   /** Share of held-out targets the winner reached (0..1). */
   heldOutSuccess?: number;
+  /** With `curriculum.heldOutCurrent`: the winner on held-out scenarios at the level it flew. */
+  heldOutCurrentScore?: number;
+  heldOutCurrentSuccess?: number;
   winner: MajorTom;
   /** The models kept for the next generation, best first (just the winner unless `parents` > 1). */
   parents: MajorTom[];
   /** With a curriculum: the level this generation flew, and the level and streak for the next one. */
-  curriculum?: { level: number; nextLevel: number; streak: number };
+  curriculum?: { level: number; nextLevel: number; streak: number; plateau?: PlateauState };
   /** With `reevaluate`: the winner's score and success share on the re-evaluation scenarios alone. */
   reevaluation?: { score: number; success: number };
   /** With the CMA-ES optimizer: its full state after this generation's update (for the checkpoint). */
@@ -219,6 +226,11 @@ export interface TrainingOptions {
     streakCount: number;
     /** Share of each arena's episodes from an earlier level (see `mixEasyEpisodes`; absent = 0). */
     keepEasy?: number;
+    /** Plateau rule (see {@link stepPlateau}) and where it stands, for resume. */
+    plateau?: PlateauRule;
+    plateauState?: PlateauState;
+    /** Also fly held-out scenarios at the current level. */
+    heldOutCurrent?: boolean;
   };
   /**
    * Re-evaluation against the winner's curse: the best `top` candidates plus the previous parents fly
@@ -272,6 +284,7 @@ export class TrainingDirector extends AIDirector {
     const curriculum = options.curriculum;
     this.level = curriculum?.level ?? 0;
     this.streak = curriculum?.streakCount ?? 0;
+    this.plateau = curriculum?.plateau ? { ...(curriculum.plateauState ?? PLATEAU_START) } : undefined;
     // Held-out scenarios measure the target task: the last level of a curriculum.
     this.heldOutScenarios = heldOutScenarios(
       curriculum ? curriculum.levels.at(-1)! : options.arenas,
@@ -282,6 +295,10 @@ export class TrainingDirector extends AIDirector {
 
   /** Curriculum level of the next generation (0 without a curriculum). */
   private level: number;
+  /** Plateau rule state on the current level (only with `curriculum.plateau`). */
+  private plateau: PlateauState | undefined;
+  /** Held-out scenarios per curriculum level, built on first use (`curriculum.heldOutCurrent`). */
+  private readonly heldOutByLevel = new Map<number, Scenario[]>();
   /** Generations in a row whose winner reached the curriculum's success share. */
   private streak: number;
 
@@ -519,6 +536,34 @@ export class TrainingDirector extends AIDirector {
       };
     }
 
+    // Held-out at the level this generation flew; on the last level they are the same scenarios.
+    let heldOutCurrent: { heldOutCurrentScore: number; heldOutCurrentSuccess: number } | undefined;
+    const plan0 = this.options.curriculum;
+    if (plan0?.heldOutCurrent && (this.options.heldOut ?? 0) > 0) {
+      if (this.level === plan0.levels.length - 1 && heldOut) {
+        heldOutCurrent = {
+          heldOutCurrentScore: heldOut.heldOutScore,
+          heldOutCurrentSuccess: heldOut.heldOutSuccess,
+        };
+      } else {
+        let scenarios = this.heldOutByLevel.get(this.level);
+        if (!scenarios) {
+          scenarios = heldOutScenarios(
+            plan0.levels[this.level]!,
+            this.options.scenarioSeed,
+            this.options.heldOut ?? 0,
+          );
+          this.heldOutByLevel.set(this.level, scenarios);
+        }
+        const [records] = await this.fly([best.network], scenarios, SCENARIO_STREAM.heldOut);
+        if (this.stopped) return;
+        heldOutCurrent = {
+          heldOutCurrentScore: scoreEpisodes(records!, this.scoring, this.tickSeconds),
+          heldOutCurrentSuccess: successRate(records!),
+        };
+      }
+    }
+
     this.generation = g;
     let curriculum: GenerationReport["curriculum"];
     const plan = this.options.curriculum;
@@ -527,12 +572,25 @@ export class TrainingDirector extends AIDirector {
       // Judged on the current level only (mixed-in easy episodes do not count), and with
       // re-evaluation on both rounds.
       const judged = [...best.records.slice(0, hardEpisodes), ...(best.reeval ?? [])];
-      this.streak = successRate(judged) >= plan.success ? this.streak + 1 : 0;
-      if (this.streak >= plan.streak && this.level < plan.levels.length - 1) {
+      const judgedSuccess = successRate(judged);
+      this.streak = judgedSuccess >= plan.success ? this.streak + 1 : 0;
+      let plateauUp = false;
+      if (plan.plateau && this.plateau) {
+        const stepped = stepPlateau(this.plateau, judgedSuccess, plan.plateau);
+        this.plateau = stepped.state;
+        plateauUp = stepped.up;
+      }
+      if ((this.streak >= plan.streak || plateauUp) && this.level < plan.levels.length - 1) {
         this.level++;
         this.streak = 0;
+        if (this.plateau) this.plateau = { ...PLATEAU_START };
       }
-      curriculum = { level, nextLevel: this.level, streak: this.streak };
+      curriculum = {
+        level,
+        nextLevel: this.level,
+        streak: this.streak,
+        ...(this.plateau ? { plateau: { ...this.plateau } } : {}),
+      };
     }
     const report: GenerationReport = {
       generation: g,
@@ -548,6 +606,7 @@ export class TrainingDirector extends AIDirector {
         best.paths,
       ),
       ...heldOut,
+      ...heldOutCurrent,
       winner: best.network,
       parents,
       ...(curriculum ? { curriculum } : {}),

@@ -234,7 +234,8 @@ so (`CLAUDE.md`).
 
 - [x] Steps 1–4 committed; every switch absent = byte-identical (fixtures, resume, gate); tests per
       switch.
-- [ ] Step 5 committed after M5's arenas exist.
+- [x] Step 5 committed after M5's arenas exist (tiered levels, plateau rule, `heldOutCurrent`;
+      `keepEasy` came from M4 step 8).
 - [ ] Phases 1–5 run under the budget rule, each closed by a decision point recorded in
       `HISTORY.md` (experiments run, adopted or dropped); Q.1 only if triggered (decision recorded
       either way).
@@ -326,3 +327,10 @@ so (`CLAUDE.md`).
 - **2026-11-13, CMA-ES code built early** (the user asked for phase 2 plus CMA-ES): the `optimizer`
   switch exists, so experiment 4.4 can run whenever phase 4 is reached. Running it is still subject
   to the budget rule.
+- **2026-11-13, step 5 built** (user: "Phase 2 + CMA-ES"): the code for 2.5–2.7. Syntax
+  deviations from the step 5 text: mixing is M4's `curriculum.keepEasy` (not `curriculum.mix`); the
+  adaptive threshold is a plateau rule `curriculum.plateau` (deterministic, documented in
+  doc/experiments.md) instead of `success: "adaptive"`, because "success stops improving" needs no
+  tuned target band and keeps `success` numeric; tiered levels are `{ "arenas": [...] }` entries in
+  `curriculum.levels`; level-aware held-out is `curriculum.heldOutCurrent: true` (extra metrics, the
+  last-level `heldOut` stays comparable).

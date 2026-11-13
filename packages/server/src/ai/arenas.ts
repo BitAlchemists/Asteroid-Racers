@@ -288,10 +288,62 @@ export function resolveArenas(configs: readonly ArenaConfig[], frames: number): 
  * level once the winner reaches at least `success` of the training targets in `streak` generations
  * in a row.
  */
+/**
+ * One curriculum level: either arena param overrides by arena name (on top of `config.arenas`), or a
+ * tiered level `{ arenas: [...] }` that replaces the arena list at that level (e.g. M5's tier arenas).
+ */
+export type CurriculumLevel = Record<string, ArenaParams> | { arenas: ArenaConfig[] };
+
+/** True for a tiered level (`{ arenas: [...] }`), which replaces the arena list. */
+export function isTieredLevel(level: CurriculumLevel): level is { arenas: ArenaConfig[] } {
+  return Array.isArray((level as { arenas?: unknown }).arenas);
+}
+
+/**
+ * The plateau rule (`curriculum.plateau`): besides the fixed `success` threshold, a run also moves up
+ * when its judged success has stopped improving: an exponential moving average (`alpha`) of the
+ * judged success that has not beaten its best by more than `minGain` for `patience` generations,
+ * while at or above `floor`.
+ */
+export interface PlateauRule {
+  floor: number;
+  patience: number;
+  alpha: number;
+  minGain: number;
+}
+
+/** Where the plateau rule stands on the current level (reset at every level-up). */
+export interface PlateauState {
+  ema: number;
+  best: number;
+  since: number;
+}
+
+export const PLATEAU_START: Readonly<PlateauState> = Object.freeze({ ema: 0, best: 0, since: 0 });
+
+/** One generation of the plateau rule: the new state, and whether the run should move up. */
+export function stepPlateau(
+  state: PlateauState,
+  success: number,
+  rule: PlateauRule,
+): { state: PlateauState; up: boolean } {
+  const ema = state.ema + rule.alpha * (success - state.ema);
+  const improved = ema > state.best + rule.minGain;
+  const next = { ema, best: improved ? ema : state.best, since: improved ? 0 : state.since + 1 };
+  return { state: next, up: next.since >= rule.patience && ema >= rule.floor };
+}
+
 export interface CurriculumConfig {
-  levels: Record<string, ArenaParams>[];
+  levels: CurriculumLevel[];
   success: number;
   streak: number;
+  /** Plateau rule: also level up when success stops improving (absent = only the fixed threshold). */
+  plateau?: PlateauRule;
+  /**
+   * Also fly the held-out scenarios at the current level and report them as `heldOutCurrent*`
+   * (absent = held-out on the last level only, as before).
+   */
+  heldOutCurrent?: boolean;
   /**
    * Share of each arena's episodes drawn from an earlier level once the run is past level 0
    * (absent = 0: all episodes on the current level). See {@link mixEasyEpisodes}.
@@ -321,6 +373,8 @@ export function parseCurriculum(raw: unknown, arenas: readonly ArenaConfig[]): C
     success = 0.8,
     streak = 3,
     keepEasy,
+    plateau,
+    heldOutCurrent,
     ...rest
   } = raw as Record<string, unknown>;
   if (Object.keys(rest).length > 0)
@@ -333,10 +387,25 @@ export function parseCurriculum(raw: unknown, arenas: readonly ArenaConfig[]): C
     throw new Error("config.curriculum.levels must be a list of at least 2 levels");
   if (keepEasy !== undefined && (typeof keepEasy !== "number" || !(keepEasy > 0 && keepEasy < 1)))
     throw new Error("config.curriculum.keepEasy must be in (0, 1)");
+  if (heldOutCurrent !== undefined && heldOutCurrent !== true)
+    throw new Error("config.curriculum.heldOutCurrent must be true (or absent)");
+  const plateauRule = plateau === undefined ? undefined : parsePlateau(plateau);
   const names = new Set(arenas.map((a) => a.name));
-  const parsed = levels.map((level: unknown, i) => {
+  const parsed = levels.map((level: unknown, i): CurriculumLevel => {
     if (typeof level !== "object" || level === null || Array.isArray(level))
       throw new Error(`config.curriculum.levels[${i}] must be an object of arena params by arena name`);
+    if ("arenas" in level) {
+      const { arenas: tier, ...extra } = level as { arenas: unknown };
+      if (Object.keys(extra).length > 0)
+        throw new Error(`config.curriculum.levels[${i}]: a tiered level has only "arenas"`);
+      try {
+        return { arenas: parseArenas(tier) };
+      } catch (error) {
+        throw new Error(`config.curriculum.levels[${i}].arenas: ${(error as Error).message}`, {
+          cause: error,
+        });
+      }
+    }
     for (const [name, params] of Object.entries(level)) {
       if (!names.has(name))
         throw new Error(
@@ -352,7 +421,27 @@ export function parseCurriculum(raw: unknown, arenas: readonly ArenaConfig[]): C
     success,
     streak: streak as number,
     ...(keepEasy === undefined ? {} : { keepEasy }),
+    ...(plateauRule ? { plateau: plateauRule } : {}),
+    ...(heldOutCurrent ? { heldOutCurrent: true } : {}),
   };
+}
+
+/** `curriculum.plateau`: `{ floor?, patience?, alpha?, minGain? }`, defaults 0.5, 10, 0.2, 0.02. */
+function parsePlateau(raw: unknown): PlateauRule {
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw))
+    throw new Error("config.curriculum.plateau must be an object ({ floor?, patience?, alpha?, minGain? })");
+  const { floor = 0.5, patience = 10, alpha = 0.2, minGain = 0.02, ...rest } = raw as Record<string, unknown>;
+  if (Object.keys(rest).length > 0)
+    throw new Error(`unknown config.curriculum.plateau keys ${Object.keys(rest).join(", ")}`);
+  if (typeof floor !== "number" || !(floor >= 0 && floor <= 1))
+    throw new Error("config.curriculum.plateau.floor must be in [0, 1]");
+  if (!Number.isInteger(patience) || (patience as number) < 1)
+    throw new Error("config.curriculum.plateau.patience must be an integer ≥ 1");
+  if (typeof alpha !== "number" || !(alpha > 0 && alpha <= 1))
+    throw new Error("config.curriculum.plateau.alpha must be in (0, 1]");
+  if (typeof minGain !== "number" || !(minGain >= 0))
+    throw new Error("config.curriculum.plateau.minGain must be ≥ 0");
+  return { floor, patience: patience as number, alpha, minGain };
 }
 
 /**
@@ -384,7 +473,9 @@ export function mixEasyEpisodes(
       return;
     }
     const earlier = Math.floor(seededRandom(deriveSeed(seed, SCENARIO_STREAM.keepEasy, a, g))() * level);
-    const from = levels[earlier]![a]!;
+    // Tiered levels may have a different number of arenas: wrap around the earlier level's list.
+    const earlierRuns = levels[earlier]!;
+    const from = earlierRuns[a % earlierRuns.length]!;
     regular.push({ arena: run.arena, params: { ...run.params, episodes: n - k } });
     easy.push({ arena: from.arena, params: { ...from.params, episodes: k } });
   });
@@ -416,10 +507,8 @@ export function reevaluationScenarios(
 }
 
 /** The arena configs of one curriculum level: each arena's params with the level's overrides on top. */
-export function applyLevel(
-  arenas: readonly ArenaConfig[],
-  level: Record<string, ArenaParams>,
-): ArenaConfig[] {
+export function applyLevel(arenas: readonly ArenaConfig[], level: CurriculumLevel): ArenaConfig[] {
+  if (isTieredLevel(level)) return level.arenas.map((a) => ({ name: a.name, params: { ...a.params } }));
   return arenas.map((a) => ({ name: a.name, params: { ...a.params, ...level[a.name] } }));
 }
 

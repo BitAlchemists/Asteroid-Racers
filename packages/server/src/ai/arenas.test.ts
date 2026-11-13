@@ -6,9 +6,14 @@ import {
   applyLevel,
   arenaByName,
   deriveSeed,
+  isTieredLevel,
   legacyArena,
+  mixEasyEpisodes,
   parseCurriculum,
+  PLATEAU_START,
   pointToPointArena,
+  resolveArenas,
+  stepPlateau,
   type Scenario,
 } from "./arenas";
 import { MemoryModelStore } from "./model-store";
@@ -313,6 +318,73 @@ describe("rock-in-line arena", () => {
     const b = arenaByName("rock-in-line").generate(seededRandom(9), { asteroids: 10 });
     expect(JSON.stringify(a)).toBe(JSON.stringify(b));
     expect(a.obstacles.length).toBeGreaterThanOrEqual(8 + 10 - 2); // nearly every rock placed
+  });
+});
+
+describe("curriculum v2", () => {
+  it("tiered levels replace the arena list; param levels still override", () => {
+    const base = [{ name: "point-to-point", params: { episodes: 2 } }];
+    const c = parseCurriculum(
+      {
+        levels: [
+          { arenas: [{ name: "stop", params: { episodes: 3 } }] },
+          { "point-to-point": { asteroids: 5 } },
+        ],
+      },
+      base,
+    );
+    expect(isTieredLevel(c.levels[0]!)).toBe(true);
+    expect(applyLevel(base, c.levels[0]!)).toEqual([{ name: "stop", params: { episodes: 3 } }]);
+    expect(applyLevel(base, c.levels[1]!)).toEqual([
+      { name: "point-to-point", params: { episodes: 2, asteroids: 5 } },
+    ]);
+    expect(() => parseCurriculum({ levels: [{ arenas: "stop" }, {}] }, base)).toThrow(/levels\[0\]\.arenas/);
+  });
+
+  it("keepEasy wraps around an earlier tiered level with fewer arenas", () => {
+    const levels = [
+      resolveArenas([{ name: "stop", params: { episodes: 4 } }], 600),
+      resolveArenas(
+        [
+          { name: "point-to-point", params: { episodes: 4 } },
+          { name: "chain", params: { episodes: 4 } },
+        ],
+        600,
+      ),
+    ];
+    const { runs, hard } = mixEasyEpisodes(levels, 1, 0.5, 1, 1);
+    expect(hard).toBe(2);
+    expect(runs.map((r) => [r.arena.name, r.params.episodes])).toEqual([
+      ["point-to-point", 2],
+      ["chain", 2],
+      ["stop", 2],
+      ["stop", 2],
+    ]);
+  });
+
+  it("the plateau rule moves up after `patience` generations without improvement, above the floor", () => {
+    const rule = { floor: 0.5, patience: 2, alpha: 1, minGain: 0.05 };
+    let state = { ...PLATEAU_START };
+    const ups: boolean[] = [];
+    for (const s of [0.4, 0.6, 0.62, 0.61, 0.6]) {
+      const step = stepPlateau(state, s, rule);
+      state = step.state;
+      ups.push(step.up);
+    }
+    // 0.4 and 0.6 improve; 0.62 and 0.61 do not by more than 0.05 → up on the 2nd stalled generation.
+    expect(ups).toEqual([false, false, false, true, true]);
+    // Below the floor nothing moves up, however long it stalls.
+    let low = { ...PLATEAU_START };
+    for (let i = 0; i < 5; i++) low = stepPlateau(low, 0.2, rule).state;
+    expect(stepPlateau(low, 0.2, rule).up).toBe(false);
+    expect(
+      parseCurriculum({ plateau: {} }, [{ name: "rock-in-line" }, { name: "point-to-point" }]).plateau,
+    ).toEqual({
+      floor: 0.5,
+      patience: 10,
+      alpha: 0.2,
+      minGain: 0.02,
+    });
   });
 });
 

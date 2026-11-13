@@ -607,6 +607,141 @@ describe("evo-lab worker (protocol v1)", () => {
     expect(res.config.curriculum.keepEasy).toBe(0.5);
   }, 180_000);
 
+  it("tiered curriculum: levels replace the arena list (M5 tier arenas), replay and resume stay exact", async () => {
+    // The point-to-point targets sit inside their radius, so 2 targets per generation are always
+    // reached: success ≥ 2/5 on every level, enough for 0.3 with streak 1.
+    const easy = { name: "point-to-point", params: { episodes: 2, distance: [10, 20] } };
+    const config = {
+      sample: 6,
+      frames: 60,
+      arenas: [easy],
+      collisions: "obstacles",
+      curriculum: {
+        levels: [
+          { arenas: [easy] },
+          {
+            arenas: [easy, { name: "chain", params: { episodes: 1, targets: [3, 3], distance: [300, 400] } }],
+          },
+          { arenas: [easy, { name: "stop", params: { episodes: 1 } }] },
+        ],
+        success: 0.3,
+        streak: 1,
+      },
+    };
+    const dir = await exactResume(config);
+    const levels = events(dir)
+      .filter((e) => e.type === "gen")
+      .map((e) => (e.metrics as { level: number }).level);
+    expect(levels).toEqual([0, 1, 2, 2]);
+    const snap = (g: number) =>
+      JSON.parse(readFileSync(join(dir, "gens", `g000${g}.json`), "utf8")) as {
+        arenas: { name: string }[];
+        trace: unknown[];
+      };
+    expect(snap(1).arenas.map((a) => a.name)).toEqual(["point-to-point"]);
+    expect(snap(2).arenas.map((a) => a.name)).toEqual(["point-to-point", "chain"]);
+    expect(snap(3).arenas.map((a) => a.name)).toEqual(["point-to-point", "stop"]);
+    expect(snap(2).trace).toHaveLength(2);
+    // A replay of the chain run of g2 matches what training recorded.
+    const { replayed, traced } = await replayEpisodes(dir, 2, 1, config);
+    expect(replayed).toEqual(traced);
+  }, 180_000);
+
+  it("curriculum plateau: the run moves up when success stops improving, and resume stays exact", async () => {
+    // The fixed threshold (1.0 for 99 generations) never fires. With alpha 1 the average is the
+    // success itself; the first generation improves it, then it stalls: up after 2 stalled generations.
+    const config = {
+      sample: 6,
+      frames: 60,
+      arenas: [
+        { name: "point-to-point", params: { episodes: 2, distance: [10, 20] } },
+        { name: "rock-in-line", params: { episodes: 1 } },
+      ],
+      collisions: "obstacles",
+      curriculum: {
+        levels: [
+          { "rock-in-line": { rocks: 0 } },
+          { "rock-in-line": { rocks: 1 } },
+          { "rock-in-line": { rocks: 2 } },
+        ],
+        success: 1,
+        streak: 99,
+        plateau: { floor: 0.3, patience: 2, alpha: 1, minGain: 0.5 },
+      },
+    };
+    const straight = newRun(config);
+    expect(await run(straight, ["--to", "6"])).toBe(0);
+    const resumed = newRun(config);
+    expect(await run(resumed, ["--to", "2"])).toBe(0);
+    const ckpt = JSON.parse(readFileSync(join(resumed, "ckpt.json"), "utf8")) as {
+      curriculum: { level: number; plateau: { ema: number; best: number; since: number } };
+    };
+    expect(ckpt.curriculum.level).toBe(0);
+    expect(ckpt.curriculum.plateau.since).toBe(1);
+    expect(await run(resumed, ["--resume", "--to", "6"])).toBe(0);
+    expect(result(resumed)).toBe(result(straight));
+    const hashes = (d: string) =>
+      events(d)
+        .filter((e) => e.type === "gen")
+        .map((e) => e.stateHash);
+    expect(hashes(resumed)).toEqual(hashes(straight));
+    const levels = events(straight)
+      .filter((e) => e.type === "gen")
+      .map((e) => (e.metrics as { level: number }).level);
+    expect(levels).toEqual([0, 0, 0, 1, 1, 1]);
+    const res = JSON.parse(result(straight)) as { config: { curriculum: { plateau: unknown } } };
+    expect(res.config.curriculum.plateau).toEqual({ floor: 0.3, patience: 2, alpha: 1, minGain: 0.5 });
+  }, 180_000);
+
+  it("curriculum heldOutCurrent: held-out at the flown level as extra metrics, equal to held-out on the last level", async () => {
+    const config = {
+      sample: 6,
+      frames: 60,
+      arenas: [
+        { name: "point-to-point", params: { episodes: 2, distance: [10, 20] } },
+        { name: "rock-in-line", params: { episodes: 1 } },
+      ],
+      collisions: "obstacles",
+      heldOut: 1,
+      curriculum: {
+        levels: [
+          { "rock-in-line": { rocks: 0 } },
+          { "rock-in-line": { rocks: 1 } },
+          { "rock-in-line": { rocks: 2 } },
+        ],
+        success: 0.3,
+        streak: 1,
+        heldOutCurrent: true,
+      },
+    };
+    const dir = await exactResume(config);
+    const gens = events(dir)
+      .filter((e) => e.type === "gen")
+      .map(
+        (e) =>
+          e.metrics as {
+            level: number;
+            heldOut: number;
+            heldOutSuccess: number;
+            heldOutCurrent: number;
+            heldOutCurrentSuccess: number;
+          },
+      );
+    expect(gens.map((m) => m.level)).toEqual([0, 1, 2, 2]);
+    for (const m of gens) {
+      expect(typeof m.heldOutCurrent).toBe("number");
+      expect(typeof m.heldOutCurrentSuccess).toBe("number");
+    }
+    // On the last level the current-level held-out is the held-out.
+    expect(gens[3]!.heldOutCurrent).toBe(gens[3]!.heldOut);
+    expect(gens[3]!.heldOutCurrentSuccess).toBe(gens[3]!.heldOutSuccess);
+    // Without the option, no extra metrics (and the same run otherwise is a different held-out cost only).
+    const plain = newRun({ ...config, curriculum: { ...config.curriculum, heldOutCurrent: undefined } });
+    expect(await run(plain, ["--to", "2"])).toBe(0);
+    const plainGen = events(plain).find((e) => e.type === "gen")!.metrics as Record<string, unknown>;
+    expect(plainGen.heldOutCurrent).toBeUndefined();
+  }, 180_000);
+
   it("standard Gaussian mutation (all weights, sigma 0.03) and a linear policy: deterministic, exact resume, replay", async () => {
     const arenas = [{ name: "point-to-point", params: { episodes: 2, asteroids: 5 } }];
     const gaussian = {
@@ -927,6 +1062,14 @@ describe("evo-lab worker (protocol v1)", () => {
       [{ curriculum: { success: 2 } }, /curriculum.success/],
       [{ curriculum: { pace: 1 } }, /unknown config.curriculum keys/],
       [{ curriculum: { keepEasy: 1 } }, /keepEasy/],
+      [
+        { curriculum: { levels: [{ arenas: [{ name: "moon" }] }, {}] } },
+        /levels\[0\]\.arenas: unknown arena/,
+      ],
+      [{ curriculum: { levels: [{ arenas: [], extra: 1 }, {}] } }, /only "arenas"/],
+      [{ curriculum: { plateau: { patience: 0 } } }, /plateau.patience/],
+      [{ curriculum: { plateau: { speed: 1 } } }, /unknown config.curriculum.plateau keys/],
+      [{ curriculum: { heldOutCurrent: false } }, /heldOutCurrent/],
       [{ reevaluate: { top: 0 } }, /reevaluate.top/],
       [{ reevaluate: { episodes: 2.5 } }, /reevaluate.episodes/],
       [{ reevaluate: { rounds: 2 } }, /unknown config.reevaluate keys/],

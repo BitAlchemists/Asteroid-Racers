@@ -43,6 +43,7 @@ import {
   applyLevel,
   type CurriculumConfig,
   type CmaEsJson,
+  type PlateauState,
   parseModelConfig,
   parseSensors,
   parseExamConfig,
@@ -168,7 +169,7 @@ interface Checkpoint {
   /** The CMA-ES distribution after generation `g`; only with the `optimizer` switch. */
   cmaes?: CmaEsJson;
   /** Where the curriculum stands for the next generation; only with the `curriculum` switch. */
-  curriculum?: { level: number; streak: number };
+  curriculum?: { level: number; streak: number; plateau?: PlateauState };
   bestScore: number | null;
   rng: { mutation: number; server: number };
 }
@@ -463,7 +464,7 @@ async function main(): Promise<void> {
   /** The CMA-ES state after the last generation (only with the `optimizer` switch). */
   let cmaes: CmaEsJson | undefined = saved?.cmaes;
   /** Curriculum level and streak for the next generation (only with the `curriculum` switch). */
-  let curriculum: { level: number; streak: number } | undefined = config.curriculum
+  let curriculum: { level: number; streak: number; plateau?: PlateauState } | undefined = config.curriculum
     ? (saved?.curriculum ?? { level: 0, streak: 0 })
     : undefined;
   let genStartWall = performance.now();
@@ -500,7 +501,11 @@ async function main(): Promise<void> {
     if (report.optimizerState) cmaes = report.optimizerState;
     const flownLevel = report.curriculum?.level;
     if (report.curriculum)
-      curriculum = { level: report.curriculum.nextLevel, streak: report.curriculum.streak };
+      curriculum = {
+        level: report.curriculum.nextLevel,
+        streak: report.curriculum.streak,
+        ...(report.curriculum.plateau ? { plateau: report.curriculum.plateau } : {}),
+      };
     const cpu = process.cpuUsage(genStartCpu);
     const wall = (performance.now() - genStartWall) / 1000;
     const cpuSec = (cpu.user + cpu.system) / 1e6;
@@ -539,6 +544,12 @@ async function main(): Promise<void> {
         ? {}
         : { heldOut: report.heldOutScore, heldOutSuccess: report.heldOutSuccess }),
       ...(flownLevel === undefined ? {} : { level: flownLevel }),
+      ...(report.heldOutCurrentScore === undefined
+        ? {}
+        : {
+            heldOutCurrent: report.heldOutCurrentScore,
+            heldOutCurrentSuccess: report.heldOutCurrentSuccess,
+          }),
       ...(report.reevaluation === undefined
         ? {}
         : { reevalScore: report.reevaluation.score, reevalSuccess: report.reevaluation.success }),
@@ -643,7 +654,14 @@ async function main(): Promise<void> {
         ? {}
         : { optimizer: { ...config.optimizer, ...(cmaes === undefined ? {} : { state: cmaes }) } }),
       ...(config.curriculum && curriculum
-        ? { curriculum: { ...config.curriculum, level: curriculum.level, streakCount: curriculum.streak } }
+        ? {
+            curriculum: {
+              ...config.curriculum,
+              level: curriculum.level,
+              streakCount: curriculum.streak,
+              ...(curriculum.plateau ? { plateauState: curriculum.plateau } : {}),
+            },
+          }
         : {}),
       ...(config.initRange === undefined ? {} : { initRange: config.initRange }),
       ...(config.crashLimit === undefined ? {} : { crashLimit: config.crashLimit }),
