@@ -36,6 +36,19 @@ An experiment answers one question by comparing **arms** (the baseline config, p
     `targetDistanceSoft` (0.5 at 500). A missing target reads 0 on all four, `Present` included.
     Training needs multi-target episodes (M5's `chain` arena); in races the bot reads the race's
     checkpoint chain (the same controller), so the exam and the game need no change.
+  - `inputDelay` (M6): integer ≥ 0. The network sees the inputs of that many controller steps ago
+    (4 ≈ 66 ms at the 15 ms tick): a ring buffer in the controller, reset at every episode start
+    (until k steps have passed it sees the episode's first inputs). Applies to training, held-out and
+    re-evaluation flights and to snapshot replays. 0 = absent.
+  - `inputNoise` (M6): σ ≥ 0. Gaussian noise N(0, σ²) on every input the network sees (after the
+    delay). Each scenario of each round (training, held-out, re-evaluation) has its own stream,
+    seeded from (seed, round, generation, scenario index) and the same for every candidate, so
+    nothing is saved for a resume. 0 = absent.
+  - Robustness exam (M6): `exam: { …, "inputDelay": 4, "inputNoise": 0.05 }`. The winner then flies
+    the exam twice: plain (metrics `exam*`, as without the keys) and with the delay and noise
+    (`examRobust`, `examRobustCheckpoints`, `examRobustFinished`, `examRobustCrashes`). The exam's
+    noise stream is fixed per race (from the race seed), so every model meets the same noise. In the
+    `exam` method the keys make the exam itself the perturbed one.
 - A switch key may not appear in the method's default config in `lab.config.json` (that is why the
   `model` block is not there).
 - **The decision metric is `exam`** (the race exam score, lower is better), produced inside training

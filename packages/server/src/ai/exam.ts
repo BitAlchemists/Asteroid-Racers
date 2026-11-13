@@ -3,11 +3,12 @@ import type { IClientProxy } from "../contracts";
 import { GameServer } from "../game-server";
 import { seededRandom } from "../random";
 import { trackByName } from "../tracks";
-import { deriveSeed } from "./arenas";
+import { deriveSeed, SCENARIO_STREAM } from "./arenas";
 import { AIDirector } from "./directors";
 import type { MajorTom } from "./network";
 import { startScript, type Replay, type ReplayInputs, type ReplaySource, type ReplayStatus } from "./replay";
 import { RaceTargetScript } from "./scripts";
+import type { Perception } from "./target-vehicle-controller";
 import type { SensorPrimitive } from "./sensors";
 import { addPathPoint, PATH_EVERY } from "./trace";
 
@@ -31,6 +32,28 @@ export interface ExamConfig {
   weights: ExamWeights;
   /** Decides the asteroids and random tracks. Keep it fixed so every model flies the same exam. */
   seed: number;
+  /**
+   * Robustness exam (M6): the bot sees its inputs this many steps late. In a training run's `exam`
+   * config this (or `inputNoise`) adds a second, perturbed exam reported as `examRobust*`.
+   */
+  inputDelay?: number;
+  /** Robustness exam: Gaussian noise on every input, from a stream fixed per flight. */
+  inputNoise?: number;
+}
+
+/** The exam's perturbation, or undefined when it has none (delay and noise absent or 0). */
+export function examPerception(config: ExamConfig): { inputDelay?: number; inputNoise?: number } | undefined {
+  if (!((config.inputDelay ?? 0) > 0 || (config.inputNoise ?? 0) > 0)) return undefined;
+  return {
+    ...(config.inputDelay === undefined ? {} : { inputDelay: config.inputDelay }),
+    ...(config.inputNoise === undefined ? {} : { inputNoise: config.inputNoise }),
+  };
+}
+
+/** The exam without its perturbation (the plain exam of a robustness config). */
+export function plainExam(config: ExamConfig): ExamConfig {
+  const { inputDelay: _d, inputNoise: _n, ...plain } = config;
+  return plain;
 }
 
 export const DEFAULT_EXAM: Readonly<ExamConfig> = Object.freeze({
@@ -130,6 +153,8 @@ export class ExamReplay implements Replay {
     trackName: string,
     seed: number,
     timeLimitSeconds: number,
+    /** Robustness exam: input delay and noise (the noise seed derives from the flight's seed). */
+    perception?: { inputDelay?: number; inputNoise?: number },
   ): Promise<ExamReplay> {
     const server = new GameServer({ random: seededRandom(seed) }).loadTrack(trackByName(trackName));
     const race = server.raceController!;
@@ -138,6 +163,11 @@ export class ExamReplay implements Replay {
     await server.start();
 
     const script = new RaceTargetScript(model, 0, model.name);
+    if (perception)
+      script.perception = {
+        ...perception,
+        noiseSeed: deriveSeed(seed, SCENARIO_STREAM.noise),
+      } satisfies Perception;
     const { running, proxy } = await startScript(director, script);
     const replay = new ExamReplay(server, trackName, seed, script, proxy, running, timeLimitSeconds);
     script.client!.onCrash = () => replay.crashes++;
@@ -260,8 +290,9 @@ export async function examFlight(
   seed: number,
   timeLimitSeconds: number,
   weights: ExamWeights,
+  perception?: { inputDelay?: number; inputNoise?: number },
 ): Promise<FlightResult> {
-  return (await examFlightWithTrace(model, trackName, seed, timeLimitSeconds, weights)).result;
+  return (await examFlightWithTrace(model, trackName, seed, timeLimitSeconds, weights, perception)).result;
 }
 
 async function examFlightWithTrace(
@@ -270,8 +301,9 @@ async function examFlightWithTrace(
   seed: number,
   timeLimitSeconds: number,
   weights: ExamWeights,
+  perception?: { inputDelay?: number; inputNoise?: number },
 ): Promise<{ result: FlightResult; trace: FlightTrace }> {
-  const replay = await ExamReplay.create(model, trackName, seed, timeLimitSeconds);
+  const replay = await ExamReplay.create(model, trackName, seed, timeLimitSeconds, perception);
   while (!replay.done) replay.step();
   const out = { result: replay.result(weights), trace: replay.trace() };
   replay.dispose();
@@ -292,8 +324,16 @@ export function examFlights(config: ExamConfig): { track: string; seed: number }
 export async function runExam(model: MajorTom, config: ExamConfig = DEFAULT_EXAM): Promise<ExamResult> {
   const flights: FlightResult[] = [];
   const traces: FlightTrace[] = [];
+  const perception = examPerception(config);
   for (const { track, seed } of examFlights(config)) {
-    const flight = await examFlightWithTrace(model, track, seed, config.timeLimitSeconds, config.weights);
+    const flight = await examFlightWithTrace(
+      model,
+      track,
+      seed,
+      config.timeLimitSeconds,
+      config.weights,
+      perception,
+    );
     flights.push(flight.result);
     traces.push(flight.trace);
   }
@@ -317,7 +357,14 @@ export function parseExamConfig(raw: unknown): ExamConfig {
     timeLimitSeconds: (r.timeLimitSeconds as number | undefined) ?? DEFAULT_EXAM.timeLimitSeconds,
     weights: { ...DEFAULT_EXAM.weights, ...(r.weights as Partial<ExamWeights> | undefined) },
     seed: (r.seed as number | undefined) ?? DEFAULT_EXAM.seed,
+    // Robustness keys: present only when given, so other configs stay as they were.
+    ...(r.inputDelay === undefined ? {} : { inputDelay: r.inputDelay as number }),
+    ...(r.inputNoise === undefined ? {} : { inputNoise: r.inputNoise as number }),
   };
+  if (config.inputDelay !== undefined && (!Number.isInteger(config.inputDelay) || config.inputDelay < 0))
+    throw new Error("exam.inputDelay must be an integer ≥ 0");
+  if (config.inputNoise !== undefined && (typeof config.inputNoise !== "number" || !(config.inputNoise >= 0)))
+    throw new Error("exam.inputNoise must be a number ≥ 0");
   if (!Array.isArray(config.tracks) || !config.tracks.every((t) => typeof t === "string"))
     throw new Error("exam.tracks must be a list of track names");
   config.tracks.forEach(trackByName);
@@ -338,6 +385,7 @@ export function examReplaySource(
   flights: readonly { track: string; seed: number }[],
   timeLimitSeconds: number,
   tickSeconds = 0.015,
+  perception?: { inputDelay?: number; inputNoise?: number },
 ): ReplaySource {
   let random = 0;
   return {
@@ -345,7 +393,7 @@ export function examReplaySource(
     open(index) {
       const flight = flights[index];
       if (!flight) throw new Error(`no flight ${index}`);
-      return ExamReplay.create(model, flight.track, flight.seed, timeLimitSeconds);
+      return ExamReplay.create(model, flight.track, flight.seed, timeLimitSeconds, perception);
     },
     segmentFrames: () => Math.round(timeLimitSeconds / tickSeconds),
   };

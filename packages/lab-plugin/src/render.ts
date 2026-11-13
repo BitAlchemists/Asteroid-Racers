@@ -14,6 +14,7 @@ import {
   DEFAULT_MODEL_NAME,
   examFlights,
   examReplaySource,
+  examPerception,
   modelFromJson,
   parseArenas,
   parseExamConfig,
@@ -277,7 +278,7 @@ async function sourceFor(
       data.flights.findIndex((f) => !f.finished),
     );
     return {
-      source: examReplaySource(model, examFlights(exam), exam.timeLimitSeconds),
+      source: examReplaySource(model, examFlights(exam), exam.timeLimitSeconds, 0.015, examPerception(exam)),
       first,
       title: `${data.sourceRun} · g${data.g}`,
     };
@@ -299,6 +300,8 @@ async function sourceFor(
       collisions: (config.collisions as CollisionMode | undefined) ?? "none",
       crashMode: (config.crashMode as CrashMode | undefined) ?? "end",
       ...(typeof config.crashLimit === "number" ? { crashLimit: config.crashLimit } : {}),
+      ...(typeof config.inputDelay === "number" ? { inputDelay: config.inputDelay } : {}),
+      ...(typeof config.inputNoise === "number" ? { inputNoise: config.inputNoise } : {}),
       seed,
       g: ctx.g,
     }),

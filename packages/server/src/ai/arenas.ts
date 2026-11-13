@@ -210,7 +210,16 @@ export function arenaByName(name: string): Arena {
 }
 
 /** Seed streams, so training and held-out scenarios never share seeds. */
-export const SCENARIO_STREAM = { training: 1, heldOut: 2, reevaluate: 3, keepEasy: 4 } as const;
+export const SCENARIO_STREAM = { training: 1, heldOut: 2, reevaluate: 3, keepEasy: 4, noise: 5 } as const;
+
+/**
+ * Seed of the input-noise stream for scenario `index` of a flight round in generation `g`: `round`
+ * is the scenarios' own stream (training, held-out or re-evaluation). Every candidate flying that
+ * scenario gets the same noise (common random numbers), and nothing needs saving for a resume.
+ */
+export function noiseSeed(seed: number, round: number, g: number, index: number): number {
+  return deriveSeed(seed, SCENARIO_STREAM.noise, round, g, index);
+}
 
 /**
  * A 32-bit seed from a list of integers (FNV-1a over their bytes, then a murmur finalizer). Lets every

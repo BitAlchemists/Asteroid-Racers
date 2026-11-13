@@ -9,7 +9,9 @@ import { sameSpec, type ModelSpec } from "./model-spec";
 import {
   heldOutScenarios,
   mixEasyEpisodes,
+  noiseSeed,
   reevaluationScenarios,
+  SCENARIO_STREAM,
   trainingScenarios,
   type ArenaConfig,
   type ArenaRun,
@@ -208,6 +210,11 @@ export interface TrainingOptions {
    * Absent = selection on the training round alone.
    */
   reevaluate?: { top: number; episodes: number };
+  /**
+   * Latency and noise of every bot's inputs (`inputDelay` steps, Gaussian `inputNoise`), with the
+   * noise from its own stream per scenario (see `noiseSeed`). Absent or 0 = none.
+   */
+  perception?: { inputDelay?: number; inputNoise?: number };
   /** Every candidate flies every arena, one arena after the other. */
   arenas: readonly ArenaRun[];
   /** Run seed: scenario seeds are derived from it, the stream, the arena index and the generation. */
@@ -335,31 +342,43 @@ export class TrainingDirector extends AIDirector {
   }
 
   /** Flies `networks` through `scenarios` (one after the other) and returns each network's episode records. */
-  async fly(networks: readonly MajorTom[], scenarios: readonly Scenario[]): Promise<EpisodeRecord[][]> {
-    return (await this.flyWithPaths(networks, scenarios)).records;
+  async fly(
+    networks: readonly MajorTom[],
+    scenarios: readonly Scenario[],
+    round: number = SCENARIO_STREAM.training,
+  ): Promise<EpisodeRecord[][]> {
+    return (await this.flyWithPaths(networks, scenarios, round)).records;
   }
 
   /** Like {@link fly}, plus each network's path per episode. */
   async flyWithPaths(
     networks: readonly MajorTom[],
     scenarios: readonly Scenario[],
+    round: number = SCENARIO_STREAM.training,
   ): Promise<{ records: EpisodeRecord[][]; paths: number[][][] }> {
     const records = networks.map((): EpisodeRecord[] => []);
     const paths = networks.map((): number[][] => []);
-    for (const scenario of scenarios) {
+    const perception = this.options.perception;
+    const perceiving = !!perception && ((perception.inputDelay ?? 0) > 0 || (perception.inputNoise ?? 0) > 0);
+    for (const [index, scenario] of scenarios.entries()) {
       if (this.stopped) break;
       const placed = this.place(scenario);
       try {
-        const scripts = networks.map(
-          (network) =>
-            new ArenaScript(
-              network,
-              placed.episodes,
-              this.options.crashMode,
-              this.tickSeconds,
-              this.options.crashLimit,
-            ),
-        );
+        const scripts = networks.map((network) => {
+          const script = new ArenaScript(
+            network,
+            placed.episodes,
+            this.options.crashMode,
+            this.tickSeconds,
+            this.options.crashLimit,
+          );
+          if (perceiving)
+            script.perception = {
+              ...perception,
+              noiseSeed: noiseSeed(this.options.scenarioSeed, round, this.generation + 1, index),
+            };
+          return script;
+        });
         await Promise.all(scripts.map((script) => this.runScript(script)));
         scripts.forEach((script, i) => {
           records[i]!.push(...script.records);
@@ -418,6 +437,7 @@ export class TrainingDirector extends AIDirector {
       const reevalRecords = await this.fly(
         finalists.map((s) => s.network),
         extra,
+        SCENARIO_STREAM.reevaluate,
       );
       if (this.stopped) return;
       const total = finalists.map(
@@ -436,7 +456,7 @@ export class TrainingDirector extends AIDirector {
 
     let heldOut: { heldOutScore: number; heldOutSuccess: number } | undefined;
     if (this.heldOutScenarios.length > 0) {
-      const [winnerRecords] = await this.fly([best.network], this.heldOutScenarios);
+      const [winnerRecords] = await this.fly([best.network], this.heldOutScenarios, SCENARIO_STREAM.heldOut);
       if (this.stopped) return;
       heldOut = {
         heldOutScore: scoreEpisodes(winnerRecords!, this.scoring, this.tickSeconds),

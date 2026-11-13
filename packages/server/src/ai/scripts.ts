@@ -3,7 +3,7 @@ import type { IGameServer } from "../contracts";
 import type { AIGameClient } from "./ai-game-client";
 import type { Evaluator } from "./evaluators";
 import type { MajorTom } from "./network";
-import { TargetVehicleController } from "./target-vehicle-controller";
+import { TargetVehicleController, type Perception } from "./target-vehicle-controller";
 
 const log = getLogger("services.ai.Script");
 
@@ -28,6 +28,8 @@ export abstract class Script {
   host!: ScriptHost;
   client: AIGameClient | undefined;
   protected vehicle: TargetVehicleController | undefined;
+  /** Latency and noise of the bot's inputs (set before `run()`; absent = none). */
+  perception: Perception | undefined;
   private finished: (() => void) | undefined;
 
   constructor(readonly network: MajorTom) {}
@@ -44,7 +46,7 @@ export abstract class Script {
     }
     const client = this.host.createClient(this.botName());
     this.client = client;
-    this.vehicle = new TargetVehicleController(client, this.network);
+    this.vehicle = new TargetVehicleController(client, this.network, this.perception);
     client.vehicle = this.vehicle;
     this.attach(client);
 

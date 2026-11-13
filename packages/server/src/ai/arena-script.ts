@@ -146,7 +146,10 @@ export class ArenaScript extends Script {
       progress: 0,
     };
     this.placeShip(episode.spec);
-    if (this.vehicle) this.vehicle.target = this.currentTarget;
+    if (this.vehicle) {
+      this.vehicle.target = this.currentTarget;
+      this.vehicle.resetHistory(); // with input delay: no inputs from the previous episode
+    }
     if (episode.targets.length === 0) this.nextEpisode();
   }
 

@@ -44,6 +44,8 @@ import {
   parseModelConfig,
   parseSensors,
   parseExamConfig,
+  examPerception,
+  plainExam,
   runExam,
   type ExamConfig,
   parseScoring,
@@ -97,6 +99,16 @@ export interface TrainConfig {
    * present, sin, cos, soft length), appended to the model's inputs. Absent = none.
    */
   lookahead?: number;
+  /**
+   * Switch: every bot sees its inputs this many controller steps late (a ring buffer; 4 ≈ 66 ms at
+   * the 15 ms tick), reset at each episode start. Absent or 0 = none.
+   */
+  inputDelay?: number;
+  /**
+   * Switch: Gaussian noise (this standard deviation) on every input the network sees, from its own
+   * stream per (seed, round, generation, scenario), the same for every candidate. Absent or 0 = none.
+   */
+  inputNoise?: number;
   /** Switch: Gaussian mutation (add N(0, sigma²) with probability `rate`, default `mutationRate`). */
   mutation?: { kind: "gaussian"; sigma: number; rate?: number };
   /** Switch: models kept per generation, best first ((μ + λ) selection). Absent = 1. */
@@ -245,6 +257,8 @@ function readConfig(): TrainConfig {
     ...(raw.exam === undefined ? {} : { exam: parseTrainingExam(raw.exam) }),
     ...(raw.encoding === undefined ? {} : { encoding: raw.encoding as string }),
     ...(raw.lookahead === undefined ? {} : { lookahead: raw.lookahead as number }),
+    ...(raw.inputDelay === undefined ? {} : { inputDelay: raw.inputDelay as number }),
+    ...(raw.inputNoise === undefined ? {} : { inputNoise: raw.inputNoise as number }),
     ...(raw.mutation === undefined ? {} : { mutation: parseMutation(raw.mutation) }),
     ...(raw.parents === undefined ? {} : { parents: raw.parents as number }),
     ...(raw.initRange === undefined ? {} : { initRange: raw.initRange as number }),
@@ -261,6 +275,10 @@ function readConfig(): TrainConfig {
     if (given !== undefined) throw new Error("config.encoding and config.model.inputs cannot both be set");
   }
   if (config.lookahead !== undefined) lookaheadInputs(config.lookahead); // throws when out of range
+  if (config.inputDelay !== undefined && (!Number.isInteger(config.inputDelay) || config.inputDelay < 0))
+    throw new Error("config.inputDelay must be an integer ≥ 0");
+  if (config.inputNoise !== undefined && (typeof config.inputNoise !== "number" || !(config.inputNoise >= 0)))
+    throw new Error("config.inputNoise must be a number ≥ 0");
   if (
     config.parents !== undefined &&
     (!Number.isInteger(config.parents) ||
@@ -454,12 +472,21 @@ async function main(): Promise<void> {
       if (exam && examModel) {
         const startWall = performance.now();
         const startCpu = process.cpuUsage();
-        const result = await runExam(examModel, exam);
-        const examCpu = process.cpuUsage(startCpu);
+        const robust = examPerception(exam);
+        const result = await runExam(examModel, robust ? plainExam(exam) : exam);
         metrics.exam = result.score;
         metrics.examCheckpoints = result.checkpoints;
         metrics.examFinished = result.finished;
         metrics.examCrashes = result.crashes;
+        if (robust) {
+          // The same races with the exam's input delay and noise.
+          const perturbed = await runExam(examModel, exam);
+          metrics.examRobust = perturbed.score;
+          metrics.examRobustCheckpoints = perturbed.checkpoints;
+          metrics.examRobustFinished = perturbed.finished;
+          metrics.examRobustCrashes = perturbed.crashes;
+        }
+        const examCpu = process.cpuUsage(startCpu);
         genEvent.phases.exam = {
           wall: (performance.now() - startWall) / 1000,
           cpu: (examCpu.user + examCpu.system) / 1e6,
@@ -506,6 +533,14 @@ async function main(): Promise<void> {
       ...(config.initRange === undefined ? {} : { initRange: config.initRange }),
       ...(config.crashLimit === undefined ? {} : { crashLimit: config.crashLimit }),
       ...(config.reevaluate === undefined ? {} : { reevaluate: config.reevaluate }),
+      ...(config.inputDelay === undefined && config.inputNoise === undefined
+        ? {}
+        : {
+            perception: {
+              ...(config.inputDelay === undefined ? {} : { inputDelay: config.inputDelay }),
+              ...(config.inputNoise === undefined ? {} : { inputNoise: config.inputNoise }),
+            },
+          }),
       random: mutationRandom,
       firstGeneration: startG + 1,
       maxGenerations: to - startG,

@@ -121,6 +121,8 @@ export interface TrainingServiceOptions {
   curriculum?: CurriculumConfig & { level?: number; streakCount?: number };
   /** Re-evaluate the best `top` candidates plus the parents on about `episodes` extra scenarios. */
   reevaluate?: { top: number; episodes: number };
+  /** Latency (`inputDelay` steps) and Gaussian noise (`inputNoise`) on the bots' inputs. Absent = none. */
+  perception?: { inputDelay?: number; inputNoise?: number };
   maxGenerations?: number;
   /** Number of the first generation (default 1; a resumed run passes g + 1). */
   firstGeneration?: number;
@@ -174,6 +176,7 @@ export function registerAITrainingService(
     ...(options.parents === undefined ? {} : { parents: options.parents }),
     ...(options.initRange === undefined ? {} : { initRange: options.initRange }),
     ...(options.reevaluate ? { reevaluate: options.reevaluate } : {}),
+    ...(options.perception ? { perception: options.perception } : {}),
     ...(options.curriculum
       ? {
           curriculum: {

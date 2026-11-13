@@ -48,6 +48,22 @@
     "examCrashes": {
       "direction": "min",
       "label": "Crashes during the exam"
+    },
+    "examRobust": {
+      "direction": "min",
+      "label": "Robustness exam score: input delay and noise (lower is better)"
+    },
+    "examRobustCheckpoints": {
+      "direction": "max",
+      "label": "Robustness exam: share of race checkpoints reached"
+    },
+    "examRobustFinished": {
+      "direction": "max",
+      "label": "Robustness exam: share of races finished"
+    },
+    "examRobustCrashes": {
+      "direction": "min",
+      "label": "Robustness exam: crashes"
     }
   },
   "leaderboard": {

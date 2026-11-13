@@ -465,12 +465,43 @@ describe("evo-lab worker (protocol v1)", () => {
     return straight;
   }
 
+  /** Kill-and-resume: a run killed after its checkpoint at g ≥ 2 and resumed to `to` = a straight run. */
+  async function killResume(config: object, to = 6): Promise<string> {
+    const straight = newRun(config);
+    expect(await run(straight, ["--to", String(to)])).toBe(0);
+    const killed = newRun(config);
+    const worker = start(killed, ["--to", String(to)]);
+    const deadline = Date.now() + 60_000;
+    while (!events(killed).some((e) => e.type === "checkpoint" && (e.g ?? 0) >= 2)) {
+      if (Date.now() > deadline) throw new Error("no checkpoint");
+      await new Promise((r) => setTimeout(r, 10));
+    }
+    worker.child.kill("SIGKILL");
+    await worker.exited;
+    expect(await run(killed, ["--resume", "--to", String(to)])).toBe(0);
+    expect(result(killed)).toBe(result(straight));
+    const hashes = (dir: string) =>
+      events(dir)
+        .filter((e) => e.type === "gen")
+        .map((e) => [e.g, e.stateHash]);
+    // A killed run may repeat generations after its checkpoint; the last hash per generation counts.
+    expect(Object.fromEntries(hashes(killed))).toEqual(Object.fromEntries(hashes(straight)));
+    return straight;
+  }
+
   /** Replays a training snapshot's arena `index` and returns (reached, crashes) per episode, and the trace's. */
   async function replayEpisodes(
     dir: string,
     g: number,
     index: number,
-    config: { frames: number; collisions: string; crashMode?: string; arenas: unknown },
+    config: {
+      frames: number;
+      collisions: string;
+      crashMode?: string;
+      arenas: unknown;
+      inputDelay?: number;
+      inputNoise?: number;
+    },
   ) {
     const snap = JSON.parse(
       readFileSync(join(dir, "gens", `g${String(g).padStart(4, "0")}.json`), "utf8"),
@@ -488,6 +519,8 @@ describe("evo-lab worker (protocol v1)", () => {
       seed: 7,
       g,
       arenaIndex: index,
+      ...(config.inputDelay === undefined ? {} : { inputDelay: config.inputDelay }),
+      ...(config.inputNoise === undefined ? {} : { inputNoise: config.inputNoise }),
     });
     while (!replay.done) replay.step(200);
     const replayed = replay.records.map((r) => [r.reached, r.crashes]);
@@ -630,6 +663,52 @@ describe("evo-lab worker (protocol v1)", () => {
     expect(replayed).toEqual(traced);
   }, 180_000);
 
+  it("inputDelay / inputNoise switches and the robustness exam: deterministic, kill-and-resume, replay, 0 = absent", async () => {
+    const base = {
+      sample: 6,
+      frames: 60,
+      arenas: [{ name: "point-to-point", params: { episodes: 2, asteroids: 5 } }],
+      collisions: "obstacles",
+    };
+    const exam = { every: 3, tracks: ["short"], randomTracks: 1, timeLimitSeconds: 5 };
+    const config = {
+      ...base,
+      inputDelay: 4,
+      inputNoise: 0.05,
+      exam: { ...exam, inputDelay: 4, inputNoise: 0.1 },
+    };
+    const dir = await killResume(config);
+    const { replayed, traced } = await replayEpisodes(dir, 6, 0, config);
+    expect(replayed).toEqual(traced);
+    const metricsAt = (d: string, g: number) =>
+      events(d).filter((e) => e.type === "gen" && e.g === g)[0]!.metrics as Record<string, number>;
+    expect(metricsAt(dir, 3)).toMatchObject({
+      exam: expect.any(Number),
+      examRobust: expect.any(Number),
+      examRobustCheckpoints: expect.any(Number),
+      examRobustFinished: expect.any(Number),
+      examRobustCrashes: expect.any(Number),
+    });
+    // The plain exam is the exam without delay and noise: the same as in a run without them.
+    const plainExamRun = newRun({ ...config, exam });
+    expect(await run(plainExamRun, ["--to", "3"])).toBe(0);
+    expect(metricsAt(plainExamRun, 3).exam).toBe(metricsAt(dir, 3).exam);
+    expect(metricsAt(plainExamRun, 3)).not.toHaveProperty("examRobust");
+    // Training with delay and noise changes the run; 0 is the same as absent, byte for byte.
+    const plain = newRun(base);
+    expect(await run(plain, ["--to", "3"])).toBe(0);
+    const zero = newRun({ ...base, inputDelay: 0, inputNoise: 0 });
+    expect(await run(zero, ["--to", "3"])).toBe(0);
+    const strip = (d: string) => {
+      const { config: _c, ...rest } = JSON.parse(result(d)) as Record<string, unknown>;
+      return rest;
+    };
+    expect(strip(zero)).toEqual(strip(plain));
+    const short = newRun(config);
+    expect(await run(short, ["--to", "3"])).toBe(0);
+    expect(strip(short)).not.toEqual(strip(plain));
+  }, 240_000);
+
   it("exam switch: race metrics on every N-th generation, results and resume unchanged", async () => {
     const exam = { every: 2, tracks: ["short"], randomTracks: 1, timeLimitSeconds: 10 };
     const withExam = newRun({ ...CONFIG, exam });
@@ -712,6 +791,10 @@ describe("evo-lab worker (protocol v1)", () => {
       [{ sensors: { nearest: { horizon: 1 } } }, /unknown parameter/],
       [{ lookahead: 3 }, /lookahead/],
       [{ lookahead: 0 }, /lookahead/],
+      [{ inputDelay: -1 }, /config.inputDelay/],
+      [{ inputDelay: 2.5 }, /config.inputDelay/],
+      [{ inputNoise: -0.1 }, /config.inputNoise/],
+      [{ exam: { inputDelay: 1.5 } }, /exam.inputDelay/],
     ] as const) {
       const dir = newRun(config);
       expect(await run(dir, ["--to", "1"])).not.toBe(0);

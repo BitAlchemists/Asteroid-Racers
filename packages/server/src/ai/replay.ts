@@ -4,7 +4,7 @@ import { GameServer } from "../game-server";
 import type { LocalConnectionOptions } from "../local-connection";
 import { seededRandom } from "../random";
 import { ArenaScript, type CrashMode } from "./arena-script";
-import { resolveArenas, trainingScenarios, type ArenaConfig } from "./arenas";
+import { noiseSeed, resolveArenas, SCENARIO_STREAM, trainingScenarios, type ArenaConfig } from "./arenas";
 import { AIDirector, placeScenario } from "./directors";
 import type { MajorTom } from "./network";
 import type { EpisodeRecord } from "./scoring";
@@ -101,6 +101,10 @@ export interface ArenaReplayOptions {
   g: number;
   /** Which arena of the config (default 0). */
   arenaIndex?: number;
+  /** The config's `inputDelay` switch (absent = none). */
+  inputDelay?: number;
+  /** The config's `inputNoise` switch (absent = none); the noise is the training round's. */
+  inputNoise?: number;
 }
 
 /**
@@ -133,6 +137,12 @@ export class ArenaReplay implements Replay {
     await server.start();
     const placed = placeScenario(server, scenario);
     const script = new ArenaScript(o.model, placed.episodes, o.crashMode, server.tickSeconds, o.crashLimit);
+    if ((o.inputDelay ?? 0) > 0 || (o.inputNoise ?? 0) > 0)
+      script.perception = {
+        ...(o.inputDelay === undefined ? {} : { inputDelay: o.inputDelay }),
+        ...(o.inputNoise === undefined ? {} : { inputNoise: o.inputNoise }),
+        noiseSeed: noiseSeed(o.seed, SCENARIO_STREAM.training, o.g, o.arenaIndex ?? 0),
+      };
     const { running, proxy } = await startScript(director, script);
     return new ArenaReplay(server, script, proxy, running);
   }
