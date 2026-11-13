@@ -547,3 +547,23 @@ for byte, and all earlier tests pass unchanged.
   `analyze`, train-57 and train-64). That is about 1,000 ticks/s per run, about 70,000
   ship-steps/s, about 14 µs CPU per ship-step. The tick counts are estimated.
 - **S1 training-speed plan** written (`doc/plans/S1-training-speed.md`), waiting for approval.
+
+### M4 step 7b: curriculum switch
+
+- **Asked by the user:** a smoother difficulty curve, first a clear line of sight, then more rocks.
+  The plan was updated first (step 7b, experiment E3b; commit 802e66c).
+- **`curriculum` switch** (commit 89af824, built on branch `m4-curriculum` in its own worktree
+  because the S1 agent works in main, then fast-forwarded):
+  - default levels: clear line → 1 rock → +20 scattered → 2 rocks + 40 → the v2 task;
+  - level up after `streak` (3) generations with winner success ≥ `success` (0.8);
+  - held-out scenarios on the last level;
+  - level and streak in the checkpoint and the `stateHash`;
+  - `level` on every gen event;
+  - snapshots record their generation's arenas, and the plugin replays from them.
+  - Tests: level-ups 0, 1, 2, 2 in a 4-generation run; exact resume and equal hashes; a replay from
+    the snapshot's arenas places exactly the rocks training flew; config validation; defaults.
+    `npm run check` green (226 tests).
+- **E3b plan** written (`experiments/m4-e3b-curriculum.md`). It starts after E3 and after S1's
+  baseline bench, which needs the machine to itself.
+- Also answered: the viewer shows only lineCheck because E3's models have only that sensor;
+  whiskers, sectors and nearest were E2 arms and return in E5.
