@@ -2,7 +2,15 @@ import { Vector2 } from "@ar/shared";
 import { describe, expect, it } from "vitest";
 import type { GameServer } from "../game-server";
 import { seededRandom } from "../random";
-import { arenaByName, deriveSeed, legacyArena, pointToPointArena, type Scenario } from "./arenas";
+import {
+  applyLevel,
+  arenaByName,
+  deriveSeed,
+  legacyArena,
+  parseCurriculum,
+  pointToPointArena,
+  type Scenario,
+} from "./arenas";
 import { MemoryModelStore } from "./model-store";
 import type { GenerationReport, TrainingDirector } from "./directors";
 import {
@@ -254,5 +262,28 @@ describe("rock-in-line arena", () => {
     const b = arenaByName("rock-in-line").generate(seededRandom(9), { asteroids: 10 });
     expect(JSON.stringify(a)).toBe(JSON.stringify(b));
     expect(a.obstacles.length).toBeGreaterThanOrEqual(8 + 10 - 2); // nearly every rock placed
+  });
+});
+
+describe("curriculum", () => {
+  const arenas = [
+    { name: "rock-in-line", params: { episodes: 16, rocks: 2 } },
+    { name: "point-to-point", params: { episodes: 8, asteroids: 80 } },
+  ];
+
+  it("defaults to five levels from a clear line of sight to the v2 task, success 0.8, streak 3", () => {
+    const c = parseCurriculum({}, arenas);
+    expect(c.success).toBe(0.8);
+    expect(c.streak).toBe(3);
+    expect(c.levels).toHaveLength(5);
+    expect(applyLevel(arenas, c.levels[0]!)).toEqual([
+      { name: "rock-in-line", params: { episodes: 16, rocks: 0 } },
+      { name: "point-to-point", params: { episodes: 8, asteroids: 0 } },
+    ]);
+    expect(applyLevel(arenas, c.levels[4]!)).toEqual(arenas);
+  });
+
+  it("level overrides apply only to the arenas they name", () => {
+    expect(applyLevel(arenas, { "rock-in-line": { rocks: 1 } })[1]).toEqual(arenas[1]);
   });
 });

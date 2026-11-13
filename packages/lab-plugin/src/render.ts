@@ -52,6 +52,8 @@ interface TrainSnapshot {
   score?: number;
   model?: unknown;
   trace?: ArenaTrace[];
+  /** With a curriculum: the arenas (at this generation's level) the generation flew. */
+  arenas?: unknown;
 }
 
 interface ExamSnapshot {
@@ -266,7 +268,7 @@ async function sourceFor(
   return {
     source: arenaReplaySource({
       model,
-      arenas: parseArenas(config.arenas),
+      arenas: parseArenas(snapshot.arenas ?? config.arenas),
       frames: typeof config.frames === "number" ? config.frames : 600,
       collisions: (config.collisions as CollisionMode | undefined) ?? "none",
       crashMode: (config.crashMode as CrashMode | undefined) ?? "end",

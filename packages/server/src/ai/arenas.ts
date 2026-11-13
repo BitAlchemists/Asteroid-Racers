@@ -277,6 +277,73 @@ export function resolveArenas(configs: readonly ArenaConfig[], frames: number): 
   return configs.map((a) => ({ arena: arenaByName(a.name), params: { frames, ...a.params } }));
 }
 
+/**
+ * A staged curriculum: `levels[i]` overrides arena params by arena name. A run moves to the next
+ * level once the winner reaches at least `success` of the training targets in `streak` generations
+ * in a row.
+ */
+export interface CurriculumConfig {
+  levels: Record<string, ArenaParams>[];
+  success: number;
+  streak: number;
+}
+
+/** The default levels: a clear line of sight first, then more and more rocks (the v2 task last). */
+export const DEFAULT_CURRICULUM_LEVELS: readonly Record<string, ArenaParams>[] = Object.freeze([
+  { "rock-in-line": { rocks: 0 }, "point-to-point": { asteroids: 0 } },
+  { "rock-in-line": { rocks: 1 }, "point-to-point": { asteroids: 0 } },
+  { "rock-in-line": { rocks: 1 }, "point-to-point": { asteroids: 20 } },
+  { "rock-in-line": { rocks: 2 }, "point-to-point": { asteroids: 40 } },
+  { "rock-in-line": { rocks: 2 }, "point-to-point": { asteroids: 80 } },
+]);
+
+/**
+ * The `curriculum` section of a training config: `{ levels?, success?, streak? }` (`{}` = the default
+ * levels, success 0.8, streak 3). Every arena a level names must be in `arenas`; arenas a level does
+ * not name keep their own params.
+ */
+export function parseCurriculum(raw: unknown, arenas: readonly ArenaConfig[]): CurriculumConfig {
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw))
+    throw new Error("config.curriculum must be an object ({ levels?, success?, streak? })");
+  const {
+    levels = DEFAULT_CURRICULUM_LEVELS,
+    success = 0.8,
+    streak = 3,
+    ...rest
+  } = raw as Record<string, unknown>;
+  if (Object.keys(rest).length > 0)
+    throw new Error(`unknown config.curriculum keys ${Object.keys(rest).join(", ")}`);
+  if (typeof success !== "number" || !(success > 0 && success <= 1))
+    throw new Error("config.curriculum.success must be in (0, 1]");
+  if (!Number.isInteger(streak) || (streak as number) < 1)
+    throw new Error("config.curriculum.streak must be an integer ≥ 1");
+  if (!Array.isArray(levels) || levels.length < 2)
+    throw new Error("config.curriculum.levels must be a list of at least 2 levels");
+  const names = new Set(arenas.map((a) => a.name));
+  const parsed = levels.map((level: unknown, i) => {
+    if (typeof level !== "object" || level === null || Array.isArray(level))
+      throw new Error(`config.curriculum.levels[${i}] must be an object of arena params by arena name`);
+    for (const [name, params] of Object.entries(level)) {
+      if (!names.has(name))
+        throw new Error(
+          `config.curriculum.levels[${i}] names arena ${JSON.stringify(name)}, which is not in config.arenas`,
+        );
+      if (typeof params !== "object" || params === null || Array.isArray(params))
+        throw new Error(`config.curriculum.levels[${i}].${name} must be an object of params`);
+    }
+    return level as Record<string, ArenaParams>;
+  });
+  return { levels: parsed.map((l) => ({ ...l })), success, streak: streak as number };
+}
+
+/** The arena configs of one curriculum level: each arena's params with the level's overrides on top. */
+export function applyLevel(
+  arenas: readonly ArenaConfig[],
+  level: Record<string, ArenaParams>,
+): ArenaConfig[] {
+  return arenas.map((a) => ({ name: a.name, params: { ...a.params, ...level[a.name] } }));
+}
+
 /** The training scenarios of generation `g` (1-based), one per arena; fixed arenas ignore `g`. */
 export function trainingScenarios(runs: readonly ArenaRun[], seed: number, g: number): Scenario[] {
   return runs.map((run, a) =>

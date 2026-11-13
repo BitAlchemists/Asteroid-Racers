@@ -3,6 +3,8 @@ import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "no
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { EntityType } from "@ar/shared";
+import { ArenaReplay, MajorTom, parseArenas, type NetworkJson } from "@ar/server";
 import { afterAll, describe, expect, it } from "vitest";
 
 /** The evo-lab worker, exercised exactly as the runner calls it (separate process, cwd = run dir). */
@@ -317,6 +319,81 @@ describe("evo-lab worker (protocol v1)", () => {
     expect(hashes(resumed)).toEqual(hashes(straight));
   }, 120_000);
 
+  it("curriculum switch: levels go up with success, exact resume holds, snapshots replay the right level", async () => {
+    // Targets 10–20 units from the start (inside the 50-unit target radius): every episode succeeds,
+    // so with streak 1 the run climbs one level per generation.
+    const config = {
+      sample: 6,
+      frames: 60,
+      arenas: [
+        { name: "point-to-point", params: { episodes: 2, distance: [10, 20] } },
+        { name: "rock-in-line", params: { episodes: 1 } },
+      ],
+      collisions: "obstacles",
+      heldOut: 1,
+      // 2 of 3 targets are reached for sure (rock-in-line may fail), so success ≥ 0.6 every generation.
+      curriculum: {
+        levels: [
+          { "rock-in-line": { rocks: 0 } },
+          { "rock-in-line": { rocks: 1 } },
+          { "rock-in-line": { rocks: 2 } },
+        ],
+        success: 0.6,
+        streak: 1,
+      },
+    };
+    const straight = newRun(config);
+    expect(await run(straight, ["--to", "4"])).toBe(0);
+    const levels = events(straight)
+      .filter((e) => e.type === "gen")
+      .map((e) => (e.metrics as { level: number }).level);
+    expect(levels).toEqual([0, 1, 2, 2]);
+    const snap = (g: number) =>
+      JSON.parse(readFileSync(join(straight, "gens", `g000${g}.json`), "utf8")) as {
+        arenas: { name: string; params: Record<string, unknown> }[];
+        trace: { obstacles: unknown[] }[];
+        model: NetworkJson;
+      };
+    expect(snap(1).arenas[1]!.params.rocks).toBe(0);
+    expect(snap(2).arenas[1]!.params.rocks).toBe(1);
+    expect(snap(1).trace[1]!.obstacles).toHaveLength(0);
+    expect(snap(3).trace[1]!.obstacles).toHaveLength(2);
+    // A replay built from the snapshot's arenas places exactly the obstacles training flew.
+    const replay = await ArenaReplay.create({
+      model: MajorTom.fromJson(snap(2).model),
+      arenas: parseArenas(snap(2).arenas),
+      frames: 60,
+      collisions: "obstacles",
+      crashMode: "end",
+      seed: 7,
+      g: 2,
+      arenaIndex: 1,
+    });
+    const rocks = [...replay.server.world.entities.values()].filter((e) => e.type === EntityType.ASTEROID);
+    const round = (v: number) => Math.round(v * 10) / 10; // traces store 0.1 units
+    expect(rocks.map((r) => [round(r.position.x), round(r.position.y), round(r.radius)])).toEqual(
+      snap(2).trace[1]!.obstacles,
+    );
+    expect(rocks).toHaveLength(1);
+    replay.dispose();
+
+    const resumed = newRun(config);
+    expect(await run(resumed, ["--to", "2"])).toBe(0);
+    const ckpt = JSON.parse(readFileSync(join(resumed, "ckpt.json"), "utf8")) as { curriculum: unknown };
+    expect(ckpt.curriculum).toEqual({ level: 2, streak: 0 });
+    expect(await run(resumed, ["--resume", "--to", "4"])).toBe(0);
+    expect(result(resumed)).toBe(result(straight));
+    const hashes = (dir: string) =>
+      events(dir)
+        .filter((e) => e.type === "gen")
+        .map((e) => e.stateHash);
+    expect(hashes(resumed)).toEqual(hashes(straight));
+    const res = JSON.parse(result(straight)) as {
+      config: { curriculum: { success: number; streak: number } };
+    };
+    expect(res.config.curriculum).toMatchObject({ success: 0.6, streak: 1 });
+  }, 120_000);
+
   it("exam switch: race metrics on every N-th generation, results and resume unchanged", async () => {
     const exam = { every: 2, tracks: ["short"], randomTracks: 1, timeLimitSeconds: 10 };
     const withExam = newRun({ ...CONFIG, exam });
@@ -386,6 +463,10 @@ describe("evo-lab worker (protocol v1)", () => {
       [{ mutation: { kind: "gaussian", sigma: 0 } }, /sigma/],
       [{ sample: 10, parents: 3 }, /parents/],
       [{ initRange: -1 }, /initRange/],
+      [{ curriculum: { levels: [{}] } }, /at least 2 levels/],
+      [{ curriculum: { levels: [{}, { moon: {} }] } }, /not in config.arenas/],
+      [{ curriculum: { success: 2 } }, /curriculum.success/],
+      [{ curriculum: { pace: 1 } }, /unknown config.curriculum keys/],
       [{ sensors: { nearest: { horizon: 1 } } }, /unknown parameter/],
     ] as const) {
       const dir = newRun(config);

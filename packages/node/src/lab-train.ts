@@ -37,6 +37,9 @@ import {
   registerAITrainingService,
   seededRandom,
   parseArenas,
+  parseCurriculum,
+  applyLevel,
+  type CurriculumConfig,
   parseModelConfig,
   parseSensors,
   parseExamConfig,
@@ -95,6 +98,11 @@ export interface TrainConfig {
   /** Switch: range of the random starting weights. Absent = 1. */
   initRange?: number;
   /**
+   * Switch: a staged curriculum over `arenas` (`{ levels, success, streak }`, defaults filled in):
+   * a clear line of sight first, more rocks as the winner gets good. Absent = always `arenas`.
+   */
+  curriculum?: CurriculumConfig;
+  /**
    * Switch: every `every` generations (and at the last), the winner flies the race exam; its
    * metrics go on that generation's `gen` event. The rest is an exam config (defaults filled in).
    */
@@ -109,6 +117,8 @@ interface Checkpoint {
   winner: NetworkJson | null;
   /** All kept models, best first; only with the `parents` switch (else the winner alone). */
   parents?: NetworkJson[];
+  /** Where the curriculum stands for the next generation; only with the `curriculum` switch. */
+  curriculum?: { level: number; streak: number };
   bestScore: number | null;
   rng: { mutation: number; server: number };
 }
@@ -208,6 +218,9 @@ function readConfig(): TrainConfig {
     ...(raw.mutation === undefined ? {} : { mutation: parseMutation(raw.mutation) }),
     ...(raw.parents === undefined ? {} : { parents: raw.parents as number }),
     ...(raw.initRange === undefined ? {} : { initRange: raw.initRange as number }),
+    ...(raw.curriculum === undefined
+      ? {}
+      : { curriculum: parseCurriculum(raw.curriculum, parseArenas(raw.arenas)) }),
   };
   if (config.encoding !== undefined) {
     if (typeof config.encoding !== "string" || !(config.encoding in ENCODINGS))
@@ -297,6 +310,10 @@ async function main(): Promise<void> {
   let winner: MajorTom | undefined = saved?.winner ? MajorTom.fromJson(saved.winner) : undefined;
   /** Kept models after the last generation (only tracked with the `parents` switch). */
   let parents: NetworkJson[] | undefined = saved?.parents;
+  /** Curriculum level and streak for the next generation (only with the `curriculum` switch). */
+  let curriculum: { level: number; streak: number } | undefined = config.curriculum
+    ? (saved?.curriculum ?? { level: 0, streak: 0 })
+    : undefined;
   let genStartWall = performance.now();
   let genStartCpu = process.cpuUsage();
   let genStartFrame = 0;
@@ -312,6 +329,7 @@ async function main(): Promise<void> {
     config,
     winner: winner ? winner.toJson() : null,
     ...(parents === undefined ? {} : { parents }),
+    ...(curriculum === undefined ? {} : { curriculum }),
     bestScore,
     rng: { mutation: mutationRandom.state, server: serverRandom.state },
   });
@@ -325,6 +343,9 @@ async function main(): Promise<void> {
     winner = report.winner;
     bestScore = report.bestScore;
     if (config.parents !== undefined) parents = report.parents.map((p) => p.toJson());
+    const flownLevel = report.curriculum?.level;
+    if (report.curriculum)
+      curriculum = { level: report.curriculum.nextLevel, streak: report.curriculum.streak };
     const cpu = process.cpuUsage(genStartCpu);
     const wall = (performance.now() - genStartWall) / 1000;
     const cpuSec = (cpu.user + cpu.system) / 1e6;
@@ -342,6 +363,10 @@ async function main(): Promise<void> {
           score: report.bestScore,
           model: report.winner.toJson(),
           trace: report.trace,
+          // With a curriculum, the arenas this generation flew, so a replay builds the same scenarios.
+          ...(config.curriculum && flownLevel !== undefined
+            ? { arenas: applyLevel(config.arenas, config.curriculum.levels[flownLevel]!) }
+            : {}),
         }),
       );
     }
@@ -353,6 +378,7 @@ async function main(): Promise<void> {
       ...(report.heldOutScore === undefined
         ? {}
         : { heldOut: report.heldOutScore, heldOutSuccess: report.heldOutSuccess }),
+      ...(flownLevel === undefined ? {} : { level: flownLevel }),
       // Speed (timing data: never in result.json or stateHash).
       ticks,
       tps: wall > 0 ? Math.round(ticks / wall) : undefined,
@@ -364,6 +390,7 @@ async function main(): Promise<void> {
         JSON.stringify({
           winner: report.winner.toJson(),
           ...(parents === undefined ? {} : { parents }),
+          ...(curriculum === undefined ? {} : { curriculum }),
           bestScore: report.bestScore,
           rng: { mutation: mutationRandom.state, server: serverRandom.state },
         }),
@@ -429,6 +456,9 @@ async function main(): Promise<void> {
       mutationStrength: config.mutationStrength,
       ...(config.mutation ? { mutation: config.mutation } : {}),
       ...(config.parents === undefined ? {} : { parents: config.parents }),
+      ...(config.curriculum && curriculum
+        ? { curriculum: { ...config.curriculum, level: curriculum.level, streakCount: curriculum.streak } }
+        : {}),
       ...(config.initRange === undefined ? {} : { initRange: config.initRange }),
       random: mutationRandom,
       firstGeneration: startG + 1,

@@ -3,7 +3,7 @@ import type { CollisionMode } from "../contracts";
 import { GameServer } from "../game-server";
 import { seededRandom, type Random } from "../random";
 import type { CrashMode } from "./arena-script";
-import { legacyArena, resolveArenas, type ArenaConfig } from "./arenas";
+import { applyLevel, legacyArena, resolveArenas, type ArenaConfig, type CurriculumConfig } from "./arenas";
 import { MemoryModelStore, type ModelStore } from "./model-store";
 import { DEFAULT_HIDDEN, layoutFor, LEGACY_SPEC, type ModelSpec } from "./model-spec";
 import defaultModel from "./models/default-model.json";
@@ -113,6 +113,11 @@ export interface TrainingServiceOptions {
   parents?: number;
   /** Range of the random starting weights (default 1). */
   initRange?: number;
+  /**
+   * A staged curriculum over `arenas` (see {@link CurriculumConfig}); `level` and `streak` say where a
+   * resumed run stands (default 0). Absent = always `arenas`.
+   */
+  curriculum?: CurriculumConfig & { level?: number; streakCount?: number };
   maxGenerations?: number;
   /** Number of the first generation (default 1; a resumed run passes g + 1). */
   firstGeneration?: number;
@@ -162,6 +167,19 @@ export function registerAITrainingService(
     ...(options.onGeneration === undefined ? {} : { onGeneration: options.onGeneration }),
     ...(options.parents === undefined ? {} : { parents: options.parents }),
     ...(options.initRange === undefined ? {} : { initRange: options.initRange }),
+    ...(options.curriculum
+      ? {
+          curriculum: {
+            levels: options.curriculum.levels.map((level) =>
+              resolveArenas(applyLevel(options.arenas ?? [{ name: legacyArena.name }], level), frames),
+            ),
+            success: options.curriculum.success,
+            streak: options.curriculum.streak,
+            level: options.curriculum.level ?? 0,
+            streakCount: options.curriculum.streakCount ?? 0,
+          },
+        }
+      : {}),
     mutate: options.mutation
       ? (network: MajorTom, rnd: Random) =>
           network.mutate(options.mutation!.rate ?? mutationRate, options.mutation!.sigma, mutateGaussian, rnd)

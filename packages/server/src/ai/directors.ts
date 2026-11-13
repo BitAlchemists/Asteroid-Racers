@@ -148,6 +148,8 @@ export interface GenerationReport {
   winner: MajorTom;
   /** The models kept for the next generation, best first (just the winner unless `parents` > 1). */
   parents: MajorTom[];
+  /** With a curriculum: the level this generation flew, and the level and streak for the next one. */
+  curriculum?: { level: number; nextLevel: number; streak: number };
   sampleSize: number;
   gameSeconds: number;
 }
@@ -171,6 +173,17 @@ export interface TrainingOptions {
   parents?: number;
   /** Range of the random starting weights of the first generation (default 1). */
   initRange?: number;
+  /**
+   * A staged curriculum: the arena runs of every level (`arenas` is ignored for training, held-out
+   * scenarios use the last level). `level` and `streak` are where the run stands (for resume).
+   */
+  curriculum?: {
+    levels: readonly (readonly ArenaRun[])[];
+    success: number;
+    streak: number;
+    level: number;
+    streakCount: number;
+  };
   /** Every candidate flies every arena, one arena after the other. */
   arenas: readonly ArenaRun[];
   /** Run seed: scenario seeds are derived from it, the stream, the arena index and the generation. */
@@ -206,7 +219,25 @@ export class TrainingDirector extends AIDirector {
     if (options.arenas.length === 0) throw new Error("training needs at least one arena");
     this.generation = (options.firstGeneration ?? 1) - 1;
     this.scoring = options.scoring ?? { ...LEGACY_SCORING };
-    this.heldOutScenarios = heldOutScenarios(options.arenas, options.scenarioSeed, options.heldOut ?? 0);
+    const curriculum = options.curriculum;
+    this.level = curriculum?.level ?? 0;
+    this.streak = curriculum?.streakCount ?? 0;
+    // Held-out scenarios measure the target task: the last level of a curriculum.
+    this.heldOutScenarios = heldOutScenarios(
+      curriculum ? curriculum.levels.at(-1)! : options.arenas,
+      options.scenarioSeed,
+      options.heldOut ?? 0,
+    );
+  }
+
+  /** Curriculum level of the next generation (0 without a curriculum). */
+  private level: number;
+  /** Generations in a row whose winner reached the curriculum's success share. */
+  private streak: number;
+
+  /** The arena runs the next generation trains on. */
+  private get trainingRuns(): readonly ArenaRun[] {
+    return this.options.curriculum?.levels[this.level] ?? this.options.arenas;
   }
 
   start(): void {
@@ -225,7 +256,7 @@ export class TrainingDirector extends AIDirector {
 
   /** The training scenarios of generation `g` (1-based), one per arena. */
   scenariosFor(g: number): Scenario[] {
-    return trainingScenarios(this.options.arenas, this.options.scenarioSeed, g);
+    return trainingScenarios(this.trainingRuns, this.options.scenarioSeed, g);
   }
 
   private async trainLoop(): Promise<void> {
@@ -341,6 +372,17 @@ export class TrainingDirector extends AIDirector {
     }
 
     this.generation = g;
+    let curriculum: GenerationReport["curriculum"];
+    const plan = this.options.curriculum;
+    if (plan) {
+      const level = this.level;
+      this.streak = successRate(best.records) >= plan.success ? this.streak + 1 : 0;
+      if (this.streak >= plan.streak && this.level < plan.levels.length - 1) {
+        this.level++;
+        this.streak = 0;
+      }
+      curriculum = { level, nextLevel: this.level, streak: this.streak };
+    }
     const report: GenerationReport = {
       generation: g,
       modelGeneration: best.network.generation,
@@ -357,6 +399,7 @@ export class TrainingDirector extends AIDirector {
       ...heldOut,
       winner: best.network,
       parents,
+      ...(curriculum ? { curriculum } : {}),
       sampleSize: scored.length,
       gameSeconds: (this.server?.gameTime ?? 0) - startedAt,
     };
