@@ -1,16 +1,7 @@
-import { readFileSync } from "node:fs";
 import { parseArgs } from "node:util";
 import { Level, setLogLevel, WebSocketServerConnection } from "@ar/shared";
-import {
-  AIGameClient,
-  bundledModels,
-  DEFAULT_MODEL_NAME,
-  MajorTom,
-  RaceTargetScript,
-  TICK_SECONDS,
-  type NetworkJson,
-  type ScriptHost,
-} from "@ar/server";
+import { loadModelFile } from "./model-file";
+import { AIGameClient, RaceTargetScript, TICK_SECONDS, type ScriptHost } from "@ar/server";
 
 const HELP = `Connect a racing bot to a running game server over WebSocket.
 
@@ -38,12 +29,6 @@ if (values.help) {
 }
 setLogLevel("", Level.INFO);
 
-function loadModel(file: string | undefined): MajorTom {
-  if (!file) return bundledModels().load(DEFAULT_MODEL_NAME)![0]!;
-  const json = JSON.parse(readFileSync(file, "utf8")) as NetworkJson | NetworkJson[];
-  return MajorTom.fromJson(Array.isArray(json) ? json[0]! : json);
-}
-
 /** A tiny stand-in for the in-server director: wall-clock timers and a 15 ms control loop. */
 class RemoteHost implements ScriptHost {
   readonly server = undefined;
@@ -57,7 +42,7 @@ class RemoteHost implements ScriptHost {
 }
 
 const script = new RaceTargetScript(
-  loadModel(values.model ?? values.brain),
+  loadModelFile(values.model ?? values.brain),
   Number(values.delay),
   values.name,
 );

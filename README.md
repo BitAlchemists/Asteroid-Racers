@@ -83,6 +83,16 @@ npm run bot -- --url ws://localhost:1337/ws --name "Luke"
 
 sends a bot to any running server over the network. `npm run train -- --help` lists all options.
 
+To see how well a model actually races, the race exam flies it through the game's race tracks
+(the corridor race, a short race and five random ones) and prints checkpoints, finish times and
+crashes:
+
+```bash
+npm run exam -- --model bundled
+```
+
+It also reads trainer output (`luke.txt`) and Evo Lab files (snapshots, `result.json`).
+
 > The bundled model is an interim one (48 generations); a longer training run is still to do.
 
 ## Deploying

@@ -8,7 +8,8 @@
     "start": "tsx src/main.ts",
     "dev": "tsx watch src/main.ts",
     "train": "tsx src/train.ts",
-    "bot": "tsx src/bot.ts"
+    "bot": "tsx src/bot.ts",
+    "exam": "tsx src/exam.ts"
   },
   "dependencies": {
     "@ar/shared": "*",
