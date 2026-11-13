@@ -146,3 +146,82 @@ Plan: [`plans/M1-training-foundations.md`](plans/M1-training-foundations.md), ap
   "held-out next to training" roadmap item to done (shipped in M1).
 - The Evo Lab session reported that experiments (plan, approve, screen, report, sign-off) and the
   leaderboard are live. Experiments fit M5; nothing to change now.
+
+## 2026-11-13 — M2: measurement (race exam, snapshots)
+
+Plan: [`plans/M2-measurement.md`](plans/M2-measurement.md), approved by the user ("Start M2").
+
+| Commit    | What                                                                                 |
+| --------- | ------------------------------------------------------------------------------------ |
+| `b016a06` | M2 plan                                                                              |
+| `11f18ef` | M2.1: track registry (`demo`, `short`, `random`), `GameServer.loadTrack`             |
+| `e2f2f4a` | M2.2: exam runner (game rules, real racing bot, start on the portal, 3-minute limit) |
+| `deb16c9` | M2.3: training saves winner snapshots to `RUN_DIR/gens/gNNNN.json`                   |
+| `fc7a969` | M2.4: `exam` method (Evo Lab evaluation-only runs with `inputRun` / `inputGens`)     |
+| `9767c5d` | M2.5: `npm run exam`, short exam in CI                                               |
+
+- **Asked the Evo Lab session** how snapshots and inputs from another run work. Answers:
+  - snapshots in `RUN_DIR/gens/` with a `snapshot` field on the `gen` event;
+  - evaluation-only runs (contract A9) with `--input-run` and `--input-gens`, and `g` = the source
+    generation.
+  Evo Lab needed no changes.
+- **Deviations from the plan** (the plan is edited to match):
+  - snapshots go to `gens/`, not `models/`;
+  - the exam method is not resumable (about 1.5 s per model, deterministic), so the exact-resume
+    item was dropped.
+- **Correction of an earlier finding:** before M1 I reported that neither the bundled model nor
+  train-1 reaches a single checkpoint in the real race. That test made the bot fly to the race portal
+  first and wait 5 s before each target. The exam starts the ship on the portal with no delay, and
+  then every model reaches checkpoints. The flight to the portal was where they flew off into space.
+  So the earlier claim was true only for that setup, not for racing in general.
+
+### Baseline exams (Evo Lab, default exam: `demo`, `short`, 5 random tracks, 3 minutes each, exam seed 1)
+
+| Exam   | Model                                   | Exam score | Checkpoints | Finished | Crashes |
+| ------ | --------------------------------------- | ---------- | ----------- | -------- | ------- |
+| exam-1 | bundled (interim, 48 gens)              | 27,626     | 53 %        | 1 of 7   | 121     |
+| exam-2 | train-1 winner (g200, before M1)        | 28,245     | 57 %        | 2 of 7   | 181     |
+| exam-3 | train-2 winner (g200, `legacy` after M1) | 14,690     | 74 %        | 4 of 7   | 201     |
+| exam-4 | train-3 winner (g50, `point-to-point`)  | 18,774     | 66 %        | 4 of 7   | 206     |
+
+- None of these reaches even the first checkpoint of `demo` (the corridor race players see); they
+  crash 38–65 times in its corridors.
+- Two of the five random tracks catch every model: they stall about 500 units from a checkpoint and
+  crash about 60 times. Probably asteroids near that checkpoint; it can be looked at once there is a
+  watch page (M3).
+
+### train-4 and the exam along a run (exam-5)
+
+train-4: the train-3 setup (point-to-point, 8 episodes, 20 asteroids, collisions `obstacles`,
+scoring distance 1 / missed target 1000 / crash 500, 2 held-out) for 150 generations, seed 2026,
+snapshots every 10. exam-5 examined all 15 snapshots.
+
+| g   | Training score | Held-out success | Exam score | Checkpoints | Finished |
+| --- | -------------- | ---------------- | ---------- | ----------- | -------- |
+| 10  | 35,761         | 75 %             | 17,406     | 70 %        | 2 of 7   |
+| 30  | 21,092         | 88 %             | 12,673     | 77 %        | 5 of 7   |
+| 50  | 16,667         | 75 %             | 18,774     | 66 %        | 4 of 7   |
+| 80  | 9,501          | 100 %            | 20,374     | 64 %        | 2 of 7   |
+| 110 | 16,670         | 81 %             | **3,579**  | **94 %**    | **6 of 7** |
+| 140 | 7,061          | 81 %             | 9,563      | 83 %        | 5 of 7   |
+| 150 | 14,384         | 94 %             | 9,581      | 83 %        | 5 of 7   |
+
+- **First models to finish `demo`:** g110 in 77.5 s and g150 in 85.5 s, with 5 and 3 crashes.
+- **The exam does not follow the training score.** g80 has the best training score so far (9,501,
+  100 % held-out) but one of the worst exams. g110 has a middling training score and by far the best
+  exam. The training scenarios change every generation, so a single generation's training score is
+  noisy, and point-to-point flights are not races. Selecting or stopping on the exam (or training on
+  race-like arenas) are candidates for M4/M5.
+- train-3 g50 and train-4 g50 have the same exam score (18,774): train-4 repeats train-3's setup and
+  seed, so its first 50 generations are identical. Determinism holding across runs, as expected.
+- **Model promotion:** train-4 g110 is the best racer so far, by far. Per `CLAUDE.md`, putting it into
+  the game is the user's call. Not done.
+
+### Other
+
+- The Evo Lab session asked whether we need GPU acceleration (no: tiny networks, the time is in the
+  game simulation, and results must be bit-identical) and a shared model pool (later, for M5: only
+  for starting runs from a model, never for swapping models between running runs). It pointed out
+  that `imports` at enqueue can already hand a run a starting model; useful for M5 curriculum runs.
+  Our training worker does not read `--import` yet.
+- Nothing pushed. CI has not run on the M2 commits.

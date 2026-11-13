@@ -108,12 +108,12 @@ Each step ends with `npm run check` green and its own commit.
 
 ## Acceptance
 
-- [ ] Steps 1–5 committed, `npm run check` green, CI green.
-- [ ] Same model, config and seed give the same exam result twice, byte for byte. (Exact resume
+- [x] Steps 1–5 committed, `npm run check` green. CI is still open: it runs only after a push.
+- [x] Same model, config and seed give the same exam result twice, byte for byte. (Exact resume
       dropped: the exam method is not resumable; see step 4.)
-- [ ] Training runs write snapshots; `result.json` and exact resume are unchanged by them (tested).
-- [ ] An Evo Lab exam of a run's snapshots shows the exam metrics per generation.
-- [ ] Baseline table (bundled, train-1, train-2, train-3) recorded in `HISTORY.md`.
+- [x] Training runs write snapshots; `result.json` and exact resume are unchanged by them (tested).
+- [x] An Evo Lab exam of a run's snapshots shows the exam metrics per generation (exam-5 on train-4).
+- [x] Baseline table (bundled, train-1, train-2, train-3) recorded in `HISTORY.md`.
 
 ## Not in M2
 

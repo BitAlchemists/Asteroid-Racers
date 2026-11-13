@@ -43,7 +43,8 @@ second arena (point-to-point) runs from config alone.
 
 ### M2 — Measurement 🟡
 
-Plan: [`plans/M2-measurement.md`](plans/M2-measurement.md), approved 2026-11-13
+Plan: [`plans/M2-measurement.md`](plans/M2-measurement.md), approved 2026-11-13. All steps are done
+and the acceptance items are ticked, except CI, which runs only after a push.
 
 - **Race exam:** an Evo Lab evaluate-only method. It flies a model through the real race tracks and
   reports checkpoints reached, finish time and crashes.
