@@ -529,3 +529,21 @@ for byte, and all earlier tests pass unchanged.
   user asked why. Check runs go through the lab from now on.
 - **E3 `m4-e3-noise-floor-v2`:** plan in `experiments/`, approved (the user approved step 7 and then
   E3). 10 runs to g50, train-57..66, running.
+
+### Replay viewer goal display; S1 plan written
+
+- **Viewer** (the user said the goal was unclear in Evo Lab):
+  - only the current target is drawn, filled yellow with a thick ring, with a dashed line from the
+    ship to it;
+  - a white cross marks the episode start;
+  - the caption states the goal;
+  - "All targets" (key `t`) shows the other episodes' targets again;
+  - the sensor's rock outline changed from yellow to orange-red.
+  - Commit f4b7f9b. Checked in Evo Lab after a full page reload.
+- **Friction:** Evo Lab's "Reload plugin" fails with "Extension type application already has a
+  handler", because PixiJS registers its extensions a second time. A full page reload works. This
+  is a limitation of our plugin, not of Evo Lab.
+- **Training speed** (the user asked): about 21 s per generation with 10 runs in parallel (Evo Lab
+  `analyze`, train-57 and train-64). That is about 1,000 ticks/s per run, about 70,000
+  ship-steps/s, about 14 µs CPU per ship-step. The tick counts are estimated.
+- **S1 training-speed plan** written (`doc/plans/S1-training-speed.md`), waiting for approval.
