@@ -24,10 +24,10 @@ How we work is described in [`CLAUDE.md`](../CLAUDE.md). Each milestone gets its
 
 Status: ⬜ not started · 🟡 in progress · ✅ done
 
-### M1 — Training foundations 🟡
+### M1 — Training foundations ✅
 
-Plan: [`plans/M1-training-foundations.md`](plans/M1-training-foundations.md). All steps are done and
-the acceptance items are ticked, except CI, which runs only after a push.
+Plan: [`plans/M1-training-foundations.md`](plans/M1-training-foundations.md). Done 2026-11-13; CI
+green on `b45baa7`.
 
 Make the trainer generic enough that new courses, inputs and scoring are config rather than code:
 

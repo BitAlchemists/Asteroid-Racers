@@ -1,6 +1,6 @@
 # M1 — Training foundations
 
-Status: 🟡 in progress (approved 2026-11-13). Roadmap: [`../ROADMAP.md`](../ROADMAP.md)
+Status: ✅ done (approved and finished 2026-11-13). Roadmap: [`../ROADMAP.md`](../ROADMAP.md)
 
 ## Goal
 
@@ -119,7 +119,7 @@ interface Arena {
 
 ## Acceptance
 
-- [x] Steps 1–6 committed, `npm run check` green. CI is still open: it runs only after a push.
+- [x] Steps 1–6 committed, `npm run check` green, CI green (run 43399450644 on `b45baa7`).
 - [x] Exact-resume tests pass for both arenas, including kill-and-resume.
 - [x] Same seed gives the same result twice, byte for byte.
 - [x] Legacy baseline recorded and compared with train-1 (train-2). It did **not** match within

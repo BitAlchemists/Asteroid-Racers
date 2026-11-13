@@ -127,4 +127,6 @@ Plan: [`plans/M1-training-foundations.md`](plans/M1-training-foundations.md), ap
   generation 1 to 75 % by generation 50, so on this arena the brains learn something that carries
   over to unseen scenarios, unlike train-1 on the original course.
 - Not checked yet: how train-2 or train-3 brains do in the real race. That is the race exam in M2.
-- Nothing pushed. CI has not run on these commits.
+- Pushed to `main` at the user's request; CI passed on `b45baa7` (run 43399450644). M1 is done.
+  GitHub reports one moderate Dependabot alert (`minimatch`); its automatic update PR failed. Not
+  looked at yet.
