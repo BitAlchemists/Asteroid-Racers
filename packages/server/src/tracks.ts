@@ -2,6 +2,7 @@ import type { Entity, World } from "@ar/shared";
 import type { RaceController } from "./race-controller";
 import type { Random } from "./random";
 import { generateAsteroidBelt, SceneController } from "./scene-controller";
+import { parseTrackFile, trackFromFile } from "./track-file";
 
 /** Asteroids of the `random` track keep this much room around the start and every checkpoint. */
 const RANDOM_TRACK_CLEARANCE = 150;
@@ -16,7 +17,8 @@ export interface Track {
   build(world: World, race: RaceController, random: Random): void;
 }
 
-export const TRACKS: Readonly<Record<string, Track>> = {
+/** The tracks built in code. The race exam flies these; they must not change (M4 compares runs on it). */
+const CODE_TRACKS: Readonly<Record<string, Track>> = {
   demo: {
     name: "demo",
     description: "Scene 2: the corridor race through four asteroid blocks that the game runs",
@@ -51,6 +53,28 @@ export const TRACKS: Readonly<Record<string, Track>> = {
     },
   },
 };
+
+/**
+ * Track files (`tracks/*.json`, format `asteroid-racers/track/v1`), bundled so the browser has them.
+ * They are for the game and the watch page; the exam and training use only the tracks they name.
+ */
+const TRACK_FILES: Readonly<Record<string, unknown>> = {};
+
+/** Builds the file tracks; throws if a file is invalid or its name doesn't match its file name. */
+export function fileTracks(files: Readonly<Record<string, unknown>> = TRACK_FILES): Record<string, Track> {
+  const tracks: Record<string, Track> = {};
+  for (const [name, raw] of Object.entries(files)) {
+    const file = parseTrackFile(raw, `tracks/${name}.json`);
+    if (file.name !== name)
+      throw new Error(`tracks/${name}.json: name ${JSON.stringify(file.name)} must match the file name`);
+    if (name in CODE_TRACKS) throw new Error(`tracks/${name}.json: ${name} is already a code track`);
+    tracks[name] = trackFromFile(file);
+  }
+  return tracks;
+}
+
+/** Every track: the code tracks first, then the file tracks (the order the game's picker shows). */
+export const TRACKS: Readonly<Record<string, Track>> = { ...CODE_TRACKS, ...fileTracks() };
 
 export function trackByName(name: string): Track {
   const track = TRACKS[name];
