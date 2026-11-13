@@ -51,6 +51,11 @@ export interface InputContext {
   target: Vector2;
   /** The asteroids the bot knows of (what a player sees on screen); empty when not needed. */
   obstacles?: ObstacleGrid;
+  /**
+   * Lookahead: position of the k-th target after the current one (k = 1 is the next one), or
+   * undefined when there is none. Absent = no upcoming targets known.
+   */
+  next?: ((k: number) => Vector2 | undefined) | undefined;
 }
 
 /** Wraps a half-turn-normalised angle (1 = π) into [-1, 1]. */
@@ -71,6 +76,60 @@ export function relativeAngle(dx: number, dy: number, orientation: number): numb
 export const V2_DISTANCE_HALF = 500;
 /** Encoding v2: speeds are divided by this (typical race speeds 200–600 read 0.4–1.2). */
 export const V2_SPEED_SCALE = 500;
+
+/**
+ * Lookahead inputs for leg `k` (k = 1: from the current target to the one after it; k = 2: the leg
+ * after that), encoded like v2: `present` (1 when that target exists, else 0 and the rest 0), the
+ * sine and cosine of the leg's direction relative to the ship's nose, and the leg length squashed
+ * like `targetDistanceSoft`. The leg, not the ship-to-target line: it says how sharp the turn at the
+ * current target will be, which the ship-to-target angle hardly shows while the target is far away.
+ */
+function lookaheadLeg(k: number): {
+  present: (ctx: InputContext) => number;
+  sin: (ctx: InputContext) => number;
+  cos: (ctx: InputContext) => number;
+  distanceSoft: (ctx: InputContext) => number;
+} {
+  const leg = ({ target, next }: InputContext): { dx: number; dy: number } | undefined => {
+    const to = next?.(k);
+    if (!to) return undefined;
+    const from = k === 1 ? target : next?.(k - 1);
+    if (!from) return undefined;
+    return { dx: to.x - from.x, dy: to.y - from.y };
+  };
+  const angle = (ctx: InputContext, f: (a: number) => number): number => {
+    const l = leg(ctx);
+    return l ? f(Math.PI * relativeAngle(l.dx, l.dy, ctx.ship.orientation)) : 0;
+  };
+  return {
+    present: (ctx) => (leg(ctx) ? 1 : 0),
+    sin: (ctx) => angle(ctx, Math.sin),
+    cos: (ctx) => angle(ctx, Math.cos),
+    distanceSoft: (ctx) => {
+      const l = leg(ctx);
+      if (!l) return 0;
+      const d = Math.hypot(l.dx, l.dy);
+      return d / (d + V2_DISTANCE_HALF);
+    },
+  };
+}
+
+/** Longest lookahead the `lookahead` switch offers (legs to `next2` and `next3`). */
+export const MAX_LOOKAHEAD = 2;
+
+/** The lookahead entries of {@link INPUTS}: `next2*` for leg 1, `next3*` for leg 2. */
+function lookaheadEntries(): Record<string, (ctx: InputContext) => number> {
+  const entries: Record<string, (ctx: InputContext) => number> = {};
+  for (let k = 1; k <= MAX_LOOKAHEAD; k++) {
+    const leg = lookaheadLeg(k);
+    const prefix = `next${k + 1}`;
+    entries[`${prefix}Present`] = leg.present;
+    entries[`${prefix}Sin`] = leg.sin;
+    entries[`${prefix}Cos`] = leg.cos;
+    entries[`${prefix}DistanceSoft`] = leg.distanceSoft;
+  }
+  return entries;
+}
 
 /**
  * The input registry. Angles are relative to the ship's nose in half turns, lengths scaled by 1/1000.
@@ -106,7 +165,22 @@ export const INPUTS: Readonly<Record<string, (ctx: InputContext) => number>> = {
   sideSpeed: ({ ship }) =>
     (ship.velocity.length / V2_SPEED_SCALE) *
     Math.sin(Math.PI * relativeAngle(ship.velocity.x, ship.velocity.y, ship.orientation)),
+
+  // Lookahead (the `lookahead` switch): the legs after the current target, encoded like v2.
+  ...lookaheadEntries(),
 };
+
+/**
+ * The inputs the `lookahead: n` switch appends to a spec's inputs: for each of the next `n` legs,
+ * `next{k+1}Present`, `…Sin`, `…Cos`, `…DistanceSoft`.
+ */
+export function lookaheadInputs(n: number): string[] {
+  if (!Number.isInteger(n) || n < 1 || n > MAX_LOOKAHEAD)
+    throw new Error(`lookahead must be an integer from 1 to ${MAX_LOOKAHEAD}, got ${JSON.stringify(n)}`);
+  return Array.from({ length: n }, (_, i) =>
+    ["Present", "Sin", "Cos", "DistanceSoft"].map((f) => `next${i + 2}${f}`),
+  ).flat();
+}
 
 /** Named input sets: `v1` is the original four, `v2` the smooth, frame-relative encoding. */
 export const ENCODINGS: Readonly<Record<string, readonly string[]>> = {

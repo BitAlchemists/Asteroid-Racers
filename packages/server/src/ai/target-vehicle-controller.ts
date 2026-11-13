@@ -25,6 +25,11 @@ export function targetInputs(ship: Movable, target: Vector2): [number, number, n
  */
 export class TargetVehicleController implements VehicleController {
   target: Entity | undefined;
+  /**
+   * The targets after `target`, for lookahead inputs: k = 1 is the next one. Set by the script that
+   * knows them (a training episode's list, a race's checkpoint chain); absent = none known.
+   */
+  next: ((k: number) => Vector2 | undefined) | undefined;
   private readonly inputs: ((ctx: InputContext) => number)[];
   private readonly buffer: Float64Array;
   /** The network's output array of the last step (a reference, not a copy); undefined before. */
@@ -63,7 +68,7 @@ export class TargetVehicleController implements VehicleController {
     const ship = this.client.ship;
     if (!this.target || !ship) return;
 
-    const ctx: InputContext = { ship, target: this.target.position };
+    const ctx: InputContext = { ship, target: this.target.position, next: this.next };
     for (let i = 0; i < this.inputs.length; i++) this.buffer[i] = this.inputs[i]!(ctx);
     const sensors = this.network.spec.sensors;
     if (sensors?.length)

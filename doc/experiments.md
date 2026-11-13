@@ -29,6 +29,13 @@ An experiment answers one question by comparing **arms** (the baseline config, p
     both rounds (gen metrics `reevalScore`, `reevalSuccess`);
   - `curriculum.keepEasy`: e.g. `0.25`: after level 0, that share of each arena's episodes comes
     from an earlier level (snapshots then record the mixed arenas).
+  - `lookahead` (M6): `1` or `2`. Appends, per leg after the current target, `next{k+1}Present`,
+    `…Sin`, `…Cos`, `…DistanceSoft` to the model's inputs (after `encoding`/`model.inputs`, before
+    sensors). Leg 1 runs from the current target to the one after it, leg 2 from there to the next.
+    Sin/cos are the leg's direction relative to the ship's nose, the length is squashed like
+    `targetDistanceSoft` (0.5 at 500). A missing target reads 0 on all four, `Present` included.
+    Training needs multi-target episodes (M5's `chain` arena); in races the bot reads the race's
+    checkpoint chain (the same controller), so the exam and the game need no change.
 - A switch key may not appear in the method's default config in `lab.config.json` (that is why the
   `model` block is not there).
 - **The decision metric is `exam`** (the race exam score, lower is better), produced inside training

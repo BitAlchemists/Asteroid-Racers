@@ -70,6 +70,9 @@ export class ArenaScript extends Script {
   }
 
   protected override started(): void {
+    // Lookahead inputs see the episode's targets after the current one.
+    if (this.vehicle)
+      this.vehicle.next = (k) => this.episodes[this.episode]?.targets[this.targetIndex + k]?.position;
     this.nextEpisode();
   }
 

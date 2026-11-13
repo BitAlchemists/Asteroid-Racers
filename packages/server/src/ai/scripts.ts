@@ -116,6 +116,7 @@ export class RaceTargetScript extends Script {
   }
 
   protected override attach(client: AIGameClient): void {
+    if (this.vehicle) this.vehicle.next = raceLookahead(client, this.vehicle);
     let portalTargeted = false;
     client.onEntityUpdate = (entity) => {
       if (entity.type === EntityType.LAUNCH_PLATFORM && !portalTargeted) {
@@ -133,6 +134,31 @@ export class RaceTargetScript extends Script {
       if (this.state !== ScriptState.ENDED && this.vehicle) this.vehicle.target = target();
     });
   }
+}
+
+/**
+ * Lookahead in a race: the checkpoints after the vehicle's current target, as the bot knows them.
+ * The server adds a race's checkpoints to the world in race order, so their ids rise along the
+ * course; the finish is the last one. A target that is not a checkpoint (the portal) has none.
+ */
+export function raceLookahead(
+  client: AIGameClient,
+  vehicle: { readonly target: Entity | undefined },
+): (k: number) => Vector2 | undefined {
+  let known = -1;
+  let chain: Entity[] = [];
+  return (k) => {
+    const target = vehicle.target;
+    if (!target || target.type !== EntityType.CHECKPOINT) return undefined;
+    if (client.entities.size !== known) {
+      known = client.entities.size;
+      chain = [...client.entities.values()]
+        .filter((e) => e.type === EntityType.CHECKPOINT)
+        .sort((a, b) => a.id - b.id);
+    }
+    const at = chain.findIndex((e) => e.id === target.id);
+    return at < 0 ? undefined : chain[at + k]?.position;
+  };
 }
 
 export interface TrainingScriptOptions {

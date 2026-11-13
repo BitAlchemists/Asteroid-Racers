@@ -29,6 +29,7 @@ import {
   DEFAULT_MODEL_NAME,
   ENCODINGS,
   GameServer,
+  lookaheadInputs,
   ManualGameLoop,
   MemoryModelStore,
   MUTATION_RATE,
@@ -91,6 +92,11 @@ export interface TrainConfig {
   hidden?: number[];
   /** Switch: a named input set (`v2`: smooth angles, ship-frame velocity) replacing `model.inputs`. */
   encoding?: string;
+  /**
+   * Switch: lookahead inputs for the next 1 or 2 legs after the current target (`next2*`, `next3*`:
+   * present, sin, cos, soft length), appended to the model's inputs. Absent = none.
+   */
+  lookahead?: number;
   /** Switch: Gaussian mutation (add N(0, sigma²) with probability `rate`, default `mutationRate`). */
   mutation?: { kind: "gaussian"; sigma: number; rate?: number };
   /** Switch: models kept per generation, best first ((μ + λ) selection). Absent = 1. */
@@ -238,6 +244,7 @@ function readConfig(): TrainConfig {
     ...(raw.hidden === undefined ? {} : { hidden: raw.hidden as number[] }),
     ...(raw.exam === undefined ? {} : { exam: parseTrainingExam(raw.exam) }),
     ...(raw.encoding === undefined ? {} : { encoding: raw.encoding as string }),
+    ...(raw.lookahead === undefined ? {} : { lookahead: raw.lookahead as number }),
     ...(raw.mutation === undefined ? {} : { mutation: parseMutation(raw.mutation) }),
     ...(raw.parents === undefined ? {} : { parents: raw.parents as number }),
     ...(raw.initRange === undefined ? {} : { initRange: raw.initRange as number }),
@@ -253,6 +260,7 @@ function readConfig(): TrainConfig {
     const given = (raw.model as { inputs?: unknown } | undefined)?.inputs;
     if (given !== undefined) throw new Error("config.encoding and config.model.inputs cannot both be set");
   }
+  if (config.lookahead !== undefined) lookaheadInputs(config.lookahead); // throws when out of range
   if (
     config.parents !== undefined &&
     (!Number.isInteger(config.parents) ||
@@ -473,7 +481,10 @@ async function main(): Promise<void> {
       framesPerTarget: config.frames,
       model: {
         spec: {
-          inputs: config.encoding ? [...ENCODINGS[config.encoding]!] : config.model.inputs,
+          inputs: [
+            ...(config.encoding ? ENCODINGS[config.encoding]! : config.model.inputs),
+            ...(config.lookahead === undefined ? [] : lookaheadInputs(config.lookahead)),
+          ],
           outputs: config.model.outputs,
           ...(config.sensors ? { sensors: parseSensors(config.sensors) } : {}),
         },

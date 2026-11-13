@@ -1,6 +1,6 @@
 # M6 — Experiments
 
-Status: ⬜ planned (written 2026-11-13, waiting for approval). Roadmap: [`../ROADMAP.md`](../ROADMAP.md)
+Status: 🟡 approved 2026-11-13, switch code in progress. Roadmap: [`../ROADMAP.md`](../ROADMAP.md)
 
 ## Goal
 

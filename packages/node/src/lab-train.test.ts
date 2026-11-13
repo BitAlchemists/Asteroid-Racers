@@ -593,6 +593,43 @@ describe("evo-lab worker (protocol v1)", () => {
     expect(replayed).toEqual(traced);
   }, 180_000);
 
+  it("lookahead switch: next-leg inputs appended to the spec, exact resume, replay, the exam's bot flies it", async () => {
+    const config = {
+      sample: 6,
+      frames: 60,
+      // M5's chain arena: 3–5 targets per episode, so the lookahead inputs see real legs.
+      arenas: [{ name: "chain", params: { episodes: 2 } }],
+      collisions: "obstacles",
+      encoding: "v2",
+      lookahead: 2,
+      exam: { every: 4, tracks: ["demo"], randomTracks: 0, timeLimitSeconds: 5 },
+    };
+    const dir = await exactResume(config);
+    const res = JSON.parse(result(dir)) as {
+      config: Record<string, unknown>;
+      winner: { input_neurons_count: number; spec: { inputs: string[] } };
+    };
+    expect(res.config.lookahead).toBe(2);
+    expect(res.winner.spec.inputs.slice(5)).toEqual([
+      "next2Present",
+      "next2Sin",
+      "next2Cos",
+      "next2DistanceSoft",
+      "next3Present",
+      "next3Sin",
+      "next3Cos",
+      "next3DistanceSoft",
+    ]);
+    expect(res.winner.input_neurons_count).toBe(13);
+    const examined = events(dir).filter((e) => e.type === "gen" && e.g === 4)[0]!.metrics as Record<
+      string,
+      unknown
+    >;
+    expect(examined.examCheckpoints).toEqual(expect.any(Number));
+    const { replayed, traced } = await replayEpisodes(dir, 4, 0, config);
+    expect(replayed).toEqual(traced);
+  }, 180_000);
+
   it("exam switch: race metrics on every N-th generation, results and resume unchanged", async () => {
     const exam = { every: 2, tracks: ["short"], randomTracks: 1, timeLimitSeconds: 10 };
     const withExam = newRun({ ...CONFIG, exam });
@@ -673,6 +710,8 @@ describe("evo-lab worker (protocol v1)", () => {
       [{ reevaluate: { episodes: 2.5 } }, /reevaluate.episodes/],
       [{ reevaluate: { rounds: 2 } }, /unknown config.reevaluate keys/],
       [{ sensors: { nearest: { horizon: 1 } } }, /unknown parameter/],
+      [{ lookahead: 3 }, /lookahead/],
+      [{ lookahead: 0 }, /lookahead/],
     ] as const) {
       const dir = newRun(config);
       expect(await run(dir, ["--to", "1"])).not.toBe(0);
