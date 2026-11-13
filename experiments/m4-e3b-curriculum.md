@@ -55,12 +55,14 @@ them to generation 5 with today's code and compares `stateHash`.
 
 ## Runs
 
-10 curriculum runs (seeds 1–10) to g50 (screen), continued to g150. About 45–60 minutes per run;
-early levels have fewer rocks and may be faster. All 10 in parallel.
+10 curriculum runs (seeds 1–10) to g50 (screen), continued to g150. Started while E3's final runs
+are still going (20 runs on 24 threads), so each run is slower; results are deterministic either
+way. E3's g150 runs are done long before E3b reaches g150.
 
 ## Decision rule
 
 The curriculum wins if its paired exam effect at g150 is below −2 × paired-se and below −10,000
-(`minEffect`, to be updated from E3's measured sd before approval), with at least 80 % of seeds
-better. Exam crashes are reported; more crashes veto adoption. The level reached per seed is
+(`minEffect`), with at least 80 % of seeds better. `minEffect` stays at E2's 10,000: E3's sd at g50
+is about 41,500 (seeds 1–10), and one sd as the minimum effect would be far larger than any change
+worth having; the paired-se rule already accounts for the noise. Exam crashes are reported; more crashes veto adoption. The level reached per seed is
 reported: a run that never gets to the last level counts as it is (no exclusion).
