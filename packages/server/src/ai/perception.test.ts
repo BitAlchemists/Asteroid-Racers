@@ -17,7 +17,7 @@ function rig(perception?: Perception) {
   const client = {
     ship,
     obstacles: undefined,
-    proxy: { movePlayer: (m: { rotationSpeed: number }) => sent.push(m.rotationSpeed) },
+    move: (m: { rotationSpeed: number }) => sent.push(m.rotationSpeed),
   } as unknown as AIGameClient;
   const controller = new TargetVehicleController(client, model(), perception);
   controller.target = new Movable({ position: new Vector2(0, 1000) });

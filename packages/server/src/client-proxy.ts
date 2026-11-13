@@ -1,4 +1,5 @@
 import {
+  createEntityEnvelope,
   createEnvelope,
   EntityMarshal,
   getLogger,
@@ -22,6 +23,11 @@ const QUIET_TYPES = new Set([MessageType.PING_PONG, MessageType.INPUT]);
  */
 export class ClientProxy implements IClientProxy {
   movable: Movable | undefined;
+  /**
+   * Set by a direct in-process link (training): the client receives its own ship without an
+   * envelope. Unset = the normal ENTITY message.
+   */
+  directOwnShip: ((movable: Movable) => void) | undefined;
   private readonly subscriptions: Unsubscribe[];
 
   constructor(
@@ -42,6 +48,12 @@ export class ClientProxy implements IClientProxy {
 
   send(envelope: Envelope): void {
     if (this.connection.connected) this.connection.send(envelope);
+  }
+
+  sendOwnShip(movable: Movable): void {
+    if (this.directOwnShip) {
+      if (this.connection.connected) this.directOwnShip(movable);
+    } else this.send(createEntityEnvelope(movable));
   }
 
   /** Server-initiated disconnect. */

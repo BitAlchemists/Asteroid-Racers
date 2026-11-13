@@ -142,7 +142,7 @@ export class TargetVehicleController implements VehicleController {
     const outputs = this.network.activate(this.perceive());
     this.lastOutputs = outputs;
     const [thrust, turn] = outputs;
-    this.client.proxy.movePlayer({
+    this.client.move({
       accelerationFactor: (thrust! + 1) / 2, // tanh −1..1 → 0..1
       rotationSpeed: turn! * MAX_BOT_ROTATION_SPEED,
       // no newOrientation: the server keeps the orientation and integrates the rotation speed

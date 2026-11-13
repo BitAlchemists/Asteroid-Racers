@@ -5,9 +5,15 @@ import {
   getLogger,
   type Connection,
   type Envelope,
+  type Movable,
+  type MovementInput,
   type ServerConnection,
   type Unsubscribe,
 } from "@ar/shared";
+
+function isPresent(value: number | undefined): value is number {
+  return value !== undefined && !Number.isNaN(value);
+}
 import { ClientProxy } from "./client-proxy";
 import type { CollisionMode } from "./contracts";
 import type { GameServer } from "./game-server";
@@ -30,6 +36,13 @@ export interface LocalConnectionOptions {
   collisions?: CollisionMode;
   /** Respawn automatically after a crash (default true). */
   autoRespawn?: boolean;
+  /**
+   * Training fast path (needs `delivery: "sync"`, no `encode`): the bot's movement input and its
+   * own-ship updates skip envelopes and dispatchers and go straight to the server and the bot, at
+   * the same moment and with the same guards as the messages. Results are identical. Other
+   * messages still travel as envelopes.
+   */
+  direct?: boolean;
 }
 
 /** One direction-agnostic end of the in-memory pipe. */
@@ -103,6 +116,10 @@ export class LocalServerConnection implements ServerConnection {
   private link: LocalLink | undefined;
   private readonly events = new ConnectionEvents();
   private readonly options: Required<LocalConnectionOptions>;
+  /** The server side of the current link (for the direct input path). */
+  private serverProxy: ClientProxy | undefined;
+  /** Receives the own ship on a direct link (set by the bot). */
+  directShipSink: ((movable: Movable) => void) | undefined;
 
   constructor(
     private readonly server: GameServer,
@@ -111,9 +128,30 @@ export class LocalServerConnection implements ServerConnection {
       delivery = "microtask",
       collisions = "all",
       autoRespawn = true,
+      direct = false,
     }: LocalConnectionOptions = {},
   ) {
-    this.options = { encode, delivery, collisions, autoRespawn };
+    this.options = { encode, delivery, collisions, autoRespawn, direct };
+  }
+
+  /** Whether movement input and own-ship updates take the direct path. */
+  get direct(): boolean {
+    return this.options.direct && this.options.delivery === "sync" && !this.options.encode;
+  }
+
+  /**
+   * Movement input without an envelope, for a direct link: the same as `movePlayer` → INPUT message
+   * → the server's INPUT handler (NaN fields are dropped like the protobuf marshalling does).
+   */
+  directInput(input: MovementInput): void {
+    const proxy = this.serverProxy;
+    if (!this.link?.open || !proxy) return;
+    if (!proxy.movable?.canMove) return;
+    const clean: MovementInput = {};
+    if (isPresent(input.accelerationFactor)) clean.accelerationFactor = input.accelerationFactor;
+    if (isPresent(input.newOrientation)) clean.newOrientation = input.newOrientation;
+    if (isPresent(input.rotationSpeed)) clean.rotationSpeed = input.rotationSpeed;
+    this.server.computePlayerInput(proxy, clean);
   }
 
   get connected(): boolean {
@@ -134,6 +172,13 @@ export class LocalServerConnection implements ServerConnection {
       this.options.collisions,
       this.options.autoRespawn,
     );
+    this.serverProxy = proxy;
+    if (this.direct) {
+      // Same as ENTITY(snapshot) → ServerProxy → updateEntity(snapshot.clone()): the bot gets a copy.
+      proxy.directOwnShip = (movable) => {
+        if (link.open) this.directShipSink?.(movable.clone());
+      };
+    }
     this.server.connectClient(proxy);
     return Promise.resolve();
   }

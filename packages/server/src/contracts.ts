@@ -18,6 +18,11 @@ export interface IClientProxy {
   /** Respawn automatically after a crash (default true). Training arenas turn this off and decide themselves. */
   readonly autoRespawn?: boolean;
   send(envelope: Envelope): void;
+  /**
+   * Sends the client its own ship. Default: an ENTITY envelope (see `createEntityEnvelope`). An
+   * in-process training bot may take the ship directly; the result for the bot is the same.
+   */
+  sendOwnShip?(movable: Movable): void;
 }
 
 /** What services (chat, AI directors) and the race controller may use of the game server. */

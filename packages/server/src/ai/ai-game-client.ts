@@ -6,8 +6,10 @@ import {
   ServerProxy,
   type Entity,
   type IGameClient,
+  type MovementInput,
   type ServerConnection,
 } from "@ar/shared";
+import { LocalServerConnection } from "../local-connection";
 
 import { ObstacleGrid } from "./obstacle-grid";
 
@@ -56,6 +58,13 @@ export class AIGameClient implements IGameClient {
     readonly username = "Major Tom",
   ) {
     this.proxy = new ServerProxy(this);
+    if (connection instanceof LocalServerConnection && connection.direct) {
+      const direct = connection;
+      direct.directShipSink = (ship) => this.updateEntity(ship);
+      this.move = (input) => {
+        if (direct.connected) direct.directInput(input);
+      };
+    }
     this.proxy.dispatcher.on(MessageType.CHAT, () => {}); // bots don't read chat
     this.proxy.onDisconnect(() => {
       this.pendingConnect?.reject(new Error("disconnected before the handshake completed"));
@@ -99,6 +108,11 @@ export class AIGameClient implements IGameClient {
   step(dt: number): void {
     this.vehicle?.step(dt);
   }
+
+  /** Sends movement input: as an INPUT message, or straight to the server on a direct training link. */
+  move = (input: MovementInput): void => {
+    this.proxy.movePlayer(input);
+  };
 
   // --- IGameClient -------------------------------------------------------------------
 

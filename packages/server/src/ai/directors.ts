@@ -277,7 +277,7 @@ export class TrainingDirector extends AIDirector {
   constructor(readonly options: TrainingOptions) {
     // Bots get their messages synchronously so they react in the same frame even when the server runs
     // flat out, and never respawn on their own: the arena script decides what a crash means.
-    super({ delivery: "sync", collisions: options.collisions ?? "none", autoRespawn: false });
+    super({ delivery: "sync", collisions: options.collisions ?? "none", autoRespawn: false, direct: true });
     if (options.arenas.length === 0) throw new Error("training needs at least one arena");
     this.generation = (options.firstGeneration ?? 1) - 1;
     this.scoring = options.scoring ?? { ...LEGACY_SCORING };

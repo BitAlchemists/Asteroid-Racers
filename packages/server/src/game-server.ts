@@ -297,7 +297,7 @@ export class GameServer implements IGameServer {
 
     if (this.sendOwnShipEveryTick) {
       for (const client of [...this.clientSet]) {
-        if (client.movable) client.send(createEntityEnvelope(client.movable));
+        if (client.movable) sendOwnShip(client, client.movable);
       }
     }
   }
@@ -345,7 +345,7 @@ export class GameServer implements IGameServer {
     movable.rotationSpeed = 0;
     movable.updateRank += 1;
     if ((client.collisions ?? "all") !== "none") this.crashDetector.activate(movable);
-    if (notifyOwner) client.send(createEntityEnvelope(movable));
+    if (notifyOwner) sendOwnShip(client, movable);
   }
 
   /**
@@ -421,6 +421,12 @@ export class GameServer implements IGameServer {
       if (point.length <= 1) return point;
     }
   }
+}
+
+/** Sends a client its own ship: directly if the client proxy can take it, else as an ENTITY message. */
+function sendOwnShip(client: IClientProxy, movable: Movable): void {
+  if (client.sendOwnShip) client.sendOwnShip(movable);
+  else client.send(createEntityEnvelope(movable));
 }
 
 /** Convenience for demos and tests: a seeded server with the demo world. */
