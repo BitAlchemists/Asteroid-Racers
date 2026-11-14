@@ -26,8 +26,6 @@ jobs:
     permissions:
       contents: read
       packages: write
-      # For the deploy job's Workload Identity Federation login (see the placeholder below).
-      id-token: write
     outputs:
       image: ${{ env.IMAGE }}
       digest: ${{ steps.push.outputs.digest }}
@@ -94,20 +92,49 @@ jobs:
             echo "Pull by digest: \`$IMAGE@$digest\`"
           } >> "$GITHUB_STEP_SUMMARY"
 
-  # ---------------------------------------------------------------------------------------------
-  # PLACEHOLDER: deploy job, to be supplied by the Infra session. Do not fill in from guesswork.
-  #
-  # It will run after `image`, log in through Workload Identity Federation (id-token: write) and
-  # run, in effect:
-  #   ssh web-server "deploy asteroid-racers ${{ needs.image.outputs.digest }}"
-  # where the digest has the form sha256:<hex>.
-  #
-  # deploy:
-  #   needs: image
-  #   runs-on: ubuntu-latest
-  #   permissions:
-  #     contents: read
-  #     id-token: write
-  #   steps:
-  #     - ... (from Infra)
-  # ---------------------------------------------------------------------------------------------
+  # Deploy job as supplied by the Infra session (infra@cc8391c). Keyless login through Workload
+  # Identity Federation (admits only this repo on refs/heads/production), then the VM's forced-command
+  # deploy gate, which pulls the digest, waits for a healthy container and checks the running image.
+  deploy:
+    name: Deploy to web-server
+    needs: image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    concurrency: { group: deploy-asteroid-racers, cancel-in-progress: false }
+    steps:
+      - uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: projects/422633553646/locations/global/workloadIdentityPools/github/providers/github-oidc
+          service_account: deploy-asteroid-racers@cyberphunk-agency.iam.gserviceaccount.com
+      - uses: google-github-actions/setup-gcloud@v3
+      - name: Configure VM deploy access
+        env:
+          VM_DEPLOY_SSH_KEY: ${{ secrets.VM_DEPLOY_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          test -n "$VM_DEPLOY_SSH_KEY"
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$VM_DEPLOY_SSH_KEY" > ~/.ssh/vm_deploy && chmod 600 ~/.ssh/vm_deploy
+          echo "web-server ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHL2UFG8Mk0Nyysj2mQntSvjxNTSdgPvyEDg2JAkmAQh" > ~/.ssh/known_hosts_vm
+          cat > ~/.ssh/config <<'EOF'
+          Host web-server
+            User deploy-asteroid-racers
+            IdentityFile ~/.ssh/vm_deploy
+            IdentitiesOnly yes
+            StrictHostKeyChecking yes
+            UserKnownHostsFile ~/.ssh/known_hosts_vm
+            HostKeyAlias web-server
+            ProxyCommand gcloud compute start-iap-tunnel web-server 22 --listen-on-stdin --zone=europe-west1-b --project=cyberphunk-agency --verbosity=warning
+          EOF
+      - name: Deploy
+        env:
+          DIGEST: ${{ needs.image.outputs.digest }}
+        run: |
+          [[ "$DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]] || { echo "bad digest: $DIGEST"; exit 1; }
+          ssh web-server "deploy asteroid-racers $DIGEST"
+      - name: Check the live site
+        run: |
+          curl -fsS https://asteroid-racers.cypherpunk.agency/health
+          curl -fsS -o /dev/null https://asteroid-racers.cypherpunk.agency/

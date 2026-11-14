@@ -82,8 +82,12 @@ Limits and timeouts, as the code stands:
   `workflow_dispatch`): `npm ci`, `npm run check`, docker build, Trivy scan (fails on HIGH or
   CRITICAL findings that have a fix), push to ghcr.io tagged with the commit sha. The pushed digest
   is a job output and appears in the run's summary.
-- The deploy job itself (WIF login, then `ssh web-server "deploy asteroid-racers sha256:<digest>"`)
-  is a marked placeholder in the workflow, to be supplied by Infra.
+- The `deploy` job (supplied by Infra, infra@cc8391c) then logs in keyless through Workload
+  Identity Federation (only this repo on `refs/heads/production` is admitted), runs
+  `ssh web-server "deploy asteroid-racers sha256:<digest>"` through an IAP tunnel to the VM's
+  forced-command deploy gate, and checks `/health` and `/` on
+  https://asteroid-racers.cypherpunk.agency. The gate waits for a healthy container and fails if the
+  running image isn't the digest. It needs the repo secret `VM_DEPLOY_SSH_KEY` (set by Infra).
 - To release: fast-forward `production` to a `main` commit that passed CI, and push it:
 
   ```sh
@@ -95,8 +99,9 @@ Limits and timeouts, as the code stands:
 - **Make the package private.** The first push creates
   `ghcr.io/bitalchemists/asteroid-racers`. Because the repository is public, the package may
   start public. In GitHub: organisation BitAlchemists → Packages → `asteroid-racers` → Package
-  settings → Danger Zone → Change visibility → Private. The web server then needs a pull credential
-  (Infra).
+  settings → Danger Zone → Change visibility → Private. The VM's pull fails while the package is
+  public, so the very first run's deploy job fails: flip the package to private, then re-run the
+  failed job. The VM's pull credential is Infra's.
 - Optionally protect the `production` branch (no force pushes).
 
 ## Content Security Policy
