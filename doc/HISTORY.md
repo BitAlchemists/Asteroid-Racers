@@ -2052,3 +2052,21 @@ multiplayer play".
   derived from their index and so differ from the frozen exam's. Its numbers are close but not
   identical (for example, scripted 53.0 against 52.6). The table above is from a second run on the
   frozen v3.0.
+
+### D1 live: first production deploy
+
+- **Pushed** `main` and `production` (d89b43f) at the user's request. The deploy job is Infra's
+  (WIF, the VM's forced-command deploy gate, a live check), pasted in as d89b43f.
+- **Deploy run 43593522141 green:** image built, scanned and pushed, then deployed. Digest
+  `sha256:e3b562fe4e4ffd231132053dc7095ef866b6301f062b052b1f17a701b7fd8b2f`.
+- **Checked:**
+  - In a browser (built-in pane; Claude in Chrome wasn't connected): singleplayer connects over
+    wss with bots, and the showcase loads with no console errors under the live CSP.
+  - Infra verified from the VM: container healthy (256 MiB / 0.5 CPU cap, using about 37 MiB and
+    2 %); `/ws` upgrade 101 through Caddy; package PRIVATE; uptime check `cp-asteroid-racers` on
+    `/health`.
+- **Mistake:** I first reported the wrong digest to Infra (`sha256:1314fb…`). My grep over the
+  run log took the build step's local image ID instead of the push step's digest. The workflow
+  itself was right. Corrected with Infra.
+- **Deviation:** the package was expected to start public and break the first pull. It came up
+  private, so no flip was needed.

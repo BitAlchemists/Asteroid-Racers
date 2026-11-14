@@ -179,7 +179,7 @@ Inserted between M6's batch A and the rest of M6.
   `generated-legs` and `race-legs` (gates, stop, laps, par), arenas `gates` and `laps`, an opt-in
   `scoring.par`, generated levels in tiered curricula.
 
-### D1 — Deploy and showcase 🟡 (side track)
+### D1 — Deploy and showcase ✅ (side track)
 
 Put the game online at https://asteroid-racers.cypherpunk.agency. No separate plan: the scope came
 with the user's request.
@@ -193,6 +193,8 @@ with the user's request.
   g150, residual 0.5) and comparison models through every track, the skill arenas and exam v2,
   with live and headless results; racing against a showcase model (`?opponent=`). No model is
   promoted into the game: the user decides after real races.
+- **Live** since 2026-11-14 (first deploy run 43593522141, verified by Infra). Routine releases:
+  push to `production`.
 
 ## Open questions
 
