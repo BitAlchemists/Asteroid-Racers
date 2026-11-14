@@ -7,24 +7,25 @@ new inputs, network sizes, curricula and mutation strategies.
 How we work is described in [`CLAUDE.md`](../CLAUDE.md). Each milestone gets its own plan in
 [`doc/plans/`](plans/) before work starts. What actually happened goes in [`HISTORY.md`](HISTORY.md).
 
-## Where we stand (2026-11-13, evening)
+## Where we stand (2026-11-14)
 
-- **Done:** M1–M5, plus the speed side tracks S1 and S2. Training is about 6–7× faster than this
-  morning, bit-identical.
-- **Best setup** (M4 default: task v2, `lineCheck`, curriculum at 60 %, 10 parents). On the 102-race
-  exam: about 86–89 % of checkpoints and 82–86 % of races finished. Blind models finished 39 % on
-  the old exam. Best model: train-327 g300, 94.5 % of checkpoints. It is not in the game; the user
-  decides that.
+- **Done:** M1–M5, M7 (Benchmark v2), the speed side tracks S1 and S2, and D1 (the game is live).
+- **Baseline** (adopted by the user after M6 batch A): M4's default setup (task v2, `lineCheck`,
+  curriculum at 60 %, 10 parents) + the residual controller (scale 0.5) + the progress reward (3).
+  It had never been run as a combination; `m6-a3-combination` runs it now.
+- **Yardstick:** exam v3's `exam3` (0–100), with `exam3Crashes` as a veto. Batch A's residual arm
+  scores about 49, the M4 default about 43, the scripted controller 53. 20 seeds detect about 4–8
+  points. Exam v2 (checkpoints about 0.89) is saturated and kept for continuity.
 - **Known problems:**
-  - **"Spin and pulse":** models spin at full rate instead of steering. The scripted baseline shows
-    this is a local optimum, not a scoring problem: steering scores about 44 % better on clean
-    episodes, but the spinners avoid rocks far better.
-  - **Reward trap on multi-target tasks:** models circle a checkpoint instead of taking it.
-  - **Skill gaps** that the exam does not show: the default models brake at only 2 % of `stop`
-    targets and get round the bend in only 13 % of `corridor` episodes.
-  - **Plateau:** training past g150 brings nothing.
-- **Now:** M6 batch A is decided: the user adopted the residual controller and the progress reward.
-  M7 (Benchmark v2) is next, because exam v2 is saturated. After M7, M6 continues on exam v3.
+  - medium and hard generated tracks: every model so far crash-loops in narrow corridors and belts
+    (exam3 medium and hard about 15–25);
+  - single generations of a run can drop sharply on one exam (seed 5 of batch A's residual arm);
+    being investigated from data;
+  - the training plateau after about g150.
+- **Now:** M6 continues on exam v3: the combination check (`m6-a3-combination`, rotation cost 20 on
+  the new baseline), then batch B (`m6-b-curriculum`: 2.4 keep easy, 2.5 plateau, 2.6 tiered
+  curricula of M5 arenas and of M7 generated tracks, 2.7 level-aware held-out). Decisions are the
+  user's.
 
 ## Milestones
 
@@ -125,7 +126,7 @@ picker) and training side (six tiered arenas, the watch page's arena mode, basel
 ### M6 — Experiments 🟡
 
 Plan: [`plans/M6-experiments.md`](plans/M6-experiments.md), approved 2026-11-13. All switch code for
-phases 1–5 is built, except 3.4's `controller` switch. Optional MAP-Elites is not built either.
+phases 1–5 is built, 3.4's `controller` switch included. Optional MAP-Elites is not built.
 
 Five phases, each ending in a decision point where the user decides what is adopted:
 
@@ -152,19 +153,21 @@ Five phases, each ending in a decision point where the user decides what is adop
 
 Only if needed: Q.1 quality diversity (MAP-Elites).
 
-**Proposed next** (waiting for the user's OK):
-1. Build a skills exam: per-arena success for every model, every 25 generations.
-2. Build 3.4's `controller` switch.
-3. Run batch A in parallel as one Evo Lab experiment: 2.1 progress, 2.2 costs, 2.8 rotation cost,
-   3.4 residual.
-4. Decision point.
-5. Batch B, the curriculum (2.4, 2.5, 2.6, 2.7), on the new baseline.
+**Order** (agreed with the user):
+1. ✅ Skills exam and 3.4's `controller` switch built.
+2. ✅ Batch A (2.1 progress, 2.2 costs, 2.8 rotation, 3.4 residual), decided 2026-11-14: residual 0.5
+   and progress 3 adopted by judgement.
+3. ✅ M7 (Benchmark v2): exam v3 is the yardstick from now on.
+4. 🟡 The combination check `m6-a3-combination` (rotation 20 on the new baseline), 20 seeds, exam3.
+5. 🟡 Batch B `m6-b-curriculum` (2.4, 2.5, 2.6 in two variants, 2.7) on the new baseline without
+   rotation, reusing step 4's baseline runs.
 6. Then perception (3.1–3.3), the learner, and readiness.
 
-### M7 — Benchmark v2 🟡
+### M7 — Benchmark v2 ✅
 
 Plan: [`plans/M7-benchmark-v2.md`](plans/M7-benchmark-v2.md), approved by the user 2026-11-14.
-Inserted between M6's batch A and the rest of M6.
+Inserted between M6's batch A and the rest of M6. Done 2026-11-14: all acceptance items ticked; M6's
+combination check and batch B are planned on exam v3.
 
 - S1 ✅: a procedural track generator with corridors, hairpins, gates, rock fields, straights into
   tight turns, belts and chicanes, in difficulty bands (`generated:<band>`, arena

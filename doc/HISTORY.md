@@ -2070,3 +2070,37 @@ multiplayer play".
   itself was right. Corrected with Infra.
 - **Deviation:** the package was expected to start public and break the first pull. It came up
   private, so no flip was needed.
+
+### M7 closed; combination check and batch B planned and started
+
+- **M7 closed** (user decision 2026-11-14: "yes" to "close M7 and start the combination check, then
+  batch B"). Acceptance items 4 and 5 ticked:
+  - item 4 checked in the code: the 10 track files are in `TRACK_FILES` and so in `TRACKS` and the
+    start page's picker; the "Race mode (singleplayer)" box is in `index.html` (`menu.ts`,
+    `race-modes.ts`); S2's fingerprint test keeps the default rules;
+  - item 5: `experiments/m6-a3-combination.md` and `experiments/m6-b-curriculum.md` committed.
+  - Roadmap: M7 ✅, "Where we stand" rewritten for exam v3 and the new baseline.
+- **Plans** (both on `exam3` at g150, 20 seeds, IQM with a paired bootstrap CI, `minEffect` 3;
+  vetoes `exam3Crashes` and exam v2 checkpoints; details in the M6 plan's changes):
+  - `m6-a3-combination`: rotation 20 on the new baseline (M4 default + residual 0.5 + progress 3);
+  - `m6-b-curriculum`: 2.4 keepEasy 0.25, 2.5 plateau, 2.6 as two levels (`m5tiers`, M5 arenas;
+    `m7gen`, the M7 S5 generated curriculum), 2.7 heldOutCurrent; it reuses the combination
+    check's baseline runs and does not wait for the user's rotation decision.
+  - The per-arm drafts `m6-2-4` … `m6-2-7` and the example `m7-s5-generated-curriculum` are marked
+    as superseded by batch B.
+- **Evo Lab:**
+  - the machine server on 4320 was down; started it (`bin/server.js --port 4320`);
+  - **friction:** `exp new` refuses a plan without `baseline.runs`, so a baseline that was never
+    run can't be an experiment. Workaround: train-505..524 (seeds 1–20) queued through the lab to
+    g5 only, as the stored baseline; the gate re-ran them (train-525..544) and `reuse` continued
+    the check runs to g150 as the baseline arm (train-545..564). Reported to the Evo Lab session
+    via main. No evo-lab code touched.
+  - `m6-a3-combination` started 12:48: baseline train-545..564, +rotation train-565..584.
+- **Seed 5 (train-499), first look** (exam3 on the stored snapshots; analysis, not training):
+  - exam3 at g150 is 48.8, exactly the residual arm's IQM (re-score of train-495..504 at g150:
+    41.2–52.6). Its "collapse" exists on exam v2 only: 0.36 checkpoints with the fewest crashes
+    (371), so a passive model, not a crashing one;
+  - along the run exam3 is flat (g25 49.8 … g140 52.9, g150 48.8) with one dip at g125 (28.5),
+    where exam v2 also dropped (0.73, 1,937 crashes);
+  - other seeds of the arm show the same one-exam drops on exam v2: train-498 g75 0.47,
+    train-500 g125 0.45. Continued in a later entry.

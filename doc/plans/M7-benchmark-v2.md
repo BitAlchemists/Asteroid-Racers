@@ -1,6 +1,6 @@
 # M7 — Benchmark v2
 
-Status: 🟡 approved by the user 2026-11-14 ("I want it all built"). Roadmap:
+Status: ✅ done 2026-11-14 (approved by the user 2026-11-14, "I want it all built"). Roadmap:
 [`../ROADMAP.md`](../ROADMAP.md). Inserted between M6's batch A and the rest of M6.
 
 ## Goal
@@ -186,8 +186,11 @@ Done 2026-11-14; see the history. The syntax is in
 - [x] Exam v3 with the pre-registered `exam3` score, profile metrics and tool; E9's baseline and
       batch A re-scored.
 - [x] The calibration check passed, or the one-time revision recorded (passed; no revision).
-- [ ] The game offers the new race modes and the 10 hand-made tracks; default rules unchanged.
-- [ ] M6's combination check and batch B planned on exam v3.
+- [x] The game offers the new race modes and the 10 hand-made tracks; default rules unchanged
+      (checked 2026-11-14: the 10 files in `TRACK_FILES`, all in `TRACKS` and the start page picker;
+      the "Race mode (singleplayer)" box in `index.html`; S2's fingerprint test).
+- [x] M6's combination check and batch B planned on exam v3: `experiments/m6-a3-combination.md`
+      and `experiments/m6-b-curriculum.md` (both on `exam3`, 20 seeds).
 
 ## Not in M7
 
