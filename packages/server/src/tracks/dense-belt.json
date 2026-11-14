@@ -1,5 +1,5 @@
 {
-  "format": "asteroid-racers/track/v1",
+  "format": "asteroid-racers/track/v2",
   "name": "dense-belt",
   "description": "A belt of rocks 6,000 wide and 2,100 deep with gaps barely wider than a ship: weave in to a checkpoint in a clearing, then out the far side",
   "author": "Claude (M7)",

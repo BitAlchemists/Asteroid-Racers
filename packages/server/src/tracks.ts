@@ -7,8 +7,11 @@ import { generatedTrack, parseGeneratedTrackName, TRACK_BAND_NAMES } from "./tra
 import canyon from "./tracks/canyon.json";
 import chicane from "./tracks/chicane.json";
 import denseBelt from "./tracks/dense-belt.json";
+import circuit from "./tracks/circuit.json";
+import gateRow from "./tracks/gate-row.json";
 import gauntlet from "./tracks/gauntlet.json";
 import hairpins from "./tracks/hairpins.json";
+import pitStop from "./tracks/pit-stop.json";
 import slalom from "./tracks/slalom.json";
 import straightToTurn from "./tracks/straight-to-turn.json";
 
@@ -75,6 +78,9 @@ const TRACK_FILES: Readonly<Record<string, unknown>> = {
   "straight-to-turn": straightToTurn,
   "dense-belt": denseBelt,
   chicane,
+  "gate-row": gateRow,
+  circuit,
+  "pit-stop": pitStop,
 };
 
 /** Builds the file tracks; throws if a file is invalid or its name doesn't match its file name. */

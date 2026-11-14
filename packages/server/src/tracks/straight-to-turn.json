@@ -1,5 +1,5 @@
 {
-  "format": "asteroid-racers/track/v1",
+  "format": "asteroid-racers/track/v2",
   "name": "straight-to-turn",
   "description": "Four long straights (2,000–2,600 units) between walls, each ending in a tight corner (110° right, 125° left, 100° right, 140° left): build speed, then brake in time",
   "author": "Claude (M7)",

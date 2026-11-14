@@ -1,5 +1,5 @@
 {
-  "format": "asteroid-racers/track/v1",
+  "format": "asteroid-racers/track/v2",
   "name": "chicane",
   "description": "A corridor, 320 wide, with four chicanes: quick left-right and right-left S bends that shift the line sideways by more than the corridor width",
   "author": "Claude (M7)",

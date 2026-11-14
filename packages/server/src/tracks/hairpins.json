@@ -1,5 +1,5 @@
 {
-  "format": "asteroid-racers/track/v1",
+  "format": "asteroid-racers/track/v2",
   "name": "hairpins",
   "description": "A serpentine corridor, 340 wide: five straights joined by four 180° hairpins, alternating right and left; brake and turn around without touching the walls",
   "author": "Claude (M7)",

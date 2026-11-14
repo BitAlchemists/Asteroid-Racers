@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { GameServer, SHIP_RADIUS } from "./game-server";
 import { seededRandom } from "./random";
 import { fileTracks, trackByName } from "./tracks";
+import circuit from "./tracks/circuit.json";
 
 /**
  * Fairness of the hand-made tracks (M5, M7 S3), checked on the built world, so belts and later
@@ -15,7 +16,7 @@ const FILE_TRACKS = Object.keys(fileTracks());
  * Tracks that are one closed corridor: no way out between the wall rocks, every leg in sight. (M5's
  * `canyon` is open past the finish and cuts a bend or two, so it is not on the list.)
  */
-const CORRIDORS = ["hairpins", "straight-to-turn", "chicane"];
+const CORRIDORS = ["hairpins", "straight-to-turn", "chicane", "circuit"];
 
 interface Circle {
   x: number;
@@ -97,6 +98,9 @@ describe("hand-made tracks", () => {
       "straight-to-turn",
       "dense-belt",
       "chicane",
+      "gate-row",
+      "circuit",
+      "pit-stop",
     ]);
   });
 
@@ -123,15 +127,20 @@ describe("hand-made tracks", () => {
     expect(flood(rocks, points).escapes).toBe(false);
   });
 
-  it.each(CORRIDORS)("%s: every leg is a clear line of sight, a ship's width from every rock", (name) => {
-    const { rocks, points } = world(name);
-    const blocked: string[] = [];
-    for (let k = 1; k < points.length; k++)
-      for (const rock of rocks)
-        if (segmentDistance(points[k - 1]!, points[k]!, rock.x, rock.y) < rock.r + SHIP_RADIUS) {
-          blocked.push(`leg ${k} by the rock at (${rock.x}, ${rock.y})`);
-          break;
-        }
-    expect(blocked).toEqual([]);
-  });
+  it.each([...CORRIDORS, "gate-row"])(
+    "%s: every leg is a clear line of sight, a ship's width from every rock",
+    (name) => {
+      const { rocks, points } = world(name);
+      // A lap track also runs from the finish to the first checkpoint again.
+      if (name === "circuit" && circuit.race.laps > 1) points.push(points[1]!);
+      const blocked: string[] = [];
+      for (let k = 1; k < points.length; k++)
+        for (const rock of rocks)
+          if (segmentDistance(points[k - 1]!, points[k]!, rock.x, rock.y) < rock.r + SHIP_RADIUS) {
+            blocked.push(`leg ${k} by the rock at (${rock.x}, ${rock.y})`);
+            break;
+          }
+      expect(blocked).toEqual([]);
+    },
+  );
 });
