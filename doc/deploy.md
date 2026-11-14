@@ -102,18 +102,16 @@ Limits and timeouts, as the code stands:
 ## Content Security Policy
 
 Everything the pages load is same-origin (scripts, styles, `logo.png`); there are no fonts or CDN
-URLs. Known conflicts with a strict `default-src 'self'` policy (findings of 2026-11-14, confirmed
-in a browser with the policy set as a header):
+URLs. A strict `default-src 'self'` policy works with no exceptions (fixed in `ca62851`, checked in
+a browser with the policy set as a header: start, singleplayer, multiplayer, watch and showcase
+pages show no CSP errors):
 
-- **PixiJS needs `'unsafe-eval'`**: its WebGL and WebGPU renderers check `new Function` at start and
-  throw ("Current environment does not allow unsafe-eval") without it. Fix in the client: import
-  `pixi.js/unsafe-eval` once before creating the `Application` (`packages/client/src/index.ts` and
-  `packages/client/src/replay/replay-viewer.ts`). Until then the policy needs
-  `script-src 'self' 'unsafe-eval'`.
-- **Inline styles:** `index.html` has `<body style="overflow: auto">`, and the watch page's replay
-  viewer adds a `<style>` element from script. Both need `style-src 'self' 'unsafe-inline'` until
-  they move to the stylesheet.
-- With `default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'`
-  the multiplayer page loads, connects to `/ws` (`'self'` covers same-host WebSockets) and plays.
+- PixiJS's renderers check `new Function` at start. The client imports `pixi.js/unsafe-eval` before
+  creating the `Application` (`packages/client/src/index.ts`, `replay/replay-viewer.ts`), which
+  replaces the check, so no `'unsafe-eval'` is needed. Any new page that creates a PixiJS
+  `Application` must do the same.
+- No inline styles: the start page uses a class, and the replay viewer's CSS is a constructed
+  style sheet (`replay-viewer.css`).
+- `'self'` covers the same-host WebSocket at `/ws`.
 - `multiplayer.html?server=<url>` connects to another server; `connect-src 'self'` blocks that, as
   intended in production.
