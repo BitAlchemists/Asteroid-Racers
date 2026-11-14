@@ -5,6 +5,7 @@ export * from "./collision-detector";
 export * from "./scene-controller";
 export * from "./tracks";
 export * from "./race-controller";
+export * from "./race-modes";
 export * from "./game-server";
 export * from "./client-proxy";
 export * from "./chat-server";

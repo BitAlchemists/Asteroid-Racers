@@ -282,6 +282,31 @@ brackets; `frames` defaults to the config's `frames` (600).
 The watch page flies any of them (`watch.html?arena=<name>&params=<JSON>&seed=<run seed>&g=<gen>`),
 built exactly as in a training run with that seed at that generation.
 
+## Goal types (M7 S2)
+
+Four optional goals beyond today's race ("touch the checkpoints in order"). Absent, everything is as
+before: the default rules, exam v2 and training are byte-identical (a message fingerprint of the
+race controller, the exam and arena fixtures). The track file fields are in
+[`track-format.md`](track-format.md).
+
+| Goal | Race controller (game, exam): `RaceRules` | Track file v2 | Training: `EpisodeSpec` / `TargetSpec` |
+| --- | --- | --- | --- |
+| Stop at the finish | `finishMaxSpeed`: the final finish counts only while speed ≤ it; too fast, nothing happens (one chat warning per visit) | `race.finish.maxSpeed` | `TargetSpec.maxSpeed` (any target, every pass) |
+| Directional gate | a gate checkpoint (`addCheckpoint(…, gateWidth)`, or `gates: true` = every inner checkpoint, width 2 × radius) counts only when the ship's centre crosses its line forwards, within width / 2; backwards or touching doesn't count; a > 300-unit jump (respawn) is no crossing | `width` on a checkpoint (+ `heading`) | `TargetSpec.gate: { orientation, width }` (replaces the radius test; with `maxSpeed` both apply) |
+| Time trial | `par` (s) and/or `timeTrial`: `onFinish` reports the race time (game seconds from joining to the frame the finish counted) and par; the racer gets "Finished in t s (par p s, ±d s)" | `race.par` | `EpisodeSpec.parFrames` → copied to `EpisodeRecord.parFrames` (scoring on it is S5) |
+| Laps | `laps`: a lap is checkpoints 1…n−1 and the finish; progress (`progressOf`, `onCheckpoint`) is the course position over all laps (`courseLength` = 1 + laps × (n−1)); `finishMaxSpeed` only at the end of the last lap; a crash respawns at the last checkpoint cleared | `race.laps` | `EpisodeSpec.laps`: targets flown `laps` times; `record.targets` = targets × laps |
+
+- **Exam:** `ExamReplay`/`examFlight` fly a track under its rules (and take a `Track` object as well as
+  a name). `checkpoints`/`totalCheckpoints` count over all laps. On a track with goals the
+  `FlightResult` gains `goalMet` (= finished under the rules), `par` and `timeVsPar` (= seconds ÷
+  par, when finished); on other tracks these keys are absent.
+- **Game:** a v2 track's goal fields apply in every mode. On top, the start page has "Race mode"
+  controls (laps, stop at the finish ≤ 100, directional gates, time trial) that go into the
+  singleplayer URL: `singleplayer.html?track=<name>&laps=3&stop=100&gates&par=45&timetrial`
+  (`race-modes.ts`: `parseRaceModes`, `withRaceRules`). New gates get arrows. Race messages
+  (rules on joining, "Lap 2 of 3", too fast, wrong way, finish time) arrive as chat from "Race",
+  only when a goal is active. Multiplayer: the server's track decides (`TRACK=<name>`).
+
 ## Skills exam
 
 `exam: { ..., "skills": {} }` (optional `episodes`, default 8) makes every exam also fly fixed

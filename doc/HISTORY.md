@@ -1629,3 +1629,34 @@ Approved by the user as the rest of M5 after M4 closed. M5 is done.
   - the plan has file ownership for parallel builders.
 - **The M6 plan changes:** the combination check and batch B move after M7 and are judged on exam
   v3. Decisions from now on use 20 seeds and a pre-committed primary metric.
+
+### M7 S2: goal types (race controller, game modes, training)
+
+- **Commits:** `aae464e` track format v2 (types and validation, landed first so S3 could use it);
+  then the goal types (race controller, exam fields, race modes, training fields, docs).
+- **Goal types:**
+  - stop at the finish: `finishMaxSpeed`, only at the final finish;
+  - directional gates: crossing the gate's line forwards within width / 2; backwards, touching, or a
+    respawn jump don't count;
+  - time trials: race time and par reported on finish;
+  - laps: progress over all laps.
+
+  They are available as `RaceRules` in `race-controller.ts`, as track format v2 fields
+  (`doc/track-format.md`), and as `TargetSpec.gate`, `EpisodeSpec.laps` and
+  `EpisodeSpec.parFrames` in training.
+- **Exam:** `FlightResult` gains `goalMet`, `par` and `timeVsPar` only on tracks with goals, and
+  laps count in `checkpoints`/`totalCheckpoints`. `examFlight` also takes a `Track` object.
+- **Game:** the start page has "Race mode" controls (laps, stop ≤ 100, gates, time trial) that pass
+  the modes as singleplayer URL parameters (`race-modes.ts`). Gates get arrows, and race messages
+  come as chat from "Race", only when a goal is active. Checked in the browser pane: menu link and
+  gate arrows. Not watched: a full race.
+- **Byte-identical defaults:** a new fingerprint test hashes every message the race controller
+  sends a racer over two flights on demo and slalom. The hash was recorded with the pre-S2
+  controller and is unchanged. Exam v2, the arena fixtures and the track fingerprints all pass
+  unchanged.
+- **Decisions:**
+  - the gate fields are `width` plus the existing `heading`;
+  - `laps` and `par` sit in `race`, with one par per race and none per leg;
+  - v2 fields are rejected in v1 files;
+  - training `maxSpeed` and `gate` apply on every lap.
+- **Not done here (S5):** par-time scoring in training; arenas that use the new fields.

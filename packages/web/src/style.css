@@ -145,6 +145,20 @@ body {
   color: #8cf;
 }
 
+.race-modes {
+  border: 1px solid #444;
+  margin: 0 0 1rem;
+}
+
+.race-modes label {
+  display: block;
+  margin: 0.25rem 0;
+}
+
+.race-modes input[type="number"] {
+  width: 4rem;
+}
+
 .menu kbd {
   border: 1px solid #666;
   border-radius: 3px;

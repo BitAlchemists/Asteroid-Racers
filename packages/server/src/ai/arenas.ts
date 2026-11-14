@@ -11,6 +11,12 @@ export interface TargetSpec {
   maxSpeed?: number;
   /** Ship orientation when it respawns here (episodes with `respawn: "last-target"`; default: the start's). */
   orientation?: number;
+  /**
+   * Directional gate (M7): the target counts only when the ship's centre crosses the line through
+   * `position`, across `orientation` (the game's radians, travel direction (−sin, cos)) and `width`
+   * wide, in that direction — not when it is merely inside `radius`. With `maxSpeed` both apply.
+   */
+  gate?: { orientation: number; width: number };
 }
 
 /** One flight: the ship is placed at `start` and has `timeLimitFrames` to reach the targets in order. */
@@ -23,6 +29,13 @@ export interface EpisodeSpec {
    * reached, at rest, as in a race (the start until the first one). Absent = always at the start.
    */
   respawn?: "last-target";
+  /**
+   * Laps (M7, integer ≥ 1, default 1): the targets are flown this many times in order; the episode
+   * has `targets.length × laps` targets. `maxSpeed` and `gate` apply on every pass.
+   */
+  laps?: number;
+  /** Par time in frames (M7, time trials): copied to the episode's record for scoring. */
+  parFrames?: number;
 }
 
 export interface ObstacleSpec {

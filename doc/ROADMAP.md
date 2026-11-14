@@ -168,8 +168,8 @@ Inserted between M6's batch A and the rest of M6.
 
 - S1: a procedural track generator with corridors, hairpins, gates, rock fields, straights into
   tight turns, belts and chicanes, in difficulty bands.
-- S2: goal types, in the race controller, as optional game modes and in training: stop at the
-  finish, directional gates, time trials with par times, laps.
+- S2 ✅: goal types, in the race controller, as optional game modes and in training: stop at the
+  finish, directional gates, time trials with par times, laps. Track format v2.
 - S3: 7 more hand-made tracks (10 in total), in track format v2.
 - S4: exam v3, with a pre-registered primary score `exam3` that doesn't saturate and a profile per
   difficulty band, goal type and skill. Exam v2 is kept for comparison.

@@ -1,5 +1,6 @@
 import { Entity, EntityType, Vector2 } from "@ar/shared";
 import { createArrow, generateAsteroidBelt } from "./scene-controller";
+import type { RaceRules } from "./race-controller";
 import type { Track } from "./tracks";
 
 /** The first format: race points, asteroids, belts and arrows; today's race rules. */
@@ -231,6 +232,15 @@ export function parseTrackFile(raw: unknown, source = "track file"): TrackFile {
   return file;
 }
 
+/** The race rules of a file's goal fields (`{}` for a v1 file or a v2 file without goals). */
+export function raceRulesOf(file: TrackFile): RaceRules {
+  const rules: RaceRules = {};
+  if (file.race.laps !== undefined) rules.laps = file.race.laps;
+  if (file.race.finish.maxSpeed !== undefined) rules.finishMaxSpeed = file.race.finish.maxSpeed;
+  if (file.race.par !== undefined) rules.par = file.race.par;
+  return rules;
+}
+
 /** The radius a file checkpoint gets: `radius`, else `width / 2` for a gate, else 100. */
 export function checkpointRadius(c: TrackCheckpoint): number {
   return c.radius ?? (c.width !== undefined ? c.width / 2 : RACE_RADIUS);
@@ -285,8 +295,12 @@ export function trackFromFile(file: TrackFile): Track {
       });
 
       race.addStart(start.x, start.y, orientationAt(0));
-      checkpoints.forEach((c, i) => race.addCheckpoint(c.x, c.y, orientationAt(i + 1), checkpointRadius(c)));
+      checkpoints.forEach((c, i) =>
+        race.addCheckpoint(c.x, c.y, orientationAt(i + 1), checkpointRadius(c), c.width),
+      );
       race.addFinish(finish.x, finish.y, orientationAt(points.length - 1));
+      const rules = raceRulesOf(file);
+      if (Object.keys(rules).length > 0) race.setRules(rules);
       world.addEntities(race.checkpoints);
       if (race.start) world.addEntity(race.start);
       if (race.finish) world.addEntity(race.finish);

@@ -61,7 +61,7 @@ and data, not by watching.
   - the scripted controller and the best M6 model fly samples from each band, and their success is
     ordered easy > medium > hard.
 
-### S2. Goal types (race controller, game modes, training)
+### S2. Goal types (race controller, game modes, training) ✅
 
 - **Stop at the finish:** the finish counts only below a speed limit (`finish.maxSpeed`).
 - **Directional gates:** a checkpoint counts only when crossed in its direction (`checkpoint.heading`
@@ -74,9 +74,9 @@ and data, not by watching.
 - **In training:** episode specs and arenas support the same goals: `stop` already has `maxSpeed`;
   add directional targets, par time and lap chains.
 - **Acceptance:**
-  - race-controller unit tests per goal;
-  - the default rules are unchanged (fingerprints);
-  - training episodes with each goal are deterministic and replay exactly.
+  - [x] race-controller unit tests per goal;
+  - [x] the default rules are unchanged (fingerprints);
+  - [x] training episodes with each goal are deterministic and replay exactly.
 
 ### S3. Hand-made tracks (7 more, 10 in total)
 
@@ -208,4 +208,7 @@ and data, not by watching.
 
 ## Changes to this plan
 
+- 2026-11-14 (S2): gate fields are `width` on a checkpoint (with the existing `heading`), `laps` and
+  `par` sit in `race`, and `par` is per race only (no per-leg par). Format v2 landed as its own
+  commit first so S3 could use it.
 - 2026-11-14: created with the user's approval, after batch A showed exam v2 is saturated.

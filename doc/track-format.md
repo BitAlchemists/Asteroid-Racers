@@ -64,13 +64,12 @@ Example (a 2-lap circuit with two gates, stop at the finish, par 45 s):
 
 ## The same goals elsewhere
 
-Being built in M7 S2 (until it lands, the loader validates the goal fields and draws the gates, but
-the race doesn't enforce them yet):
-
 - **Race controller** (`race-controller.ts`): `RaceRules` (`laps`, `finishMaxSpeed`, `par`,
   `timeTrial`, `gates`) plus per-checkpoint gates; a file's goal fields become these rules. Without
   rules the race is today's: touch the checkpoints in order, no stop, one lap.
+- **Exam:** flights fly a track under its rules; `FlightResult` gains `goalMet`, `par` and
+  `timeVsPar` on tracks with goals.
 - **Game** (start page and `singleplayer.html`): optional modes that override the file, see
-  `doc/experiments.md` → "Goal types".
+  `doc/experiments.md` → "Goal types (M7 S2)".
 - **Training episodes** (`arenas.ts`): `TargetSpec.maxSpeed`, `TargetSpec.gate`,
   `EpisodeSpec.laps`, `EpisodeSpec.parFrames`.

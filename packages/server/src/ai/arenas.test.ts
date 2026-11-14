@@ -14,7 +14,9 @@ import {
   pointToPointArena,
   resolveArenas,
   stepPlateau,
+  type EpisodeSpec,
   type Scenario,
+  type TargetSpec,
 } from "./arenas";
 import { MemoryModelStore } from "./model-store";
 import type { GenerationReport, TrainingDirector } from "./directors";
@@ -264,6 +266,76 @@ describe("ArenaScript (via TrainingDirector.fly)", () => {
 
     // With `end` every crash already ends the episode: the limit changes nothing.
     expect(await flyOnce(scenario, { ...crash, crashMode: "end", crashLimit: 3 })).toEqual(ended);
+  });
+});
+
+describe("ArenaScript goal types (M7)", () => {
+  // The ship starts flying up (−y) at 400 units/s; a random network barely changes that in 0.5 s.
+  const fly = (target: Partial<TargetSpec> & { position: Vector2 }, extra: Partial<EpisodeSpec> = {}) => ({
+    start: { position: Vector2.zero(), orientation: Math.PI, velocity: new Vector2(0, -400) },
+    targets: [{ radius: 20, ...target }],
+    timeLimitFrames: 40,
+    ...extra,
+  });
+
+  it("a directional gate counts only when crossed in its direction", async () => {
+    const at = new Vector2(0, -100);
+    const [touched, forwards, backwards, narrow] = await flyOnce({
+      obstacles: [],
+      episodes: [
+        fly({ position: at }),
+        fly({ position: at, radius: 1, gate: { orientation: Math.PI, width: 200 } }),
+        fly({ position: at, radius: 500, gate: { orientation: 0, width: 200 } }),
+        fly({ position: new Vector2(150, -100), radius: 500, gate: { orientation: Math.PI, width: 200 } }),
+      ],
+    });
+    expect(touched!.reached).toBe(1);
+    expect(forwards!.reached).toBe(1); // a radius of 1 doesn't matter: the line does
+    expect(backwards!.reached).toBe(0); // inside the radius, but crossed the wrong way
+    expect(narrow!.reached).toBe(0); // the line is 150 units to the side, 100 wide each way
+  });
+
+  it("laps repeat the targets; parFrames goes to the record; absent fields change nothing", async () => {
+    const a = new Vector2(0, -60);
+    const b = new Vector2(0, -120);
+    const scenario: Scenario = {
+      obstacles: [],
+      episodes: [
+        fly(
+          { position: a },
+          {
+            targets: [
+              { position: a, radius: 30 },
+              { position: b, radius: 30 },
+            ],
+            laps: 3,
+          },
+        ),
+        fly({ position: a }, { parFrames: 25 }),
+        fly({ position: a }),
+      ],
+    };
+    const [laps, par, plain] = await flyOnce(scenario);
+    expect(laps!.targets).toBe(6);
+    expect(laps!.reached).toBeGreaterThanOrEqual(2); // the first lap; the ship flies on, away from lap 2
+    expect(laps!.reached).toBeLessThan(6);
+    expect(par).toMatchObject({ targets: 1, reached: 1, parFrames: 25 });
+    expect(Object.keys(plain!)).not.toContain("parFrames");
+    const { parFrames: _, ...parWithout } = par!;
+    expect(parWithout).toEqual(plain); // the par is bookkeeping only
+  });
+
+  it("goal episodes are deterministic", async () => {
+    const at = new Vector2(0, -100);
+    const scenario: Scenario = {
+      obstacles: [{ position: new Vector2(300, -300), radius: 40 }],
+      episodes: [
+        fly({ position: at, gate: { orientation: Math.PI, width: 200 } }, { laps: 2, parFrames: 30 }),
+        fly({ position: at, maxSpeed: 50 }, { timeLimitFrames: 120 }),
+      ],
+    };
+    const options = { collisions: "obstacles" as const, crashMode: "respawn" as const };
+    expect(await flyOnce(scenario, options)).toEqual(await flyOnce(scenario, options));
   });
 });
 

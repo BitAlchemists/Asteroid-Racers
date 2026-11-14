@@ -25,6 +25,11 @@ export interface EpisodeRecord {
   rotation: number;
   /** Frames actually flown (frames minus the time charged after an episode-ending crash). */
   flownFrames: number;
+  /**
+   * The episode's par time in frames (M7), present only when its spec has one. A finished episode
+   * (`reached === targets`) took `frames` frames.
+   */
+  parFrames?: number;
 }
 
 /** Weights of the score terms. The score is a weighted sum; lower is better. */

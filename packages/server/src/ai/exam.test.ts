@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { seededRandom } from "../random";
+import { parseTrackFile, TRACK_FORMAT_V2, trackFromFile } from "../track-file";
 import { DEFAULT_EXAM, examFlight, examFlights, parseExamConfig, runExam } from "./exam";
 import { bundledModels, DEFAULT_LAYOUT, DEFAULT_MODEL_NAME } from "./index";
 import { MajorTom } from "./network";
@@ -8,6 +9,36 @@ const bundled = () => bundledModels().load(DEFAULT_MODEL_NAME)![0]!;
 const weights = DEFAULT_EXAM.weights;
 
 describe("race exam", () => {
+  it("goal races (M7): laps count over all laps; goalMet, par and timeVsPar only on goal tracks", async () => {
+    const plain = await examFlight(bundled(), "short", 1, 30, weights);
+    expect(Object.keys(plain)).not.toContain("goalMet");
+    expect(Object.keys(plain)).not.toContain("par");
+
+    const loop = trackFromFile(
+      parseTrackFile({
+        format: TRACK_FORMAT_V2,
+        name: "loop",
+        description: "two laps of a square",
+        race: {
+          start: { x: 0, y: 0, heading: 0 },
+          checkpoints: [
+            { x: 0, y: -700 },
+            { x: 700, y: -700 },
+          ],
+          finish: { x: 700, y: 0 },
+          laps: 2,
+          par: 30,
+        },
+      }),
+    );
+    const flight = await examFlight(bundled(), loop, 1, 90, weights);
+    expect(flight).toMatchObject({ track: "loop", totalCheckpoints: 6, par: 30 });
+    expect(flight.goalMet).toBe(flight.finished);
+    if (flight.finished) expect(flight.timeVsPar).toBeCloseTo(flight.seconds / 30, 12);
+    else expect(flight.timeVsPar).toBeUndefined();
+    expect(flight.checkpoints).toBeGreaterThan(3); // into the second lap at least
+  });
+
   it("the bundled model finishes the short track (one lap, no crash)", async () => {
     const flight = await examFlight(bundled(), "short", 1, 30, weights);
     expect(flight).toMatchObject({

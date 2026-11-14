@@ -1,4 +1,5 @@
-import type { Checkpoint } from "@ar/shared";
+import type { Checkpoint, Vector2 } from "@ar/shared";
+import { crossesGate } from "../race-controller";
 import type { EpisodeSpec } from "./arenas";
 import type { AIGameClient } from "./ai-game-client";
 import type { MajorTom } from "./network";
@@ -34,6 +35,8 @@ export class ArenaScript extends Script {
   private crashed = false;
   /** Distance to the current target on the previous frame (undefined after a start, respawn or new target). */
   private lastDistance: number | undefined;
+  /** Ship position on the previous frame, for directional gates (undefined after a start or respawn). */
+  private lastPosition: Vector2 | undefined;
   private record: EpisodeRecord | undefined;
 
   constructor(
@@ -51,7 +54,15 @@ export class ArenaScript extends Script {
   }
 
   get currentTarget(): Checkpoint | undefined {
-    return this.episodes[this.episode]?.targets[this.targetIndex];
+    return this.targetAt(this.targetIndex);
+  }
+
+  /** The episode's target number `index` counted over all laps, or undefined past the last. */
+  private targetAt(index: number): Checkpoint | undefined {
+    const episode = this.episodes[this.episode];
+    if (!episode) return undefined;
+    const n = episode.targets.length;
+    return index < n * (episode.spec.laps ?? 1) ? episode.targets[index % n] : undefined;
   }
 
   /** Index of the episode being flown (episodes.length once all are done). */
@@ -74,8 +85,7 @@ export class ArenaScript extends Script {
 
   protected override started(): void {
     // Lookahead inputs see the episode's targets after the current one.
-    if (this.vehicle)
-      this.vehicle.next = (k) => this.episodes[this.episode]?.targets[this.targetIndex + k]?.position;
+    if (this.vehicle) this.vehicle.next = (k) => this.targetAt(this.targetIndex + k)?.position;
     this.nextEpisode();
   }
 
@@ -109,13 +119,22 @@ export class ArenaScript extends Script {
       // respawn: back to the start; the clock keeps running
       this.placeShip(episode.spec);
       this.lastDistance = undefined;
+      this.lastPosition = undefined;
     } else {
-      const maxSpeed = episode.spec.targets[this.targetIndex]?.maxSpeed;
-      if (distance < target.radius && (maxSpeed === undefined || ship.velocity.length <= maxSpeed)) {
+      const spec = episode.spec.targets[this.targetIndex % episode.targets.length];
+      const maxSpeed = spec?.maxSpeed;
+      const gate = spec?.gate;
+      const previous = this.lastPosition;
+      if (gate) this.lastPosition = ship.position.clone();
+      const arrived = gate
+        ? previous !== undefined &&
+          crossesGate(previous, ship.position, target.position, gate.orientation, gate.width) > 0
+        : distance < target.radius;
+      if (arrived && (maxSpeed === undefined || ship.velocity.length <= maxSpeed)) {
         record.reached++;
         this.targetIndex++;
         this.lastDistance = undefined;
-        if (this.targetIndex >= episode.targets.length) this.nextEpisode();
+        if (this.targetIndex >= record.targets) this.nextEpisode();
         else if (this.vehicle) this.vehicle.target = this.currentTarget;
         return;
       }
@@ -142,8 +161,9 @@ export class ArenaScript extends Script {
     this.frames = 0;
     this.crashed = false;
     this.lastDistance = undefined;
+    this.lastPosition = undefined;
     this.record = {
-      targets: episode.targets.length,
+      targets: episode.targets.length * (episode.spec.laps ?? 1),
       reached: 0,
       frames: 0,
       crashes: 0,
@@ -151,6 +171,7 @@ export class ArenaScript extends Script {
       progress: 0,
       rotation: 0,
       flownFrames: 0,
+      ...(episode.spec.parFrames === undefined ? {} : { parFrames: episode.spec.parFrames }),
     };
     this.placeShip(episode.spec);
     if (this.vehicle) {
@@ -167,7 +188,10 @@ export class ArenaScript extends Script {
     const proxy = [...server.clients].find((c) => c.movable?.id === ship.id);
     if (!proxy) return;
     // `respawn: "last-target"` (race rules): after a crash, back at the last target reached, at rest.
-    const last = spec.respawn === "last-target" ? spec.targets[this.targetIndex - 1] : undefined;
+    const last =
+      spec.respawn === "last-target" && this.targetIndex > 0
+        ? spec.targets[(this.targetIndex - 1) % spec.targets.length]
+        : undefined;
     if (last) server.teleportPlayerTo(proxy, last.position, last.orientation ?? spec.start.orientation);
     else server.teleportPlayerTo(proxy, spec.start.position, spec.start.orientation, spec.start.velocity);
   }

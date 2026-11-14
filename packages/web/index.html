@@ -18,6 +18,19 @@
         </label>
         <span id="track-description"></span>
       </p>
+      <fieldset class="race-modes">
+        <legend>Race mode (singleplayer)</legend>
+        <p id="track-rules"></p>
+        <label
+          >Laps <input id="mode-laps" type="number" min="1" max="20" step="1" placeholder="track"
+        /></label>
+        <label><input id="mode-stop" type="checkbox" /> Stop at the finish (speed ≤ 100)</label>
+        <label
+          ><input id="mode-gates" type="checkbox" /> Directional gates (cross every checkpoint along its
+          arrow)</label
+        >
+        <label><input id="mode-timetrial" type="checkbox" /> Time trial (finish times in the chat)</label>
+      </fieldset>
       <ul>
         <li>
           <a href="singleplayer.html" id="singleplayer">Singleplayer</a> — the server runs in your browser

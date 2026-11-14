@@ -3,7 +3,7 @@ import type { Entity, Movable } from "@ar/shared";
 import type { IClientProxy } from "../contracts";
 import { GameServer } from "../game-server";
 import { seededRandom } from "../random";
-import { trackByName } from "../tracks";
+import { trackByName, type Track } from "../tracks";
 import { deriveSeed, SCENARIO_STREAM } from "./arenas";
 import { AIDirector } from "./directors";
 import type { MajorTom } from "./network";
@@ -82,6 +82,16 @@ export interface FlightResult {
   crashes: number;
   /** Distance to the next checkpoint at the end (0 when finished). */
   distanceLeft: number;
+  /**
+   * Goal races only (M7: the track has laps, gates, a stop at the finish or a par time; absent
+   * otherwise, so exam v2's results are unchanged): whether the race's goal was met. The race rules
+   * enforce gates and the stop, so this is "finished under the rules".
+   */
+  goalMet?: boolean;
+  /** The track's par time in seconds, when it has one. */
+  par?: number;
+  /** `seconds` ÷ `par` when finished on a track with a par (1 = on par, < 1 = faster). */
+  timeVsPar?: number;
   score: number;
 }
 
@@ -156,13 +166,16 @@ export class ExamReplay implements Replay {
 
   static async create(
     model: MajorTom,
-    trackName: string,
+    /** A registered track's name, or a track (e.g. a goal race built for the exam). */
+    trackOrName: string | Track,
     seed: number,
     timeLimitSeconds: number,
     /** Robustness exam: input delay and noise (the noise seed derives from the flight's seed). */
     perception?: { inputDelay?: number; inputNoise?: number },
   ): Promise<ExamReplay> {
-    const server = new GameServer({ random: seededRandom(seed) }).loadTrack(trackByName(trackName));
+    const track = typeof trackOrName === "string" ? trackByName(trackOrName) : trackOrName;
+    const trackName = track.name;
+    const server = new GameServer({ random: seededRandom(seed) }).loadTrack(track);
     const race = server.raceController!;
     const director = new ExamDirector();
     server.registerService(director);
@@ -178,7 +191,7 @@ export class ExamReplay implements Replay {
     const replay = new ExamReplay(server, trackName, seed, script, proxy, running, timeLimitSeconds);
     script.client!.onCrash = () => replay.crashes++;
     race.onCheckpoint = (racer: IClientProxy, index: number) => {
-      if (racer === proxy && index === race.checkpoints.length - 1) replay.finishedAt ??= server.gameTime;
+      if (racer === proxy && index === race.courseLength - 1) replay.finishedAt ??= server.gameTime;
     };
     server.teleportPlayerTo(proxy, race.start!.position, race.start!.orientation);
     return replay;
@@ -199,14 +212,21 @@ export class ExamReplay implements Replay {
 
   /** The next race checkpoint (the finish last). */
   get target(): Entity | undefined {
-    const race = this.server.raceController!;
-    return race.checkpoints[(race.progressOf(this.proxy) ?? 0) + 1];
+    return this.checkpointAfter(this.server.raceController!.progressOf(this.proxy) ?? 0);
   }
 
-  /** Checkpoints touched so far, the finish included. */
+  /** Checkpoints cleared so far over all laps, the finish included. */
   get reached(): number {
     const race = this.server.raceController!;
-    return this.finishedAt !== undefined ? race.checkpoints.length - 1 : (race.progressOf(this.proxy) ?? 0);
+    return this.finishedAt !== undefined ? race.courseLength - 1 : (race.progressOf(this.proxy) ?? 0);
+  }
+
+  /** The checkpoint after course position `position`, or undefined at the end of the course. */
+  private checkpointAfter(position: number): Entity | undefined {
+    const race = this.server.raceController!;
+    return position + 1 < race.courseLength
+      ? race.checkpoints[race.checkpointIndexAt(position + 1)]
+      : undefined;
   }
 
   status(): ReplayStatus {
@@ -215,7 +235,7 @@ export class ExamReplay implements Replay {
       index: 0,
       count: 1,
       reached: this.reached,
-      total: this.server.raceController!.checkpoints.length - 1, // checkpoint 0 is the portal
+      total: this.server.raceController!.courseLength - 1, // position 0 is the portal
       crashes: this.crashes,
       seconds: this.frame * this.server.tickSeconds,
       done: this.done,
@@ -262,10 +282,10 @@ export class ExamReplay implements Replay {
 
   result(weights: ExamWeights): FlightResult {
     const race = this.server.raceController!;
-    const totalCheckpoints = race.checkpoints.length - 1;
+    const totalCheckpoints = race.courseLength - 1;
     const finished = this.finishedAt !== undefined;
     const reached = this.reached;
-    const next = race.checkpoints[reached + 1];
+    const next = this.checkpointAfter(reached);
     const movable = this.proxy.movable;
     const result: Omit<FlightResult, "score"> = {
       track: this.track,
@@ -279,6 +299,14 @@ export class ExamReplay implements Replay {
       crashes: this.crashes,
       distanceLeft: finished || !next || !movable ? 0 : movable.position.distanceTo(next.position),
     };
+    if (race.hasGoals) {
+      const par = race.rules.par;
+      result.goalMet = finished;
+      if (par !== undefined) {
+        result.par = par;
+        if (finished) result.timeVsPar = result.seconds / par;
+      }
+    }
     return { ...result, score: flightScore(result, weights) };
   }
 
@@ -292,7 +320,7 @@ export class ExamReplay implements Replay {
 /** Flies one exam flight to the end and returns its result. */
 export async function examFlight(
   model: MajorTom,
-  trackName: string,
+  trackName: string | Track,
   seed: number,
   timeLimitSeconds: number,
   weights: ExamWeights,
@@ -303,7 +331,7 @@ export async function examFlight(
 
 async function examFlightWithTrace(
   model: MajorTom,
-  trackName: string,
+  trackName: string | Track,
   seed: number,
   timeLimitSeconds: number,
   weights: ExamWeights,
