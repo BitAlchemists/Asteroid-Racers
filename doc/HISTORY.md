@@ -2229,3 +2229,62 @@ multiplayer play".
   - Not adopted: plateau, m5tiers, m7gen (as built), heldOutCurrent. The two Evo Lab experiments are
     still open in Evo Lab (`lab exp close` not run by me).
 - **Still with the user:** approval of the M8 plan.
+
+### M8 approved; steps 1 and 2 (tools, guard, smoke run, generator check); E1 started
+
+- **Approval:** the user approved the M8 plan 2026-11-14 ("Plan sounds good. Make it happen."), with
+  a nuance on speed: faster races are preferred over crashes, but not to be over-optimised. Recorded
+  as a dated change in the plan; for E3, `scoring.par` stays a modest weight judged on exam3 as a
+  whole. Roadmap: M8 🟡 in progress.
+- **Housekeeping:** `lab exp close` on `m6-a3-combination` (rotation 20 not adopted) and
+  `m6-b-curriculum` (keepEasy 0.25 adopted; plateau, m5tiers, m7gen, heldOutCurrent dropped), with
+  the user's decision point 2 as the reason.
+- **Commits:** b7f56f3 (step 1), this docs commit.
+- **Step 1 (b7f56f3):**
+  - `npm run exam3 -- --gens 125..150:5` and `npm run iqm -- --gens 125..150:5` (list mode, with or
+    without `--from`). Checked on train-585..588: the re-score at g125 and g150 equals the in-run
+    exam3 to all printed digits, and `--gens 125..150:25` gives exactly the mean of the two
+    single-generation runs (IQM 51.9 vs 48.5, effect −3.370 both ways).
+  - Exam seeds out of training: `generated-legs` redraws a track seed in 300001–340005
+    (`EXAM_TRACK_SEEDS`); a test pins all 70 exam seeds inside it and the redraw. No pinned hash
+    changed. The binding changed, so E1's gate re-runs its baseline.
+  - A test pins that 12 `generated-legs` entries fly 12 different tracks per generation and new ones
+    the next.
+- **Smoke run** train-725 (E1's race + lookahead config, seed 1, g10, through Evo Lab): level 1 at g4;
+  held-out and the start check work; ship-steps per generation 1.8–2.4 M against 0.6–1.1 M for the
+  baseline (train-585 g1–10), about **2.3×** (plan limit 3.5×). Re-scored exam3 g1–g9 44–51, g10
+  **25.9** (a one-generation dip: easy 21, goals 21; the in-run g10 exam agrees).
+- **Step 2, generator check** (analysis only; scratch scripts, no code change):
+  - **Method:** 1,000 seeds per band (1–1000); every leg flown from rest at its race point, as a
+    `generated-legs` episode (one leg, 600 frames, respawn), and arriving at race speed from the leg
+    before; by the scripted controller, a slowed scripted controller (cruise 150) and three trained
+    g150 models (train-585 baseline, train-645 m7gen, train-468 best on hard) on 300 seeds per band.
+    Plus the widest passage through every field and belt (best clearance, ship centre to rock
+    surface, within ±600 of the line) on 150 seeds per band.
+  - **Legs failed from rest, by kind** (scripted / all four controllers on the same leg), medium:
+    straight 0 %, gate 0 %, chicane 0 %, corridor bends < 60° 17 % / 1 %, bends ≥ 60° 63 % / 24 %,
+    **hairpin 96 % / 96 %**, **belt 86 % / 74 %**, **field 98 % / 72 %**; hard: bends ≥ 60° 85 % /
+    29 %, hairpin 98 % / 94 %, belt 96 % / 93 %, field 99 % / 88 %. Easy: only fields (79 %) and belts
+    (49 %) fail. Share of tracks with at least one leg the scripted controller can't fly: easy 65 %,
+    medium 97 %, hard 98 %.
+  - **No entry trap:** arriving at race speed fails no more often than starting from rest (medium
+    33 % vs 35 % over all legs); corridor mouths are clear (bends < 60°: 1–2 % failures); the first
+    leg of a track (always a straight) never fails.
+  - **Passages exist:** fields are wide (median best clearance 139 / 120 / 71 on easy / medium / hard;
+    the ship's radius is 20). Belts are tight: median 106 / 52 / 40; clearance below 30 on 0 % /
+    3 % / 22 % of belts (hard fields 13 %). A few hard belts and fields pass only within about 10
+    units, or round the belt's end (the validator inflates rocks by the ship radius + 12 on a
+    16-unit grid, as built).
+  - **S4's four stall races:** 310014 stalls at a belt (clearance 30), 310015 at a corridor with two
+    bends (73°, 68°), 320008 at a belt (43), 320009 at a wide field (170). Not needles.
+  - **S5's "first leg into a corridor wall":** the episodes start at random race points; medium tracks
+    have bent corridors, hairpins, belts and fields on about 40 % of legs, which the controllers fail
+    from rest. With one track per generation that decided a whole generation.
+  - **Decision: not a flaw, hard spots.** The generator builds what its spec says; no defect in
+    mouths, arrival or validation. The failures follow the element types. Two are beyond today's
+    inputs rather than the generator: a **hairpin** puts the next checkpoint behind the wall the ship
+    faces (94–96 % failed by every controller), and **belts** need threading at speed. No
+    `generator: 2`; E1–E4 train on generator v1. For the user, later and separately: hairpins and
+    needle belts as candidates for M6 3.2 (sensors that see corridors) or exam v3.1.
+  - The 9-second leg limit matters for slow flying: the cruise-150 scripted controller fails about
+    half of the straights (long ones), so slowing down alone is not a cure in training.

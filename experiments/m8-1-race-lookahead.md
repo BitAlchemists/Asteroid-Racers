@@ -1,10 +1,19 @@
 # Experiment: m8-1-race-lookahead
 
-Status: **DRAFT, NOT RUN.** Not created in Evo Lab. Part of the M8 plan
-([`../doc/plans/M8-race-training.md`](../doc/plans/M8-race-training.md), step 3), which waits for the
-user's approval. Before `exp new`: steps 1 and 2 of the plan land (averaged-decision tools, the
-exam-seed guard, the multi-track smoke run, the generator check). If step 2 adds `generator: 2`, every
-`generated-legs` entry below gets `"generator": 2`.
+Status: **pre-registered 2026-11-14, before any run** (M8 plan step 3; the plan was approved by the
+user 2026-11-14). Steps 1 and 2 landed first: the averaged-decision tools and the exam-seed guard
+(commit b7f56f3), the multi-track smoke run and the generator check (no flaw found: hard spots, not traps; no
+`generator: 2`, so the entries below are unchanged; numbers in the history, 2026-11-14).
+
+**Smoke run** (train-725, race levels + lookahead, seed 1, g10, through Evo Lab): 12 different
+tracks per generation and new ones every generation (pinned by a test); held-out and the start
+check work; level 1 at g4. Ship-steps per generation 1.8–2.4 M against 0.6–1.1 M for the baseline
+(train-585, same gens): about **2.3×**, below the 3.5× limit, so 12 tracks per level stay.
+
+**Baseline and the code binding:** step 1's guard changed `tier-arenas.ts` and `track-generator.ts`
+(both in the binding), so Evo Lab's gate re-runs train-585..604 to g5 and, by `reuse`, continues the
+check runs to g150 as the baseline arm (one extra wave). Exam seeds are never drawn by the baseline
+(it has no generated tracks), so the gate must pass bit-identically.
 
 **Question.** Does training on many fresh generated race legs per generation (race levels easy →
 medium → hard), with and without lookahead, make exam3 rise with training, and raise it above the
