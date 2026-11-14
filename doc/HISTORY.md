@@ -1709,3 +1709,71 @@ Approved by the user as the rest of M5 after M4 closed. M5 is done.
   - The machine was shut down mid-task; work resumed on the uncommitted file after a rebase onto
     S2's format commit.
 
+
+### M7 S3: seven hand-made tracks
+
+- **Commits:** four tracks in format v1 (`hairpins`, `straight-to-turn`, `dense-belt`, `chicane`);
+  then `gate-row`, `circuit`, `pit-stop` in format v2, with all seven moved to v2; then par times and
+  goal tests. All three were rebased onto S2 (`aae464e`, `8b013aa`). Hashes are in `git log`.
+- **Tracks** (`packages/server/src/tracks/`): fixed rocks, the same world for every seed. A
+  scratch generator script wrote them; the JSON files are checked in. Each is built around one
+  challenge:
+  - `hairpins`: a serpentine corridor, 340 wide, with five straights of 1,500 and four 180°
+    hairpins alternating sides. Checkpoints sit at each hairpin's entry, apex and exit.
+  - `straight-to-turn`: four straights of 2,000–2,600 between walls into tight corners (110°, 125°,
+    100°, 140°), with one checkpoint on each corner's apex.
+  - `dense-belt`: a belt 6,000 wide and 2,100 deep (270 rocks, edge gaps ≥ 110), with a checkpoint
+    in a clearing inside. The first version, with gaps ≥ 62, crash-looped every controller.
+  - `chicane`: a corridor, 320 wide, with four S bumps (±278 sideways), with checkpoints at each
+    bump's entry, apex and exit.
+  - `gate-row`: seven gates, each 240 wide between two posts. Six zigzag up, square to the racing
+    line; the seventh faces down, so you overshoot it and come back from above.
+  - `circuit`: a closed corridor loop, 340 wide (a rounded triangle with three 120° corners), run
+    for 3 laps.
+  - `pit-stop`: a fast run into a dead-end pit lane, 300 wide, ending in the finish
+    (`maxSpeed` 80) just before the back wall.
+- **Fairness checks** (`handmade-tracks.test.ts`, on the built world):
+  - every file track is seed-independent, and every race point can be reached by a ship (a
+    flood fill in configuration space);
+  - the corridor tracks (`hairpins`, `straight-to-turn`, `chicane`, `circuit`) are closed: no gap
+    lets a ship out;
+  - those four and `gate-row` have a clear line of sight on every leg, a ship's width from every
+    rock (for `circuit` this includes the lap wrap);
+  - the goal fields are as designed;
+  - the scripted controller meets the goals of `hairpins`, `straight-to-turn`, `gate-row`,
+    `circuit` and `pit-stop` within par and without a crash.
+
+  M5's `canyon` is open past the finish and cuts bends, so it is not in the corridor checks.
+- **Par** (`race.par`, s) is the fastest finish of the three controllers below × 1.2, rounded up:
+  hairpins 39, straight-to-turn 35, chicane 38, dense-belt 70, gate-row 32, circuit 61, pit-stop 19.
+- **How they fly** (S2's goal rules, 180 s, seeds 1 | 2; checkpoints/total, time, crashes). The
+  residual model is train-501 g150, from batch A's `+controller` arm (exam checkpoints 0.94).
+
+  | track | scripted | train-327 (luke.txt) | train-501 g150 (residual) |
+  | --- | --- | --- | --- |
+  | hairpins | 13/13, 32.1 s, 0 \| same | 13/13, 78 s, 10 \| 84 s, 11 | 13/13, 74 s, 12 \| 70 s, 11 |
+  | straight-to-turn | 5/5, 29.1 s, 0 \| same | 5/5, 54.5 s, 4 \| 54.9 s, 4 | 5/5, 43.8 s, 4 \| 44.8 s, 4 |
+  | dense-belt | 1/4, 54 \| 1/4, 58 | 4/4, 58 s, 2 \| 67 s, 4 | 1/4, 14 \| 1/4, 14 |
+  | chicane | 13/13, 31.1 s, 4 \| 31.4 s, 4 | 13/13, 57 s, 8 \| 53 s, 7 | 13/13, 52 s, 11 \| 51 s, 10 |
+  | gate-row | 8/8, 26.6 s, 0 \| same | 8/8, 136 s, 2 \| 116 s, 2 | 8/8, 102 s, 2 \| 125 s, 1 |
+  | circuit (3 laps) | 18/18, 50.7 s, 0 \| same | 18/18, 158 s, 19 \| 136 s, 17 | 18/18, 106 s, 14 \| 110 s, 16 |
+  | pit-stop | 3/3, 15.1 s, 0 \| same | 2/3, 1 \| 2/3, 19 (no stop) | 3/3, 30.6 s, 2 \| 30.5 s, 2 |
+
+  The tracks separate the controllers. The scripted controller is clean and fast wherever every leg
+  is in sight, but crash-loops in the dense belt. train-327 is the only one through the belt, and
+  it fails to stop in the pit. Both models crash in every corridor and are 2–4× over par on the
+  gates and the circuit.
+- **Tuning:**
+  - checkpoints on the corridor tracks were moved so that every leg is in line of sight. In the
+    first layout the scripted controller crash-looped at the first corner of `straight-to-turn`,
+    flying straight at a checkpoint behind the inner wall;
+  - `gate-row` was first a straight row of alternating gates with posts on the direct line, and
+    the scripted controller crash-looped on the first post;
+  - `pit-stop`'s last checkpoint was moved back so the lane can be entered straight.
+- **Kept out:** exam v2 still flies only demo, short and random (test). Training's race-legs
+  arena defaults to `random`. `lab.config.json`'s binding covers `tracks.ts`, but not the track
+  JSON files. S4 should add `packages/server/src/tracks/*.json` to the binding once exam v3 flies
+  them.
+- **Interruption:** the machine was shut down mid-task, after the first two commits' files were
+  written but before the second was committed. Work resumed in the same worktree: the files were
+  regenerated from the script and checked again before that commit.

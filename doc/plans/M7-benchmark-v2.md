@@ -82,7 +82,7 @@ are in [`../experiments.md`](../experiments.md#generated-tracks-m7-s1).
   - [x] the default rules are unchanged (fingerprints);
   - [x] training episodes with each goal are deterministic and replay exactly.
 
-### S3. Hand-made tracks (7 more, 10 in total)
+### S3. Hand-made tracks (7 more, 10 in total) ✅
 
 - **Each built around one challenge,** in the track file format:
   - `hairpins`;
@@ -99,8 +99,8 @@ are in [`../experiments.md`](../experiments.md#generated-tracks-m7-s1).
   - `par`.
 - **Fixed rocks,** so every seed gives the same world.
 - **Acceptance:**
-  - validation tests per file;
-  - the scripted controller and the best model flown on each, with results in the history.
+  - [x] validation tests per file;
+  - [x] the scripted controller and the best model flown on each, with results in the history.
 
 ### S4. Exam v3
 
@@ -212,6 +212,10 @@ are in [`../experiments.md`](../experiments.md#generated-tracks-m7-s1).
 
 ## Changes to this plan
 
+- 2026-11-14 (S3): par = the fastest finish of the scripted controller or the best models × 1.2
+  (the scripted controller doesn't finish `dense-belt` and crashes on `chicane`), rounded up.
+  Fairness is checked in tests (flood fill, closed corridors, line of sight per leg) instead of in
+  the loader, so the loader keeps S2's validation unchanged.
 - 2026-11-14 (S2): gate fields are `width` on a checkpoint (with the existing `heading`), `laps` and
   `par` sit in `race`, and `par` is per race only (no per-leg par). Format v2 landed as its own
   commit first so S3 could use it.

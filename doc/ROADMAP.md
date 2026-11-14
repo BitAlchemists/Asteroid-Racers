@@ -171,7 +171,7 @@ Inserted between M6's batch A and the rest of M6.
   `generated-legs`).
 - S2 ✅: goal types, in the race controller, as optional game modes and in training: stop at the
   finish, directional gates, time trials with par times, laps. Track format v2.
-- S3: 7 more hand-made tracks (10 in total), in track format v2.
+- S3 ✅: 7 more hand-made tracks (10 in total), in track format v2.
 - S4: exam v3, with a pre-registered primary score `exam3` that doesn't saturate and a profile per
   difficulty band, goal type and skill. Exam v2 is kept for comparison.
 - S5: the generator and goal types available to training and the curriculum.
