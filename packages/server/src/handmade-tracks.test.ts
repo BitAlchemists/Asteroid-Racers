@@ -1,8 +1,13 @@
 import { describe, expect, it } from "vitest";
+import { DEFAULT_EXAM, examFlight } from "./ai/exam";
+import { scriptedModel } from "./ai/scripted-controller";
 import { GameServer, SHIP_RADIUS } from "./game-server";
 import { seededRandom } from "./random";
 import { fileTracks, trackByName } from "./tracks";
+import { parseTrackFile } from "./track-file";
 import circuit from "./tracks/circuit.json";
+import gateRow from "./tracks/gate-row.json";
+import pitStop from "./tracks/pit-stop.json";
 
 /**
  * Fairness of the hand-made tracks (M5, M7 S3), checked on the built world, so belts and later
@@ -141,6 +146,24 @@ describe("hand-made tracks", () => {
             break;
           }
       expect(blocked).toEqual([]);
+    },
+  );
+
+  it("the M7 tracks carry their goals (format v2): gates, laps, stop at the finish, par", () => {
+    for (const name of FILE_TRACKS.slice(3)) expect(trackByName(name)).toBeDefined();
+    const files = [gateRow, circuit, pitStop].map((raw) => parseTrackFile(raw));
+    expect(files[0]!.race.checkpoints.every((c) => c.width === 240)).toBe(true);
+    expect(files[1]!.race.laps).toBe(3);
+    expect(files[2]!.race.finish.maxSpeed).toBe(80);
+  });
+
+  // Fair: the scripted controller meets these tracks' goals within par (par = its time × 1.2).
+  it.each(["hairpins", "straight-to-turn", "gate-row", "circuit", "pit-stop"])(
+    "the scripted controller finishes %s within par without a crash",
+    async (name) => {
+      const f = await examFlight(scriptedModel(), name, 1, 180, DEFAULT_EXAM.weights);
+      expect([f.finished, f.goalMet, f.crashes]).toEqual([true, true, 0]);
+      expect(f.timeVsPar).toBeLessThan(1);
     },
   );
 });
