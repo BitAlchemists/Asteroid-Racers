@@ -25,10 +25,13 @@ export interface GameView {
   render(dt: number, radarTargets: readonly RadarTarget[]): void;
 }
 
-/** The HTML overlay: connection controls, debug readout and chat. */
+/** The HTML overlay: the game menu, debug readout and chat. */
 export interface Hud {
+  /** The name to ask the server for (set on the start page). */
   readonly username: string;
   setConnectionState(state: ConnectionState): void;
+  /** The connection ended without the player asking, or could not be made: `reason` says which. */
+  connectionLost(reason: string): void;
   setDebugText(text: string): void;
   showChat(from: string, text: string): void;
   showNotice(text: string): void;
@@ -38,7 +41,10 @@ export interface Hud {
 
 /** Callbacks the HUD fires; wired by the game client. */
 export interface HudActions {
-  onConnectToggle(): void;
   onChatSubmit(text: string): void;
   onLeaveRace(): void;
+  /** Connect again after the connection was lost. */
+  onReconnect(): void;
+  /** Close the connection on purpose (leaving the page): no "connection lost" dialog. */
+  onQuit(): void;
 }

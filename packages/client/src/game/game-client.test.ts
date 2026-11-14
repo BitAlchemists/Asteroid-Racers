@@ -60,6 +60,7 @@ class FakeView implements GameView {
 class FakeHud implements Hud {
   states: ConnectionState[] = [];
   notices: string[] = [];
+  lost: string[] = [];
   chat: [string, string][] = [];
   debug = "";
   inRace = false;
@@ -67,6 +68,9 @@ class FakeHud implements Hud {
   constructor(public username = "Tester") {}
   setConnectionState(s: ConnectionState) {
     this.states.push(s);
+  }
+  connectionLost(reason: string) {
+    this.lost.push(reason);
   }
   setDebugText(t: string) {
     this.debug = t;
@@ -82,6 +86,39 @@ class FakeHud implements Hud {
   }
   toggleVisible() {
     this.visible = !this.visible;
+  }
+}
+
+/** Wraps a connection so a test can end it from the server's side (a restart, a deploy). */
+class DroppableConnection implements ServerConnection {
+  private readonly listeners: (() => void)[] = [];
+  constructor(private readonly inner: ServerConnection) {
+    inner.onDisconnect(() => this.emit());
+  }
+  get connected() {
+    return this.inner.connected;
+  }
+  connect() {
+    return this.inner.connect();
+  }
+  send(envelope: Parameters<ServerConnection["send"]>[0]) {
+    this.inner.send(envelope);
+  }
+  disconnect() {
+    this.inner.disconnect();
+  }
+  onMessage(listener: Parameters<ServerConnection["onMessage"]>[0]) {
+    return this.inner.onMessage(listener);
+  }
+  onDisconnect(listener: () => void) {
+    this.listeners.push(listener);
+    return () => {};
+  }
+  drop() {
+    this.inner.disconnect();
+  }
+  private emit() {
+    for (const listener of this.listeners) listener();
   }
 }
 
@@ -153,24 +190,77 @@ describe("GameClient — connecting", () => {
     client.attachHud(hud);
     await client.connect();
     expect(hud.notices).toContain("Could not connect.");
+    expect(hud.lost).toEqual(["Could not connect to the server."]);
     expect(client.server.state).toBe(ConnectionState.DISCONNECTED);
     expect(view.built).toBe(0);
   });
 
-  it("disconnecting clears the scene and state; reconnecting works", async () => {
+  it("quitting clears the scene and state without a 'connection lost'; reconnecting works", async () => {
     const { server, view, hud, client } = await connected();
-    client.onConnectToggle(); // → disconnect
+    client.onQuit();
     expect(hud.notices.at(-1)).toBe("Disconnected");
+    expect(hud.lost).toEqual([]);
     expect(view.cleared).toBeGreaterThan(0);
     expect(client.player).toBeUndefined();
     expect(client.entityCount).toBe(0);
     expect(server.clients.size).toBe(0);
 
-    client.onConnectToggle(); // → connect
+    client.onReconnect();
     await Promise.resolve();
     await Promise.resolve();
     expect(client.player).toBeDefined();
     expect(server.clients.size).toBe(1);
+    expect(hud.states.at(-1)).toBe(ConnectionState.CONNECTED);
+  });
+
+  it("a connection the server drops is reported as lost; Reconnect brings the game back", async () => {
+    const connections: DroppableConnection[] = [];
+    const server = new GameServer({ random: seededRandom(1) }).prepareDemoConfiguration();
+    const view = new FakeView();
+    const hud = new FakeHud();
+    const client = new GameClient(view, () => {
+      const connection = new DroppableConnection(new LocalServerConnection(server, { delivery: "sync" }));
+      connections.push(connection);
+      return connection;
+    });
+    client.attachHud(hud);
+    await client.connect();
+    expect(client.player).toBeDefined();
+
+    connections[0]!.drop(); // the server restarts
+    expect(hud.lost).toEqual(["The connection to the server was lost."]);
+    expect(hud.inRace).toBe(false);
+    expect(client.player).toBeUndefined();
+    expect(client.server.state).toBe(ConnectionState.DISCONNECTED);
+
+    client.onReconnect();
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(connections).toHaveLength(2);
+    expect(client.player).toBeDefined();
+    expect(hud.states.at(-1)).toBe(ConnectionState.CONNECTED);
+    expect(hud.lost).toHaveLength(1);
+  });
+
+  it("quitting while still connecting reports nothing as lost", async () => {
+    const view = new FakeView();
+    const hud = new FakeHud();
+    let reject: (error: Error) => void = () => {};
+    const pending: ServerConnection = {
+      connected: false,
+      connect: () => new Promise<void>((_resolve, r) => (reject = r)),
+      send() {},
+      disconnect: () => reject(new Error("closed")),
+      onMessage: () => () => {},
+      onDisconnect: () => () => {},
+    };
+    const client = new GameClient(view, () => pending);
+    client.attachHud(hud);
+    const connecting = client.connect();
+    client.onQuit();
+    await connecting;
+    expect(hud.lost).toEqual([]);
+    expect(client.server.state).toBe(ConnectionState.DISCONNECTED);
   });
 });
 
@@ -301,6 +391,16 @@ describe("GameClient — racing", () => {
     expect(view.leaveable.get(portal)).toBeUndefined();
     expect(client.raceTarget).toBeUndefined();
     expect(race.isClientInRace(proxyOf(server, "Tester"))).toBe(false);
+    expect(hud.notices.at(-1)).toBe("You left the race. Fly into the green start pad to race again.");
+  });
+
+  it("Leave race outside a race does nothing", async () => {
+    const { server, client, hud } = await connected();
+    const before = hud.notices.length;
+    client.onLeaveRace();
+    server.tick();
+    expect(hud.notices).toHaveLength(before);
+    expect(hud.inRace).toBe(false);
   });
 });
 

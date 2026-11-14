@@ -33,6 +33,8 @@ if (bots > 0) registerRacingBots(server, { bots, opponent: params.get("opponent"
 await server.start(new RealtimeGameLoop());
 
 await startGame({
+  // The game menu offers Restart race (a reload), Change track and Back to menu.
+  mode: "singleplayer",
   // `?encode` round-trips every message through protobuf, like the network would (catches codec bugs).
   connection: () => new LocalServerConnection(server, { encode: params.has("encode") }),
   debugCollisions: params.has("collisions"),

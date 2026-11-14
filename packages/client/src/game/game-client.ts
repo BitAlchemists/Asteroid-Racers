@@ -38,6 +38,8 @@ export class GameClient implements IGameClient, HudActions {
   private racePortal: RacePortalController | undefined;
   private nextCheckpoint: EntityController | undefined;
   private hud: Hud | undefined;
+  /** Set while a disconnect the player asked for is under way. */
+  private quitting = false;
 
   private previous = { acceleration: 0, orientation: 0, rotation: 0 };
   private sincePing = 0;
@@ -86,6 +88,8 @@ export class GameClient implements IGameClient, HudActions {
       log.info(`could not connect: ${String(error)}`);
       this.hud?.showNotice("Could not connect.");
       this.hud?.setConnectionState(this.server.state);
+      if (this.quitting) this.quitting = false;
+      else this.hud?.connectionLost("Could not connect to the server.");
       return;
     }
     log.info("Connected");
@@ -95,13 +99,20 @@ export class GameClient implements IGameClient, HudActions {
     this.server.sendHandshake(this.hud?.username ?? "");
   }
 
+  /** Closes the connection on purpose: the HUD then shows no "connection lost" dialog. */
   disconnect(): void {
+    if (this.server.state === ConnectionState.DISCONNECTED) return;
+    this.quitting = true;
     this.server.disconnect();
   }
 
   private onDisconnected(): void {
+    const lost = !this.quitting;
+    this.quitting = false;
     this.hud?.showNotice("Disconnected");
     this.hud?.setConnectionState(this.server.state);
+    // A server restart or deploy, a network drop: the HUD offers Reconnect and Back to menu.
+    if (lost) this.hud?.connectionLost("The connection to the server was lost.");
     this.hud?.setInRace(false);
     this.view.setLocalPlayer(undefined);
     this.view.clearScene();
@@ -115,17 +126,12 @@ export class GameClient implements IGameClient, HudActions {
 
   // --- HUD actions -------------------------------------------------------------------
 
-  onConnectToggle(): void {
-    switch (this.server.state) {
-      case ConnectionState.DISCONNECTED:
-        void this.connect();
-        break;
-      case ConnectionState.CONNECTED:
-        this.disconnect();
-        break;
-      case ConnectionState.CONNECTING:
-        break;
-    }
+  onReconnect(): void {
+    void this.connect();
+  }
+
+  onQuit(): void {
+    this.disconnect();
   }
 
   onChatSubmit(text: string): void {
@@ -133,7 +139,10 @@ export class GameClient implements IGameClient, HudActions {
   }
 
   onLeaveRace(): void {
+    if (!this.racePortal) return;
     this.server.requestLeaveRace();
+    // The server answers with RACE_LEAVE (also sent, with a rejoin, after every finish line).
+    this.hud?.showNotice("You left the race. Fly into the green start pad to race again.");
   }
 
   // --- frame ---------------------------------------------------------------------------

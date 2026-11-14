@@ -4,12 +4,18 @@ const LEFT = new Set(["ArrowLeft", "KeyA"]);
 const RIGHT = new Set(["ArrowRight", "KeyD"]);
 const THRUST = new Set(["ArrowUp", "KeyW"]);
 const TOGGLE_GUI = "Digit1";
+const MENU = "Escape";
 
 /**
- * Keyboard steering for the local ship (arrow keys, or WASD) and "1" to toggle the GUI.
- * Keys typed into text fields (username, chat) are ignored.
+ * Keyboard steering for the local ship (arrow keys, or WASD), "1" to toggle the GUI and Esc to open
+ * or close the game menu. Keys typed into text fields (chat) are ignored; Esc there leaves the field.
  */
-export function bindKeyboard(target: Window, client: GameClient, toggleGui: () => void): () => void {
+export function bindKeyboard(
+  target: Window,
+  client: GameClient,
+  toggleGui: () => void,
+  toggleMenu: () => void = () => {},
+): () => void {
   const held = new Set<string>();
 
   const isTyping = (event: KeyboardEvent) => {
@@ -31,6 +37,10 @@ export function bindKeyboard(target: Window, client: GameClient, toggleGui: () =
     if (isTyping(event)) return;
     if (event.code === TOGGLE_GUI) {
       if (!event.repeat) toggleGui();
+      return;
+    }
+    if (event.key === MENU) {
+      if (!event.repeat) toggleMenu();
       return;
     }
     if (!LEFT.has(event.code) && !RIGHT.has(event.code) && !THRUST.has(event.code)) return;

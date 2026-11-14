@@ -6,13 +6,15 @@ import { GameClient } from "./game/game-client";
 import { bindKeyboard } from "./game/keyboard-input";
 import { bindTouch, wantsTouchControls } from "./game/touch-input";
 import { PixiGameView, type PixiGameViewOptions } from "./render/pixi-game-view";
+import type { GameMode } from "./ui/game-menu";
 import { HtmlHud } from "./ui/html-hud";
 
 export { GameClient } from "./game/game-client";
 export * from "./game/contracts";
 export * from "./game/controllers";
 export { PixiGameView } from "./render/pixi-game-view";
-export { HtmlHud } from "./ui/html-hud";
+export { HtmlHud, type HtmlHudOptions } from "./ui/html-hud";
+export * from "./ui/game-menu";
 export * from "./game/touch-input";
 
 export interface StartGameOptions extends PixiGameViewOptions {
@@ -22,6 +24,12 @@ export interface StartGameOptions extends PixiGameViewOptions {
   parent?: HTMLElement;
   /** Connect right away (as the Dart client did). */
   autoConnect?: boolean;
+  /** Which game menu to offer (game-menu.ts). Defaults to multiplayer. */
+  mode?: GameMode;
+  /** The start page ("Back to menu"). Defaults to `index.html`. */
+  menuUrl?: string;
+  /** Singleplayer "Change track". Defaults to the start page's track picker. */
+  changeTrackUrl?: string;
 }
 
 export interface RunningGame {
@@ -41,6 +49,9 @@ export async function startGame({
   connection,
   parent = document.body,
   autoConnect = true,
+  mode = "multiplayer",
+  menuUrl = "index.html",
+  changeTrackUrl = "index.html#track-heading",
   ...viewOptions
 }: StartGameOptions): Promise<RunningGame> {
   const touchUi = wantsTouchControls(window);
@@ -57,10 +68,23 @@ export async function startGame({
 
   const view = new PixiGameView(app, viewOptions);
   const client = new GameClient(view, connection);
-  const hud = new HtmlHud(parent, client);
+  const hud = new HtmlHud(parent, client, {
+    mode,
+    navigation: {
+      menuUrl,
+      changeTrackUrl,
+      navigate: (url) => location.assign(url),
+      reload: () => location.reload(),
+    },
+  });
   client.attachHud(hud);
 
-  const unbindKeys = bindKeyboard(window, client, () => hud.toggleVisible());
+  const unbindKeys = bindKeyboard(
+    window,
+    client,
+    () => hud.toggleVisible(),
+    () => hud.toggleMenu(),
+  );
   // Phones and tablets (or `?touch`): a touch layer under the HUD, and the world zoomed out a bit.
   const touch = touchUi ? bindTouch(parent, client, hud.root) : undefined;
   app.ticker.add((ticker) => {
@@ -83,6 +107,7 @@ export async function startGame({
       touch?.destroy();
       client.disconnect();
       hud.root.remove();
+      hud.menu.remove();
       app.destroy(true, { children: true });
     },
   };

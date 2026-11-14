@@ -14,6 +14,8 @@ const url = opponent
   : base;
 
 const game = await startGame({
+  // The game menu offers Leave race and Back to menu; a lost connection offers Reconnect.
+  mode: "multiplayer",
   connection: () => new WebSocketServerConnection(url),
   debugCollisions: params.has("collisions"),
 });

@@ -53,8 +53,14 @@ body {
   gap: 6px;
 }
 
-.hud-pilot label {
-  color: var(--text);
+.hud-panel-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hud-panel-actions:empty {
+  display: none;
 }
 
 .hud input {
@@ -128,9 +134,99 @@ body {
   color: var(--notice);
 }
 
-@media (max-width: 480px) {
-  .hud-pilot {
-    width: calc(100% - 20px);
+/* --- game menu (Esc / "☰ Menu"; opens by itself when the multiplayer connection is lost) ------- */
+
+.game-menu {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  box-sizing: border-box;
+  background: rgba(0, 0, 0, 0.55);
+  touch-action: manipulation;
+  font-size: 14px;
+}
+
+.game-menu[hidden] {
+  display: none;
+}
+
+.game-menu-panel {
+  width: min(320px, 100%);
+  max-height: 100%;
+  overflow-y: auto;
+  background: rgba(40, 40, 40, 0.95);
+  border: 1px solid #555;
+  border-radius: 12px;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.game-menu-panel h2 {
+  margin: 0 0 8px;
+  font-size: 18px;
+}
+
+.game-menu-message {
+  margin: 0 0 12px;
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.game-menu-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.game-menu-button {
+  font: inherit;
+  min-height: 44px;
+  border: 1px solid #666;
+  border-radius: 10px;
+  background: #2b2b2b;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.game-menu-button:hover:not(:disabled) {
+  background: #3a3a3a;
+}
+
+.game-menu-button:focus-visible {
+  outline: 2px solid var(--notice);
+  outline-offset: 1px;
+}
+
+.game-menu-button:disabled {
+  opacity: 0.7;
+  cursor: progress;
+}
+
+.game-menu-resume,
+.game-menu-reconnect {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.game-menu-resume:hover:not(:disabled),
+.game-menu-reconnect:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+@media (max-height: 420px) {
+  .game-menu-panel {
+    padding: 10px 12px;
+  }
+  .game-menu-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .game-menu-button {
+    min-height: 40px;
   }
 }
 
@@ -189,6 +285,14 @@ body.watch {
   color: #8cf;
   font-weight: bold;
   text-decoration: none;
+}
+.watch-bar .back-to-menu {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid #8cf;
+  border-radius: 8px;
 }
 .watch-bar input[type="number"] {
   width: 5em;
@@ -291,7 +395,6 @@ body.touch-controls .hud-pilot {
   gap: 4px;
 }
 
-body.touch-controls .hud-pilot label,
 body.touch-controls .hud-debug {
   display: none;
 }

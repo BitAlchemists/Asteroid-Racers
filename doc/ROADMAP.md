@@ -242,6 +242,12 @@ with the user's request.
   each race, with player votes (`/vote`, a HUD box, `GET /lobby`), never during a human's race.
   `TRACK=<name>` still fixes one track. See [`deploy.md`](deploy.md), "Track rotation". Not
   released yet: needs a push to `production`.
+- **Follow-up, in-game menu** (2026-11-14, the user's report "I cannot disconnect, or I cannot go
+  back to the main menu"): "☰ Menu" (and Esc) on the game pages, per mode: singleplayer Restart
+  race, Change track, Back to menu; multiplayer Leave race and Back to menu (closes the WebSocket
+  first), and a lost connection opens "Disconnected" with Reconnect and Back to menu. The old
+  Username field and Connect/Disconnect button are gone (the name is set on the start page); watch
+  and showcase got a "← Menu" link. Not released yet: needs a push to `production`.
 
 ## Open questions
 
