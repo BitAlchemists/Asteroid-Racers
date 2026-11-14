@@ -83,6 +83,33 @@ describe("static files", () => {
   });
 });
 
+describe("health", () => {
+  it("answers GET /health with 200 and a small JSON state", async () => {
+    const response = await fetch(`${host.url}/health`);
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toContain("application/json");
+    expect(response.headers.get("cache-control")).toBe("no-store");
+    const body = (await response.json()) as Record<string, unknown>;
+    expect(body).toEqual({
+      status: "ok",
+      clients: 0,
+      frame: expect.any(Number),
+      uptimeS: expect.any(Number),
+    });
+  });
+
+  it("counts connected clients and ignores the query string", async () => {
+    await connectClient();
+    await until(() => host.gameServer.clients.size === 1, "client to join");
+    const body = (await (await fetch(`${host.url}/health?probe=1`)).json()) as { clients: number };
+    expect(body.clients).toBe(1);
+  });
+
+  it("refuses other methods", async () => {
+    expect((await fetch(`${host.url}/health`, { method: "POST" })).status).toBe(405);
+  });
+});
+
 describe("WebSocket game traffic", () => {
   it("connects, greets, and handles the handshake over the wire", async () => {
     const { connection, received } = await connectClient();

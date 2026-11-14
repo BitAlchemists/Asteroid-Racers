@@ -1,0 +1,27 @@
+# Build context for the Dockerfile: sources and lockfile only.
+.git
+.github
+.claude
+.vscode
+.idea
+**/node_modules
+**/dist
+**/*.tsbuildinfo
+**/.vite
+coverage
+
+# Not needed to build or run the game server
+doc
+lab
+experiments
+proto
+db
+log
+logs
+lab.config.json
+*.md
+**/*.test.ts
+packages/node/src/fixtures
+
+Dockerfile
+.dockerignore

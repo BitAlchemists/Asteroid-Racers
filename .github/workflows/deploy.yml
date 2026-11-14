@@ -1,0 +1,113 @@
+name: Deploy
+
+# Production deploys: push to the `production` branch (fast-forward it from main), or run by hand.
+# ci.yml keeps checking every push; this workflow builds, scans and publishes the container image.
+# See doc/deploy.md.
+on:
+  push:
+    branches: [production]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+env:
+  # ghcr.io names must be lowercase.
+  IMAGE: ghcr.io/bitalchemists/asteroid-racers
+
+jobs:
+  image:
+    name: Check, build, scan, push
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      # For the deploy job's Workload Identity Federation login (see the placeholder below).
+      id-token: write
+    outputs:
+      image: ${{ env.IMAGE }}
+      digest: ${{ steps.push.outputs.digest }}
+    steps:
+      # Third-party actions are pinned to commit SHAs (tag in the comment).
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      # typecheck + lint + format check + tests
+      - run: npm run check
+
+      - name: Build image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          load: true
+          push: false
+          tags: ${{ env.IMAGE }}:${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+
+      - name: Scan image (fail on fixable HIGH/CRITICAL)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: ${{ env.IMAGE }}:${{ github.sha }}
+          format: table
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          vuln-type: os,library
+          exit-code: "1"
+
+      - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push image
+        id: push
+        run: |
+          docker push "$IMAGE:$GITHUB_SHA"
+          repo_digest=$(docker image inspect --format '{{index .RepoDigests 0}}' "$IMAGE:$GITHUB_SHA")
+          digest=${repo_digest#*@}
+          case "$digest" in sha256:*) ;; *) echo "no digest for $IMAGE:$GITHUB_SHA ($repo_digest)" >&2; exit 1 ;; esac
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+          {
+            echo "### Image pushed"
+            echo
+            echo "| | |"
+            echo "|---|---|"
+            echo "| Image | \`$IMAGE\` |"
+            echo "| Tag | \`$GITHUB_SHA\` |"
+            echo "| Digest | \`$digest\` |"
+            echo
+            echo "Pull by digest: \`$IMAGE@$digest\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # ---------------------------------------------------------------------------------------------
+  # PLACEHOLDER: deploy job, to be supplied by the Infra session. Do not fill in from guesswork.
+  #
+  # It will run after `image`, log in through Workload Identity Federation (id-token: write) and
+  # run, in effect:
+  #   ssh web-server "deploy asteroid-racers ${{ needs.image.outputs.digest }}"
+  # where the digest has the form sha256:<hex>.
+  #
+  # deploy:
+  #   needs: image
+  #   runs-on: ubuntu-latest
+  #   permissions:
+  #     contents: read
+  #     id-token: write
+  #   steps:
+  #     - ... (from Infra)
+  # ---------------------------------------------------------------------------------------------

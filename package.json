@@ -27,13 +27,15 @@
     "experiment": "npm run experiment -w @ar/node --",
     "iqm": "npm run iqm -w @ar/node --",
     "scripted": "npm run scripted -w @ar/node --",
-    "skills": "npm run skills -w @ar/node --"
+    "skills": "npm run skills -w @ar/node --",
+    "build:server": "node scripts/bundle-server.mjs"
   },
   "devDependencies": {
     "@bufbuild/buf": "^1.75.0",
     "@bufbuild/protoc-gen-es": "^2.17.0",
     "@eslint/js": "^10.0.1",
     "@types/node": "^26.6.6",
+    "esbuild": "^0.28.2",
     "eslint": "^10.14.0",
     "eslint-config-prettier": "^10.1.8",
     "globals": "^17.14.0",

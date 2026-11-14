@@ -1,4 +1,4 @@
-import { createServer, type Server } from "node:http";
+import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import type { AddressInfo } from "node:net";
 import { getLogger } from "@ar/shared";
 import {
@@ -21,6 +21,8 @@ const log = getLogger("TCPServer");
 
 export const DEFAULT_PORT = 1337;
 export const WEB_SOCKET_PATH = "/ws";
+/** Liveness/readiness probe for the container platform. */
+export const HEALTH_PATH = "/health";
 /** Largest client message we accept. Inputs and chat are tiny. */
 export const MAX_MESSAGE_BYTES = 64 * 1024;
 
@@ -58,8 +60,14 @@ export async function startHost({
 }: HostOptions = {}): Promise<RunningHost> {
   const game = gameServer ?? createDefaultGameServer();
   const serveStatic = createStaticHandler(staticRoots);
+  const startedAt = Date.now();
 
   const http = createServer((request, response) => {
+    // Plain string match: `new URL` can throw on odd request targets, and this runs every probe.
+    if (request.url?.split("?", 1)[0] === HEALTH_PATH) {
+      serveHealth(request, response, game, startedAt);
+      return;
+    }
     serveStatic(request, response).catch((error: unknown) => {
       log.warning(`error serving ${request.url}`, error);
       if (!response.headersSent) response.writeHead(500).end("500 - Internal Server Error");
@@ -113,6 +121,35 @@ export async function startHost({
       await new Promise<void>((done, fail) => http.close((error) => (error ? fail(error) : done())));
     },
   };
+}
+
+/**
+ * GET /health: always 200 while the process serves HTTP, with a small JSON body describing the
+ * state. Cheap by design (a few counters, no simulation work): it is probed every 30 s. A degraded
+ * state is reported in the body, never as a 5xx.
+ */
+function serveHealth(
+  request: IncomingMessage,
+  response: ServerResponse,
+  game: GameServer,
+  startedAt: number,
+) {
+  if (request.method !== "GET" && request.method !== "HEAD") {
+    response.writeHead(405, { Allow: "GET, HEAD" }).end();
+    return;
+  }
+  const body = JSON.stringify({
+    status: "ok",
+    clients: game.clients.size,
+    frame: game.frameCount,
+    uptimeS: Math.floor((Date.now() - startedAt) / 1000),
+  });
+  response.writeHead(200, {
+    "Content-Type": "application/json; charset=utf-8",
+    "Content-Length": Buffer.byteLength(body),
+    "Cache-Control": "no-store",
+  });
+  response.end(request.method === "HEAD" ? undefined : body);
 }
 
 export interface DefaultGameServerOptions {

@@ -176,6 +176,16 @@ Inserted between M6's batch A and the rest of M6.
   difficulty band, goal type and skill. Exam v2 is kept for comparison.
 - S5: the generator and goal types available to training and the curriculum.
 
+### D1 — Deploy and showcase 🟡 (side track)
+
+Put the game online at https://asteroid-racers.cypherpunk.agency. No separate plan: the scope came
+with the user's request.
+
+- **Deploy:** a container image (`Dockerfile`, non-root, read-only root filesystem), `GET /health`,
+  and `.github/workflows/deploy.yml` (push to `production` → check, build, Trivy scan, push to
+  ghcr.io). The server side (Caddy, compose, the deploy job) belongs to the Infra session. See
+  [`deploy.md`](deploy.md).
+
 ## Open questions
 
 Each question below has a default we work with until it is answered.

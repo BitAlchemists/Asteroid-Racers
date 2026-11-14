@@ -1777,3 +1777,38 @@ Approved by the user as the rest of M5 after M4 closed. M5 is done.
 - **Interruption:** the machine was shut down mid-task, after the first two commits' files were
   written but before the second was committed. Work resumed in the same worktree: the files were
   regenerated from the script and checked again before that commit.
+
+### D1 deploy: container image, /health, production workflow
+
+- **Built** (side track D1, deploy part; the user asked for the game online at
+  https://asteroid-racers.cypherpunk.agency; the server side belongs to the Infra session):
+  - `GET /health` in `host.ts`: always 200, `{status, clients, frame, uptimeS}`, counters only; tests
+    in `host.test.ts`.
+  - `npm run build:server` (`scripts/bundle-server.mjs`): esbuild bundles `main.ts` with all
+    dependencies and JSON imports into `packages/node/dist/main.mjs` (430 kB). `esbuild` became an
+    explicit root devDependency (it was already installed through tsx and vite).
+  - `Dockerfile` + `.dockerignore`: build on `node:22-bookworm-slim`, run on `node:22-alpine`
+    without npm/yarn, as the `node` user, with only the bundle and `packages/web/dist`.
+  - `.github/workflows/deploy.yml`: push to `production` (or by hand) → `npm ci`, `npm run check`,
+    build, Trivy (HIGH/CRITICAL with fixes), push to `ghcr.io/bitalchemists/asteroid-racers:<sha>`;
+    digest as job output and in the summary. Actions pinned to commit SHAs. The deploy job is a
+    marked placeholder for Infra.
+  - `doc/deploy.md`.
+- **Decision:** run a bundled `.mjs` instead of tsx in the container: no `node_modules`, no
+  TypeScript at runtime, nothing written to disk. The image is 62 MB (base `node:22-alpine` 61.4 MB).
+- **Verified locally** (Docker in WSL, legacy builder; there is no buildx):
+  - `--read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges`: starts, `/health`
+    and `/` answer 200, the image's HEALTHCHECK reports healthy, `/app` is not writable, SIGTERM
+    stops it cleanly (exit 0). No writable paths needed.
+  - Multiplayer through the image: `npm run bot` connected; two headless players saw each other's
+    ships and chat; the browser client played through it.
+  - Idle with `BOTS=1`: about 1 % CPU (one sample 8 %), 71 MiB memory, RSS 77 MB.
+  - Trivy 0.76.2: 0 HIGH/CRITICAL fixable findings. The bundle hides npm dependencies from Trivy.
+- **CSP findings** (browser test with the policy as a header): everything is same-origin, and the
+  WebSocket URL comes from `location`. But PixiJS throws without `'unsafe-eval'` (fix:
+  `import "pixi.js/unsafe-eval"` in the client), and `index.html`'s `style` attribute and the
+  watch page's `<style>` element need `'unsafe-inline'` styles. Not fixed here (client code is the
+  showcase agent's); documented in `doc/deploy.md`.
+- **Deviation:** D1 has no plan file; the scope came with the user's request.
+- **Mistake:** the first container test died with exit 255 and no log. The WSL VM had shut down
+  when idle, not the server. Kept a WSL session open for the rest of the tests.
