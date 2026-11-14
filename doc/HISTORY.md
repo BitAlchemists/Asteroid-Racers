@@ -2104,3 +2104,40 @@ multiplayer play".
     where exam v2 also dropped (0.73, 1,937 crashes);
   - other seeds of the arm show the same one-exam drops on exam v2: train-498 g75 0.47,
     train-500 g125 0.45. Continued in a later entry.
+
+### M6 combination check (m6-a3-combination): rotation 20 on the new baseline
+
+- **Runs:** baseline train-545..564 (continued from the gate's check runs train-525..544), +rotation
+  20 train-565..584; seeds 1–20, g150; gate identical on all 20. About 70 minutes per wave of 20.
+- **Decision (pre-registered, exam3 at g150, IQM, paired bootstrap):** no clear difference,
+  +0.02 [−1.86, +1.94], 11/20 seeds better; baseline 50.4, arm 50.4. Detectable effect at 20 seeds:
+  3.3 points. No veto: exam3 crashes clearly *lower* with rotation (35.6 → 28.6 per race,
+  −7.0 [−11.0, −3.3], 16/20), exam v2 checkpoints unchanged (0.902 / 0.903). Rotation also lowers
+  spin (0.35 → 0.30) and finishes slower (time ÷ par 1.49 → 1.70). Report:
+  `experiments/m6-a3-combination.report.md`. Recommendation not signed off.
+- **exam3 doesn't grow with training on this baseline:** IQM 50.0 at g5, 51.1 at g25, 50.4 at
+  g150 (the scripted controller alone: 52.6). The network learns to crash less than the scripted
+  controller (35.6 against 44.0 per race), not to race better.
+- **Descriptive:** residual + progress (train-545..554) against residual only (train-495..504),
+  seeds 1–10, g150: IQM 50.6 vs 48.8, +1.8 [−1.8, +4.8], 5/10 better. Not a test.
+- **Seed 5's collapse, from data:**
+  - train-549, the new baseline's seed 5, drops at **g150** too: exam v2 checkpoints 0.28, exam3
+    42.9. Same seed, same generation as batch A's train-499 (0.36, exam3 48.8).
+  - Local exam v2 with traces (`npm run exam` and a scratch probe on `runExam`'s traces):
+    g145–g149 of both runs are normal (0.75–0.93); the g150 winners **freeze**: in 51 and 63 of 102
+    races they move about 70 units from the start and stand still for the full 180 s, with no
+    crash. In open space without rocks the same models reach a single target at 300–4,000 units
+    in every direction, so the freeze needs the race environment (rocks in view).
+  - The same freeze is in train-498 g75 and train-500 g125 (batch A residual); every other drop in
+    batch A's non-residual arms is a crash loop (many crashes). Only residual runs freeze.
+  - The rotation arm's seed 5 (train-569) does not freeze at g150.
+  - Reading: the reported model of a generation is that generation's winner on its own scenarios;
+    a residual network can learn outputs that cancel the scripted controller in states the
+    training scenarios of that generation don't test, and the next generation's winner is
+    normal again. Seed 5 hitting it at g150 in two configs suggests that seed's g150 training
+    scenarios don't punish it (the scenarios come from the seed and generation). A hypothesis,
+    not checked.
+  - exam3 shows the same kind of single-exam dips (10–20 points) in several runs; the runs recover.
+- **Mistake:** the first local exam batch passed snapshot paths relative to the repository root,
+  but npm runs the tool from `packages/node`; nothing ran. Re-run with absolute paths. Queued
+  exam-method runs (exam-8..12) sat behind the experiments' training runs and were stopped.

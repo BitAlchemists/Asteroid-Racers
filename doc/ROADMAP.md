@@ -158,7 +158,8 @@ Only if needed: Q.1 quality diversity (MAP-Elites).
 2. ✅ Batch A (2.1 progress, 2.2 costs, 2.8 rotation, 3.4 residual), decided 2026-11-14: residual 0.5
    and progress 3 adopted by judgement.
 3. ✅ M7 (Benchmark v2): exam v3 is the yardstick from now on.
-4. 🟡 The combination check `m6-a3-combination` (rotation 20 on the new baseline), 20 seeds, exam3.
+4. 🟡 The combination check `m6-a3-combination` (rotation 20 on the new baseline), 20 seeds, exam3:
+   run; no win by the rule (fewer crashes, slower); waiting for the user's decision.
 5. 🟡 Batch B `m6-b-curriculum` (2.4, 2.5, 2.6 in two variants, 2.7) on the new baseline without
    rotation, reusing step 4's baseline runs.
 6. Then perception (3.1–3.3), the learner, and readiness.
