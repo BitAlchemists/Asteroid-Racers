@@ -2,8 +2,17 @@ import { Entity, EntityType, Vector2 } from "@ar/shared";
 import { createArrow, generateAsteroidBelt } from "./scene-controller";
 import type { Track } from "./tracks";
 
-/** The format tag every track file starts with. A new, incompatible format gets a new version. */
-export const TRACK_FORMAT = "asteroid-racers/track/v1";
+/** The first format: race points, asteroids, belts and arrows; today's race rules. */
+export const TRACK_FORMAT_V1 = "asteroid-racers/track/v1";
+/**
+ * Format v2 (M7) adds goal fields: directional gates (`width` on a checkpoint), `race.laps`,
+ * `race.par` and `race.finish.maxSpeed`. Everything else is as in v1, and v1 files still load (the v2
+ * fields are allowed only in v2 files). See `doc/track-format.md`.
+ */
+export const TRACK_FORMAT_V2 = "asteroid-racers/track/v2";
+/** The current format tag. A new, incompatible format gets a new version. */
+export const TRACK_FORMAT = TRACK_FORMAT_V2;
+export type TrackFormat = typeof TRACK_FORMAT_V1 | typeof TRACK_FORMAT_V2;
 
 /** Radius of the start portal, the checkpoints (default) and the finish, as in `RaceController`. */
 const RACE_RADIUS = 100;
@@ -22,8 +31,21 @@ export interface TrackPoint {
 }
 
 export interface TrackCheckpoint extends TrackPoint {
-  /** Default 100. */
+  /** Default 100; for a gate (`width` set) default `width / 2`. */
   radius?: number;
+  /**
+   * v2: makes the checkpoint a **directional gate** of this width: a line through (x, y), across the
+   * checkpoint's heading (`heading`, or by default facing the next point). It counts only when the
+   * ship's centre crosses that line in the heading's direction, within `width / 2` of (x, y);
+   * crossing it backwards, or touching the circle without crossing, does not count.
+   */
+  width?: number;
+}
+
+/** The finish of a race. */
+export interface TrackFinish extends TrackPoint {
+  /** v2: stop at the finish — it counts only while the ship is at most this fast (units/s). */
+  maxSpeed?: number;
 }
 
 /**
@@ -41,7 +63,7 @@ export interface TrackBelt {
 
 /** A track file (`packages/server/src/tracks/*.json`), format {@link TRACK_FORMAT}. */
 export interface TrackFile {
-  format: typeof TRACK_FORMAT;
+  format: TrackFormat;
   /** Lower case, digits and dashes; the file is `<name>.json`. */
   name: string;
   description: string;
@@ -49,7 +71,14 @@ export interface TrackFile {
   race: {
     start: TrackPoint;
     checkpoints: TrackCheckpoint[];
-    finish: TrackPoint;
+    finish: TrackFinish;
+    /**
+     * v2: laps (integer ≥ 1, default 1). Each lap is the checkpoints and then the finish; the finish
+     * ends the race only after the last lap (and only there `finish.maxSpeed` applies).
+     */
+    laps?: number;
+    /** v2: par time of the whole race (all laps) in seconds, for time trials. */
+    par?: number;
   };
   /** Fixed asteroids: `[x, y, radius]`. */
   asteroids?: [number, number, number][];
@@ -98,11 +127,13 @@ export function parseTrackFile(raw: unknown, source = "track file"): TrackFile {
       number(n, `${path}[${i}] (${names[i]})`, { positive: positiveLast && i === names.length - 1 }),
     ) as [number, number, number];
   };
-  const point = (v: unknown, path: string, withRadius: boolean): TrackCheckpoint => {
-    const o = object(v, path, ["x", "y"], withRadius ? ["heading", "radius"] : ["heading"]);
-    const p: TrackCheckpoint = { x: number(o.x, `${path}.x`), y: number(o.y, `${path}.y`) };
+  const point = (v: unknown, path: string, extra: string[]): TrackCheckpoint & TrackFinish => {
+    const o = object(v, path, ["x", "y"], ["heading", ...extra]);
+    const p: TrackCheckpoint & TrackFinish = { x: number(o.x, `${path}.x`), y: number(o.y, `${path}.y`) };
     if (o.heading !== undefined) p.heading = number(o.heading, `${path}.heading`);
     if (o.radius !== undefined) p.radius = number(o.radius, `${path}.radius`, { positive: true });
+    if (o.width !== undefined) p.width = number(o.width, `${path}.width`, { positive: true });
+    if (o.maxSpeed !== undefined) p.maxSpeed = number(o.maxSpeed, `${path}.maxSpeed`, { positive: true });
     return p;
   };
 
@@ -112,24 +143,38 @@ export function parseTrackFile(raw: unknown, source = "track file"): TrackFile {
     ["format", "name", "description", "race"],
     ["author", "asteroids", "belts", "arrows"],
   );
-  if (top.format !== TRACK_FORMAT)
-    fail("format", `must be ${JSON.stringify(TRACK_FORMAT)}, not ${JSON.stringify(top.format)}`);
+  if (top.format !== TRACK_FORMAT_V1 && top.format !== TRACK_FORMAT_V2)
+    fail(
+      "format",
+      `must be ${JSON.stringify(TRACK_FORMAT_V2)} or ${JSON.stringify(TRACK_FORMAT_V1)}, not ${JSON.stringify(top.format)}`,
+    );
+  const v2 = top.format === TRACK_FORMAT_V2;
+  /** `keys` in a v2 file, none in a v1 file (so a v2 field in a v1 file is reported as unknown). */
+  const since2 = (...keys: string[]) => (v2 ? keys : []);
   const name = string(top.name, "name");
   if (!/^[a-z][a-z0-9-]*$/.test(name)) fail("name", "must be lower case letters, digits and dashes");
-  const raceRaw = object(top.race, "race", ["start", "checkpoints", "finish"]);
+  const raceRaw = object(top.race, "race", ["start", "checkpoints", "finish"], since2("laps", "par"));
   const checkpointsRaw = list(raceRaw.checkpoints, "race.checkpoints");
   if (checkpointsRaw.length === 0) fail("race.checkpoints", "must have at least one checkpoint");
 
   const file: TrackFile = {
-    format: TRACK_FORMAT,
+    format: v2 ? TRACK_FORMAT_V2 : TRACK_FORMAT_V1,
     name,
     description: string(top.description, "description"),
     race: {
-      start: point(raceRaw.start, "race.start", false),
-      checkpoints: checkpointsRaw.map((c, i) => point(c, `race.checkpoints[${i}]`, true)),
-      finish: point(raceRaw.finish, "race.finish", false),
+      start: point(raceRaw.start, "race.start", []),
+      checkpoints: checkpointsRaw.map((c, i) =>
+        point(c, `race.checkpoints[${i}]`, ["radius", ...since2("width")]),
+      ),
+      finish: point(raceRaw.finish, "race.finish", since2("maxSpeed")),
     },
   };
+  if (raceRaw.laps !== undefined) {
+    const laps = number(raceRaw.laps, "race.laps");
+    if (!Number.isInteger(laps) || laps < 1) fail("race.laps", "must be an integer ≥ 1");
+    file.race.laps = laps;
+  }
+  if (raceRaw.par !== undefined) file.race.par = number(raceRaw.par, "race.par", { positive: true });
   if (top.author !== undefined) file.author = string(top.author, "author");
   if (top.asteroids !== undefined)
     file.asteroids = list(top.asteroids, "asteroids").map((a, i) =>
@@ -164,7 +209,8 @@ export function parseTrackFile(raw: unknown, source = "track file"): TrackFile {
       path: `race.checkpoints[${i}]`,
       x: c.x,
       y: c.y,
-      radius: c.radius ?? RACE_RADIUS,
+      // A gate's line must be clear too: it lies inside the circle of radius width / 2.
+      radius: Math.max(checkpointRadius(c), (c.width ?? 0) / 2),
     })),
     { path: "race.finish", ...file.race.finish, radius: RACE_RADIUS },
     { path: "the world spawn (0, 0)", ...WORLD_SPAWN },
@@ -185,7 +231,12 @@ export function parseTrackFile(raw: unknown, source = "track file"): TrackFile {
   return file;
 }
 
-/** Degrees on screen (0 = up, clockwise) → the game's orientation in radians (π = up). */
+/** The radius a file checkpoint gets: `radius`, else `width / 2` for a gate, else 100. */
+export function checkpointRadius(c: TrackCheckpoint): number {
+  return c.radius ?? (c.width !== undefined ? c.width / 2 : RACE_RADIUS);
+}
+
+/** Degrees on screen (0 = up, clockwise) →the game's orientation in radians (π = up). */
 export function headingToOrientation(heading: number): number {
   return ((((heading + 180) % 360) + 360) % 360) * (Math.PI / 180);
 }
@@ -225,9 +276,16 @@ export function trackFromFile(file: TrackFile): Track {
       world.passiveCollisionEntities.push(...rocks);
       for (const [x, y, heading] of file.arrows ?? [])
         world.addEntity(createArrow(x, y, headingToOrientation(heading)));
+      // v2 gates: an arrow on each, pointing the way to cross it (v1 files have no gates).
+      checkpoints.forEach((c, i) => {
+        if (c.width === undefined) return;
+        const arrow = createArrow(c.x, c.y, orientationAt(i + 1));
+        arrow.radius = Math.min(100, checkpointRadius(c) * 0.8);
+        world.addEntity(arrow);
+      });
 
       race.addStart(start.x, start.y, orientationAt(0));
-      checkpoints.forEach((c, i) => race.addCheckpoint(c.x, c.y, orientationAt(i + 1), c.radius));
+      checkpoints.forEach((c, i) => race.addCheckpoint(c.x, c.y, orientationAt(i + 1), checkpointRadius(c)));
       race.addFinish(finish.x, finish.y, orientationAt(points.length - 1));
       world.addEntities(race.checkpoints);
       if (race.start) world.addEntity(race.start);

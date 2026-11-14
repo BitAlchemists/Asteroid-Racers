@@ -5,6 +5,8 @@ import {
   headingToOrientation,
   parseTrackFile,
   TRACK_FORMAT,
+  TRACK_FORMAT_V1,
+  TRACK_FORMAT_V2,
   trackFromFile,
   TrackFileError,
 } from "./track-file";
@@ -176,7 +178,11 @@ describe("track files", () => {
   });
 
   it.each<[string, Record<string, unknown>, RegExp]>([
-    ["a wrong format", { format: "asteroid-racers/track/v0" }, /format must be "asteroid-racers\/track\/v1"/],
+    [
+      "a wrong format",
+      { format: "asteroid-racers/track/v0" },
+      /format must be "asteroid-racers\/track\/v2" or "asteroid-racers\/track\/v1"/,
+    ],
     ["a bad name", { name: "My Track" }, /name must be lower case/],
     ["an unknown key", { speed: 3 }, /the track has an unknown key "speed"/],
     [
@@ -229,6 +235,82 @@ describe("track files", () => {
     expect(() => parseTrackFile(minimal(extra), "tracks/tiny.json")).toThrow(TrackFileError);
     expect(() => parseTrackFile(minimal(extra), "tracks/tiny.json")).toThrow(message);
     expect(() => parseTrackFile(minimal(extra), "tracks/tiny.json")).toThrow(/^tracks\/tiny.json: /);
+  });
+
+  it("format v2: gates, laps, par and finish.maxSpeed load; v1 files still load as v1", () => {
+    const v2 = parseTrackFile(
+      minimal({
+        format: TRACK_FORMAT_V2,
+        race: {
+          start: { x: 0, y: 0 },
+          checkpoints: [
+            { x: 0, y: -600, heading: 0, width: 240 },
+            { x: 300, y: -900 },
+          ],
+          finish: { x: 0, y: -1200, maxSpeed: 150 },
+          laps: 3,
+          par: 42.5,
+        },
+      }),
+    );
+    expect(v2.format).toBe(TRACK_FORMAT_V2);
+    expect(v2.race).toMatchObject({ laps: 3, par: 42.5, finish: { maxSpeed: 150 } });
+    expect(v2.race.checkpoints[0]).toEqual({ x: 0, y: -600, heading: 0, width: 240 });
+    // A gate without a radius is drawn with radius width / 2.
+    const server = load(trackFromFile(v2), 1);
+    expect(server.raceController!.checkpoints.map((c) => c.radius)).toEqual([100, 120, 100, 100]);
+
+    const v1 = parseTrackFile(minimal({ format: TRACK_FORMAT_V1 }));
+    expect(v1.format).toBe(TRACK_FORMAT_V1);
+    expect(v1.race.laps).toBeUndefined();
+  });
+
+  it.each<[string, Record<string, unknown>, RegExp]>([
+    [
+      "a gate in a v1 file",
+      { checkpoints: [{ x: 0, y: -600, width: 200 }] },
+      /race.checkpoints\[0\] has an unknown key "width"/,
+    ],
+    ["laps in a v1 file", { laps: 2 }, /race has an unknown key "laps"/],
+    ["par in a v1 file", { par: 30 }, /race has an unknown key "par"/],
+    [
+      "finish.maxSpeed in a v1 file",
+      { finish: { x: 0, y: -1200, maxSpeed: 100 } },
+      /race.finish has an unknown key "maxSpeed"/,
+    ],
+  ])("v1 rejects %s", (_, race, message) => {
+    const raw = minimal({ format: TRACK_FORMAT_V1 }) as { race: Record<string, unknown> };
+    expect(() => parseTrackFile({ ...raw, race: { ...raw.race, ...race } })).toThrow(message);
+  });
+
+  it.each<[string, Record<string, unknown>, RegExp]>([
+    ["zero laps", { laps: 0 }, /race.laps must be an integer ≥ 1/],
+    ["fractional laps", { laps: 1.5 }, /race.laps must be an integer ≥ 1/],
+    ["a zero par", { par: 0 }, /race.par must be > 0/],
+    [
+      "a negative gate width",
+      { checkpoints: [{ x: 0, y: -600, width: -5 }] },
+      /race.checkpoints\[0\].width must be > 0/,
+    ],
+    ["a zero finish speed", { finish: { x: 0, y: -1200, maxSpeed: 0 } }, /race.finish.maxSpeed must be > 0/],
+    ["a width on the start", { start: { x: 0, y: 0, width: 100 } }, /race.start has an unknown key "width"/],
+    [
+      "maxSpeed on a checkpoint",
+      { checkpoints: [{ x: 0, y: -600, maxSpeed: 9 }] },
+      /race.checkpoints\[0\] has an unknown key "maxSpeed"/,
+    ],
+  ])("v2 rejects %s", (_, race, message) => {
+    const raw = minimal({ format: TRACK_FORMAT_V2 }) as { race: Record<string, unknown> };
+    expect(() => parseTrackFile({ ...raw, race: { ...raw.race, ...race } })).toThrow(message);
+  });
+
+  it("v2: a gate line must be clear of rocks (it lies in the circle of radius width / 2)", () => {
+    const raw = minimal({ format: TRACK_FORMAT_V2, asteroids: [[180, -600, 20]] }) as {
+      race: Record<string, unknown>;
+    };
+    expect(() => parseTrackFile(raw)).not.toThrow(); // a plain checkpoint: radius 100, clear
+    const gate = { ...raw, race: { ...raw.race, checkpoints: [{ x: 0, y: -600, width: 400, radius: 50 }] } };
+    expect(() => parseTrackFile(gate)).toThrow(/race.checkpoints\[0\] overlaps asteroids\[0\]/);
   });
 
   it("file names must match track names and must not shadow code tracks", () => {
