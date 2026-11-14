@@ -28,11 +28,36 @@ workflow that builds it.
 
 ## Environment
 
-| Variable | Default | Meaning                                          |
-| -------- | ------- | ------------------------------------------------ |
-| `PORT`   | `1337`  | HTTP and WebSocket port                          |
-| `BOTS`   | `1`     | AI racing bots in the world (`0` for none)       |
-| `TRACK`  | `demo`  | track from the registry in `@ar/server`          |
+| Variable        | Default    | Meaning                                                                    |
+| --------------- | ---------- | -------------------------------------------------------------------------- |
+| `PORT`          | `1337`     | HTTP and WebSocket port                                                    |
+| `BOTS`          | `1`        | AI racing bots in the world (`0` for none)                                 |
+| `TRACK`         | `rotation` | `rotation`: the race tracks in turn, with votes; `<name>`: that track only |
+| `ROUND_SECONDS` | `240`      | rotation only: the longest round on one track when nobody finishes         |
+
+`TRACK` unset (or `rotation`) is the live default since the D1 follow-up of 2026-11-14 (it used to be
+`demo`, fixed). `TRACK=<name>` (any track of the registry in `@ar/server`, e.g. `TRACK=demo`) keeps
+one fixed track with no rotation and no voting, as before.
+
+### Track rotation
+
+The race tracks (`packages/node/src/track-categories.ts`: demo, canyon, gauntlet, circuit, random,
+generated:easy, generated:medium, generated:hard) are played in that order. Skill tracks are for
+singleplayer only.
+
+- A round on a track ends at the first finish (bots count) or after `ROUND_SECONDS` of game time.
+- The track then switches as soon as no human is racing. A human counts as racing once they have
+  left their start slot or cleared a checkpoint; someone waiting on the start grid (for example
+  just after a finish) is carried to the new track's grid. While the switch waits, the chat says
+  "… It starts when the current race is over." An idle racer away from the grid holds the
+  rotation until they leave the race or disconnect.
+- Players vote with `/vote <track>` in the chat or the "Vote next track" box on the multiplayer
+  page; one vote per player, gone when they disconnect; most votes wins, ties go to rotation
+  order; votes reset at each switch. `/tracks` shows the state.
+- Bots restart on the new track with the model they flew; the opponent choice is kept.
+- `GET /lobby` returns the state as JSON (current and next track, votes, whether the switch is
+  waiting); for a fixed track `{ "fixed": true, "current": … }`. It only reads counters, like
+  `/health`. The multiplayer page polls it every 4 s.
 
 Bots use the bundled model (`packages/server/src/ai/models/`); the container has no `db/`.
 

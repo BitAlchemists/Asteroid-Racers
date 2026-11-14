@@ -2288,3 +2288,82 @@ multiplayer play".
     needle belts as candidates for M6 3.2 (sensors that see corridors) or exam v3.1.
   - The 9-second leg limit matters for slow flying: the cruise-150 scripted controller fails about
     half of the straights (long ones), so slowing down alone is not a cure in training.
+
+### D1 follow-up: race tracks and skill tracks; multiplayer rotation with votes
+
+The user's request (2026-11-14): "there is a difference between training tracks, or maybe we can
+call them skill tracks, and on the other side there is actual race tracks. So I guess players
+should be able to select training tracks or race tracks." Design agreed via main ("that's all okay
+for me"); no separate plan file (a D1 side track, like the deploy part).
+
+- **Commits:** `552f61d` (code), this docs commit.
+- **Grouping** (`packages/node/src/track-categories.ts`, one-line blurb per track):
+  - race tracks: demo, canyon, gauntlet, circuit (3 laps), random, generated:easy,
+    generated:medium, generated:hard;
+  - skill tracks: short (warm-up), slalom, hairpins, straight-to-turn, chicane, dense-belt,
+    gate-row, pit-stop;
+  - excluded: none. A test fails if a registered track is in no group, or in two.
+- **Start page:** two groups of radio cards ("Race tracks", "Skill tracks") with the blurb, the
+  registry description under the list; "Play alone" takes any track; the race-mode box is
+  unchanged. Phone: one column, 44 px rows, no horizontal scroll at 375 px.
+- **Multiplayer rotation** (`track-rotation.ts` pure, `track-lobby.ts` on the server, wired in
+  `host.ts`/`main.ts`):
+  - the round on a track ends at the first finish (bots count) or after `ROUND_SECONDS` (240 s);
+  - the switch then waits until no human is racing. A racer still on the start grid (no checkpoint
+    cleared and within 200 units of their slot, e.g. right after a finish) is not racing and is
+    carried to the new grid; humans outside the race are put next to the new start, facing it;
+  - `/vote <track>` (or a part of the name) in the chat, or the HUD box "Vote next track"; one vote
+    per player, dropped when they leave; most votes wins, ties go to rotation order; votes reset
+    at the switch. Lobby lines in the chat: the greeting, each vote, "… It starts when the current
+    race is over", and the new track with its blurb and the next one;
+  - bots restart on the new track (their directors' scripts are stopped and reloaded) with the
+    model they flew; the opponent choice is untouched;
+  - `GET /lobby` (JSON, counters only) feeds the HUD box: current track, next (by vote or
+    rotation, "after the current race" while waiting), the race tracks with vote counts;
+  - `TRACK` unset or `rotation` = rotation (the new live default); `TRACK=<name>` = one fixed
+    track, no lobby (as before). Documented in `deploy.md`.
+- **Tests** (all in `packages/node`): `track-rotation.test.ts` (order and wrap, ties, a vote for
+  the current track, re-voting, voters leaving, unknown tracks, list checks);
+  `track-categories.test.ts` (completeness, only registered names, the agreed groups, blurbs);
+  `track-lobby.test.ts` (switch and entity messages, rotation with no players, players re-armed
+  and placed clear of rocks, waiting while a human races, switching when they leave or
+  disconnect, finishers carried, idle grid racers not blocking, a racer off the grid blocking,
+  `/vote` as a command and chat still relayed, ties and leaving, partial names and skill tracks
+  refused, bots restarting with the chosen model, TRACK fixed vs rotation, the GameServer
+  internals); `host.test.ts` (`/lobby` with a vote over the WebSocket, `/lobby` for a fixed track).
+  `npm run check` green: 541 tests.
+- **Browser check** (built-in pane, `npm run build` + `npm run build:server`, the bundle on port
+  4401 with `ROUND_SECONDS=60` behind a local proxy adding `Content-Security-Policy: default-src
+  'self'`): start page groups and links (no CSP errors); singleplayer on slalom (desktop) and
+  gate-row with 2 laps (375×812); multiplayer with a desktop tab and a 375×812 tab: the phone voted
+  circuit with the box, the desktop chat showed the vote, the desktop player flew off the grid and
+  the switch waited ("after the current race"), "Leave race" switched to circuit; later switches
+  (random, generated:easy/medium/hard) seen live in both tabs, bots back each time. A node probe
+  over the proxy counted 793 removes and the new track's entities at one switch. Viewport reset to
+  desktop. No docker run.
+- **Decisions:**
+  - the code lives in `@ar/node`, not `@ar/server`: the training binding covers every file in
+    `packages/server/src`, so even a new file there would have changed the binding hash. The
+    switch therefore reaches two private parts of `GameServer` (the portal detector and the service
+    list) through one checked accessor, pinned by a test. A proper `GameServer.replaceTrack`
+    belongs in `game-server.ts` the next time the binding changes anyway;
+  - "on the start grid" does not count as racing. Every file track starts at the world spawn, so a
+    player who connects or respawns there joins the race at once; counting that as racing would let
+    one idle tab stop the rotation for good;
+  - the web page imports the categories as `@ar/node/track-categories` (a browser-safe subpath).
+- **Deviation:** the brief suggested `packages/server/src/track-categories.ts`; moved to
+  `packages/node` for the binding reason above.
+- **Mistakes, found in the browser:**
+  - my first rule kept every human in the race "racing" except right after a finish; on canyon the
+    fallback spawn put idle players on the grid, which would have blocked the rotation. Replaced by
+    the start-grid rule above.
+  - the client's canvas froze after a switch: an explosion still running on a removed entity (a
+    bot that had just crashed) threw in the render loop. Fixed in `effects.ts` (an explosion whose
+    node is destroyed ends quietly). A unit test for it needs a canvas (pixi gradients), so it is
+    covered by the browser check only.
+- **Known limits:** a human idling away from the grid in the race holds the rotation (as the
+  opponent switch does); the phone's 3-line chat shows the oldest of its 5 lines (D1 behaviour),
+  the HUD box carries the lobby state there.
+- **Try after the next push to `production`:** open the game on the phone and on a desktop, vote
+  in the box, finish a race (or wait up to 4 minutes) and watch the track change; check that
+  `https://asteroid-racers.cypherpunk.agency/lobby` answers; pick a skill track under "Play alone".

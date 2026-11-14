@@ -236,6 +236,12 @@ with the user's request.
   promoted into the game: the user decides after real races.
 - **Live** since 2026-11-14 (first deploy run 43593522141, verified by Infra). Routine releases:
   push to `production`.
+- **Follow-up, race and skill tracks** (2026-11-14, the user's request "players should be able to
+  select training tracks or race tracks"): the start page lists race tracks and skill tracks in two
+  groups with a one-line blurb each; the multiplayer server rotates through the race tracks after
+  each race, with player votes (`/vote`, a HUD box, `GET /lobby`), never during a human's race.
+  `TRACK=<name>` still fixes one track. See [`deploy.md`](deploy.md), "Track rotation". Not
+  released yet: needs a push to `production`.
 
 ## Open questions
 
