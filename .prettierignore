@@ -6,3 +6,4 @@ doc
 packages/server/src/ai/models
 packages/node/src/fixtures
 experiments
+packages/server/src/showcase/models

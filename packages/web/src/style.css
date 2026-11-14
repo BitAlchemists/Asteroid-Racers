@@ -204,3 +204,300 @@ body.watch {
   flex: 1;
   min-height: 0;
 }
+
+/* --- phones (D1) ----------------------------------------------------------------------- */
+
+/* While playing: no scrolling, no pull-to-refresh, no double-tap zoom. */
+body.touch-controls {
+  overscroll-behavior: none;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.touch-layer {
+  position: fixed;
+  inset: 0;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.touch-hint {
+  position: absolute;
+  bottom: calc(24px + env(safe-area-inset-bottom));
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 13px;
+  pointer-events: none;
+}
+
+.touch-hint-stick {
+  left: calc(24px + env(safe-area-inset-left));
+}
+
+.touch-thrust {
+  position: absolute;
+  right: calc(20px + env(safe-area-inset-right));
+  bottom: calc(20px + env(safe-area-inset-bottom));
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  background: rgba(139, 0, 0, 0.35);
+  color: rgba(255, 255, 255, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: bold;
+  pointer-events: none;
+}
+
+.touch-thrust.active {
+  background: rgba(208, 0, 0, 0.75);
+  color: #fff;
+}
+
+.touch-stick {
+  position: absolute;
+  width: 112px;
+  height: 112px;
+  margin: -56px 0 0 -56px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.06);
+  pointer-events: none;
+}
+
+.touch-knob {
+  position: absolute;
+  left: 32px;
+  top: 32px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(159, 211, 255, 0.55);
+}
+
+/* The HUD gets out of the thumbs' way: a small pilot panel, the chat log without input at the top. */
+body.touch-controls .hud {
+  font-size: 12px;
+}
+
+body.touch-controls .hud-pilot {
+  top: calc(6px + env(safe-area-inset-top));
+  left: calc(6px + env(safe-area-inset-left));
+  width: 132px;
+  padding: 6px;
+  gap: 4px;
+}
+
+body.touch-controls .hud-pilot label,
+body.touch-controls .hud-debug {
+  display: none;
+}
+
+body.touch-controls .hud-button {
+  height: 32px;
+}
+
+body.touch-controls .hud-chat {
+  top: calc(6px + env(safe-area-inset-top));
+  left: calc(146px + env(safe-area-inset-left));
+  right: calc(6px + env(safe-area-inset-right));
+  bottom: auto;
+  padding: 6px;
+  background: rgba(68, 68, 68, 0.4);
+  pointer-events: none;
+}
+
+body.touch-controls .hud-chat input {
+  display: none;
+}
+
+body.touch-controls .hud-chat-log {
+  min-height: 0;
+  max-height: calc(3 * 1.35em);
+  overflow: hidden;
+}
+
+/* Start page on a phone: bigger targets. */
+@media (pointer: coarse), (max-width: 600px) {
+  .menu {
+    padding: 1rem 16px 2rem;
+  }
+  .menu h1 {
+    font-size: 1.6rem;
+  }
+  .menu select,
+  .menu input[type="number"] {
+    font-size: 16px; /* below 16px iOS zooms into the field */
+    min-height: 36px;
+  }
+  .menu input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    vertical-align: middle;
+  }
+  .race-modes label {
+    margin: 0.5rem 0;
+  }
+  .menu li {
+    margin: 0.6rem 0;
+  }
+  .menu-choice select {
+    max-width: 100%;
+  }
+  .watch-bar {
+    gap: 6px 10px;
+    padding: 6px 8px;
+    font-size: 13px;
+  }
+  .watch-bar select,
+  .watch-bar input {
+    font-size: 16px;
+    max-width: 100%;
+  }
+  .watch-bar .watch-params {
+    width: 12em;
+  }
+}
+
+.menu-choice {
+  margin: 0 0 1rem;
+}
+
+.menu-choice label {
+  display: block;
+}
+
+.menu-note {
+  color: var(--muted);
+  font-size: 0.9em;
+}
+
+.touch-only {
+  display: none;
+}
+
+@media (pointer: coarse) {
+  .touch-only {
+    display: block;
+  }
+}
+
+.menu-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.menu .menu-button {
+  display: inline-block;
+  padding: 10px 18px;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #fff;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+.menu .menu-button:hover {
+  background: var(--accent-hover);
+}
+
+.menu .menu-button-alt {
+  background: #234;
+}
+
+.menu input[type="text"] {
+  font: inherit;
+  padding: 4px 6px;
+  max-width: 100%;
+}
+
+/* Showcase page (D1): viewer and challenge list side by side, stacked on a portrait phone. */
+body.showcase {
+  height: 100dvh;
+}
+.showcase-main {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+.showcase-viewer {
+  flex: 1;
+  min-width: 0;
+}
+.showcase-side {
+  width: min(460px, 40vw);
+  overflow: auto;
+  padding: 8px 10px;
+  background: #050b12;
+  font-size: 13px;
+}
+.showcase-side h2 {
+  font-size: 14px;
+  margin: 14px 0 4px;
+}
+.showcase-about {
+  margin: 0 0 8px;
+  color: #9bc;
+}
+.showcase-scroll {
+  overflow-x: auto;
+}
+.showcase-table {
+  border-collapse: collapse;
+  width: 100%;
+}
+.showcase-table th,
+.showcase-table td {
+  text-align: left;
+  padding: 3px 6px;
+  border-bottom: 1px solid #123;
+  white-space: nowrap;
+}
+.showcase-table tr.current {
+  background: #123;
+}
+.showcase-table button {
+  background: none;
+  border: none;
+  color: #8cf;
+  font: inherit;
+  padding: 4px 0;
+  cursor: pointer;
+  text-align: left;
+}
+.showcase-table small {
+  color: #678;
+}
+.showcase-summary td,
+.showcase-summary th {
+  font-size: 12px;
+}
+.watch-bar #race {
+  font-weight: normal;
+}
+@media (max-width: 800px) and (orientation: portrait) {
+  .showcase-main {
+    flex-direction: column;
+  }
+  .showcase-viewer {
+    flex: none;
+    height: 52dvh;
+  }
+  .showcase-side {
+    width: auto;
+    flex: 1;
+    min-height: 0;
+  }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  .showcase .watch-bar {
+    padding: 3px 8px;
+  }
+  .showcase-side {
+    width: 42vw;
+  }
+}

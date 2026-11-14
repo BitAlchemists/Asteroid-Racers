@@ -8,7 +8,9 @@ import {
   DEFAULT_MODEL_NAME,
   examFlights,
   examReplaySource,
+  loadShowcaseModel,
   modelFromJson,
+  SHOWCASE_MODELS,
   TRACKS,
   type ArenaParams,
   type CrashMode,
@@ -61,7 +63,20 @@ if (params.get("arena") && params.get("arena")! in ARENAS)
   trackSelect.value = ARENA_PREFIX + params.get("arena")!;
 else if (params.get("track") && params.get("track")! in TRACKS) trackSelect.value = params.get("track")!;
 
+// The showcase models (D1) too, as `?model=<id>`.
+const SHOWCASE_PREFIX = "showcase:";
+for (const info of SHOWCASE_MODELS.filter((m) => m.file !== null)) {
+  const option = document.createElement("option");
+  option.value = SHOWCASE_PREFIX + info.id;
+  option.textContent = info.label;
+  $("showcase-models").append(option);
+}
 let model: MajorTom = bundledModels().load(DEFAULT_MODEL_NAME)![0]!;
+const requested = params.get("model");
+if (requested && loadShowcaseModel(requested) && requested !== "default") {
+  model = loadShowcaseModel(requested)!;
+  modelSelect.value = SHOWCASE_PREFIX + requested;
+}
 let viewer: ReplayViewer | undefined;
 let segment = Number(params.get("flight") ?? 0) || 0;
 /** Counts show() calls, so a slower earlier mount doesn't leave a second viewer behind. */
@@ -89,7 +104,9 @@ function showMode(arena: boolean): void {
 
 /** What to watch now, and the URL that leads back to it; a string is an error to show. */
 function currentSource(seed: number, url: URL): { source: ReplaySource; label: string } | string {
-  for (const key of ["track", "arena", "params", "g", "crash"]) url.searchParams.delete(key);
+  for (const key of ["track", "arena", "params", "g", "crash", "model"]) url.searchParams.delete(key);
+  if (modelSelect.value.startsWith(SHOWCASE_PREFIX))
+    url.searchParams.set("model", modelSelect.value.slice(SHOWCASE_PREFIX.length));
   const arena = arenaName();
   showMode(arena !== undefined);
   if (arena !== undefined) {
@@ -155,7 +172,10 @@ async function show(): Promise<void> {
 
 modelSelect.addEventListener("change", () => {
   if (modelSelect.value === "file") fileInput.click();
-  else {
+  else if (modelSelect.value.startsWith(SHOWCASE_PREFIX)) {
+    model = loadShowcaseModel(modelSelect.value.slice(SHOWCASE_PREFIX.length))!;
+    void show();
+  } else {
     model = bundledModels().load(DEFAULT_MODEL_NAME)![0]!;
     void show();
   }

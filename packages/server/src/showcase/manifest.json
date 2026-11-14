@@ -1,0 +1,78 @@
+{
+  "about": "Showcase models (D1): models the user can review on the showcase page and race against. Not the game's default; promotion into packages/server/src/ai/models/ is by hand, after real races. Exam v2 numbers are the training run's own exam (102 races: demo, short, 100 random tracks; seed 1; 180 s) at that generation; skills are `npm run skills` (8 episodes per skill, seed 1).",
+  "models": [
+    {
+      "id": "default",
+      "label": "Game default (bundled)",
+      "role": "The model the game ships with today (packages/server/src/ai/models/default-model.json)",
+      "file": null,
+      "setup": "legacy spec (4 inputs, no sensors, no controller), interim Dart-era training (48 generations, seed 2026)"
+    },
+    {
+      "id": "train-502-g150",
+      "label": "Accepted setup · train-502 g150",
+      "role": "Latest accepted model: best of m6-a2-rewards-control's residual arm (chosen)",
+      "file": "models/train-502-g150.json",
+      "run": "train-502",
+      "generation": 150,
+      "experiment": "m6-a2-rewards-control, arm +controller, seed 8",
+      "setup": "M4 default (task v2, lineCheck, curriculum success 0.6, parents 10) + controller residual 0.5",
+      "exam": { "checkpoints": 0.9504, "finished": 0.9314, "crashes": 750, "score": 51825 },
+      "skills": {
+        "Stop": 1,
+        "TurnAndGo": 1,
+        "Chain": 0.84,
+        "Corridor": 0.38,
+        "Field": 0.75,
+        "RaceLegs": 1,
+        "Rock1": 0.63,
+        "Rock2": 0.63,
+        "Field80": 0.75
+      }
+    },
+    {
+      "id": "train-504-g150",
+      "label": "Accepted setup · train-504 g150 (runner-up)",
+      "role": "Runner-up of the residual arm: fewest exam crashes of the top three, weaker skills",
+      "file": "models/train-504-g150.json",
+      "run": "train-504",
+      "generation": 150,
+      "experiment": "m6-a2-rewards-control, arm +controller, seed 10",
+      "setup": "M4 default (task v2, lineCheck, curriculum success 0.6, parents 10) + controller residual 0.5",
+      "exam": { "checkpoints": 0.9482, "finished": 0.9412, "crashes": 541, "score": 52991 },
+      "skills": {
+        "Stop": 1,
+        "TurnAndGo": 0.88,
+        "Chain": 0.68,
+        "Corridor": 0.25,
+        "Field": 0.75,
+        "RaceLegs": 1,
+        "Rock1": 0.63,
+        "Rock2": 0.5,
+        "Field80": 0.5
+      }
+    },
+    {
+      "id": "train-327-g300",
+      "label": "Best M4 model · train-327 g300",
+      "role": "Best model of the M4 default setup (E9, m4-e9-confirm, seed 8), for comparison",
+      "file": "models/train-327-g300.json",
+      "run": "train-327",
+      "generation": 300,
+      "experiment": "m4-e9-confirm, seed 8",
+      "setup": "M4 default (task v2, lineCheck, curriculum success 0.6, parents 10), no controller",
+      "exam": { "checkpoints": 0.9449, "finished": 0.9118, "crashes": 711, "score": 57808 },
+      "skills": {
+        "Stop": 0,
+        "TurnAndGo": 0.25,
+        "Chain": 0.77,
+        "Corridor": 0.25,
+        "Field": 0.75,
+        "RaceLegs": 1,
+        "Rock1": 0.88,
+        "Rock2": 0.5,
+        "Field80": 0.88
+      }
+    }
+  ]
+}

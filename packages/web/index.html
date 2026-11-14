@@ -11,6 +11,31 @@
     <main class="menu">
       <h1>Asteroid Racers</h1>
       <p>Race your spaceship against other players in the weightlessness of outer space.</p>
+      <p class="menu-actions">
+        <a class="menu-button" href="multiplayer.html" id="multiplayer">Join multiplayer</a>
+        <a class="menu-button menu-button-alt" href="singleplayer.html" id="singleplayer-button"
+          >Play alone</a
+        >
+      </p>
+      <p class="menu-choice">
+        <label
+          >Your name
+          <input
+            id="player-name"
+            type="text"
+            maxlength="40"
+            placeholder="random ship name"
+            autocomplete="off"
+        /></label>
+        <span class="menu-note">Shown to the other racers; you can change it in the game too.</span>
+      </p>
+      <p class="menu-choice">
+        <label
+          >Race against
+          <select id="opponent"></select>
+        </label>
+        <span class="menu-note" id="opponent-note"></span>
+      </p>
       <p>
         <label
           >Track
@@ -36,8 +61,12 @@
           <a href="singleplayer.html" id="singleplayer">Singleplayer</a> — the server runs in your browser
         </li>
         <li>
-          <a href="multiplayer.html">Multiplayer</a> — connects to the game server (its track is set by
-          <code>TRACK=&lt;name&gt;</code> when it starts)
+          <a href="multiplayer.html" id="multiplayer-link">Multiplayer</a> — everyone on this server races
+          together, with the server&#39;s bots (the server picks the track)
+        </li>
+        <li>
+          <a href="showcase.html" id="showcase">Model showcase</a> — watch a trained model fly every track,
+          training arena and the race exam, with results
         </li>
         <li>
           <a href="watch.html" id="watch">Watch the AI</a> — a trained model flies the race exam, or the
@@ -49,6 +78,10 @@
         <kbd>←</kbd> <kbd>→</kbd> turn, <kbd>↑</kbd> thrust (or <kbd>A</kbd> <kbd>D</kbd> <kbd>W</kbd>),
         <kbd>1</kbd> toggles the interface. Fly into the green start pad to join the race; click it (or “Leave
         race”) to leave.
+      </p>
+      <p class="touch-only">
+        On a phone: drag anywhere on the left half to steer (the ship turns to point where you drag), hold
+        anywhere on the right half to thrust.
       </p>
     </main>
     <script type="module" src="./src/menu.ts"></script>

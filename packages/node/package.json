@@ -13,7 +13,8 @@
     "experiment": "tsx src/experiment.ts",
     "iqm": "tsx src/iqm.ts",
     "scripted": "tsx src/scripted-baseline.ts",
-    "skills": "tsx src/skills-profile.ts"
+    "skills": "tsx src/skills-profile.ts",
+    "showcase": "tsx src/showcase.ts"
   },
   "dependencies": {
     "@ar/shared": "*",

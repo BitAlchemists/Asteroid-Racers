@@ -9,7 +9,7 @@ import {
   WebSocketServerConnection,
   type Envelope,
 } from "@ar/shared";
-import { ChatServer, GameServer, ManualGameLoop, seededRandom } from "@ar/server";
+import { ChatServer, GameServer, ManualGameLoop, opponentChoice, seededRandom } from "@ar/server";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { createDefaultGameServer, startHost, type RunningHost } from "./host";
 
@@ -252,5 +252,23 @@ describe("default game server", () => {
     expect(checkpoints()).toBe(7);
     expect(checkpoints("slalom")).toBe(10);
     expect(() => createDefaultGameServer({ bots: 0, track: "moon" })).toThrow(/unknown track/);
+  });
+});
+
+describe("opponent choice over the WebSocket URL", () => {
+  it("?opponent= switches the racing bots; the default returns when the player leaves", async () => {
+    const gameServer = createDefaultGameServer({ bots: 1, modelDir: join(tmpdir(), "ar-no-models") });
+    const own = await startHost({ port: 0, host: "127.0.0.1", gameServer, loop: new ManualGameLoop() });
+    const choice = opponentChoice(gameServer)!;
+    try {
+      expect(choice.current).toBe("default");
+      const connection = new WebSocketServerConnection(`${own.webSocketUrl}?opponent=train-502-g150`);
+      await connection.connect();
+      await until(() => choice.current === "train-502-g150", "the switch");
+      connection.disconnect();
+      await until(() => choice.current === "default", "the default to return");
+    } finally {
+      await own.close();
+    }
   });
 });

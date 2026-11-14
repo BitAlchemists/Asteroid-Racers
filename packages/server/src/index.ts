@@ -14,3 +14,4 @@ export * from "./local-connection";
 export { SHIP_NAMES } from "./ship-names";
 
 export * from "./ai/index";
+export * from "./showcase/index";

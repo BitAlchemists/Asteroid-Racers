@@ -5,7 +5,7 @@ import {
   LocalServerConnection,
   parseRaceModes,
   RealtimeGameLoop,
-  registerAIRacingService,
+  registerRacingBots,
   TRACKS,
   withRaceRules,
   type RaceRules,
@@ -28,7 +28,8 @@ try {
 const server = new GameServer().loadTrack(withRaceRules(track ?? TRACKS.demo!, modes));
 server.registerService(new ChatServer());
 const bots = params.has("bots") ? Math.max(0, Number(params.get("bots")) || 0) : 1;
-if (bots > 0) registerAIRacingService(server, undefined, { bots });
+// `?opponent=<showcase model id>`: the bots fly that model instead of the bundled one.
+if (bots > 0) registerRacingBots(server, { bots, opponent: params.get("opponent") });
 await server.start(new RealtimeGameLoop());
 
 await startGame({

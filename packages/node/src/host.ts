@@ -8,7 +8,8 @@ import {
   DEFAULT_MODEL_NAME,
   GameServer,
   RealtimeGameLoop,
-  registerAIRacingService,
+  opponentChoice,
+  registerRacingBots,
   trackByName,
   type GameLoop,
 } from "@ar/server";
@@ -90,7 +91,13 @@ export async function startHost({
     const remote = `${request.socket.remoteAddress ?? "?"}:${request.socket.remotePort ?? "?"}`;
     log.info(`client connected from ${remote}`);
     const connection = new WebSocketClientConnection(socket, remote);
-    connection.onDisconnect(() => log.info(`client ${remote} disconnected`));
+    // `/ws?opponent=<showcase model id>`: the racing bots fly that model (see registerRacingBots).
+    const opponent = new URL(request.url ?? "/", "http://localhost").searchParams.get("opponent");
+    const leave = opponentChoice(game)?.join(opponent);
+    connection.onDisconnect(() => {
+      log.info(`client ${remote} disconnected`);
+      leave?.();
+    });
     game.connectClient(new ClientProxy(connection, game));
   });
 
@@ -174,7 +181,7 @@ export function createDefaultGameServer({
     const trained = new FileModelStore(modelDir);
     const store = trained.load(DEFAULT_MODEL_NAME) ? trained : bundledModels();
     log.info(`racing bots use ${store === trained ? trained.path(DEFAULT_MODEL_NAME) : "the bundled model"}`);
-    registerAIRacingService(server, store, { bots });
+    registerRacingBots(server, { bots, defaultStore: store, defaultName: DEFAULT_MODEL_NAME });
   }
   return server;
 }

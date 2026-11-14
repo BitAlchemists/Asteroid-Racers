@@ -21,8 +21,12 @@ class ParallaxLayer extends Container {
     super();
   }
 
-  follow(cameraX: number, cameraY: number, screenWidth: number, screenHeight: number): void {
-    this.position.set(screenWidth / 2 - cameraX * this.factor, screenHeight / 2 - cameraY * this.factor);
+  follow(cameraX: number, cameraY: number, screenWidth: number, screenHeight: number, zoom = 1): void {
+    if (this.scale.x !== zoom) this.scale.set(zoom);
+    this.position.set(
+      screenWidth / 2 - cameraX * this.factor * zoom,
+      screenHeight / 2 - cameraY * this.factor * zoom,
+    );
   }
 }
 
@@ -60,6 +64,8 @@ export class PixiGameView implements GameView {
   private readonly radarBlips = new Graphics();
   private readonly radarLabels = new Map<EntityController, Text>();
   private readonly options: Required<PixiGameViewOptions>;
+  /** Scale of the world on screen (1 = one unit per pixel). Phones zoom out to see further. */
+  zoom = 1;
 
   constructor(
     private readonly app: Application,
@@ -180,7 +186,7 @@ export class PixiGameView implements GameView {
     const player = this.player?.entity;
     if (player) {
       const camera = this.nodes.get(this.player!)?.root.position ?? player.position;
-      for (const layer of this.layers) layer.follow(camera.x, camera.y, width, height);
+      for (const layer of this.layers) layer.follow(camera.x, camera.y, width, height, this.zoom);
 
       if (this.thrust) {
         this.thrust.emitting = this.player!.accelerationFactor !== 0 && player.canMove;

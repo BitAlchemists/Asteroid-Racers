@@ -21,6 +21,7 @@ export default defineConfig({
         singleplayer: resolve(import.meta.dirname, "singleplayer.html"),
         multiplayer: resolve(import.meta.dirname, "multiplayer.html"),
         watch: resolve(import.meta.dirname, "watch.html"),
+        showcase: resolve(import.meta.dirname, "showcase.html"),
       },
     },
   },

@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Asteroid Racers · Showcase</title>
+    <link rel="icon" type="image/png" href="logo.png" />
+    <link rel="stylesheet" href="./src/style.css" />
+  </head>
+  <body class="watch showcase">
+    <form class="watch-bar" id="form">
+      <a href="index.html" title="Back to the menu">Asteroid Racers</a>
+      <label
+        >Model
+        <select id="model"></select
+      ></label>
+      <label><input type="checkbox" id="autoplay" checked /> Play all in order</label>
+      <a id="race" href="singleplayer.html">Race against it</a>
+      <span id="status"></span>
+    </form>
+    <div class="showcase-main">
+      <div id="viewer" class="watch-viewer showcase-viewer"></div>
+      <aside class="showcase-side">
+        <p class="showcase-about" id="about"></p>
+        <table class="showcase-table">
+          <thead>
+            <tr>
+              <th>Challenge</th>
+              <th>Watched</th>
+              <th>Headless</th>
+            </tr>
+          </thead>
+          <tbody id="challenges"></tbody>
+        </table>
+        <h2>All models, headless</h2>
+        <p class="showcase-about" id="summary-status">Computing…</p>
+        <div class="showcase-scroll">
+          <table class="showcase-table showcase-summary" id="summary"></table>
+        </div>
+      </aside>
+    </div>
+    <script type="module" src="./src/showcase.ts"></script>
+  </body>
+</html>

@@ -4,6 +4,8 @@ import {
   RaceController,
   raceModesQuery,
   seededRandom,
+  SHOWCASE_MODELS,
+  showcaseModelInfo,
   TRACKS,
   type IGameServer,
   type RaceRules,
@@ -74,7 +76,8 @@ function update(): void {
   description.textContent = track.description;
   trackRules.textContent = `Track rules: ${ownRules(track.name)}.`;
   const query = raceModesQuery(modes());
-  singleplayer.href = `singleplayer.html?track=${encodeURIComponent(track.name)}${query ? `&${query}` : ""}`;
+  singleplayer.href = `singleplayer.html?track=${encodeURIComponent(track.name)}${query ? `&${query}` : ""}${opponentQuery("&")}`;
+  updateOpponent();
   watch.href = select.value === "demo" ? "watch.html" : `watch.html?track=${encodeURIComponent(track.name)}`;
   try {
     localStorage.setItem(KEY, track.name);
@@ -91,6 +94,61 @@ function update(): void {
     // not remembered
   }
 }
+// D1: the player name (the HUD keeps the same key), the opponent model, a join button.
+const NAME_KEY = "asteroid-racers.username";
+const OPPONENT_KEY = "asteroid-racers.opponent";
+const nameInput = document.getElementById("player-name") as HTMLInputElement;
+const opponentSelect = document.getElementById("opponent") as HTMLSelectElement;
+const opponentNote = document.getElementById("opponent-note")!;
+for (const info of SHOWCASE_MODELS) {
+  const option = document.createElement("option");
+  option.value = info.id;
+  option.textContent = info.label;
+  opponentSelect.append(option);
+}
+try {
+  nameInput.value = localStorage.getItem(NAME_KEY) ?? "";
+  const savedOpponent = localStorage.getItem(OPPONENT_KEY);
+  if (savedOpponent && showcaseModelInfo(savedOpponent)) opponentSelect.value = savedOpponent;
+} catch {
+  // storage blocked
+}
+nameInput.addEventListener("input", () => {
+  try {
+    localStorage.setItem(NAME_KEY, nameInput.value.trim());
+  } catch {
+    // not remembered
+  }
+});
+
+/** `?opponent=` for the game links, empty for the default (so default play is unchanged). */
+function opponentQuery(separator: "?" | "&"): string {
+  const id = opponentSelect.value;
+  return id && id !== "default" ? `${separator}opponent=${encodeURIComponent(id)}` : "";
+}
+
+function updateOpponent(): void {
+  const info = showcaseModelInfo(opponentSelect.value);
+  opponentNote.textContent = info
+    ? `${info.role}. In multiplayer the bots are shared: the latest choice wins, from the next race on.`
+    : "";
+  const multiplayer = `multiplayer.html${opponentQuery("?")}`;
+  for (const id of ["multiplayer", "multiplayer-link"])
+    (document.getElementById(id) as HTMLAnchorElement).href = multiplayer;
+  (document.getElementById("singleplayer-button") as HTMLAnchorElement).href = singleplayer.href;
+  const showcase = document.getElementById("showcase") as HTMLAnchorElement;
+  showcase.href =
+    opponentSelect.value === "default"
+      ? "showcase.html"
+      : `showcase.html?model=${encodeURIComponent(opponentSelect.value)}`;
+  try {
+    localStorage.setItem(OPPONENT_KEY, opponentSelect.value);
+  } catch {
+    // not remembered
+  }
+}
+opponentSelect.addEventListener("change", update);
+
 select.addEventListener("change", update);
 for (const input of [laps, stop, gates, timeTrial]) input.addEventListener("input", update);
 update();
