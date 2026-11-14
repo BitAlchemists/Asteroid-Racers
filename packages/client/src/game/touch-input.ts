@@ -197,7 +197,11 @@ export function bindTouch(parent: HTMLElement, client: GameClient, before?: Elem
 
   const onDown = (e: PointerEvent) => {
     e.preventDefault();
-    layer.setPointerCapture?.(e.pointerId);
+    try {
+      layer.setPointerCapture(e.pointerId); // keep getting its moves when the thumb leaves the layer
+    } catch {
+      // not an active pointer (synthetic events): fine without capture
+    }
     state.down(e.pointerId, e.clientX, e.clientY, layer.clientWidth || doc.defaultView!.innerWidth);
     draw();
   };

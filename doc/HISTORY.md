@@ -1812,3 +1812,72 @@ Approved by the user as the rest of M5 after M4 closed. M5 is done.
 - **Deviation:** D1 has no plan file; the scope came with the user's request.
 - **Mistake:** the first container test died with exit 255 and no log. The WSL VM had shut down
   when idle, not the server. Kept a WSL session open for the rest of the tests.
+
+### D1 showcase and phone play (the review tool for the accepted model)
+
+Plan: [`plans/D1-showcase.md`](plans/D1-showcase.md), written from the user's request ("a version
+that also works on the phone and that can present our latest accepted model through all relevant
+challenges … regular play … racing against one of these models"), plus "the server should allow
+multiplayer play".
+
+- **Model choice.** No run of the adopted combination (residual 0.5 + progress 3) exists, so the
+  candidates were batch A's residual arm (train-495..504) and progress arm (train-445..454) at g150,
+  their last generation:
+  - exam v2 checkpoints: train-501 and train-502 0.9504, train-504 0.9482; best progress run
+    train-449 0.9273;
+  - exam crashes among those three: 504 541, 501 650, 502 750;
+  - skills (`npm run skills`, mean share reached): 502 78 %, 504 69 %, 501 66 %. Only 502 reaches
+    100 % on stop, turn-and-go and race-legs.
+  - **Chosen: train-502 g150** (seed 8): top exam checkpoints and the best skills profile.
+    train-504 g150 (seed 10, fewest crashes) is in the showcase as runner-up. The M7 tracks that
+    landed meanwhile confirm it: 502 finishes 12 of the 15 tracks, 504 only 9.
+- **Showcase models** (`packages/server/src/showcase/`, manifest with run, generation, setup, exam
+  and skills): the bundled default, train-502 g150, train-504 g150, train-327 g300. The model JSON
+  keeps the spec (`controller: residual 0.5`, `lineCheck`). `packages/server/src/ai/models/` is
+  untouched: promotion stays the user's decision.
+- **Residual in the game, verified:** the same weights without `spec.controller` fly another path
+  (test), and the headless exam v2 of every showcase model reproduces its training run's exam
+  exactly: 502 863/908 checkpoints, 95/102 finished, 750 crashes; 504 861/908, 96/102, 541;
+  327 858/908, 93/102, 711.
+- **Challenges:** every registered track but `random` (15 now, M7's new and generated tracks
+  included automatically; seed 1, 180 s), the skills exam's nine arenas (8 fixed episodes), exam v2
+  (102 races). `runChallenge` flies the same replays the viewer shows; `npm run showcase` prints the
+  table. Headless results (finished tracks of 15 / exam v2 checkpoints, finished, crashes):
+
+  | Model | Tracks finished | Exam v2 | Stop | Turn&go | Chain | Corridor | Field | Race legs | Rock1 | Rock2 | Field80 |
+  | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+  | default (bundled) | 3 | 53 %, 21/102, 2,870 | 25 % | 0 % | 48 % | 0 % | 46 % | 63 % | 13 % | 25 % | 25 % |
+  | train-502 g150 | 12 | 95 %, 95/102, 750 | 100 % | 100 % | 84 % | 38 % | 75 % | 100 % | 63 % | 63 % | 75 % |
+  | train-504 g150 | 9 | 95 %, 96/102, 541 | 100 % | 88 % | 68 % | 25 % | 75 % | 100 % | 63 % | 50 % | 50 % |
+  | train-327 g300 | 12 | 94 %, 93/102, 711 | 0 % | 25 % | 77 % | 25 % | 75 % | 100 % | 88 % | 50 % | 88 % |
+
+- **Showcase page** (`showcase.html`, linked from the start page): pick a model; the M3 replay
+  viewer plays the tracks and skills in order (auto-advance; exam v2's 102 races when picked), a
+  "Watched" column fills in live, a "Headless" column and an all-models table come from a Web
+  Worker. The watch page lists the showcase models too (`?model=`).
+- **Opponent choice:** `?opponent=<id>` on singleplayer (the in-page server's bots) and multiplayer
+  (sent as `/ws?opponent=`). On the shared server the bots are shared, so the choice is per server:
+  the latest choice wins, but it waits while any human is in the race and is applied once nobody is
+  racing (announced in the chat both times), so it never cuts into someone's race; the default comes
+  back when the last player leaves. Bots flying a showcase model are named `Major Tom (<id>)`.
+  Default play is unchanged. Start page: a "Join multiplayer" button, the player name (same storage
+  key as the HUD), the opponent selector.
+- **Phone:** touch controls (left half: floating stick, the ship turns to the drag direction at the
+  keyboard turn rate and snaps when within one frame; right half: thrust), compact HUD (chat log
+  without input at the top), the world zoomed to about 700 units on the short side, sharp rendering
+  (device pixel ratio up to 2), no zoom or scroll on the game pages. Only on coarse pointers or
+  `?touch`; desktop renders as before. Tests for the input mapping (`touch-input.test.ts`).
+- **CSP** (the deploy agent's findings): `import "pixi.js/unsafe-eval"` in the client and the replay
+  viewer; the viewer's CSS moved to `replay-viewer.css`, applied as a constructed style sheet (no
+  `<style>` element); the start page's `style` attribute became a class.
+- **Verified** against the production build (`npm run build`, `npm run server`) behind a local proxy
+  that adds `Content-Security-Policy: default-src 'self'`: start page, singleplayer, multiplayer,
+  watch and showcase load without CSP errors. Two tabs (one in the 375×812 mobile viewport with
+  touch, one desktop) plus `npm run bot` on one server: both saw each other and the bots; the phone
+  steered and thrust with the touch layer; the desktop tab's `?opponent=train-327-g300` was deferred
+  while the phone player was racing ("… once the current race is over"); after all players left the
+  bots were back to "Major Tom". Landscape 812×375 checked for the game and the showcase.
+- **Deviation:** the first version switched the bots at once; after "the server should allow
+  multiplayer play" it waits until no human is racing.
+- **Mistake:** a synthetic pointer event made `setPointerCapture` throw and the touch handler stop
+  before recording the thumb; now guarded.

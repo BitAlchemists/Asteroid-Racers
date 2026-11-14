@@ -75,8 +75,9 @@ for (const [i, challenge] of challenges.entries()) {
   cells.set(challenge.id, { row, live: row.insertCell(), full: row.insertCell() });
 }
 
-function short(r: ChallengeResult | undefined, c: Challenge): string {
+function short(r: ChallengeResult | undefined, c: Challenge, flying = false): string {
   if (!r) return "–";
+  if (flying) return `flying… ${r.reached}/${r.total} · ${r.crashes} cr.`;
   if (c.kind === "track")
     return `${r.reached}/${r.total}${r.completed ? ` ✓ ${r.seconds.toFixed(1)} s` : " ✗"} · ${r.crashes} cr.`;
   const pct = r.total ? Math.round((100 * r.reached) / r.total) : 0;
@@ -96,7 +97,7 @@ function refreshList(): void {
     const cell = cells.get(c.id)!;
     cell.row.classList.toggle("current", i === current);
     const live = watchedResult(c);
-    const text = short(live, c);
+    const text = short(live, c, i === current && viewer?.controller.replay?.done === false);
     if (cell.live.textContent !== text) cell.live.textContent = text;
     cell.live.title = live ? formatResult(live, c.kind) : "";
     const full = headless.get(modelSelect.value)?.get(c.id);

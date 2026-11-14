@@ -1,4 +1,6 @@
 import type { ServerConnection } from "@ar/shared";
+// No eval under the site's CSP (default-src 'self'): PixiJS needs this polyfill before any Application.
+import "pixi.js/unsafe-eval";
 import { Application } from "pixi.js";
 import { GameClient } from "./game/game-client";
 import { bindKeyboard } from "./game/keyboard-input";

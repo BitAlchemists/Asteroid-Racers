@@ -1,6 +1,6 @@
 # D1 — Showcase and phone play (side track of "D1 — Deploy and showcase")
 
-Status: 🟡 in progress (2026-11-14). Written from the user's request for the online version at
+Status: ✅ done (2026-11-14). Written from the user's request for the online version at
 asteroid-racers.cypherpunk.agency; the deploy part (Dockerfile, CI, `/health`) is the deploy agent's.
 Roadmap: [`../ROADMAP.md`](../ROADMAP.md)
 
@@ -55,18 +55,18 @@ as it is): the showcase is the user's review tool for that decision.
 
 ## Acceptance criteria
 
-- [ ] `npm run check` green; no change to `packages/server/src/ai/models/`.
-- [ ] The manifest names the chosen model with its run, generation, setup and numbers; the headless
+- [x] `npm run check` green; no change to `packages/server/src/ai/models/`.
+- [x] The manifest names the chosen model with its run, generation, setup and numbers; the headless
       exam v2 of each showcase model matches its training-run exam numbers.
-- [ ] A residual showcase model flies with the residual controller in the game and the showcase
+- [x] A residual showcase model flies with the residual controller in the game and the showcase
       (test).
-- [ ] The showcase page lists every track, the nine skill arenas and exam v2, plays them in order,
+- [x] The showcase page lists every track, the nine skill arenas and exam v2, plays them in order,
       shows a live result per challenge and a summary table; works in the mobile viewport.
-- [ ] Singleplayer and multiplayer accept `?opponent=`; the start page offers it; no choice = the
+- [x] Singleplayer and multiplayer accept `?opponent=`; the start page offers it; no choice = the
       bundled model as before.
-- [ ] On a phone viewport the game can be flown with touch (stick + thrust), the HUD fits, the page
+- [x] On a phone viewport the game can be flown with touch (stick + thrust), the HUD fits, the page
       does not scroll or zoom; tests for the input mapping.
-- [ ] Same origin only (no CDNs or external fonts).
+- [x] Same origin only (no CDNs or external fonts).
 
 ## Out of scope
 
@@ -79,3 +79,14 @@ as it is): the showcase is the user's review tool for that decision.
 - Shared files with M7 and the deploy agent (start page, `host.ts`): small edits, rebase often.
 - Exam results depend on the race code; if M7 changes exam v2 behaviour, the headless numbers move
   (the test that compares them is the alarm).
+
+## Changes
+
+- 2026-11-14: the user added "the server should allow multiplayer play". The opponent switch on a
+  shared server now waits until no human is racing (it used to switch at once, restarting the bots
+  mid-race); the start page got a "Join multiplayer" button and the player name; the deploy agent's
+  CSP findings (PixiJS eval, inline styles) are fixed in the client.
+
+## Result
+
+Done 2026-11-14; see the history entry "D1 showcase and phone play".

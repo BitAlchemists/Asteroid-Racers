@@ -1,5 +1,9 @@
 import type { ReplayInputs, ReplaySource } from "@ar/server";
+// PixiJS compiles shaders with new Function() unless this polyfill comes first; the site's CSP
+// (default-src 'self') forbids eval.
+import "pixi.js/unsafe-eval";
 import { Application } from "pixi.js";
+import CSS from "./replay-viewer.css?raw";
 import { ReplayController, SPEEDS } from "./replay-controller";
 import { ReplayView, type CameraMode } from "./replay-view";
 
@@ -25,37 +29,18 @@ export interface ReplayViewer {
   destroy(): void;
 }
 
-const CSS = `
-.ar-replay{position:relative;width:100%;height:100%;min-height:200px;background:#000;color:#cfe;font:12px/1.4 system-ui,sans-serif;overflow:hidden;outline:none}
-.ar-replay:focus-visible{box-shadow:inset 0 0 0 2px #4af}
-.ar-replay canvas{position:absolute;inset:0;width:100%!important;height:100%!important;display:block}
-.ar-replay .ar-hud{position:absolute;left:8px;top:6px;right:8px;pointer-events:none;text-shadow:0 0 3px #000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ar-replay .ar-hud .ar-goal{color:#fe6}
-.ar-replay .ar-bar{position:absolute;left:0;right:0;bottom:0;display:flex;gap:6px;align-items:center;padding:6px 8px;background:rgba(0,0,0,.65);flex-wrap:wrap}
-.ar-replay button,.ar-replay select{background:#123;color:#cfe;border:1px solid #345;border-radius:4px;padding:2px 8px;font:inherit;cursor:pointer;min-height:24px}
-.ar-replay button:hover{background:#234}
-.ar-replay input[type=range]{flex:1;min-width:80px}
-.ar-replay .ar-seg{max-width:220px}
-.ar-replay .ar-inputs{position:absolute;right:8px;top:44px;max-height:calc(100% - 96px);overflow:auto;padding:4px 6px;background:rgba(0,0,0,.6);border:1px solid #234;border-radius:4px;font:10px/1.25 ui-monospace,Consolas,monospace;text-shadow:none}
-.ar-replay.ar-compact .ar-inputs{top:40px;max-height:calc(100% - 48px)}
-.ar-replay .ar-inputs h4{margin:2px 0;font:inherit;color:#8ab;font-weight:600}
-.ar-replay .ar-in{display:grid;grid-template-columns:auto 64px 38px;gap:5px;align-items:center;white-space:nowrap}
-.ar-replay .ar-in-bar{position:relative;height:7px;background:#123;border-radius:2px}
-.ar-replay .ar-in-bar::before{content:"";position:absolute;left:50%;top:-1px;bottom:-1px;width:1px;background:#567}
-.ar-replay .ar-in.ar-unipolar .ar-in-bar::before{left:0}
-.ar-replay .ar-in-fill{position:absolute;top:0;bottom:0;background:#4af;border-radius:2px}
-.ar-replay .ar-in-val{text-align:right;color:#9bc}
-.ar-replay .ar-in.ar-clip .ar-in-fill{background:#f84}
-.ar-replay .ar-in.ar-clip .ar-in-val{color:#f84}
-`;
-
+/**
+ * Adds the viewer's style sheet once per document, as a constructed style sheet: a `<style>`
+ * element would need `style-src 'unsafe-inline'` under the site's Content Security Policy.
+ */
 function ensureStyle(doc: Document): void {
-  if (doc.getElementById("ar-replay-style")) return;
-  const style = doc.createElement("style");
-  style.id = "ar-replay-style";
-  style.textContent = CSS;
-  doc.head.append(style);
+  if (styled.has(doc)) return;
+  styled.add(doc);
+  const sheet = new (doc.defaultView ?? window).CSSStyleSheet();
+  sheet.replaceSync(CSS);
+  doc.adoptedStyleSheets = [...doc.adoptedStyleSheets, sheet];
 }
+const styled = new WeakSet<Document>();
 
 function el<K extends keyof HTMLElementTagNameMap>(
   tag: K,

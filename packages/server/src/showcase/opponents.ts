@@ -34,6 +34,11 @@ export interface OpponentChoice {
   join(id: string | null): () => void;
 }
 
+/** Applies a pending opponent switch once no human is racing (checked every frame). */
+class OpponentSwitch {
+  constructor(readonly update: () => void) {}
+}
+
 const choices = new WeakMap<GameServer, OpponentChoice>();
 
 /** The opponent choice of a server set up with {@link registerRacingBots}, if any. */
@@ -111,11 +116,11 @@ export function registerRacingBots(
     say(`The racing bots now fly ${label(current)}.`);
   };
 
-  server.registerService({
-    update() {
+  server.registerService(
+    new OpponentSwitch(() => {
       if (pending !== undefined && !humanRacing()) apply();
-    },
-  });
+    }),
+  );
 
   let players = 0;
   const choice: OpponentChoice = {

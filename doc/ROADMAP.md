@@ -185,6 +185,11 @@ with the user's request.
   and `.github/workflows/deploy.yml` (push to `production` → check, build, Trivy scan, push to
   ghcr.io). The server side (Caddy, compose, the deploy job) belongs to the Infra session. See
   [`deploy.md`](deploy.md).
+- **Showcase and phone play** (plan [`plans/D1-showcase.md`](plans/D1-showcase.md)): touch
+  controls and a phone layout; a showcase page that flies the latest accepted model (train-502
+  g150, residual 0.5) and comparison models through every track, the skill arenas and exam v2,
+  with live and headless results; racing against a showcase model (`?opponent=`). No model is
+  promoted into the game: the user decides after real races.
 
 ## Open questions
 
