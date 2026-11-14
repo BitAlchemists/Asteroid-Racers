@@ -6,7 +6,8 @@ import { MemoryModelStore } from "./model-store";
 import { createTrainingServer, DEFAULT_LAYOUT, registerAITrainingService } from "./index";
 import { MajorTom } from "./network";
 import type { EpisodeRecord } from "./scoring";
-import { generateTrack } from "../track-generator";
+import { drawTrainingTrackSeed, EXAM_TRACK_SEEDS, generateTrack, isExamTrackSeed } from "../track-generator";
+import { EXAM3 } from "./exam3";
 import { TRACKS } from "../tracks";
 import {
   chainArena,
@@ -443,6 +444,23 @@ describe("generated-legs arena", () => {
     for (let seed = 1; seed <= 12; seed++)
       sizes.add(generate(generatedLegsArena, seed, { bands: ["easy"] }).obstacles.length);
     expect(sizes.size).toBeGreaterThan(1);
+  });
+
+  it("never draws an exam v3 track seed (M8 step 1)", () => {
+    const seeds = [...Object.values(EXAM3.generated).flat(), ...EXAM3.goalRaces.flatMap((r) => r.seeds)];
+    expect(seeds).toHaveLength(70);
+    for (const seed of seeds) expect(isExamTrackSeed(seed), String(seed)).toBe(true);
+    expect(isExamTrackSeed(EXAM_TRACK_SEEDS.from - 1)).toBe(false);
+    expect(isExamTrackSeed(EXAM_TRACK_SEEDS.to + 1)).toBe(false);
+    // A stream whose first draws hit exam seeds: they are skipped, the next draw is returned.
+    const draws = [310_014 / 2 ** 32, 300_001 / 2 ** 32, 340_005 / 2 ** 32, 0.5];
+    let i = 0;
+    expect(drawTrainingTrackSeed(() => draws[i++]!)).toBe(2 ** 31);
+    expect(i).toBe(4);
+    // A draw outside the range is returned as is, with one draw.
+    const random = seededRandom(9);
+    const expected = Math.floor(seededRandom(9)() * 2 ** 32);
+    expect(drawTrainingTrackSeed(random)).toBe(expected);
   });
 
   it("rejects bad params", () => {

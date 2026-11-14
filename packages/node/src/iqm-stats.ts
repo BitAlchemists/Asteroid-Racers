@@ -110,3 +110,48 @@ export function seedsNeeded(sdDiff: number, effect: number): number {
 export function directionOf(metric: string): "lower" | "higher" {
   return /exam$|Crashes$|^score$|^mean$|^worst$|^heldOut$/.test(metric) ? "lower" : "higher";
 }
+
+/**
+ * A window of generations (M8 step 1): `150`, `125..150` (every generation) or `125..150:5` (every
+ * 5th, from 125). Returns the generations in order.
+ */
+export function parseGens(spec: string): number[] {
+  const m = /^\s*(\d+)(?:\s*\.\.\s*(\d+)(?:\s*:\s*(\d+))?)?\s*$/.exec(spec);
+  if (!m)
+    throw new Error(`generations must look like 150, 125..150 or 125..150:5, got ${JSON.stringify(spec)}`);
+  const from = Number(m[1]);
+  const to = m[2] === undefined ? from : Number(m[2]);
+  const step = m[3] === undefined ? 1 : Number(m[3]);
+  if (from < 1 || to < from || step < 1)
+    throw new Error(`generations ${JSON.stringify(spec)}: need 1 ≤ from ≤ to and step ≥ 1`);
+  const gens: number[] = [];
+  for (let g = from; g <= to; g += step) gens.push(g);
+  return gens;
+}
+
+/**
+ * Per run, the mean of a metric over the generations of a window (M8's averaged decision rule).
+ * `value(run, gen)` gives the metric or undefined. A generation counts if every run has it; one that
+ * no run has is skipped; one that only some runs have is an error (the mean would differ in what it
+ * averages). Returns the means (in the order of `runs`) and the generations used.
+ */
+export function windowMeans(
+  runs: readonly string[],
+  gens: readonly number[],
+  value: (run: string, gen: number) => number | undefined,
+): { means: number[]; gens: number[] } {
+  const used: number[] = [];
+  for (const g of gens) {
+    const have = runs.filter((r) => value(r, g) !== undefined);
+    if (have.length === 0) continue;
+    if (have.length < runs.length) {
+      const missing = runs.filter((r) => value(r, g) === undefined);
+      throw new Error(
+        `g${g} is missing for ${missing.join(", ")} (present for ${have.length} of ${runs.length})`,
+      );
+    }
+    used.push(g);
+  }
+  if (used.length === 0) throw new Error(`no run has a value in g${gens[0]}..g${gens[gens.length - 1]}`);
+  return { means: runs.map((r) => mean(used.map((g) => value(r, g)!))), gens: used };
+}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { comparePaired, directionOf, iqm, mean, sd, seedsNeeded } from "./iqm-stats";
+import { comparePaired, directionOf, iqm, mean, parseGens, sd, seedsNeeded, windowMeans } from "./iqm-stats";
 
 describe("iqm statistics", () => {
   it("IQM drops the outer quarters (floor(n/4) at each end), so outlier seeds do not dominate", () => {
@@ -41,5 +41,30 @@ describe("iqm statistics", () => {
     expect(directionOf("examCrashes")).toBe("lower");
     expect(directionOf("examCheckpoints")).toBe("higher");
     expect(directionOf("heldOutSuccess")).toBe("higher");
+  });
+
+  it("parses generation windows (M8 step 1)", () => {
+    expect(parseGens("150")).toEqual([150]);
+    expect(parseGens("125..150:5")).toEqual([125, 130, 135, 140, 145, 150]);
+    expect(parseGens("3..6")).toEqual([3, 4, 5, 6]);
+    expect(parseGens("125..152:5")).toEqual([125, 130, 135, 140, 145, 150]);
+    for (const bad of ["", "a..b", "150..125", "0..5", "1..5:0"]) expect(() => parseGens(bad), bad).toThrow();
+  });
+
+  it("averages a window per run, the same as averaging single generations by hand", () => {
+    const data: Record<string, Record<number, number>> = {
+      a: { 125: 40, 130: 50, 150: 60 },
+      b: { 125: 10, 130: 20, 150: 30 },
+    };
+    const value = (r: string, g: number) => data[r]![g];
+    // 135..145 exist for no run: skipped; 125, 130, 150 exist for both.
+    const w = windowMeans(["a", "b"], parseGens("125..150:5"), value);
+    expect(w.gens).toEqual([125, 130, 150]);
+    expect(w.means).toEqual([50, 20]);
+    expect(windowMeans(["a"], [150], value).means).toEqual([60]);
+    // A generation only some runs have is an error, not a silently different mean.
+    data.b![140] = 1;
+    expect(() => windowMeans(["a", "b"], parseGens("125..150:5"), value)).toThrow(/g140 is missing for a/);
+    expect(() => windowMeans(["a"], [1, 2], value)).toThrow(/no run has a value/);
   });
 });

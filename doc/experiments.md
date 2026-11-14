@@ -157,6 +157,16 @@ npm run iqm -- --base train-1,train-2,... --arm train-11,train-12,... [--metric 
   - seeds better;
   - the smallest mean effect these seeds can detect (α 0.05, power 0.8);
   - with `--effect`, the seeds needed to detect that effect.
+- **A window of generations** (M8, the averaged decision rule): `--gens 125..150:5` (list mode)
+  takes, per run, the mean of the metric over those generations before the IQM and the bootstrap.
+  Every run must have the same generations; a generation no run has is skipped (so the in-run exam
+  metrics average g125 and g150 only). With `--from`, the values come from an exam3 re-score of
+  the same window:
+
+  ```
+  npm run exam3 -- --run train-585..train-604 --gens 125..150:5 --jobs 16 --json base.json
+  npm run iqm -- --from all.json --base train-585..train-604 --arm ... --metric exam3 --gens 125..150:5
+  ```
 - **Determinism:** the bootstrap uses a fixed seed, so the output is the same every time.
 - **Exam v2** is just config: `exam: { every: 25, randomTracks: 100 }` (102 races, about 6 s).
   Exam scores are sums over races, so a 102-race score is about 6× a 17-race one. Compare only like
@@ -349,6 +359,12 @@ always gives the same track.
   `TRACK=` variable), always the same track.
 - **As a training arena:** `generated-legs` (tier 3), like `race-legs`. Absent from a config, nothing
   changes; exam v2 doesn't fly generated tracks.
+- **Exam seeds stay out of training** (M8): `generated-legs` draws its track seed again while it
+  falls in 300001–340005 (`EXAM_TRACK_SEEDS`, every exam v3 generated race lies in it), so training
+  never flies an exam track. A draw outside the range is unchanged.
+- **Several tracks per generation:** each `generated-legs` entry of a level is one track per
+  generation with its own seed stream, so listing the entry 12 times flies 12 different tracks, new
+  ones every generation (a test pins it).
 
 ## Training on generated tracks and goals (M7 S5)
 

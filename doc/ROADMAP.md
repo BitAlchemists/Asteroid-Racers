@@ -34,8 +34,8 @@ How we work is described in [`CLAUDE.md`](../CLAUDE.md). Each milestone gets its
   - rotation 20 not adopted ("I'd rather have faster races"): finish time matters more than fewer
     crashes. The residual controller already made it largely obsolete (spin about 1 → 0.3);
   - keepEasy 0.25 adopted; the averaged decision rule adopted; the budget rule dropped.
-- **Now:** M8 (race training) is planned and waits for the user's approval. M6 pauses after decision
-  point 2 and resumes after M8.
+- **Now:** M8 (race training), approved by the user 2026-11-14 and in progress. M6 pauses after
+  decision point 2 and resumes after M8.
 
 ## Milestones
 
@@ -201,11 +201,11 @@ combination check and batch B are planned on exam v3.
   `generated-legs` and `race-legs` (gates, stop, laps, par), arenas `gates` and `laps`, an opt-in
   `scoring.par`, generated levels in tiered curricula.
 
-### M8 — Race training 🟡 (planned, waiting for approval)
+### M8 — Race training 🟡 (in progress)
 
-Plan: [`plans/M8-race-training.md`](plans/M8-race-training.md), written 2026-11-14; waits for the
-user's approval. Inserted between M6's decision point 2 and the rest of M6 (direction agreed
-2026-11-14).
+Plan: [`plans/M8-race-training.md`](plans/M8-race-training.md), written and approved by the user
+2026-11-14 ("Plan sounds good. Make it happen."; faster races preferred over crashes, but not
+over-optimised for speed). Inserted between M6's decision point 2 and the rest of M6.
 
 Make races the main training task, so the network learns racing and not only crash avoidance:
 

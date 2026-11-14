@@ -5,6 +5,7 @@ import { seededRandom, type Random } from "../random";
 import { TICK_SECONDS } from "../game-loop";
 import {
   buildGeneratedTrack,
+  drawTrainingTrackSeed,
   generateTrack,
   isTrackBand,
   TRACK_BAND_NAMES,
@@ -546,11 +547,12 @@ function bandsParam(params: ArenaParams, fallback: TrackBand[]): TrackBand[] {
 /**
  * A generated track of `band` as a builder, drawing its seed from the world random exactly as the
  * registry's `generated:<band>` does; its own gates are the gate and chicane checkpoints (width
- * 2 × radius, as the race's `gates` rule would give them).
+ * 2 × radius, as the race's `gates` rule would give them). A seed in the exam's range is drawn again
+ * (M8 step 1), so training never flies an exam v3 track.
  */
 function generatedBuilder(band: TrackBand): TrackBuilder {
   return (world, race, random) => {
-    const track = generateTrack(Math.floor(random() * 2 ** 32), band);
+    const track = generateTrack(drawTrainingTrackSeed(random), band);
     buildGeneratedTrack(track, world, race);
     return new Map(track.gates.map((g) => [g.point, 2 * track.points[g.point]!.radius]));
   };

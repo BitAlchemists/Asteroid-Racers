@@ -3,6 +3,7 @@
  * score `exam3`, the profile (per category, goal type, skill and track) and the crashes.
  *
  *   npm run exam3 -- --run train-310..train-319 --gen 150 [--jobs 8] [--json out.json]
+ *   npm run exam3 -- --run train-310..train-319 --gens 125..150:5 --jobs 12 --json out.json
  *   npm run exam3 -- --model lab/runs/train-327/luke.txt
  *   npm run exam3 -- --scripted
  *
@@ -26,6 +27,7 @@ import {
   type Exam3Result,
   type MajorTom,
 } from "@ar/server";
+import { parseGens } from "./iqm-stats";
 import { loadModelFile } from "./model-file";
 import { expandRuns } from "./skills-profile";
 
@@ -35,6 +37,7 @@ Usage: npm run exam3 -- [options]
 
   --run <ids>       runs, e.g. train-310..train-319 or a,b (their gens/gNNNN.json snapshots)
   --gen <g>         the generation of the snapshots (with --run)
+  --gens <a..b:s>   several generations, e.g. 125..150:5 (with --run; labels <run>@g<gen>)
   --lab <dir>       the runs directory (default lab/runs of the project)
   --model <file>    a model file (network JSON, luke.txt, snapshot, result.json, or "bundled"); repeatable
   --scripted        the scripted steering controller (a reference)
@@ -153,6 +156,7 @@ async function main(): Promise<void> {
     options: {
       run: { type: "string" },
       gen: { type: "string" },
+      gens: { type: "string" },
       lab: { type: "string" },
       model: { type: "string", multiple: true },
       scripted: { type: "boolean" },
@@ -184,10 +188,11 @@ async function main(): Promise<void> {
       source: { kind: "file", file: resolve(file) },
     });
   if (values.run) {
-    if (!values.gen) throw new Error("--run needs --gen");
-    const gen = Number(values.gen);
+    if (!values.gen === !values.gens) throw new Error("--run needs --gen or --gens (one of them)");
+    const gens = values.gens ? parseGens(values.gens) : [Number(values.gen)];
     for (const run of expandRuns(values.run))
-      jobs.push({ label: `${run}@g${gen}`, source: { kind: "run", dir: join(labRuns, run), gen } });
+      for (const gen of gens)
+        jobs.push({ label: `${run}@g${gen}`, source: { kind: "run", dir: join(labRuns, run), gen } });
   }
   if (jobs.length === 0)
     throw new Error("nothing to examine (--run/--gen, --model or --scripted); see --help");

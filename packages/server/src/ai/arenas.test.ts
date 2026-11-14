@@ -14,6 +14,7 @@ import {
   pointToPointArena,
   resolveArenas,
   stepPlateau,
+  trainingScenarios,
   type EpisodeSpec,
   type Scenario,
   type TargetSpec,
@@ -130,6 +131,25 @@ describe("arenas", () => {
     for (let g = 0; g < 100; g++) for (let a = 0; a < 3; a++) seeds.add(deriveSeed(2026, 1, a, g));
     expect(seeds.size).toBe(300);
     expect(deriveSeed(1, 2, 3)).toBe(deriveSeed(1, 2, 3));
+  });
+});
+
+describe("several generated tracks per generation (M8 step 1)", () => {
+  it("12 generated-legs entries fly 12 different tracks, and new ones the next generation", () => {
+    const entry = { name: "generated-legs", params: { bands: ["easy"], episodes: 1, legs: 3 } };
+    const runs = resolveArenas(
+      Array.from({ length: 12 }, () => entry),
+      600,
+    );
+    const fingerprint = (s: Scenario) =>
+      s.obstacles.map((o) => `${o.position.x.toFixed(1)},${o.position.y.toFixed(1)}`).join(";");
+    const g1 = trainingScenarios(runs, 1, 1).map(fingerprint);
+    const g2 = trainingScenarios(runs, 1, 2).map(fingerprint);
+    expect(new Set(g1).size).toBe(12);
+    expect(new Set(g2).size).toBe(12);
+    expect(g2.filter((f) => g1.includes(f))).toHaveLength(0);
+    // The same seed and generation give the same tracks.
+    expect(trainingScenarios(runs, 1, 2).map(fingerprint)).toEqual(g2);
   });
 });
 

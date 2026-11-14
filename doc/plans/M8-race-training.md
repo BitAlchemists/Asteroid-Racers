@@ -1,6 +1,6 @@
 # M8 — Race training
 
-Status: 🟡 planned 2026-11-14, waiting for the user's approval of this plan. Roadmap:
+Status: 🟡 approved by the user 2026-11-14 ("Plan sounds good. Make it happen."), in progress. Roadmap:
 [`../ROADMAP.md`](../ROADMAP.md). Inserted between M6's decision point 2 and the rest of M6 (the user
 agreed to the direction on 2026-11-14, "ok").
 
@@ -165,6 +165,8 @@ Draft: [`../../experiments/m8-1-race-lookahead.md`](../../experiments/m8-1-race-
 - **Primary metric:** as E1; `exam3TimeVsPar` and `exam3Goals` reported first. Crashes stay a veto,
   but the user has said finish time matters more than fewer crashes, so a par arm that wins exam3
   with somewhat more crashes is for the user to judge.
+- **Not over-optimised for speed** (the user, at approval): par is a modest weight, judged on exam3
+  as a whole; no raising the weight only to make races faster.
 - **Seeds and gens:** 20 seeds, g150.
 
 ### 6. Confirmation E4 (`m8-4-confirm`)
@@ -239,6 +241,14 @@ exam3 averaged over g125–150 is the decision rule; the budget rule is dropped.
 | Fix the generator if step 2 finds a flaw? | Yes, as `generator: 2`; exam v3.0 unchanged. |
 
 ## Changes to this plan
+
+- 2026-11-14: **approved by the user** ("Plan sounds good. Make it happen."), with a nuance on
+  speed, in their words: "I just said I would prefer like having fast races, but I don't want you
+  to over-optimize for faster races. I just preferred like fast races over crashes, right? But
+  yeah, just don't that you overemphasize on that." For E3 this means: `scoring.par` is a modest
+  weight next to progress and success, not the dominant term; the par arm is judged on exam3 as a
+  whole (time vs par is only 0.2 of each race's value), not on time alone; the weight is not pushed
+  up just to make races faster. The E3 section below is read with this in mind.
 
 - 2026-11-14 (same day, before approval): the user decided decision point 2 (rotation 20 not
   adopted, keepEasy adopted, averaged decision rule adopted, budget rule dropped). The open

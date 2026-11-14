@@ -117,6 +117,32 @@ export const TRACK_BANDS: Readonly<Record<TrackBand, Readonly<BandSpec>>> = {
   },
 };
 
+/**
+ * Track seeds reserved for exam v3 (M8 step 1): every generated race of exam v3.0 (easy 300001–20,
+ * medium 310001–20, hard 320001–20, goal races 330001–5 and 340001–5) lies in this range, whatever
+ * its band. Training never draws a seed from it (`drawTrainingTrackSeed`), so the exam's tracks stay
+ * unseen. A test keeps the exam's seeds inside the range.
+ */
+export const EXAM_TRACK_SEEDS: Readonly<{ from: number; to: number }> = Object.freeze({
+  from: 300_001,
+  to: 340_005,
+});
+
+/** Whether `seed` is in the range reserved for the exam ({@link EXAM_TRACK_SEEDS}). */
+export const isExamTrackSeed = (seed: number): boolean =>
+  seed >= EXAM_TRACK_SEEDS.from && seed <= EXAM_TRACK_SEEDS.to;
+
+/**
+ * A generated track's seed for training: a 32-bit draw from `random`, drawn again while it falls in
+ * the exam's range. A draw outside the range is returned as is, so the stream is unchanged unless
+ * a draw hits the range (about 1 in 10⁵).
+ */
+export function drawTrainingTrackSeed(random: Random): number {
+  let seed = Math.floor(random() * 2 ** 32);
+  while (isExamTrackSeed(seed)) seed = Math.floor(random() * 2 ** 32);
+  return seed;
+}
+
 /** The ship's radius (`SHIP_RADIUS` in game-server.ts; a test keeps them equal). */
 export const GENERATOR_SHIP_RADIUS = 20;
 /** Free room a validated track keeps beyond the ship's radius along every leg's centre line. */

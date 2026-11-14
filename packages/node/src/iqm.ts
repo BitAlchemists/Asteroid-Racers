@@ -5,6 +5,10 @@
  *   npm run iqm -- <experiment-id> [--metric exam] [--gen 150] [--effect 10000]
  *   npm run iqm -- --base train-1,train-2,... --arm train-11,train-12,... [--metric ...] [--gen ...]
  *   npm run iqm -- --from exam3.json --base ... --arm ... --metric exam3 --gen 150
+ *   npm run iqm -- --from exam3.json --base ... --arm ... --metric exam3 --gens 125..150:5
+ *
+ * With --gens (M8's averaged decision rule, list mode only), each run's value is the mean of the
+ * metric over those generations (every run must have the same ones), before the IQM and bootstrap.
  *
  * With --from, the values come from a JSON file written by `npm run exam3 -- --json` (re-scored
  * stored models, labelled `<run>@g<gen>`) instead of the runs' gen events.
@@ -19,7 +23,15 @@ import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { exam3Metrics, type Exam3Result } from "@ar/server";
 import { expandRuns } from "./skills-profile";
-import { comparePaired, directionOf, iqm, seedsNeeded, type PairedComparison } from "./iqm-stats";
+import {
+  comparePaired,
+  directionOf,
+  iqm,
+  parseGens,
+  seedsNeeded,
+  windowMeans,
+  type PairedComparison,
+} from "./iqm-stats";
 
 interface Manifest {
   id: string;
@@ -124,6 +136,7 @@ function main(): void {
     options: {
       metric: { type: "string", default: "exam" },
       gen: { type: "string", default: "150" },
+      gens: { type: "string" },
       base: { type: "string" },
       arm: { type: "string" },
       baseline: { type: "string", default: "baseline" },
@@ -140,28 +153,48 @@ function main(): void {
   const direction = directionOf(metric);
   const effect = values.effect === undefined ? undefined : Number(values.effect);
   const opts = { resamples: Number(values.resamples), seed: 1 };
+  const window = values.gens === undefined ? undefined : parseGens(values.gens);
   console.log(
-    `${metric} at g${gen} (${direction} is better); 95 % CIs from ${opts.resamples} paired bootstrap resamples`,
+    `${metric} ${window ? `averaged per run over g${values.gens}` : `at g${gen}`} (${direction} is better); ` +
+      `95 % CIs from ${opts.resamples} paired bootstrap resamples`,
   );
 
   if (values.base && values.arm) {
     const rescored = values.from === undefined ? undefined : exam3Values(values.from);
-    const get = (ids: string) =>
-      expandRuns(ids).map((id) => {
-        const v = rescored
-          ? rescored.get(`${id}@g${gen}`)?.[metric]
-          : readRun(runsDir, id.trim())?.metrics.get(gen)?.[metric];
+    const runCache = new Map<string, RunData | undefined>();
+    const valueOf = (id: string, g: number): number | undefined => {
+      if (rescored) return rescored.get(`${id}@g${g}`)?.[metric];
+      if (!runCache.has(id)) runCache.set(id, readRun(runsDir, id));
+      return runCache.get(id)?.metrics.get(g)?.[metric];
+    };
+    let windowGens: number[] = [];
+    const get = (ids: string) => {
+      const runs = expandRuns(ids).map((id) => id.trim());
+      if (window) {
+        const w = windowMeans(runs, window, valueOf);
+        if (windowGens.length > 0 && w.gens.join() !== windowGens.join())
+          throw new Error(
+            `base and arm have different generations: g${windowGens.join(",")} vs g${w.gens.join(",")}`,
+          );
+        windowGens = w.gens;
+        return w.means;
+      }
+      return runs.map((id) => {
+        const v = valueOf(id, gen);
         if (v === undefined) throw new Error(`run ${id} has no ${metric} at g${gen}`);
         return v;
       });
+    };
     const base = get(values.base);
     const arm = get(values.arm);
+    if (window) console.log(`generations averaged: g${windowGens.join(", g")}`);
     console.log(`${"base".padEnd(28)} IQM ${fmt(iqm(base)).padStart(9)}  (n ${base.length})`);
     console.log(line("arm", comparePaired(base, arm, direction, opts), effect));
     return;
   }
   const experiment = positionals[0];
   if (!experiment) throw new Error("give an experiment id, or --base and --arm run lists");
+  if (window) throw new Error("--gens works with --base and --arm run lists only");
   const arms = experimentArms(runsDir, experiment, metric, gen);
   const base = arms.get(values.baseline!);
   if (!base) throw new Error(`no ${values.baseline} runs with ${metric} at g${gen} in ${experiment}`);
