@@ -407,7 +407,7 @@ describe("generated-legs arena", () => {
   });
 
   it("is a tier-3 arena registered after race-legs", () => {
-    expect(TIER_ARENAS.at(-1)).toBe(generatedLegsArena);
+    expect(TIER_ARENAS[TIER_ARENAS.indexOf(raceLegsArena) + 1]).toBe(generatedLegsArena);
     expect(arenaByName("generated-legs")).toBe(generatedLegsArena);
     expect(generatedLegsArena.tier).toBe(3);
   });

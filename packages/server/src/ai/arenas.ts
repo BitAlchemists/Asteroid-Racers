@@ -34,8 +34,14 @@ export interface EpisodeSpec {
    * has `targets.length × laps` targets. `maxSpeed` and `gate` apply on every pass.
    */
   laps?: number;
-  /** Par time in frames (M7, time trials): copied to the episode's record for scoring. */
+  /** Par time in frames (M7, time trials): copied to the episode's record for scoring (`scoring.par`). */
   parFrames?: number;
+  /**
+   * Stop at the finish (M7 S5): the episode's final target (the last one of the last lap) counts only
+   * while the ship is at most this fast, like the race's `finishMaxSpeed`. Earlier passes of that
+   * target (on earlier laps) don't need it. With the target's own `maxSpeed`, the lower limit applies.
+   */
+  finishMaxSpeed?: number;
 }
 
 export interface ObstacleSpec {
@@ -288,6 +294,21 @@ export function parseArenas(value: unknown): ArenaConfig[] {
       throw new Error(`config.arenas[${i}].params must be an object`);
     arenaByName(name); // unknown names fail here, before the run starts
     return { name, params: params as ArenaParams };
+  });
+}
+
+/**
+ * Checks every arena's params by generating one scenario (seed 0) with them, so a bad param fails
+ * before a run starts, not when a curriculum first reaches its level (M7 S5). `where` names the list
+ * in the error, e.g. "config.curriculum.levels[2].arenas".
+ */
+export function checkArenaParams(configs: readonly ArenaConfig[], frames: number, where: string): void {
+  configs.forEach((config, i) => {
+    try {
+      arenaByName(config.name).generate(seededRandom(0), { frames, ...config.params });
+    } catch (error) {
+      throw new Error(`${where}[${i}] (${config.name}): ${(error as Error).message}`, { cause: error });
+    }
   });
 }
 

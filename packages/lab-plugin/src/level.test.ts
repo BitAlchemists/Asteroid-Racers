@@ -44,3 +44,21 @@ describe("curriculumLevel", () => {
     expect(curriculumLevel({ arenas, curriculum: "bad" }, undefined)).toBeUndefined();
   });
 });
+
+describe("curriculumLevel with generated tracks and goals (M7 S5)", () => {
+  it("tells the generated bands' levels apart, goal params included", () => {
+    const legs = (params: Record<string, unknown>) => [{ name: "generated-legs", params }];
+    const levels = [
+      { arenas: legs({ bands: ["easy"] }) },
+      { arenas: legs({ bands: ["medium"], gates: "track" }) },
+      { arenas: legs({ bands: ["medium"], gates: "track", stop: 100 }) },
+    ];
+    const config = { arenas, curriculum: { levels } };
+    levels.forEach((level, index) => {
+      const flown = JSON.parse(
+        JSON.stringify(applyLevel(parseArenas(arenas), { arenas: parseArenas(level.arenas) })),
+      );
+      expect(curriculumLevel(config, flown)).toEqual({ index, count: 3 });
+    });
+  });
+});

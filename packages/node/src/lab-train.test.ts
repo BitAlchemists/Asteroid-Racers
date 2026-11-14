@@ -647,6 +647,84 @@ describe("evo-lab worker (protocol v1)", () => {
     expect(replayed).toEqual(traced);
   }, 180_000);
 
+  it("generated curriculum with goals (M7 S5): bands and goal arenas as levels, kill-and-resume, replay", async () => {
+    // As above, 2 always-reached targets per generation carry the run up one level per generation;
+    // the levels ramp generated bands and add the goals (gates, par, stop, laps).
+    const easy = { name: "point-to-point", params: { episodes: 2, distance: [10, 20] } };
+    const levels = [
+      { arenas: [easy, { name: "gates", params: { episodes: 1, targets: [1, 1], parSpeed: 400 } }] },
+      {
+        arenas: [
+          easy,
+          {
+            name: "generated-legs",
+            params: { bands: ["easy"], episodes: 1, legs: 1, gates: "track", parSpeed: 300 },
+          },
+        ],
+      },
+      {
+        arenas: [
+          easy,
+          {
+            name: "generated-legs",
+            params: { bands: ["medium", "hard"], episodes: 1, legs: 2, gates: "all", stop: 100, laps: 2 },
+          },
+          { name: "laps", params: { episodes: 1, targets: [3, 3], laps: 2, gates: true } },
+        ],
+      },
+    ];
+    const config = {
+      sample: 6,
+      frames: 60,
+      arenas: [easy],
+      collisions: "obstacles",
+      crashMode: "respawn",
+      scoring: { distance: 1, success: 1000, par: 10 },
+      curriculum: { levels, success: 0.3, streak: 1 },
+    };
+    const dir = await killResume(config, 5);
+    expect((JSON.parse(result(dir)) as { config: { scoring: unknown } }).config.scoring).toMatchObject({
+      par: 10,
+    });
+    const flown = events(dir)
+      .filter((e) => e.type === "gen")
+      .map((e) => (e.metrics as { level: number }).level);
+    expect(flown).toEqual([0, 1, 2, 2, 2]);
+    const snap = (g: number) =>
+      JSON.parse(readFileSync(join(dir, "gens", `g000${g}.json`), "utf8")) as {
+        arenas: unknown;
+        trace: { episodes: { targets: unknown[] }[] }[];
+      };
+    // The snapshot names the level's arenas exactly (what the plugin matches to show the level).
+    expect(snap(2).arenas).toEqual(JSON.parse(JSON.stringify(levels[1]!.arenas)));
+    expect(snap(3).arenas).toEqual(JSON.parse(JSON.stringify(levels[2]!.arenas)));
+    // Replays of the generated legs (gates, stop, laps) and the gated circuit match training.
+    for (const index of [1, 2]) {
+      const { replayed, traced } = await replayEpisodes(dir, 3, index, {
+        ...config,
+        arenas: levels[2]!.arenas,
+      });
+      expect(replayed).toEqual(traced);
+    }
+    // The same config without the goals runs differently (the switches do something).
+    const plain = (arenas: { name: string; params: Record<string, unknown> }[]) =>
+      arenas.map(({ name, params }) => {
+        const { gates: _g, stop: _s, laps: _l, parSpeed: _p, ...rest } = params;
+        return { name, params: rest };
+      });
+    const off = newRun({
+      ...config,
+      scoring: { distance: 1, success: 1000 },
+      curriculum: { ...config.curriculum, levels: levels.map((l) => ({ arenas: plain(l.arenas) })) },
+    });
+    expect(await run(off, ["--to", "5"])).toBe(0);
+    const hashes = (d: string) =>
+      events(d)
+        .filter((e) => e.type === "gen")
+        .map((e) => e.stateHash);
+    expect(hashes(off)).not.toEqual(hashes(dir));
+  }, 240_000);
+
   it("curriculum plateau: the run moves up when success stops improving, and resume stays exact", async () => {
     // The fixed threshold (1.0 for 99 generations) never fires. With alpha 1 the average is the
     // success itself; the first generation improves it, then it stalls: up after 2 stalled generations.
@@ -1213,6 +1291,24 @@ describe("evo-lab worker (protocol v1)", () => {
       [{ curriculum: { plateau: { patience: 0 } } }, /plateau.patience/],
       [{ curriculum: { plateau: { speed: 1 } } }, /unknown config.curriculum.plateau keys/],
       [{ curriculum: { heldOutCurrent: false } }, /heldOutCurrent/],
+      // M7 S5: arena params are checked at start, also on levels the run hasn't reached.
+      [
+        { arenas: [{ name: "gates", params: { width: 0 } }] },
+        /config.arenas\[0\] \(gates\): arena param width/,
+      ],
+      [
+        {
+          curriculum: {
+            levels: [{}, { arenas: [{ name: "generated-legs", params: { bands: ["extreme"] } }] }],
+          },
+        },
+        /levels\[1\]\.arenas\[0\] \(generated-legs\): arena param bands/,
+      ],
+      [
+        { curriculum: { levels: [{}, { arenas: [{ name: "race-legs", params: { gates: "some" } }] }] } },
+        /levels\[1\]\.arenas\[0\] \(race-legs\): arena param gates/,
+      ],
+      [{ scoring: { par: -1 } }, /scoring.par/],
       [{ reevaluate: { top: 0 } }, /reevaluate.top/],
       [{ reevaluate: { episodes: 2.5 } }, /reevaluate.episodes/],
       [{ reevaluate: { rounds: 2 } }, /unknown config.reevaluate keys/],

@@ -43,6 +43,8 @@ import {
   parseArenas,
   parseCurriculum,
   applyLevel,
+  checkArenaParams,
+  isTieredLevel,
   type CurriculumConfig,
   type CmaEsJson,
   type PlateauState,
@@ -423,6 +425,17 @@ function readConfig(): TrainConfig {
   if (!(config.mutationRate >= 0 && config.mutationRate <= 1))
     throw new Error("config.mutationRate must be in [0, 1]");
   if (!(config.mutationStrength >= 0)) throw new Error("config.mutationStrength must be ≥ 0");
+  // Every arena's params, also those of curriculum levels not reached yet (M7 S5).
+  checkArenaParams(config.arenas, config.frames, "config.arenas");
+  config.curriculum?.levels.forEach((level, i) =>
+    checkArenaParams(
+      applyLevel(config.arenas, level),
+      config.frames,
+      isTieredLevel(level)
+        ? `config.curriculum.levels[${i}].arenas`
+        : `config.curriculum.levels[${i}]: arenas`,
+    ),
+  );
   return config;
 }
 

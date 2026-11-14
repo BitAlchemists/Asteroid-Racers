@@ -52,6 +52,13 @@ export interface ScoringWeights {
    * absent from configs that do not set it, so older results stay byte-identical.
    */
   rotation?: number;
+  /**
+   * Reward per second under par (M7 S5, time trials): an episode with a par time
+   * ({@link EpisodeRecord.parFrames}) that reached all its targets in fewer frames earns
+   * `par × (parFrames − frames) × tick seconds`, subtracted from the score. Slower than par or not
+   * finished earns nothing. Absent = 0, and absent from configs that do not set it.
+   */
+  par?: number;
 }
 
 /** The original evaluator (QuadraticSumOfDistanceToTargets): distance only. */
@@ -62,7 +69,7 @@ export function parseScoring(raw: unknown): ScoringWeights {
   if (typeof raw !== "object" || raw === null) throw new Error("scoring must be an object of weights");
   const weights: ScoringWeights = { ...LEGACY_SCORING, distance: 0 };
   for (const [key, value] of Object.entries(raw)) {
-    if (!(key in weights) && key !== "progress" && key !== "rotation")
+    if (!(key in weights) && key !== "progress" && key !== "rotation" && key !== "par")
       throw new Error(`unknown scoring term ${JSON.stringify(key)}`);
     if (typeof value !== "number" || !Number.isFinite(value) || value < 0)
       throw new Error(`scoring.${key} must be a number ≥ 0`);
@@ -85,6 +92,8 @@ export function scoreEpisodes(
       weights.crashes * r.crashes;
     if (weights.progress) score -= weights.progress * r.progress;
     if (weights.rotation) score += weights.rotation * r.rotation;
+    if (weights.par && r.parFrames !== undefined && r.reached >= r.targets && r.frames < r.parFrames)
+      score -= weights.par * (r.parFrames - r.frames) * tickSeconds;
   }
   return score;
 }

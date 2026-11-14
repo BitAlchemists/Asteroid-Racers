@@ -3,6 +3,7 @@ import type { CollisionMode, IClientProxy } from "../contracts";
 import { GameServer } from "../game-server";
 import type { LocalConnectionOptions } from "../local-connection";
 import { seededRandom } from "../random";
+import { createArrow } from "../scene-controller";
 import { ArenaScript, type CrashMode } from "./arena-script";
 import { noiseSeed, resolveArenas, SCENARIO_STREAM, trainingScenarios, type ArenaConfig } from "./arenas";
 import { AIDirector, placeScenario } from "./directors";
@@ -144,6 +145,15 @@ export class ArenaReplay implements Replay {
         noiseSeed: noiseSeed(o.seed, SCENARIO_STREAM.training, o.g, o.arenaIndex ?? 0),
       };
     const { running, proxy } = await startScript(director, script);
+    // Directional gates (M7 S5) get an arrow pointing the way to cross them: decoration only, added
+    // after the ship, and never seen by the model (it sees asteroids and its targets).
+    for (const episode of placed.episodes)
+      for (const target of episode.spec.targets)
+        if (target.gate) {
+          const arrow = createArrow(target.position.x, target.position.y, target.gate.orientation);
+          arrow.radius = Math.min(100, target.gate.width * 0.4);
+          server.world.addEntity(arrow);
+        }
     return new ArenaReplay(server, script, proxy, running);
   }
 

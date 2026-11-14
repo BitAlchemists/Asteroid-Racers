@@ -37,6 +37,8 @@ export class ArenaScript extends Script {
   private lastDistance: number | undefined;
   /** Ship position on the previous frame, for directional gates (undefined after a start or respawn). */
   private lastPosition: Vector2 | undefined;
+  /** The episode has a directional gate: track the ship's position every frame (as the race does). */
+  private tracksPositions = false;
   private record: EpisodeRecord | undefined;
 
   constructor(
@@ -122,10 +124,14 @@ export class ArenaScript extends Script {
       this.lastPosition = undefined;
     } else {
       const spec = episode.spec.targets[this.targetIndex % episode.targets.length];
-      const maxSpeed = spec?.maxSpeed;
+      const finishMaxSpeed = episode.spec.finishMaxSpeed;
+      const maxSpeed =
+        finishMaxSpeed !== undefined && this.targetIndex === record.targets - 1
+          ? Math.min(finishMaxSpeed, spec?.maxSpeed ?? Infinity)
+          : spec?.maxSpeed;
       const gate = spec?.gate;
       const previous = this.lastPosition;
-      if (gate) this.lastPosition = ship.position.clone();
+      if (this.tracksPositions) this.lastPosition = ship.position.clone();
       const arrived = gate
         ? previous !== undefined &&
           crossesGate(previous, ship.position, target.position, gate.orientation, gate.width) > 0
@@ -162,6 +168,7 @@ export class ArenaScript extends Script {
     this.crashed = false;
     this.lastDistance = undefined;
     this.lastPosition = undefined;
+    this.tracksPositions = episode.spec.targets.some((t) => t.gate !== undefined);
     this.record = {
       targets: episode.targets.length * (episode.spec.laps ?? 1),
       reached: 0,

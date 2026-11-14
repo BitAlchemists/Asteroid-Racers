@@ -2,7 +2,14 @@ import { EntityType, Vector2, World } from "@ar/shared";
 import type { IGameServer } from "../contracts";
 import { RaceController } from "../race-controller";
 import { seededRandom, type Random } from "../random";
-import { generatedTrack, isTrackBand, TRACK_BAND_NAMES, type TrackBand } from "../track-generator";
+import { TICK_SECONDS } from "../game-loop";
+import {
+  buildGeneratedTrack,
+  generateTrack,
+  isTrackBand,
+  TRACK_BAND_NAMES,
+  type TrackBand,
+} from "../track-generator";
 import { trackByName, type Track } from "../tracks";
 import {
   between,
@@ -343,13 +350,118 @@ function tracksParam(params: ArenaParams, fallback: string[]): string[] {
 const NO_SERVER = {} as IGameServer;
 
 /**
+ * Goal params of the arenas (M7 S5), all absent = off (the scenarios stay byte-identical):
+ * - `gates`: `"track"` = the track's own gates count only when crossed in their direction (generated
+ *   tracks: the gate and chicane checkpoints; file tracks: checkpoints with a `width`); `"all"` =
+ *   every checkpoint between the start and the finish, as the race's `gates` rule (width 2 × radius
+ *   unless the track gives one);
+ * - `stop`: the episode's final target counts only at most this fast (`finishMaxSpeed`);
+ * - `laps`: the episode's targets are flown this many times (integer ≥ 1);
+ * - `parSpeed`: a par time from this speed (units/s) over the straight path start → targets (all
+ *   laps), for `scoring.par`.
+ */
+export interface GoalParams {
+  gates?: "track" | "all";
+  stop?: number;
+  laps?: number;
+  parSpeed?: number;
+}
+
+/** Reads the goal params (absent keys stay absent). `gates` only where `gateModes` allows it. */
+export function goalParams(params: ArenaParams, gateModes: readonly string[] = []): GoalParams {
+  const goals: GoalParams = {};
+  if (params.gates !== undefined) {
+    if (!gateModes.includes(params.gates as string))
+      throw new Error(
+        `arena param gates must be ${gateModes.map((m) => JSON.stringify(m)).join(" or ") || "absent here"}, got ${JSON.stringify(params.gates)}`,
+      );
+    goals.gates = params.gates as "track" | "all";
+  }
+  if (params.stop !== undefined) goals.stop = positiveParam(params, "stop");
+  if (params.laps !== undefined) goals.laps = lapsParam(params, 1);
+  if (params.parSpeed !== undefined) goals.parSpeed = positiveParam(params, "parSpeed");
+  return goals;
+}
+
+/** A number param > 0 that has no default. */
+function positiveParam(params: ArenaParams, key: string): number {
+  const value = params[key];
+  if (typeof value !== "number" || !Number.isFinite(value) || !(value > 0))
+    throw new Error(`arena param ${key} must be a number > 0, got ${JSON.stringify(value)}`);
+  return value;
+}
+
+/** The `laps` param: an integer ≥ 1. */
+function lapsParam(params: ArenaParams, fallback: number): number {
+  const laps = numberParam(params, "laps", fallback, 1);
+  if (!Number.isInteger(laps)) throw new Error(`arena param laps must be an integer ≥ 1, got ${laps}`);
+  return laps;
+}
+
+/**
+ * Par time in frames of flying from `start` through `targets` `laps` times along straight lines at
+ * `speed` units/s (rounded up).
+ */
+export function parFramesOf(
+  start: Vector2,
+  targets: readonly TargetSpec[],
+  laps: number,
+  speed: number,
+): number {
+  let length = 0;
+  let at = start;
+  for (let lap = 0; lap < laps; lap++)
+    for (const t of targets) {
+      length += at.distanceTo(t.position);
+      at = t.position;
+    }
+  return Math.ceil(length / speed / TICK_SECONDS);
+}
+
+/**
+ * The episode-level goals (stop, laps, par) on `spec`; `perLap` is the time limit of one lap. Without
+ * goals the spec is returned unchanged (no keys added).
+ */
+function withEpisodeGoals(spec: EpisodeSpec, goals: GoalParams, perLap: number): EpisodeSpec {
+  const laps = goals.laps ?? spec.laps ?? 1;
+  return {
+    ...spec,
+    ...(goals.laps === undefined ? {} : { laps, timeLimitFrames: perLap * laps }),
+    ...(goals.stop === undefined ? {} : { finishMaxSpeed: goals.stop }),
+    ...(goals.parSpeed === undefined
+      ? {}
+      : { parFrames: parFramesOf(spec.start.position, spec.targets, laps, goals.parSpeed) }),
+  };
+}
+
+/**
+ * Builds a track into `world` and `race` with the given random; returns the track's own directional
+ * gates (checkpoint index → width).
+ */
+type TrackBuilder = (world: World, race: RaceController, random: Random) => ReadonlyMap<number, number>;
+
+/** A registry track as a builder: its own gates are the checkpoints the track gives a width. */
+function registryBuilder(track: Track): TrackBuilder {
+  return (world, race, random) => {
+    track.build(world, race, random);
+    const gates = new Map<number, number>();
+    race.checkpoints.forEach((_, i) => {
+      const width = race.gateWidth(i);
+      if (width !== undefined) gates.set(i, width);
+    });
+    return gates;
+  };
+}
+
+/**
  * Race legs: pieces of real race tracks from the track registry. Each scenario builds one track
  * (picked from `tracks`, with its own seed, so `random` makes a new race every time); each episode
  * starts at one of its checkpoints, facing as a racer respawning there would, and flies the next
  * `legs` checkpoints among the track's asteroids. Crashes respawn at the last checkpoint reached,
  * at rest, as in a race (with `crashMode: "respawn"`). Default `tracks`: `["random"]`, so the exam's
  * fixed tracks stay out of training unless named.
- * Params: `tracks`, `episodes`, `legs` per episode, `frames` per leg.
+ * Params: `tracks`, `episodes`, `legs` per episode, `frames` per leg; goals (M7 S5, see
+ * {@link GoalParams}): `gates`, `stop`, `laps`, `parSpeed`.
  */
 export const raceLegsArena: Arena = {
   name: "race-legs",
@@ -361,38 +473,59 @@ export const raceLegsArena: Arena = {
     const legs = numberParam(params, "legs", 3, 1);
     const frames = numberParam(params, "frames", 600, 1);
     if (!Number.isInteger(legs)) throw new Error(`arena param legs must be an integer, got ${legs}`);
+    const goals = goalParams(params, ["track", "all"]);
 
     const track = trackByName(tracks[intBetween(random, [0, tracks.length - 1])]!);
-    return trackLegs(track, random, episodes, legs, frames);
+    return trackLegs(track.name, registryBuilder(track), random, episodes, legs, frames, goals);
   },
 };
 
 /**
- * Builds `track` with a seed drawn from `random` and cuts `episodes` runs of `legs` consecutive
- * checkpoints from it (race-legs and generated-legs).
+ * Builds a track with a seed drawn from `random` and cuts `episodes` runs of `legs` consecutive
+ * checkpoints from it (race-legs and generated-legs), with the goals on top.
  */
-function trackLegs(track: Track, random: Random, episodes: number, legs: number, frames: number): Scenario {
+function trackLegs(
+  name: string,
+  build: TrackBuilder,
+  random: Random,
+  episodes: number,
+  legs: number,
+  frames: number,
+  goals: GoalParams,
+): Scenario {
   const world = new World();
   const race = new RaceController(NO_SERVER);
-  track.build(world, race, seededRandom(Math.floor(random() * 2 ** 32)));
+  const ownGates = build(world, race, seededRandom(Math.floor(random() * 2 ** 32)));
   const checkpoints = race.checkpoints;
   const available = checkpoints.length - 1;
-  if (available < 1) throw new Error(`track ${track.name} has no legs`);
+  if (available < 1) throw new Error(`track ${name} has no legs`);
+  // The gate width of checkpoint i under the `gates` goal, or undefined.
+  const gateWidth = (i: number): number | undefined => {
+    if (goals.gates === undefined) return undefined;
+    const own = ownGates.get(i);
+    if (own !== undefined || goals.gates === "track") return own;
+    return i > 0 && i < checkpoints.length - 1 ? 2 * checkpoints[i]!.radius : undefined;
+  };
   const n = Math.min(legs, available);
   const specs: EpisodeSpec[] = [];
   for (let i = 0; i < episodes; i++) {
     const from = intBetween(random, [0, available - n]);
     const start = checkpoints[from]!;
-    specs.push({
+    const spec: EpisodeSpec = {
       start: { position: start.position.clone(), orientation: start.orientation },
-      targets: checkpoints.slice(from + 1, from + 1 + n).map((c): TargetSpec => ({
-        position: c.position.clone(),
-        radius: c.radius,
-        orientation: c.orientation,
-      })),
+      targets: checkpoints.slice(from + 1, from + 1 + n).map((c, k): TargetSpec => {
+        const width = gateWidth(from + 1 + k);
+        return {
+          position: c.position.clone(),
+          radius: c.radius,
+          orientation: c.orientation,
+          ...(width === undefined ? {} : { gate: { orientation: c.orientation, width } }),
+        };
+      }),
       timeLimitFrames: frames * n,
       respawn: "last-target",
-    });
+    };
+    specs.push(withEpisodeGoals(spec, goals, frames * n));
   }
   const obstacles = world.passiveCollisionEntities
     .filter((e) => e.type === EntityType.ASTEROID)
@@ -411,11 +544,26 @@ function bandsParam(params: ArenaParams, fallback: TrackBand[]): TrackBand[] {
 }
 
 /**
+ * A generated track of `band` as a builder, drawing its seed from the world random exactly as the
+ * registry's `generated:<band>` does; its own gates are the gate and chicane checkpoints (width
+ * 2 × radius, as the race's `gates` rule would give them).
+ */
+function generatedBuilder(band: TrackBand): TrackBuilder {
+  return (world, race, random) => {
+    const track = generateTrack(Math.floor(random() * 2 ** 32), band);
+    buildGeneratedTrack(track, world, race);
+    return new Map(track.gates.map((g) => [g.point, 2 * track.points[g.point]!.radius]));
+  };
+}
+
+/**
  * Generated legs (M7): like race-legs, but on procedurally generated tracks (track-generator.ts).
  * Each scenario generates one track of a band picked from `bands`, with its own seed; episodes are
  * runs of `legs` consecutive checkpoints among its corridors, gates, fields and belts. Crashes respawn
  * at the last checkpoint reached (with `crashMode: "respawn"`).
- * Params: `bands` (default all three), `episodes`, `legs` per episode, `frames` per leg.
+ * Params: `bands` (default all three), `episodes`, `legs` per episode, `frames` per leg; goals (M7
+ * S5, see {@link GoalParams}): `gates` (`"track"` = the generator's gates and chicanes, `"all"`),
+ * `stop`, `laps`, `parSpeed`.
  */
 export const generatedLegsArena: Arena = {
   name: "generated-legs",
@@ -428,12 +576,123 @@ export const generatedLegsArena: Arena = {
     const legs = numberParam(params, "legs", 3, 1);
     const frames = numberParam(params, "frames", 600, 1);
     if (!Number.isInteger(legs)) throw new Error(`arena param legs must be an integer, got ${legs}`);
+    const goals = goalParams(params, ["track", "all"]);
     const band = bands[intBetween(random, [0, bands.length - 1])]!;
-    return trackLegs(generatedTrack(band), random, episodes, legs, frames);
+    return trackLegs(`generated:${band}`, generatedBuilder(band), random, episodes, legs, frames, goals);
   },
 };
 
-/** The tiered arenas, in tier order. */
+/** The direction angle (radians, x towards y) of the vector `v`. */
+const angleOf = (v: Vector2) => Math.atan2(v.y, v.x);
+
+/**
+ * Gates (M7 S5): a chain of directional gates, no obstacles. Each target counts only when the ship's
+ * centre crosses its line in its direction; the gate's direction differs from the leg that leads to
+ * it by up to `skew` degrees (random side), so the ship has to line up instead of cutting across.
+ * Params: `episodes`, `targets` [min, max], `distance` [min, max] per leg, `turn` [min, max] degrees
+ * between legs, `width` of a gate, `skew` [min, max] degrees, `frames` per target; goals: `stop`,
+ * `laps`, `parSpeed`.
+ */
+export const gatesArena: Arena = {
+  name: "gates",
+  description: "A chain of directional gates: each counts only when crossed in its direction",
+  tier: 1,
+  generate(random, params) {
+    const episodes = numberParam(params, "episodes", 6, 1);
+    const targets = intRangeParam(params, "targets", [3, 5], 1);
+    const distance = rangeParam(params, "distance", [400, 900]);
+    const turn = rangeParam(params, "turn", [0, 90]);
+    const width = numberParam(params, "width", 200, 1);
+    const skew = rangeParam(params, "skew", [0, 45]);
+    const frames = numberParam(params, "frames", 600, 1);
+    const goals = goalParams(params);
+
+    const specs: EpisodeSpec[] = [];
+    for (let i = 0; i < episodes; i++) {
+      const orientation = random() * Math.PI * 2;
+      const count = intBetween(random, targets);
+      const points = chainPoints(random, Vector2.zero(), count, distance, turn);
+      const specTargets = points.map((position, k): TargetSpec => {
+        const side = random() < 0.5 ? -1 : 1;
+        const leg = position.minus(k === 0 ? Vector2.zero() : points[k - 1]!);
+        const gate = headingToOrientation(angleOf(leg) + side * between(random, skew) * DEG);
+        return { position, radius: width / 2, orientation: gate, gate: { orientation: gate, width } };
+      });
+      const spec: EpisodeSpec = {
+        start: { position: Vector2.zero(), orientation },
+        targets: specTargets,
+        timeLimitFrames: frames * count,
+      };
+      specs.push(withEpisodeGoals(spec, goals, frames * count));
+    }
+    return { obstacles: [], episodes: specs };
+  },
+};
+
+/**
+ * Laps (M7 S5): a small circuit flown several times, no obstacles. The ship starts at rest on the
+ * circuit's start line facing the first target; the targets sit round a ring (`ring` radius, ±15 %
+ * per target), the last one back on the start, like a lap race's finish. With `gates: true` every
+ * target is a directional gate along the circuit (width 2 × `radius`).
+ * Params: `episodes`, `targets` [min, max] per lap, `ring` [min, max] radius, `radius`, `laps`
+ * (default 3), `gates`, `frames` per target (time limit = frames × targets × laps); goals: `stop`,
+ * `parSpeed`.
+ */
+export const lapsArena: Arena = {
+  name: "laps",
+  description: "A small circuit of targets flown several laps",
+  tier: 1,
+  generate(random, params) {
+    const episodes = numberParam(params, "episodes", 4, 1);
+    const targets = intRangeParam(params, "targets", [3, 5], 2);
+    const ring = rangeParam(params, "ring", [400, 700]);
+    const radius = numberParam(params, "radius", 50, 1);
+    const laps = lapsParam(params, 3);
+    const frames = numberParam(params, "frames", 600, 1);
+    if (params.gates !== undefined && typeof params.gates !== "boolean")
+      throw new Error(`arena param gates must be true or false, got ${JSON.stringify(params.gates)}`);
+    const gates = params.gates === true;
+    if (ring[0] <= 2 * radius)
+      throw new Error(`arena param ring must be > 2 × radius, got ${JSON.stringify(ring)}`);
+    const { gates: _gates, laps: _laps, ...rest } = params;
+    const goals = goalParams(rest);
+
+    const specs: EpisodeSpec[] = [];
+    for (let i = 0; i < episodes; i++) {
+      const count = intBetween(random, targets);
+      const r = between(random, ring);
+      const start = random() * Math.PI * 2;
+      const direction = random() < 0.5 ? -1 : 1;
+      // The start (origin) is on the ring at angle `start` round the centre.
+      const centre = new Vector2(-Math.cos(start), -Math.sin(start)).scale(r);
+      const points = Array.from({ length: count }, (_, k) => {
+        if (k === count - 1) return Vector2.zero();
+        const a = start + (direction * 2 * Math.PI * (k + 1)) / count;
+        return centre.plus(new Vector2(Math.cos(a), Math.sin(a)).scale(r * (0.85 + random() * 0.3)));
+      });
+      const specTargets = points.map((position, k): TargetSpec => {
+        const along = points[(k + 1) % count]!.minus(points[(k + count - 1) % count]!);
+        const orientation = headingToOrientation(angleOf(along));
+        return {
+          position,
+          radius,
+          orientation,
+          ...(gates ? { gate: { orientation, width: 2 * radius } } : {}),
+        };
+      });
+      const spec: EpisodeSpec = {
+        start: { position: Vector2.zero(), orientation: headingToOrientation(angleOf(points[0]!)) },
+        targets: specTargets,
+        timeLimitFrames: frames * count * laps,
+        laps,
+      };
+      specs.push(withEpisodeGoals(spec, goals, frames * count));
+    }
+    return { obstacles: [], episodes: specs };
+  },
+};
+
+/** The tiered arenas, in tier order within M5's and M7's (new arenas at the end). */
 export const TIER_ARENAS: readonly Arena[] = [
   stopArena,
   turnAndGoArena,
@@ -442,4 +701,6 @@ export const TIER_ARENAS: readonly Arena[] = [
   fieldArena,
   raceLegsArena,
   generatedLegsArena,
+  gatesArena,
+  lapsArena,
 ];
