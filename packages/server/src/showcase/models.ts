@@ -2,9 +2,11 @@ import { bundledModels, DEFAULT_MODEL_NAME } from "../ai/index";
 import { MemoryModelStore } from "../ai/model-store";
 import { MajorTom, type NetworkJson } from "../ai/network";
 import manifest from "./manifest.json";
+import aiV1 from "./models/ai-v1.json";
 import train327 from "./models/train-327-g300.json";
 import train502 from "./models/train-502-g150.json";
 import train504 from "./models/train-504-g150.json";
+import train595 from "./models/train-595-g147.json";
 
 /**
  * Showcase models (D1): the models the showcase page presents and players can race against. They
@@ -30,8 +32,8 @@ export interface ShowcaseModelInfo {
 /** The id of the game's bundled model: the default opponent. */
 export const DEFAULT_OPPONENT = "default";
 
-/** The id of the latest accepted model (the showcase page opens with it). */
-export const ACCEPTED_MODEL = "train-502-g150";
+/** The id of the latest accepted model (the showcase page opens with it): AI v2, the game's default. */
+export const ACCEPTED_MODEL = "train-595-g147";
 
 export const SHOWCASE_MODELS: readonly ShowcaseModelInfo[] = Object.freeze(
   manifest.models as ShowcaseModelInfo[],
@@ -41,6 +43,8 @@ const FILES: Readonly<Record<string, NetworkJson>> = {
   "models/train-327-g300.json": train327 as NetworkJson,
   "models/train-502-g150.json": train502 as NetworkJson,
   "models/train-504-g150.json": train504 as NetworkJson,
+  "models/train-595-g147.json": train595 as NetworkJson,
+  "models/ai-v1.json": aiV1 as NetworkJson,
 };
 
 export function showcaseModelInfo(id: string): ShowcaseModelInfo | undefined {

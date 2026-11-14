@@ -96,8 +96,8 @@ describe("MajorTom network", () => {
 
   it("the bundled model loads and steers", () => {
     const net = bundledModels().load(DEFAULT_MODEL_NAME)![0]!;
-    expect(net.layout).toEqual(DEFAULT_LAYOUT);
-    const [thrust, turn] = net.activate([0, 0.5, 0, 0]);
+    expect(net.layout.at(-1)).toBe(DEFAULT_LAYOUT.at(-1));
+    const [thrust, turn] = net.activate([0, 0.5, 0, 0, ...Array<number>(net.layout[0]! - 4).fill(0)]);
     expect(Math.abs(thrust!)).toBeLessThanOrEqual(1);
     expect(Math.abs(turn!)).toBeLessThanOrEqual(1);
   });

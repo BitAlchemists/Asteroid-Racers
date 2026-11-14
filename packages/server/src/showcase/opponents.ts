@@ -1,6 +1,7 @@
 import { createEnvelope, getLogger, MessageType } from "@ar/shared";
 import type { GameServer } from "../game-server";
 import { DemoDirector } from "../ai/directors";
+import { DEFAULT_MODEL_VERSION } from "../ai/model-version";
 import type { ModelStore } from "../ai/model-store";
 import type { MajorTom } from "../ai/network";
 import { RaceTargetScript, ScriptState } from "../ai/scripts";
@@ -57,10 +58,13 @@ export interface RacingBotsOptions {
   delaySeconds?: number;
 }
 
-/** The bots' name: "Major Tom" with the default model, else with the model's id. */
+/**
+ * The bots' name: "Major Tom" with the model's id, or with the AI version for the default model
+ * ("Major Tom (AI v2)"), so players can tell which model they race.
+ */
 export function botName(id: string, i: number, bots: number): string {
   const base = bots === 1 ? "Major Tom" : `Major Tom ${i + 1}`;
-  return id === DEFAULT_OPPONENT ? base : `${base} (${id})`;
+  return `${base} (${id === DEFAULT_OPPONENT ? DEFAULT_MODEL_VERSION.short : id})`;
 }
 
 /**

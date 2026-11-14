@@ -1,7 +1,7 @@
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { DEFAULT_LAYOUT, MajorTom, seededRandom } from "@ar/server";
+import { DEFAULT_LAYOUT, DEFAULT_MODEL_VERSION, MajorTom, seededRandom } from "@ar/server";
 import { afterAll, describe, expect, it } from "vitest";
 import { loadModelFile } from "./model-file";
 
@@ -26,8 +26,8 @@ describe("loadModelFile", () => {
   });
 
   it("gives the bundled model without a file, and rejects files without a model", () => {
-    expect(loadModelFile(undefined).name).toMatch(/Interim model/);
-    expect(loadModelFile("bundled").name).toMatch(/Interim model/);
+    expect(loadModelFile(undefined).name).toBe(DEFAULT_MODEL_VERSION.label);
+    expect(loadModelFile("bundled").name).toBe(DEFAULT_MODEL_VERSION.label);
     expect(() => loadModelFile(write("other.json", { hello: 1 }))).toThrow(/holds no model/);
   });
 });

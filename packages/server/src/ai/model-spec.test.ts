@@ -3,8 +3,9 @@ import { describe, expect, it } from "vitest";
 import { seededRandom } from "../random";
 import { INPUTS, LEGACY_SPEC, parseModelConfig, validateSpec } from "./model-spec";
 import { MemoryModelStore } from "./model-store";
-import { bundledModels, createTrainingServer, DEFAULT_MODEL_NAME, registerAITrainingService } from "./index";
+import { createTrainingServer, DEFAULT_MODEL_NAME, registerAITrainingService } from "./index";
 import { MajorTom, type NetworkJson } from "./network";
+import aiV1 from "../showcase/models/ai-v1.json";
 import { targetInputs } from "./target-vehicle-controller";
 
 describe("model spec", () => {
@@ -23,7 +24,7 @@ describe("model spec", () => {
     }
   });
 
-  it("is saved with a model; models without one (Dart, bundled) load with the legacy spec", () => {
+  it("is saved with a model; models without one (Dart, AI v1) load with the legacy spec", () => {
     const net = MajorTom.random([2, 3, 2], seededRandom(1), "Two", {
       inputs: ["targetAngle", "speed"],
       outputs: "thrustTurn",
@@ -34,7 +35,7 @@ describe("model spec", () => {
 
     const { spec: _, ...old } = json;
     expect(MajorTom.fromJson({ ...old, input_neurons_count: 2 } as NetworkJson).spec).toEqual(LEGACY_SPEC);
-    expect(bundledModels().load(DEFAULT_MODEL_NAME)![0]!.spec).toEqual(LEGACY_SPEC);
+    expect(MajorTom.fromJson(aiV1 as NetworkJson).spec).toEqual(LEGACY_SPEC);
   });
 
   it("rejects specs that do not fit the network or name unknown inputs", () => {
@@ -98,7 +99,7 @@ describe("training with a model spec", () => {
   });
 
   it("refuses to continue from a stored model with a different spec", async () => {
-    const store = bundledModels(); // legacy spec
+    const store = new MemoryModelStore({ [DEFAULT_MODEL_NAME]: [aiV1 as NetworkJson] }); // legacy spec
     await expect(train(store)).rejects.toThrow(/stored model .* has inputs/);
   });
 });

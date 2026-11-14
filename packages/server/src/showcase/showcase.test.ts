@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { bundledModels, DEFAULT_MODEL_NAME } from "../ai/index";
+import { DEFAULT_MODEL_VERSION } from "../ai/model-version";
 import { ExamReplay } from "../ai/exam";
 import { DemoDirector } from "../ai/directors";
 import { MajorTom } from "../ai/network";
@@ -44,7 +45,7 @@ describe("showcase models", () => {
 
   it("the accepted models carry the residual controller and fly with it", async () => {
     expect(showcaseModelInfo(ACCEPTED_MODEL)).toBeDefined();
-    for (const id of ["train-502-g150", "train-504-g150"])
+    for (const id of ["train-502-g150", "train-504-g150", "train-595-g147"])
       expect(loadShowcaseModel(id)!.spec.controller).toEqual({ kind: "residual", scale: 0.5 });
     expect(loadShowcaseModel("train-327-g300")!.spec.controller).toBeUndefined();
 
@@ -100,10 +101,10 @@ describe("opponent choice", () => {
     return { server, choice, bot: () => [...server.clients][0] };
   }
 
-  it("flies the bundled model as Major Tom by default", async () => {
+  it("flies the bundled model as Major Tom, with the AI version, by default", async () => {
     const { server, choice, bot } = await setup();
     expect(choice.current).toBe(DEFAULT_OPPONENT);
-    expect(bot()?.playerName).toBe("Major Tom");
+    expect(bot()?.playerName).toBe(`Major Tom (${DEFAULT_MODEL_VERSION.short})`);
     server.stop();
   });
 
@@ -131,7 +132,7 @@ describe("opponent choice", () => {
       server.tick();
       await flush();
     }
-    expect(bot()?.playerName).toBe("Major Tom");
+    expect(bot()?.playerName).toBe(`Major Tom (${DEFAULT_MODEL_VERSION.short})`);
     server.stop();
   });
 

@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { bundledModels, DEFAULT_LAYOUT, DEFAULT_MODEL_NAME, MajorTom, seededRandom } from "@ar/server";
+import { DEFAULT_LAYOUT, loadShowcaseModel, MajorTom, seededRandom } from "@ar/server";
 import { afterAll, describe, expect, it } from "vitest";
 
 /** The exam worker, run exactly as the evo-lab runner calls it (separate process, cwd = run dir). */
@@ -38,7 +38,8 @@ function sourceRun(): string {
       join(dir, "gens", `g000${g}.json`),
       JSON.stringify({ format: "asteroid-racers/model-snapshot/v1", g, score: 1, model: model(g) }),
     );
-  const winner = bundledModels().load(DEFAULT_MODEL_NAME)![0]!.toJson();
+  // AI v1 (the legacy model): a small, fast network for the exam method's tests.
+  const winner = loadShowcaseModel("ai-v1")!.toJson();
   writeFileSync(join(dir, "result.json"), JSON.stringify({ method: "train", generations: 5, winner }));
   return dir;
 }

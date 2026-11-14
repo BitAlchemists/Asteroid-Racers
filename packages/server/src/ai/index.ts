@@ -40,6 +40,7 @@ export * from "./sensors";
 export * from "./trace";
 export * from "./model-store";
 export * from "./model-spec";
+export * from "./model-version";
 export * from "./directors";
 export * from "./exam";
 export * from "./replay";

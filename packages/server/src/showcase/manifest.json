@@ -1,12 +1,39 @@
 {
-  "about": "Showcase models (D1): models the user can review on the showcase page and race against. Not the game's default; promotion into packages/server/src/ai/models/ is by hand, after real races. Exam v2 numbers are the training run's own exam (102 races: demo, short, 100 random tracks; seed 1; 180 s) at that generation; skills are `npm run skills` (8 episodes per skill, seed 1).",
+  "about": "Showcase models (D1): models the user can review on the showcase page and race against. The `default` entry is the game's bundled model (AI v2 since 2026-11-14, see doc/model-release.md); promotion into packages/server/src/ai/models/ is by hand, after real races. Exam v2 numbers are the training run's own exam (102 races: demo, short, 100 random tracks; seed 1; 180 s) at that generation; skills are `npm run skills` (8 episodes per skill, seed 1).",
   "models": [
     {
       "id": "default",
-      "label": "Game default (bundled)",
-      "role": "The model the game ships with today (packages/server/src/ai/models/default-model.json)",
+      "label": "Game default · AI v2 (train-595 g147)",
+      "role": "The model the game ships with (packages/server/src/ai/models/default-model.json): AI v2, released 2026-11-14 (doc/model-release.md)",
       "file": null,
-      "setup": "legacy spec (4 inputs, no sensors, no controller), interim Dart-era training (48 generations, seed 2026)"
+      "setup": "M4 default (task v2, lineCheck, curriculum success 0.6, parents 10) + controller residual 0.5 + progress 3 + keepEasy 0.25; the same network as train-595-g147"
+    },
+    {
+      "id": "train-595-g147",
+      "label": "AI v2 · train-595 g147",
+      "role": "Released as AI v2 (2026-11-14): best of the release ranking (experiments/release-candidates-2026-11-14.md)",
+      "file": "models/train-595-g147.json",
+      "run": "train-595",
+      "generation": 147,
+      "experiment": "m6-b-curriculum, arm +curriculum.keepEasy, seed 11 (the adopted baseline)",
+      "setup": "M4 default (task v2, lineCheck, curriculum success 0.6, parents 10) + controller residual 0.5 + progress 3 + keepEasy 0.25",
+      "exam": {
+        "checkpoints": 0.9053,
+        "finished": 0.8824,
+        "crashes": 681,
+        "score": 91113
+      },
+      "skills": {
+        "Stop": 1,
+        "TurnAndGo": 1,
+        "Chain": 1,
+        "Corridor": 0.25,
+        "Field": 0.68,
+        "RaceLegs": 1,
+        "Rock1": 0.63,
+        "Rock2": 0.63,
+        "Field80": 0.75
+      }
     },
     {
       "id": "train-502-g150",
@@ -17,7 +44,12 @@
       "generation": 150,
       "experiment": "m6-a2-rewards-control, arm +controller, seed 8",
       "setup": "M4 default (task v2, lineCheck, curriculum success 0.6, parents 10) + controller residual 0.5",
-      "exam": { "checkpoints": 0.9504, "finished": 0.9314, "crashes": 750, "score": 51825 },
+      "exam": {
+        "checkpoints": 0.9504,
+        "finished": 0.9314,
+        "crashes": 750,
+        "score": 51825
+      },
       "skills": {
         "Stop": 1,
         "TurnAndGo": 1,
@@ -39,7 +71,12 @@
       "generation": 150,
       "experiment": "m6-a2-rewards-control, arm +controller, seed 10",
       "setup": "M4 default (task v2, lineCheck, curriculum success 0.6, parents 10) + controller residual 0.5",
-      "exam": { "checkpoints": 0.9482, "finished": 0.9412, "crashes": 541, "score": 52991 },
+      "exam": {
+        "checkpoints": 0.9482,
+        "finished": 0.9412,
+        "crashes": 541,
+        "score": 52991
+      },
       "skills": {
         "Stop": 1,
         "TurnAndGo": 0.88,
@@ -61,7 +98,12 @@
       "generation": 300,
       "experiment": "m4-e9-confirm, seed 8",
       "setup": "M4 default (task v2, lineCheck, curriculum success 0.6, parents 10), no controller",
-      "exam": { "checkpoints": 0.9449, "finished": 0.9118, "crashes": 711, "score": 57808 },
+      "exam": {
+        "checkpoints": 0.9449,
+        "finished": 0.9118,
+        "crashes": 711,
+        "score": 57808
+      },
       "skills": {
         "Stop": 0,
         "TurnAndGo": 0.25,
@@ -73,6 +115,13 @@
         "Rock2": 0.5,
         "Field80": 0.88
       }
+    },
+    {
+      "id": "ai-v1",
+      "label": "AI v1 · interim model (game default until 2026-11-14)",
+      "role": "The previous game default, kept for comparison and rollback (doc/model-release.md)",
+      "file": "models/ai-v1.json",
+      "setup": "legacy spec (4 inputs, no sensors, no controller), interim Dart-era training (48 generations, seed 2026)"
     }
   ]
 }
