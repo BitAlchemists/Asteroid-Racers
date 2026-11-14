@@ -1945,3 +1945,110 @@ multiplayer play".
   (which sees the ship before the frame's physics) and the race (after it) then counted one frame
   apart. The flights now use 45-unit steps that avoid the boundaries. One older test asserted that
   `generated-legs` is the last tier arena; it now checks that it follows `race-legs`.
+
+### M7 S4: exam v3
+
+- **Commits:** `abda180` exam v3 (module, tool, training and exam-method wiring, metrics, tests);
+  this docs commit.
+- **Built:**
+  - `packages/server/src/ai/exam3.ts`: the exam v3.0 definition `EXAM3`, the race list, the
+    scoring and `runExam3`;
+  - `npm run exam3` (stored runs, model files or the scripted controller; `--jobs` for parallel
+    processes, `--json`, `--tracks`);
+  - `npm run iqm -- --from <exam3 json>` compares re-scored models;
+  - `exam: { v3: {} }` in training and in the exam method;
+  - the "Exam v3" metric group in `lab.config.json`; its binding now covers
+    `packages/server/src/tracks/*.json`.
+- **Exam v3.0** (details in `doc/experiments.md`, "Exam v3"):
+  - 80 races of 180 s: 20 generated tracks per band, 7 hand-made tracks, and 13 goal races
+    (gate-row, pit-stop, circuit, 5 generated easy tracks with a stop at the finish, 5 with
+    directional gates). The skills (9 arenas × 8 episodes) come on top.
+  - Race value 0.6 × progress + 0.2 × goal met + 0.2 × min(1, par ÷ time). Skills: success − 0.05
+    × crashes per episode. Weights easy 0.10, medium 0.20, hard 0.25, hand-made 0.20, goals 0.15,
+    skills 0.10, as pre-registered.
+  - Pinned by tests: the definition, the race list, every built world, and the scripted
+    controller's score (52.630751).
+- **Calibration**, done once and before freezing, on the stored g150 snapshots: E9's baseline
+  (train-310..319), batch A's six arms (train-445..504), the scripted controller and train-327
+  (luke.txt, g300). This is analysis, not training: 12 processes, 49 s for 72 models. First a
+  superset (30 per band, 10 per goal type) to choose the sizes and par; then the frozen v3.0. The
+  numbers below are from the frozen v3.0.
+
+  IQM over 10 seeds with 95 % bootstrap CIs; categories 0–100; exam v2 checkpoints from the runs'
+  own exams:
+
+  | arm | exam3 | easy | medium | hard | hand-made | goals | skills | crashes/race | exam v2 checkpoints |
+  | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+  | baseline (E9) | 42.6 [37, 47] | 61.8 [51, 71] | 22.0 [14, 32] | 20.3 [17, 27] | 72.5 [64, 80] | 47.7 [39, 55] | 50.2 [37, 58] | 29.0 [22, 37] | 0.893 |
+  | +progress 3 | 41.5 [32, 45] | 56.7 [41, 66] | 15.4 [12, 23] | 17.4 [12, 20] | 70.1 [58, 80] | 53.6 [41, 57] | 52.2 [43, 56] | 33.3 [27, 41] | 0.882 |
+  | +crashes 1000 | 43.4 [37, 46] | 64.9 [55, 70] | 18.1 [15, 23] | 19.1 [17, 21] | 73.2 [66, 81] | 50.0 [38, 58] | 53.4 [44, 58] | 34.6 [28, 41] | 0.855 |
+  | +success 3000 | 44.9 [39, 50] | 72.5 [59, 77] | 23.4 [16, 35] | 22.6 [17, 30] | 65.7 [54, 78] | 54.4 [48, 62] | 50.1 [46, 54] | 28.4 [24, 37] | 0.890 |
+  | rotation 20 | 44.0 [39, 48] | 67.0 [55, 74] | 28.4 [19, 34] | 20.0 [17, 23] | 70.4 [61, 80] | 50.4 [40, 56] | 51.6 [46, 55] | 27.2 [21, 33] | 0.887 |
+  | rotation 50 | 42.6 [36, 48] | 66.7 [51, 78] | 21.7 [15, 28] | 20.1 [17, 23] | 66.6 [59, 75] | 49.8 [38, 60] | 53.7 [44, 58] | 28.5 [21, 34] | 0.866 |
+  | +controller (residual 0.5) | 48.8 [46, 51] | 72.9 [68, 78] | 17.0 [15, 19] | 20.2 [19, 22] | 80.0 [72, 85] | 64.2 [59, 67] | 74.4 [72, 77] | 24.4 [19, 32] | 0.914 |
+  | scripted (one model) | 52.6 | 88.0 | 18.4 | 22.2 | 87.9 | 70.5 | 64.7 | 44.0 | |
+  | train-327 g300 (one model) | 51.5 | 76.8 | 32.8 | 26.7 | 92.6 | 42.5 | 57.5 | 23.3 | |
+
+  Over all 70 models: exam3 21–58 (median 45), easy 20–85, medium 8–46, hard 6–36, hand-made
+  31–96, goals 16–72, skills 17–80.
+- **Checks against the goals of the calibration:**
+  - **No ceiling or floor:** the best arm's (residual) category IQMs are 17–80 and the median
+    arm's 18–73, all between 10 and 85. Single models reach 85 on easy and 96 on hand-made
+    (train-500).
+  - **Calibration check (the plan's acceptance) passed,** so the weights are not revised. The
+    residual controller against the baseline, paired by seed:
+    - on exam3: IQM effect +6.3 [1.1, 10.7], mean +6.0 [1.9, 9.9], better on 8 of 10 seeds;
+      |effect| ÷ CI half-width 1.5;
+    - on exam v2 checkpoints: +0.021 [−0.127, 0.082], ratio 0.2; that is, invisible.
+
+    The other arms stay within noise on exam3 (effects −1.0 to +2.3, every CI spans 0). That
+    matches batch A's judgement.
+  - **Profile:** the residual gain comes from skills (+24), goal races (+16), hand-made (+8) and
+    easy (+11). It loses on medium (17.0 vs 22.0) and is equal on hard: it crash-loops in
+    corridors and belts, as in S1.
+  - **Power** (paired sd of exam3 over seeds: 6.8 for the residual arm, 8–13 for the others):
+    **20 seeds detect about 4–8 points** (residual 4.2, median of the arms 6). The residual's
+    6-point gain needs about 15 seeds at α 0.05 and power 0.8 (`npm run iqm -- --from … --effect
+    5`). For exam3Crashes, 20 seeds detect about 3–9 crashes per race.
+  - **Races per band:** 30 tracks per band instead of 20 changed the detectable effect by less
+    than 0.3 points, and 10 per band made it worse by about 0.5. The noise is between training
+    seeds, not between exam races, so 20 it is.
+- **Hard not softened.** On the frozen exam the median model scores 19 on hard and the best 36 (6
+  to 36 over the 70 models). That is above the 10 % floor, and hard still ranks single models: the
+  median model reaches 32 % of hard's checkpoints and finishes none; the best (train-468, train-474)
+  reach 51 % and finish 3–4 of 20. Medium (median 19) is as hard
+  for today's models as hard. Softening hard would have made it a copy of medium and taken away the
+  headroom the 0.25 weight is meant to keep. Neither band separates the batch A arms. The
+  scripted controller scores 18 / 22 there too (it crash-loops in narrow corridors and belts).
+- **Seed screen for first-leg traps** (S5 saw medium tracks where every training episode's first
+  leg ran into a corridor wall at a bend). Screened all 60 generated races and 10 generated goal
+  races in the frozen re-score of 72 models (scripted, train-327 and the 70 g150 models):
+  - **no race where all 72 fail the first leg.** At most 31 of 72 do (`generated:medium:310018`;
+    `hard:320014` 37 of 72, `straight-to-turn` 37 of 72); on every race some model gets further;
+  - but four races have a near-universal stall later on, where almost every model stops at the
+    same checkpoint and the best gets one or two further: `medium:310014` (68 of 72 stop after
+    checkpoint 1, best 4/8), `medium:310015` (61 at 2, best 3/8), `hard:320008` (70 at 1, best
+    3/10), `hard:320009` (66 at 1, best 3/10).
+  - **No seed changed.** Every race is passable by some model, so these are hard spots, not
+    proven traps. Replacing them now would mean a new calibration. If S1 confirms a corridor-bend
+    flaw in the generator, the fix and a seed replacement become exam v3.1, re-scored the same way.
+- **Choices made while building** (also in the plan's changes):
+  - no generated lap races, because a generated track is open and the way back from the finish
+    isn't validated;
+  - goal races on easy tracks;
+  - the three goal tracks count as goal races, not as hand-made;
+  - par: generated tracks at length ÷ 250 units/s; slalom 50, gauntlet 40, canyon 19 by S3's
+    rule;
+  - the skills use the M4 default physics.
+- **Cost:** 3.8 s per model on one core for 80 races + skills (exam v2: about 6 s for 102 races).
+  In a training run with `every: 25` that adds about 0.15 s per generation.
+- **Byte-identical:**
+  - exam v2's tests and fixtures are unchanged;
+  - a new worker test runs training with and without `v3: {}`: same `stateHash` every
+    generation, same `result.json`, same exam v2 metrics (the speed metrics `tps` and
+    `shipStepsPerSec` excepted).
+  - `npm run check` green (511 tests, after rebasing onto S5).
+- **Mistake:** my first calibration run was on the superset, where the races' world seeds are
+  derived from their index and so differ from the frozen exam's. Its numbers are close but not
+  identical (for example, scripted 53.0 against 52.6). The table above is from a second run on the
+  frozen v3.0.

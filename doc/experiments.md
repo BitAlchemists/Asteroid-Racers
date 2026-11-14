@@ -423,6 +423,69 @@ The full example, on the M6 baseline (residual controller 0.5, progress 3), is
   snapshot), and its replays draw an arrow on every directional gate. The replay's status counts
   targets over all laps. Thumbnails don't show gate directions.
 
+## Exam v3 (M7 S4)
+
+Exam v3.0 is a fixed benchmark with one pre-registered primary score, **`exam3`** (0–100, higher is
+better), and a profile. The code is `packages/server/src/ai/exam3.ts` (`EXAM3`, `runExam3`). Exam
+v2 is unchanged and keeps running next to it.
+
+- **Frozen:** the weights, tracks, seeds and par times below are exam **v3.0**. A test pins the
+  definition, the race list, every built world and the scripted controller's score (52.630751).
+  Any change is a new version with a new score name (`exam3b`), so scores stay comparable.
+- **Score:**
+  - per race: v = 0.6 × progress + 0.2 × goal met + 0.2 × min(1, par ÷ time), where:
+    - progress = checkpoints reached ÷ checkpoints, over all laps;
+    - goal met = finished under the race's rules (gates crossed forwards, stopped at the finish);
+    - the time factor counts only when finished;
+  - per category: the mean of v over its races;
+  - skills: the mean success over the 9 skill arenas − 0.05 × the mean crashes per episode,
+    clamped to [0, 1];
+  - exam3 = 100 × the weighted mean of the categories:
+
+    | category | races | weight |
+    | --- | --- | --- |
+    | easy | `generated:easy:300001…300020` | 0.10 |
+    | medium | `generated:medium:310001…310020` | 0.20 |
+    | hard | `generated:hard:320001…320020` | 0.25 |
+    | hand-made | slalom, gauntlet, canyon, hairpins, straight-to-turn, dense-belt, chicane | 0.20 |
+    | goal races | gate-row (gates), pit-stop (stop), circuit (3 laps); `generated:easy:330001…330005` with a stop at the finish (≤ 100); `generated:easy:340001…340005` with directional gates (`gates: true`) | 0.15 |
+    | skills | the skills exam's 9 arenas, 8 episodes each | 0.10 |
+
+- **Fixed flights:** 80 races, 180 s each, with the game's rules (crashes respawn after 1 s at the
+  last checkpoint). Each flight's world seed is derived from the exam seed 3 and the race's index.
+  The skills use the exam seed and the M4 default physics (obstacles, respawn, 600 frames), not
+  the run's, so exam3 measures the same thing in every run.
+- **Par:**
+  - S3's tracks: the par from the file;
+  - slalom 50, gauntlet 40, canyon 19: S3's rule (fastest of scripted, train-327, train-501 ×
+    1.2), set in the exam;
+  - generated tracks: the centre-line length ÷ 250 units/s, rounded up (about 1.2 × the scripted
+    controller's clean time on easy).
+- **Metrics** (group "Exam v3"; `exam3` is a headline):
+  - `exam3`;
+  - `exam3Easy`, `exam3Medium`, `exam3Hard`, `exam3Handmade`, `exam3Goals`, `exam3Skills` (0–100);
+  - `exam3Finished` (share);
+  - `exam3Crashes`: crashes per race, the **veto metric** (not in the score);
+  - `exam3TimeVsPar`: mean time ÷ par over the finished races.
+- **In a training run:** `exam: { every: 25, ..., v3: {} }`. Exam v3 runs on its own servers after
+  exam v2, so training, `result.json` and exam v2's metrics are unchanged (a test). The exam method
+  takes the same key.
+- **Stored models:**
+
+  ```
+  npm run exam3 -- --run train-310..train-319 --gen 150 [--jobs 8] [--tracks] [--json out.json]
+  npm run exam3 -- --model lab/runs/train-327/luke.txt
+  npm run exam3 -- --scripted
+  npm run iqm -- --from out.json --base train-310..train-319 --arm train-495..train-504 --metric exam3
+  ```
+
+  The tool prints the score, the categories, the goal types (stop, gates, laps), the skills, the
+  share of races finished, crashes per race and time ÷ par; `--tracks` prints every race.
+- **Cost:** about 4 s per model on one core, about 8 s each with 12 in parallel. Exam v2 with 102
+  races takes about 6 s.
+- **Power** (from batch A's re-score): the paired difference of two arms has an sd of 7–13 points
+  over seeds, so 20 seeds detect about 4–8 points (α 0.05, power 0.8).
+
 ## Skills exam
 
 `exam: { ..., "skills": {} }` (optional `episodes`, default 8) makes every exam also fly fixed

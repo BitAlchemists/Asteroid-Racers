@@ -102,7 +102,11 @@ are in [`../experiments.md`](../experiments.md#generated-tracks-m7-s1).
   - [x] validation tests per file;
   - [x] the scripted controller and the best model flown on each, with results in the history.
 
-### S4. Exam v3
+### S4. Exam v3 ✅
+
+Done 2026-11-14: exam v3.0 is frozen; see the history and
+[`../experiments.md`](../experiments.md#exam-v3-m7-s4). The calibration check passed without a
+revision of the weights.
 
 - **Categories** (all fixed, seeded only from the exam seed):
   1. generated tracks, about 10 per difficulty band (easy, medium, hard);
@@ -177,11 +181,11 @@ Done 2026-11-14; see the history. The syntax is in
 
 ## Acceptance
 
-- [ ] S1–S5 committed, each with `npm run check` green; absent = byte-identical (fixtures,
-      fingerprints). S1 ✅, S2 ✅, S5 ✅.
-- [ ] Exam v3 with the pre-registered `exam3` score, profile metrics and tool; E9's baseline and
+- [x] S1–S5 committed, each with `npm run check` green; absent = byte-identical (fixtures,
+      fingerprints). S1 ✅, S2 ✅, S3 ✅, S4 ✅, S5 ✅.
+- [x] Exam v3 with the pre-registered `exam3` score, profile metrics and tool; E9's baseline and
       batch A re-scored.
-- [ ] The calibration check passed, or the one-time revision recorded.
+- [x] The calibration check passed, or the one-time revision recorded (passed; no revision).
 - [ ] The game offers the new race modes and the 10 hand-made tracks; default rules unchanged.
 - [ ] M6's combination check and batch B planned on exam v3.
 
@@ -215,6 +219,23 @@ Done 2026-11-14; see the history. The syntax is in
 | exam3 weights | As above, frozen after the calibration check. |
 
 ## Changes to this plan
+
+- 2026-11-14 (S4): what exam v3.0 became, against the plan above:
+  - **20 generated tracks per band, not 10:** an exam costs about 4 s, and 30 per band didn't
+    narrow the CIs (the spread is between training seeds, not exam races).
+  - **Goal races:** gate-row, pit-stop, circuit plus 5 generated easy tracks with a stop at the
+    finish (≤ 100) and 5 with directional gates (13 races). **No generated lap races:** generated
+    tracks are open, so lap 2's way back from the finish to the first checkpoint isn't validated
+    and may cross walls; the circuit is the lap race. Easy tracks, so the goal is what's tested.
+  - **Hand-made category:** the 7 tracks without a goal; the three goal tracks are goal races.
+    Par for the v1 tracks (slalom 50, gauntlet 40, canyon 19) is set in the exam by S3's rule,
+    not in the track files.
+  - **Par of generated tracks:** centre-line length ÷ 250 units/s, rounded up (1.2 × the scripted
+    controller's median clean time on easy).
+  - **Skills** fly with the M4 default physics (obstacles, respawn, 600 frames), not the run's, so
+    exam3 is the same instrument in every run.
+  - **Hard not softened:** see the history (it is not at the floor by the criterion).
+  - **Config** is `exam: { ..., v3: {} }`, as planned; `{}` is the only value.
 
 - 2026-11-14 (S3): par = the fastest finish of the scripted controller or the best models × 1.2
   (the scripted controller doesn't finish `dense-belt` and crashes on `chicane`), rounded up.
