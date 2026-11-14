@@ -1881,3 +1881,67 @@ multiplayer play".
   multiplayer play" it waits until no human is racing.
 - **Mistake:** a synthetic pointer event made `setPointerCapture` throw and the touch handler stop
   before recording the thumb; now guarded.
+
+### M7 S5: generated tracks and goal types in training
+
+- **Commits:** `M7 S5: goal types and generated tracks in training arenas and curricula`; this docs
+  commit.
+- **Built** (syntax in `doc/experiments.md`, "Training on generated tracks and goals"):
+  - goal params on `generated-legs` and `race-legs`: `gates: "track" | "all"` (the generator's gate
+    and chicane checkpoints, or a file track's checkpoints with a `width`; or every checkpoint but
+    the finish), `stop: <speed>` (the episode's last target on the last lap), `laps: N`,
+    `parSpeed: <units/s>` (a par time per episode). They add goals on top of the same scenario
+    (no extra random draws);
+  - new tier-1 arenas `gates` (a chain of directional gates, skewed from the legs) and `laps` (a
+    small circuit, optionally gated), added after all older arenas;
+  - `scoring.par`: `par × seconds under par` subtracted for finished episodes with a par time; off by
+    default;
+  - `EpisodeSpec.finishMaxSpeed` (the race's `finishMaxSpeed` in training);
+  - the worker checks every arena's params at start, also on curriculum levels not reached yet;
+  - arena replays (Evo Lab plugin) draw an arrow on each directional gate.
+- **Byte-identical:** scenario hashes of `generated-legs` and `race-legs` recorded on main before S5
+  are pinned and unchanged; all older fixtures, fingerprints and exact-resume tests pass.
+- **Tests:** a parity test flies the same flight through a race and a training episode and gets the
+  same progress on every frame (laps, gates with a wrong-way crossing, a stop at the finish of the
+  last lap, no goals). A generated curriculum (gates → generated easy with own gates and par →
+  medium/hard with gates, stop and laps, plus a gated `laps` circuit) under `scoring.par`: kill and
+  resume equal a straight run, replays match training, snapshots name the level's arenas (the
+  plugin's level badge), and the same config without goals runs differently. Bad params on an
+  unreached level fail at start. `npm run check` green.
+- **Example plan (not run):** `experiments/m7-s5-generated-curriculum.md`, on the M6 baseline
+  (M4 default + residual 0.5 + progress 3), one switch `curriculum.levels`: generated easy (+ stop,
+  gates) → easy/medium with own gates (+ laps) → medium (+ stop) → hard + the v2 task. 20 seeds;
+  primary metric to become `exam3` once S4 lands. `scoring.par` is a follow-up on top.
+- **Smoke runs** (headless, `lab-train` in the worktree, seed 1, sample 8, parents 2, small exam):
+  - the example config: g1–g4 training success 0.89, 1.00, 0.75, 0.68; level 1 at g4;
+  - the same with `success: 0.01, streak: 1`, to fly every level: levels 0, 1, 2, 3, 3, 3 at g1–g6,
+    success 0.89, 0.53, 0.50, 0.39, 0.61, 0.46; exam checkpoints (4 random tracks) 1.00 / 0.93 / 0.86;
+  - cost: ship-steps per generation 79k for the baseline, 144k on level 0 (about 1.8 ×), 229k
+    averaged up to level 3 (about 3 ×);
+  - one short run per goal type (M6 baseline settings, 6 generations), training success g1–g6:
+    `gates` 1.00 throughout; `laps` (gated) 1.00 throughout; generated easy legs with `stop: 100`
+    0.75, 1.00, 0.44, 1.00, 1.00, 1.00; generated easy with `parSpeed: 250` and `scoring.par: 100`
+    0.75, 1.00, 0.50, 1.00, 0.96, 0.08; generated easy/medium with `gates: "track"` 0.75, then
+    0.00–0.04. The last is the same without gates (0.75, then 0.00–0.04): from g2 the generations
+    drew medium tracks where every episode's first leg runs into a corridor wall at a bend, and one
+    scenario is one track. Not a gate problem; it shows how much a generation's single generated
+    track decides its success.
+- **Decisions:**
+  - `stop` and `laps` work per episode, not per track: an episode's last target is its "finish";
+    `laps` on legs flies back from the last target to the first (open space the generator didn't
+    check; the `laps` arena is the clean case). A file track's own rules (laps, stop, par) are not
+    taken over by race-legs; goals come only from params.
+  - Par = straight-line path length ÷ `parSpeed`, as a frame count; scoring rewards only the time
+    under par (no penalty over it), so it never makes a finish worse than a miss.
+  - Gate width on generated tracks = 2 × checkpoint radius, as the race's `gates` rule gives it.
+- **Fix in S2's code:** `ArenaScript` remembered the ship's position only while the current target
+  was a gate, so in a chain mixing plain targets and gates, the first frame at a gate compared
+  against a stale position. It now tracks positions every frame in episodes that have a gate (as the
+  race does). Episodes without gates are unchanged; S2's all-gate episodes too.
+- **Known difference, unchanged:** a plain training target counts when the ship's centre is inside
+  it, a race checkpoint when the ship touches it (ship radius 20). The parity test keeps its flights
+  clear of that ring.
+- **Mistakes:** my first parity flights sampled the ship exactly on the target radius; training
+  (which sees the ship before the frame's physics) and the race (after it) then counted one frame
+  apart. The flights now use 45-unit steps that avoid the boundaries. One older test asserted that
+  `generated-legs` is the last tier arena; it now checks that it follows `race-legs`.

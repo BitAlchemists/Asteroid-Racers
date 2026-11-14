@@ -174,7 +174,9 @@ Inserted between M6's batch A and the rest of M6.
 - S3 ✅: 7 more hand-made tracks (10 in total), in track format v2.
 - S4: exam v3, with a pre-registered primary score `exam3` that doesn't saturate and a profile per
   difficulty band, goal type and skill. Exam v2 is kept for comparison.
-- S5: the generator and goal types available to training and the curriculum.
+- S5 ✅: the generator and goal types available to training and the curriculum: goal params on
+  `generated-legs` and `race-legs` (gates, stop, laps, par), arenas `gates` and `laps`, an opt-in
+  `scoring.par`, generated levels in tiered curricula.
 
 ### D1 — Deploy and showcase 🟡 (side track)
 

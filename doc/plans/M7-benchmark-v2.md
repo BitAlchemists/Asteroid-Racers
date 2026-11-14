@@ -146,16 +146,20 @@ are in [`../experiments.md`](../experiments.md#generated-tracks-m7-s1).
     difference more clearly than exam v2 checkpoints did, i.e. a narrower CI relative to the effect.
     If not, the weights are revised once, before freezing, and the revision is recorded.
 
-### S5. Training access
+### S5. Training access ✅
+
+Done 2026-11-14; see the history. The syntax is in
+[`../experiments.md`](../experiments.md#training-on-generated-tracks-and-goals-m7-s5), the example plan in
+[`../../experiments/m7-s5-generated-curriculum.md`](../../experiments/m7-s5-generated-curriculum.md).
 
 - `generated-legs` and the goal types as training arenas and curriculum levels (tiered levels can
   name them).
 - The goal types in episode specs for training (directional targets, par-time scoring, lap chains,
   stop-finish).
 - **Acceptance:**
-  - a curriculum run with generated levels is deterministic, resumes exactly and replays (the plugin
-    shows the levels);
-  - a short check run trains on each goal type.
+  - [x] a curriculum run with generated levels is deterministic, resumes exactly and replays (the
+    plugin shows the levels);
+  - [x] a short check run trains on each goal type.
 
 ### Order and file ownership (parallel builders)
 
@@ -174,7 +178,7 @@ are in [`../experiments.md`](../experiments.md#generated-tracks-m7-s1).
 ## Acceptance
 
 - [ ] S1–S5 committed, each with `npm run check` green; absent = byte-identical (fixtures,
-      fingerprints). S1 ✅, S2 ✅.
+      fingerprints). S1 ✅, S2 ✅, S5 ✅.
 - [ ] Exam v3 with the pre-registered `exam3` score, profile metrics and tool; E9's baseline and
       batch A re-scored.
 - [ ] The calibration check passed, or the one-time revision recorded.

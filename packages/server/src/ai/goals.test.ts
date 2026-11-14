@@ -121,9 +121,17 @@ describe("goal params on race-legs and generated-legs", () => {
   });
 
   it("race-legs takes a file track's own gate widths", () => {
-    // A v2 track: `gates: "track"` uses its widths; plain checkpoints stay plain.
-    const scenario = generate(raceLegsArena, 1, { tracks: ["slalom"], gates: "track", episodes: 3 });
-    for (const e of scenario.episodes) for (const t of e.targets) expect(t.gate).toBeUndefined();
+    // gate-row (M7 S3) has gates 240 wide; slalom has none, so "track" leaves it plain.
+    const row = generate(raceLegsArena, 1, { tracks: ["gate-row"], gates: "track", episodes: 4, legs: 2 });
+    const widths = row.episodes.flatMap((e) => e.targets.map((t) => t.gate?.width));
+    expect(widths).toContain(240);
+    for (const e of row.episodes)
+      for (const t of e.targets) if (t.gate) expect(t.gate.orientation).toBe(t.orientation);
+    const slalom = generate(raceLegsArena, 1, { tracks: ["slalom"], gates: "track", episodes: 3 });
+    for (const e of slalom.episodes) for (const t of e.targets) expect(t.gate).toBeUndefined();
+    // Off, gate-row's legs are plain targets, as before S5.
+    const off = generate(raceLegsArena, 1, { tracks: ["gate-row"], episodes: 4, legs: 2 });
+    for (const e of off.episodes) for (const t of e.targets) expect(t.gate).toBeUndefined();
   });
 
   it("rejects bad goal params", () => {

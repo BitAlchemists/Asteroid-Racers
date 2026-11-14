@@ -277,8 +277,9 @@ brackets; `frames` defaults to the config's `frames` (600).
 | 1 | `chain` | 3–5 targets per episode, legs turning from the last | `episodes` [6], `targets` [3, 5], `distance` [300, 900], `turn` [0, 120]°, `radius` [50], `frames` per target |
 | 2 | `corridor` | target at the end of a bent corridor of asteroid walls | `episodes` [4], `segments` [2, 3], `length` [400, 700], `bend` [40, 100]°, `width` [260], `rockRadius` [30, 45], `radius` [50], `frames` per episode |
 | 2 | `field` | a chain through a dense field | `episodes` [4], `targets` [3, 5], `distance` [400, 800], `turn` [0, 90]°, `radius` [60], `density` [10] per 10⁶ units², `rockRadius` [30, 70], `margin` [500], `lane` [0], `frames` per target |
-| 3 | `race-legs` | consecutive checkpoints of a race track; crashes respawn at the last one | `tracks` [["random"]], `episodes` [6], `legs` [3], `frames` per leg |
-| 3 | `generated-legs` (M7) | consecutive checkpoints of a generated track (see below); crashes respawn at the last one | `bands` [["easy", "medium", "hard"]], `episodes` [6], `legs` [3], `frames` per leg |
+| 3 | `race-legs` | consecutive checkpoints of a race track; crashes respawn at the last one | `tracks` [["random"]], `episodes` [6], `legs` [3], `frames` per leg; goals `gates`, `stop`, `laps`, `parSpeed` (M7 S5) |
+| 3 | `generated-legs` (M7) | consecutive checkpoints of a generated track (see below); crashes respawn at the last one | `bands` [["easy", "medium", "hard"]], `episodes` [6], `legs` [3], `frames` per leg; goals as race-legs |
+| 1 | `gates`, `laps` (M7 S5) | directional gates; a circuit flown several laps | see [below](#training-on-generated-tracks-and-goals-m7-s5) |
 
 The watch page flies any of them (`watch.html?arena=<name>&params=<JSON>&seed=<run seed>&g=<gen>`),
 built exactly as in a training run with that seed at that generation.
@@ -294,7 +295,7 @@ race controller, the exam and arena fixtures). The track file fields are in
 | --- | --- | --- | --- |
 | Stop at the finish | `finishMaxSpeed`: the final finish counts only while speed ≤ it; too fast, nothing happens (one chat warning per visit) | `race.finish.maxSpeed` | `TargetSpec.maxSpeed` (any target, every pass) |
 | Directional gate | a gate checkpoint (`addCheckpoint(…, gateWidth)`, or `gates: true` = every inner checkpoint, width 2 × radius) counts only when the ship's centre crosses its line forwards, within width / 2; backwards or touching doesn't count; a > 300-unit jump (respawn) is no crossing | `width` on a checkpoint (+ `heading`) | `TargetSpec.gate: { orientation, width }` (replaces the radius test; with `maxSpeed` both apply) |
-| Time trial | `par` (s) and/or `timeTrial`: `onFinish` reports the race time (game seconds from joining to the frame the finish counted) and par; the racer gets "Finished in t s (par p s, ±d s)" | `race.par` | `EpisodeSpec.parFrames` → copied to `EpisodeRecord.parFrames` (scoring on it is S5) |
+| Time trial | `par` (s) and/or `timeTrial`: `onFinish` reports the race time (game seconds from joining to the frame the finish counted) and par; the racer gets "Finished in t s (par p s, ±d s)" | `race.par` | `EpisodeSpec.parFrames` → copied to `EpisodeRecord.parFrames`; scored with `scoring.par` (S5) |
 | Laps | `laps`: a lap is checkpoints 1…n−1 and the finish; progress (`progressOf`, `onCheckpoint`) is the course position over all laps (`courseLength` = 1 + laps × (n−1)); `finishMaxSpeed` only at the end of the last lap; a crash respawns at the last checkpoint cleared | `race.laps` | `EpisodeSpec.laps`: targets flown `laps` times; `record.targets` = targets × laps |
 
 - **Exam:** `ExamReplay`/`examFlight` fly a track under its rules (and take a `Track` object as well as
@@ -348,6 +349,79 @@ always gives the same track.
   `TRACK=` variable), always the same track.
 - **As a training arena:** `generated-legs` (tier 3), like `race-legs`. Absent from a config, nothing
   changes; exam v2 doesn't fly generated tracks.
+
+## Training on generated tracks and goals (M7 S5)
+
+The generator's tracks and the goal types as training content. Everything is opt-in: arena params
+and a scoring key that are absent when off. Without them the scenarios hash exactly as before S5
+(pinned in `goals.test.ts`), and training is byte-identical.
+
+**Goal params** on `generated-legs` and `race-legs` (and, where noted, on the new arenas). They add
+goals on top of the same scenario: the same track, starts and targets, no extra random draws.
+
+| Param | Value | What it does | Also on |
+| --- | --- | --- | --- |
+| `gates` | `"track"` | the track's own gates become directional: on generated tracks the gate and chicane checkpoints, on file tracks the checkpoints with a `width`. Width 2 × radius (generated) or the file's width | |
+| | `"all"` | every checkpoint between the start and the finish is a directional gate, as the race's `gates` rule (`?gates` in the game) | |
+| `stop` | speed > 0 | the episode's final target (on the last lap) counts only at most this fast (`EpisodeSpec.finishMaxSpeed`, the race's `finishMaxSpeed`) | `gates`, `laps` |
+| `laps` | integer ≥ 1 | the episode's targets are flown this many times (`EpisodeSpec.laps`); the time limit grows with them | `gates` |
+| `parSpeed` | units/s > 0 | a par time per episode: the straight path start → targets (all laps) at this speed, rounded up to frames (`EpisodeSpec.parFrames`) | `gates`, `laps` |
+
+A gate counts when the ship's centre crosses its line in its direction within width / 2, exactly as
+in the race (`crossesGate`); touching or crossing backwards doesn't count. A test flies the same
+flight through a race and a training episode (laps, gates, a stop at the finish of the last lap)
+and gets the same progress on every frame. One difference stays, from before M7: a plain training
+target counts when the ship's centre is inside it, a race checkpoint when the ship touches it.
+
+On a legs arena, `laps` flies the episode's legs again from the last target back to the first,
+which on a generated track crosses open space the generator didn't check for rocks. For laps in
+isolation the `laps` arena is the cleaner choice. A file track's own rules (its laps, stop or par) are not taken
+over by `race-legs`: goals come only from these params.
+
+**New arenas** (tier 1, no obstacles, after all older arenas so older configs keep their indices):
+
+| Arena | What it asks for | Params |
+| --- | --- | --- |
+| `gates` | a chain of directional gates; each gate's direction differs from the leg leading to it by `skew`, so the ship has to line up | `episodes` [6], `targets` [3, 5], `distance` [400, 900], `turn` [0, 90]°, `width` [200], `skew` [0, 45]°, `frames` per target; `stop`, `laps`, `parSpeed` |
+| `laps` | a small circuit round a ring, the last target back on the start, flown several laps | `episodes` [4], `targets` [3, 5] per lap, `ring` [400, 700] radius (± 15 % per target), `radius` [50], `laps` [3], `gates` (true: every target a gate along the circuit), `frames` per target (× targets × laps); `stop`, `parSpeed` |
+
+`stop` (M5) already trains stopping in isolation (`maxSpeed` on its one target).
+
+**Scoring on par:** `scoring.par` (weight ≥ 0, absent = off). An episode that has a par time and
+reached all its targets earns `par × (parFrames − frames) × 0.015` (the seconds under par times the
+weight), subtracted from the score. Slower than par, or not finished, earns nothing. Without
+`parSpeed` in the arenas there are no par times and the key changes nothing. A scale: a miss costs
+`success` (1000), so `par: 100` makes 10 seconds under par worth one target.
+
+**Curriculum levels:** tiered levels (`curriculum.levels: [{ "arenas": [...] }, ...]`) can name
+any arena with any params, so generated bands and goals ramp up like this:
+
+```json
+"curriculum": {
+  "success": 0.6,
+  "levels": [
+    { "arenas": [
+      { "name": "generated-legs", "params": { "bands": ["easy"], "episodes": 8, "legs": 2 } },
+      { "name": "stop", "params": { "episodes": 4 } },
+      { "name": "gates", "params": { "episodes": 4 } } ] },
+    { "arenas": [
+      { "name": "generated-legs", "params": { "bands": ["easy", "medium"], "episodes": 8, "gates": "track" } },
+      { "name": "laps", "params": { "episodes": 2, "laps": 2 } } ] },
+    { "arenas": [
+      { "name": "generated-legs", "params": { "bands": ["hard"], "episodes": 8, "gates": "track", "stop": 100 } } ] }
+  ]
+}
+```
+
+The full example, on the M6 baseline (residual controller 0.5, progress 3), is
+[`experiments/m7-s5-generated-curriculum.md`](../experiments/m7-s5-generated-curriculum.md) (not run).
+
+- **Checked at start:** the worker generates one scenario of every arena of every level before
+  generation 1, so a bad param on level 3 fails at once (`config.curriculum.levels[3].arenas[0]
+  (generated-legs): arena param bands …`), not when the run first reaches it.
+- **In Evo Lab:** the plugin shows the level of each snapshot (the level's arena list is in the
+  snapshot), and its replays draw an arrow on every directional gate. The replay's status counts
+  targets over all laps. Thumbnails don't show gate directions.
 
 ## Skills exam
 
