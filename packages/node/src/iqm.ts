@@ -4,6 +4,10 @@
  *
  *   npm run iqm -- <experiment-id> [--metric exam] [--gen 150] [--effect 10000]
  *   npm run iqm -- --base train-1,train-2,... --arm train-11,train-12,... [--metric ...] [--gen ...]
+ *   npm run iqm -- --from exam3.json --base ... --arm ... --metric exam3 --gen 150
+ *
+ * With --from, the values come from a JSON file written by `npm run exam3 -- --json` (re-scored
+ * stored models, labelled `<run>@g<gen>`) instead of the runs' gen events.
  *
  * In experiment mode, every run labelled `exp:<id>/<arm>` counts (check runs excluded); a
  * continuation run belongs to the arm of the run it continues. Per arm and seed, the newest run
@@ -13,6 +17,8 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
+import { exam3Metrics, type Exam3Result } from "@ar/server";
+import { expandRuns } from "./skills-profile";
 import { comparePaired, directionOf, iqm, seedsNeeded, type PairedComparison } from "./iqm-stats";
 
 interface Manifest {
@@ -91,6 +97,12 @@ export function experimentArms(
   return arms;
 }
 
+/** Metrics per model label from an `npm run exam3 -- --json` file. */
+function exam3Values(file: string): Map<string, Record<string, number>> {
+  const data = JSON.parse(readFileSync(file, "utf8")) as { rows: { label: string; result: Exam3Result }[] };
+  return new Map(data.rows.map((r) => [r.label, exam3Metrics(r.result)]));
+}
+
 function fmt(v: number): string {
   if (!Number.isFinite(v)) return "–";
   const a = Math.abs(v);
@@ -118,6 +130,7 @@ function main(): void {
       effect: { type: "string" },
       resamples: { type: "string", default: "10000" },
       root: { type: "string" },
+      from: { type: "string" },
     },
   });
   const root = resolve(values.root ?? join(dirname(fileURLToPath(import.meta.url)), "../../.."));
@@ -132,9 +145,12 @@ function main(): void {
   );
 
   if (values.base && values.arm) {
+    const rescored = values.from === undefined ? undefined : exam3Values(values.from);
     const get = (ids: string) =>
-      ids.split(",").map((id) => {
-        const v = readRun(runsDir, id.trim())?.metrics.get(gen)?.[metric];
+      expandRuns(ids).map((id) => {
+        const v = rescored
+          ? rescored.get(`${id}@g${gen}`)?.[metric]
+          : readRun(runsDir, id.trim())?.metrics.get(gen)?.[metric];
         if (v === undefined) throw new Error(`run ${id} has no ${metric} at g${gen}`);
         return v;
       });

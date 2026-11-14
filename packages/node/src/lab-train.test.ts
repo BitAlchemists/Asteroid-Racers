@@ -1164,6 +1164,46 @@ describe("evo-lab worker (protocol v1)", () => {
     );
   }, 180_000);
 
+  it("exam v3 (M7): exam3 metrics at every exam; training, result and exam v2 unchanged", async () => {
+    const config = { sample: 6, frames: 60 };
+    const exam = { every: 2, tracks: ["short"], randomTracks: 0, timeLimitSeconds: 5 };
+    const withV3 = newRun({ ...config, exam: { ...exam, v3: {} } });
+    const plain = newRun({ ...config, exam });
+    expect(await run(withV3, ["--to", "2"])).toBe(0);
+    expect(await run(plain, ["--to", "2"])).toBe(0);
+    const gens = (dir: string) => events(dir).filter((e) => e.type === "gen");
+    const m = gens(withV3).at(-1)!.metrics as Record<string, number>;
+    for (const key of [
+      "exam3",
+      "exam3Easy",
+      "exam3Medium",
+      "exam3Hard",
+      "exam3Handmade",
+      "exam3Goals",
+      "exam3Skills",
+    ]) {
+      expect(m[key]).toBeGreaterThanOrEqual(0);
+      expect(m[key]).toBeLessThanOrEqual(100);
+    }
+    expect(m.exam3Crashes).toBeGreaterThanOrEqual(0);
+    expect(m.exam3Finished).toBeGreaterThanOrEqual(0);
+    expect(gens(withV3)[0]!.metrics).not.toHaveProperty("exam3");
+    // Training and exam v2 are untouched: same stateHash, same exam v2 metrics, same result.
+    expect(gens(withV3).map((e) => e.stateHash)).toEqual(gens(plain).map((e) => e.stateHash));
+    const v2 = (dir: string) =>
+      Object.fromEntries(
+        Object.entries(gens(dir).at(-1)!.metrics as Record<string, number>).filter(
+          ([k]) => !k.startsWith("exam3") && k !== "tps" && k !== "shipStepsPerSec", // speeds vary
+        ),
+      );
+    expect(v2(withV3)).toEqual(v2(plain));
+    const strip = (dir: string) => {
+      const { config: _c, ...rest } = JSON.parse(result(dir)) as Record<string, unknown>;
+      return rest;
+    };
+    expect(strip(withV3)).toEqual(strip(plain));
+  }, 180_000);
+
   it("exam switch: race metrics on every N-th generation, results and resume unchanged", async () => {
     const exam = { every: 2, tracks: ["short"], randomTracks: 1, timeLimitSeconds: 10 };
     const withExam = newRun({ ...CONFIG, exam });

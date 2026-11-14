@@ -45,6 +45,11 @@ export interface ExamConfig {
    * (see skills.ts), reported as `skill<Arena>` metrics. Absent = no skills exam.
    */
   skills?: SkillsConfig;
+  /**
+   * Exam v3 (M7, exam3.ts): every exam also flies the fixed exam v3 and reports `exam3` and its
+   * profile metrics. `{}`; absent = no exam v3. Exam v2 above is unchanged by it.
+   */
+  v3?: Record<string, never>;
 }
 
 /** The exam's perturbation, or undefined when it has none (delay and noise absent or 0). */
@@ -395,6 +400,7 @@ export function parseExamConfig(raw: unknown): ExamConfig {
     ...(r.inputDelay === undefined ? {} : { inputDelay: r.inputDelay as number }),
     ...(r.inputNoise === undefined ? {} : { inputNoise: r.inputNoise as number }),
     ...(r.skills === undefined ? {} : { skills: parseSkillsConfig(r.skills) }),
+    ...(r.v3 === undefined ? {} : { v3: parseV3(r.v3) }),
   };
   if (config.inputDelay !== undefined && (!Number.isInteger(config.inputDelay) || config.inputDelay < 0))
     throw new Error("exam.inputDelay must be an integer ≥ 0");
@@ -412,6 +418,13 @@ export function parseExamConfig(raw: unknown): ExamConfig {
       throw new Error(`exam.weights.${k} must be a known weight ≥ 0`);
   if (!Number.isInteger(config.seed) || config.seed < 0) throw new Error("exam.seed must be an integer ≥ 0");
   return config;
+}
+
+/** The `v3` key of an exam config: `{}` (exam v3 is frozen; it has no options). */
+function parseV3(raw: unknown): Record<string, never> {
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw) || Object.keys(raw).length > 0)
+    throw new Error("exam.v3 must be {} (exam v3 is fixed and has no options)");
+  return {};
 }
 
 /** The flights of an exam as replay segments (one ExamReplay each). */

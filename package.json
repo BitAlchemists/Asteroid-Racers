@@ -29,7 +29,8 @@
     "scripted": "npm run scripted -w @ar/node --",
     "skills": "npm run skills -w @ar/node --",
     "build:server": "node scripts/bundle-server.mjs",
-    "showcase": "npm run showcase -w @ar/node --"
+    "showcase": "npm run showcase -w @ar/node --",
+    "exam3": "npm run exam3 -w @ar/node --"
   },
   "devDependencies": {
     "@bufbuild/buf": "^1.75.0",

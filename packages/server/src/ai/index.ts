@@ -44,6 +44,7 @@ export * from "./directors";
 export * from "./exam";
 export * from "./replay";
 export * from "./skills";
+export * from "./exam3";
 export * from "./evaluators";
 export * from "./network";
 export * from "./obstacle-grid";

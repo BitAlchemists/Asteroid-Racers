@@ -4,6 +4,7 @@
     "packages/shared/src/**/*.ts",
     "packages/server/src/**/*.ts",
     "packages/server/src/ai/models/*.json",
+    "packages/server/src/tracks/*.json",
     "packages/node/src/lab-*.ts",
     "scripts/lab-*.mjs",
     "!**/*.test.ts"
@@ -48,6 +49,87 @@
       "description": "Crashes in the race exam, all races together.",
       "unit": "count",
       "group": "Exam",
+      "sparse": true
+    },
+    "exam3": {
+      "direction": "max",
+      "label": "Exam v3 score",
+      "description": "Exam v3 (3.0) primary score, 0-100, higher is better: weighted mean of the categories (easy 0.10, medium 0.20, hard 0.25, hand-made 0.20, goal races 0.15, skills 0.10). Fixed tracks, seeds and weights; see doc/experiments.md, Exam v3. Crashes are not in it: see exam3Crashes.",
+      "unit": "score 0-100",
+      "headline": true,
+      "group": "Exam v3",
+      "sparse": true
+    },
+    "exam3Easy": {
+      "direction": "max",
+      "label": "Exam v3: easy",
+      "description": "Exam v3 (3.0) category value: mean race value 0.6 x progress + 0.2 x finished under the rules + 0.2 x min(1, par / time) over the 20 generated easy tracks.",
+      "unit": "score 0-100",
+      "group": "Exam v3",
+      "sparse": true
+    },
+    "exam3Medium": {
+      "direction": "max",
+      "label": "Exam v3: medium",
+      "description": "Exam v3 (3.0) category value: mean race value 0.6 x progress + 0.2 x finished under the rules + 0.2 x min(1, par / time) over the 20 generated medium tracks.",
+      "unit": "score 0-100",
+      "group": "Exam v3",
+      "sparse": true
+    },
+    "exam3Hard": {
+      "direction": "max",
+      "label": "Exam v3: hard",
+      "description": "Exam v3 (3.0) category value: mean race value 0.6 x progress + 0.2 x finished under the rules + 0.2 x min(1, par / time) over the 20 generated hard tracks.",
+      "unit": "score 0-100",
+      "group": "Exam v3",
+      "sparse": true
+    },
+    "exam3Handmade": {
+      "direction": "max",
+      "label": "Exam v3: hand-made",
+      "description": "Exam v3 (3.0) category value: mean race value 0.6 x progress + 0.2 x finished under the rules + 0.2 x min(1, par / time) over the 7 hand-made tracks without a goal (slalom, gauntlet, canyon, hairpins, straight-to-turn, dense-belt, chicane).",
+      "unit": "score 0-100",
+      "group": "Exam v3",
+      "sparse": true
+    },
+    "exam3Goals": {
+      "direction": "max",
+      "label": "Exam v3: goal races",
+      "description": "Exam v3 (3.0) category value: mean race value 0.6 x progress + 0.2 x finished under the rules + 0.2 x min(1, par / time) over the 13 goal races: gate-row, pit-stop, circuit (3 laps), and 5 generated easy tracks each with a stop at the finish (max 100) and with directional gates.",
+      "unit": "score 0-100",
+      "group": "Exam v3",
+      "sparse": true
+    },
+    "exam3Skills": {
+      "direction": "max",
+      "label": "Exam v3: skills",
+      "description": "Exam v3 (3.0) skills category: mean success over the 9 skill arenas (8 fixed episodes each, M4 default physics) - 0.05 x mean crashes per episode, clamped to 0-100.",
+      "unit": "score 0-100",
+      "group": "Exam v3",
+      "sparse": true
+    },
+    "exam3Finished": {
+      "direction": "max",
+      "label": "Exam v3: races finished",
+      "description": "Share of the 80 exam v3 races finished under their rules.",
+      "unit": "share 0-1",
+      "group": "Exam v3",
+      "sparse": true
+    },
+    "exam3Crashes": {
+      "direction": "min",
+      "label": "Exam v3: crashes per race",
+      "description": "Crashes per race over the 80 exam v3 races: the veto metric next to exam3 (not part of the score).",
+      "unit": "crashes per race",
+      "group": "Exam v3",
+      "sparse": true
+    },
+    "exam3TimeVsPar": {
+      "direction": "min",
+      "label": "Exam v3: time / par",
+      "description": "Mean finish time / par over the exam v3 races finished (1 = on par). Absent when none was finished.",
+      "unit": "ratio",
+      "group": "Exam v3",
       "sparse": true
     },
     "heldOut": {

@@ -14,7 +14,8 @@
     "iqm": "tsx src/iqm.ts",
     "scripted": "tsx src/scripted-baseline.ts",
     "skills": "tsx src/skills-profile.ts",
-    "showcase": "tsx src/showcase.ts"
+    "showcase": "tsx src/showcase.ts",
+    "exam3": "tsx src/exam3.ts"
   },
   "dependencies": {
     "@ar/shared": "*",

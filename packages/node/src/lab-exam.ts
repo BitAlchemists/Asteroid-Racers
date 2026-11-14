@@ -20,7 +20,9 @@ import {
   DEFAULT_MODEL_NAME,
   MajorTom,
   parseExamConfig,
+  exam3Metrics,
   runExam,
+  runExam3,
   runSkills,
   skillMetrics,
   type ExamConfig,
@@ -163,6 +165,8 @@ async function main(): Promise<void> {
           crashMode: "respawn",
         })
       : undefined;
+    // Exam v3 (optional, M7): fixed and self-contained.
+    const v3 = config.v3 ? await runExam3(model) : undefined;
     const cpu = process.cpuUsage(startCpu);
     const cpuSec = (cpu.user + cpu.system) / 1e6;
     const snapshot = `gens/g${String(g).padStart(4, "0")}.json`;
@@ -186,6 +190,7 @@ async function main(): Promise<void> {
         examFinished: exam.finished,
         examCrashes: exam.crashes,
         ...(skills ? skillMetrics(skills) : {}),
+        ...(v3 ? exam3Metrics(v3) : {}),
       },
       phases: { exam: { wall: (performance.now() - startWall) / 1000, cpu: cpuSec } },
       cpuSec,
@@ -197,6 +202,19 @@ async function main(): Promise<void> {
       modelGeneration: model.generation,
       ...exam,
       ...(skills ? { skills } : {}),
+      ...(v3
+        ? {
+            exam3: {
+              ...v3,
+              flights: v3.flights.map(({ id, value, finished, crashes }) => ({
+                id,
+                value,
+                finished,
+                crashes,
+              })),
+            },
+          }
+        : {}),
     });
   }
 

@@ -52,10 +52,12 @@ import {
   parseSensors,
   parseExamConfig,
   examPerception,
+  exam3Metrics,
   plainExam,
   runExam,
   runSkills,
   skillMetrics,
+  runExam3,
   type ExamConfig,
   parseScoring,
   type ArenaConfig,
@@ -659,6 +661,17 @@ async function main(): Promise<void> {
           const cpu = process.cpuUsage(skillsCpu);
           genEvent.phases.skills = {
             wall: (performance.now() - skillsWall) / 1000,
+            cpu: (cpu.user + cpu.system) / 1e6,
+          };
+        }
+        if (exam.v3) {
+          // Exam v3 (M7): its own servers and fixed seeds; training state is untouched.
+          const v3Wall = performance.now();
+          const v3Cpu = process.cpuUsage();
+          Object.assign(metrics, exam3Metrics(await runExam3(examModel)));
+          const cpu = process.cpuUsage(v3Cpu);
+          genEvent.phases.exam3 = {
+            wall: (performance.now() - v3Wall) / 1000,
             cpu: (cpu.user + cpu.system) / 1e6,
           };
         }
