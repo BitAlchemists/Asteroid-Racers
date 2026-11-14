@@ -2141,3 +2141,43 @@ multiplayer play".
 - **Mistake:** the first local exam batch passed snapshot paths relative to the repository root,
   but npm runs the tool from `packages/node`; nothing ran. Re-run with absolute paths. Queued
   exam-method runs (exam-8..12) sat behind the experiments' training runs and were stopped.
+
+### M6 batch B (m6-b-curriculum): the curriculum on the new baseline
+
+- **Runs:** baseline reused (train-545..564, same task and code; not re-run). keepEasy
+  train-585..604, plateau train-605..624, m5tiers train-625..644, m7gen train-645..664,
+  heldOutCurrent train-665..684; seeds 1–20, g150. Started 13:16 UTC, done about 14:40 UTC (m7gen
+  about 40 minutes, the others about 12–15 minutes per wave of 20).
+- **Decision (pre-registered, exam3 at g150, IQM, paired bootstrap, `minEffect` 3):** no arm wins.
+  - keepEasy 0.25: +1.4 [+0.4, +3.0], 16/20 better; clear, but below 3. No veto.
+  - plateau: identical to the baseline on every metric.
+  - m5tiers: +0.6 [−2.0, +2.9], no clear difference.
+  - m7gen: −3.0 [−4.9, −0.6], worse; the exam v2 checkpoint veto also fires (−0.092
+    [−0.168, −0.040]). Crashes per race 35.6 → 9.0, medium +5.8 (18/20), easy −15.
+  - heldOutCurrent: identical training (a measurement).
+  - Detectable effects at 20 seeds: 2.0–3.0 points.
+  - Report: `experiments/m6-b-curriculum.report.md`. Recommendation not signed off: keepEasy
+    by judgement or a g300 check; drop plateau, m5tiers, m7gen (as built) and heldOutCurrent.
+- **Why the curriculum arms do nothing:** with the residual controller every seed climbs M4's
+  levels at the minimum pace and is on the last level by g13–17 (m5tiers: g13–18). The plateau
+  rule (patience 10) never fires; the tiered levels only delay the same task by a few generations.
+- **stateHash with a measurement-only switch:** heldOutCurrent's runs have the same training score
+  every generation and the same exam metrics at every exam as the baseline, but a different
+  stateHash from g1. The extra held-out flight changes a hashed state (most likely the server
+  generator's). Not a training bug, but the gate would not accept such a run as the baseline.
+  Not fixed here; for the M6 code owner to decide.
+- **Seed 5:** the g150 freeze repeats exactly in heldOutCurrent (train-669) and plateau
+  (train-609), whose training is the baseline's; it is gone in keepEasy (train-589, 0.955), m5tiers
+  (0.90) and m7gen (0.82), whose lineages differ. So it belongs to one lineage's g150 winner, not
+  to the seed. m7gen freezes much more often: 27 drops in 20 runs, most of them freezes.
+- **Correction** to the entry "M6 combination check": a wave of 20 runs took about **12 minutes**,
+  not 70. I compared UTC run timestamps with the local clock (WEST, UTC+1), and the wrong figure
+  also went to main as a 6-hour ETA for batch B; corrected with main the same afternoon.
+- **Evo Lab friction (for the Evo Lab session, via main):**
+  - `exp new` needs `baseline.runs`, so a never-run baseline needs seed runs first (worked around
+    with g5 runs).
+  - `npm run iqm <experiment>` (ours) finds no baseline when the baseline is reused from another
+    experiment's runs (labels `exp:m6-a3-combination/baseline`); list mode (`--base/--arm`) works.
+    That one is our tool, not Evo Lab.
+- **Evo Lab experiments left open:** both `m6-a3-combination` and `m6-b-curriculum` wait for the
+  user's sign-off (`lab exp close`); I did not close them.

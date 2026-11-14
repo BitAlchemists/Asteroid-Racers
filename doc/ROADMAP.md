@@ -19,13 +19,14 @@ How we work is described in [`CLAUDE.md`](../CLAUDE.md). Each milestone gets its
 - **Known problems:**
   - medium and hard generated tracks: every model so far crash-loops in narrow corridors and belts
     (exam3 medium and hard about 15–25);
-  - single generations of a run can drop sharply on one exam (seed 5 of batch A's residual arm);
-    being investigated from data;
+  - single generations' winners can drop sharply on one exam: residual models sometimes freeze at
+    the start (seed 5 at g150 in two configs), see the history;
   - the training plateau after about g150.
-- **Now:** M6 continues on exam v3: the combination check (`m6-a3-combination`, rotation cost 20 on
-  the new baseline), then batch B (`m6-b-curriculum`: 2.4 keep easy, 2.5 plateau, 2.6 tiered
-  curricula of M5 arenas and of M7 generated tracks, 2.7 level-aware held-out). Decisions are the
-  user's.
+- **Now:** decision point 2 (the user's). Run on exam v3: the combination check
+  (`m6-a3-combination`, rotation 20: no win, fewer crashes, slower) and batch B
+  (`m6-b-curriculum`: keepEasy +1.4, below the minimum; plateau, m5tiers, heldOutCurrent no
+  effect; m7gen worse). exam3 sits at about 50 from g5 on: the residual network adds safety, not
+  racing.
 
 ## Milestones
 
@@ -161,7 +162,8 @@ Only if needed: Q.1 quality diversity (MAP-Elites).
 4. 🟡 The combination check `m6-a3-combination` (rotation 20 on the new baseline), 20 seeds, exam3:
    run; no win by the rule (fewer crashes, slower); waiting for the user's decision.
 5. 🟡 Batch B `m6-b-curriculum` (2.4, 2.5, 2.6 in two variants, 2.7) on the new baseline without
-   rotation, reusing step 4's baseline runs.
+   rotation, reusing step 4's baseline runs: run; no win by the rule (keepEasy +1.4, below the
+   3-point minimum; m7gen worse); decision point 2 waits for the user.
 6. Then perception (3.1–3.3), the learner, and readiness.
 
 ### M7 — Benchmark v2 ✅
