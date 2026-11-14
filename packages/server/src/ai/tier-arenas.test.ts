@@ -6,6 +6,7 @@ import { MemoryModelStore } from "./model-store";
 import { createTrainingServer, DEFAULT_LAYOUT, registerAITrainingService } from "./index";
 import { MajorTom } from "./network";
 import type { EpisodeRecord } from "./scoring";
+import { generateTrack } from "../track-generator";
 import { TRACKS } from "../tracks";
 import {
   chainArena,
@@ -13,6 +14,7 @@ import {
   distanceToPolyline,
   distanceToSegment,
   fieldArena,
+  generatedLegsArena,
   headingToOrientation,
   raceLegsArena,
   START_CLEARANCE,
@@ -391,3 +393,79 @@ describe("race-legs arena", () => {
     expect(back).toBe(true);
   });
 });
+
+describe("generated-legs arena", () => {
+  const hash = (scenario: Scenario) => fnv(json(scenario));
+
+  it("race-legs is unchanged by the shared leg cutting (hashes from before M7 S1)", () => {
+    expect(hash(generate(raceLegsArena, 7))).toBe("93d4f572");
+    expect(
+      hash(
+        generate(raceLegsArena, 3, { tracks: ["demo", "short", "random", "slalom"], legs: 2, episodes: 9 }),
+      ),
+    ).toBe("ba0e9b10");
+  });
+
+  it("is a tier-3 arena registered after race-legs", () => {
+    expect(TIER_ARENAS.at(-1)).toBe(generatedLegsArena);
+    expect(arenaByName("generated-legs")).toBe(generatedLegsArena);
+    expect(generatedLegsArena.tier).toBe(3);
+  });
+
+  it("flies runs of consecutive checkpoints of one generated track, respawning at the last one", () => {
+    for (let seed = 1; seed <= 6; seed++) {
+      const scenario = generate(generatedLegsArena, seed, { frames: 500 });
+      expect(scenario.episodes).toHaveLength(6);
+      expect(scenario.obstacles.length).toBeGreaterThan(0);
+      for (const e of scenario.episodes) {
+        expect(e.targets).toHaveLength(3);
+        expect(e.timeLimitFrames).toBe(1500);
+        expect(e.respawn).toBe("last-target");
+        for (const t of e.targets) {
+          expect(t.orientation).toBeDefined();
+          for (const o of scenario.obstacles)
+            expect(o.position.distanceTo(t.position)).toBeGreaterThanOrEqual(o.radius + t.radius - 1e-9);
+        }
+      }
+    }
+  });
+
+  it("takes its track from the generator: the band and the scenario seed decide it", () => {
+    const scenario = generate(generatedLegsArena, 4, { bands: ["hard"], episodes: 2 });
+    const random = seededRandom(4);
+    random(); // the band pick
+    const world = seededRandom(Math.floor(random() * 2 ** 32)); // the track's world seed
+    const track = generateTrack(Math.floor(world() * 2 ** 32), "hard");
+    expect(scenario.obstacles.map((o) => [o.position.x, o.position.y, o.radius])).toEqual(
+      track.rocks.map((r) => [r.x, r.y, r.radius]),
+    );
+    const sizes = new Set<number>();
+    for (let seed = 1; seed <= 12; seed++)
+      sizes.add(generate(generatedLegsArena, seed, { bands: ["easy"] }).obstacles.length);
+    expect(sizes.size).toBeGreaterThan(1);
+  });
+
+  it("rejects bad params", () => {
+    for (const params of [
+      { bands: [] },
+      { bands: ["extreme"] },
+      { bands: "easy" },
+      { legs: 1.5 },
+      { legs: 0 },
+      { episodes: 0 },
+    ])
+      expect(() => generate(generatedLegsArena, 1, params), JSON.stringify(params)).toThrow(/arena param/);
+  });
+
+  it("can be flown by the training director (respawn mode)", async () => {
+    const scenario = generate(generatedLegsArena, 2, { episodes: 2, legs: 2, frames: 120 });
+    expect(await flyOnce(scenario, "respawn")).toHaveLength(2);
+  });
+});
+
+/** FNV-1a (32 bit, hex) of a string: a fingerprint for byte-for-byte comparisons. */
+function fnv(text: string): string {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 0x01000193);
+  return (h >>> 0).toString(16).padStart(8, "0");
+}

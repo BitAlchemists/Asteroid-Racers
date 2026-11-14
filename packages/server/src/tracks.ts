@@ -3,6 +3,7 @@ import type { RaceController } from "./race-controller";
 import type { Random } from "./random";
 import { generateAsteroidBelt, SceneController } from "./scene-controller";
 import { parseTrackFile, trackFromFile } from "./track-file";
+import { generatedTrack, parseGeneratedTrackName, TRACK_BAND_NAMES } from "./track-generator";
 import canyon from "./tracks/canyon.json";
 import gauntlet from "./tracks/gauntlet.json";
 import slalom from "./tracks/slalom.json";
@@ -76,11 +77,27 @@ export function fileTracks(files: Readonly<Record<string, unknown>> = TRACK_FILE
   return tracks;
 }
 
-/** Every track: the code tracks first, then the file tracks (the order the game's picker shows). */
-export const TRACKS: Readonly<Record<string, Track>> = { ...CODE_TRACKS, ...fileTracks() };
+/**
+ * Generated tracks (M7, track-generator.ts), one per difficulty band: `generated:easy`,
+ * `generated:medium`, `generated:hard`; the world's seed decides the track. A fixed one is
+ * `generated:<band>:<seed>` (resolved by {@link trackByName}, not listed).
+ */
+const GENERATED_TRACKS: Readonly<Record<string, Track>> = Object.fromEntries(
+  TRACK_BAND_NAMES.map((band) => [`generated:${band}`, generatedTrack(band)]),
+);
+
+/**
+ * Every track: the code tracks first, then the file tracks, then the generated ones (the order the
+ * game's picker shows).
+ */
+export const TRACKS: Readonly<Record<string, Track>> = {
+  ...CODE_TRACKS,
+  ...fileTracks(),
+  ...GENERATED_TRACKS,
+};
 
 export function trackByName(name: string): Track {
-  const track = TRACKS[name];
+  const track = TRACKS[name] ?? parseGeneratedTrackName(name);
   if (!track)
     throw new Error(`unknown track ${JSON.stringify(name)}; known: ${Object.keys(TRACKS).join(", ")}`);
   return track;

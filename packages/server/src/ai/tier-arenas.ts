@@ -2,7 +2,8 @@ import { EntityType, Vector2, World } from "@ar/shared";
 import type { IGameServer } from "../contracts";
 import { RaceController } from "../race-controller";
 import { seededRandom, type Random } from "../random";
-import { trackByName } from "../tracks";
+import { generatedTrack, isTrackBand, TRACK_BAND_NAMES, type TrackBand } from "../track-generator";
+import { trackByName, type Track } from "../tracks";
 import {
   between,
   intBetween,
@@ -11,7 +12,7 @@ import {
   rangeParam,
   type ArenaParams,
 } from "./arena-params";
-import type { Arena, EpisodeSpec, ObstacleSpec, TargetSpec } from "./arenas";
+import type { Arena, EpisodeSpec, ObstacleSpec, Scenario, TargetSpec } from "./arenas";
 
 // The tiered training arenas of M5 (see doc/plans/M5-content.md, step 4). Each asks for one skill;
 // all are opt-in by name and deterministic per seed (they use only `random`).
@@ -362,32 +363,73 @@ export const raceLegsArena: Arena = {
     if (!Number.isInteger(legs)) throw new Error(`arena param legs must be an integer, got ${legs}`);
 
     const track = trackByName(tracks[intBetween(random, [0, tracks.length - 1])]!);
-    const world = new World();
-    const race = new RaceController(NO_SERVER);
-    track.build(world, race, seededRandom(Math.floor(random() * 2 ** 32)));
-    const checkpoints = race.checkpoints;
-    const available = checkpoints.length - 1;
-    if (available < 1) throw new Error(`track ${track.name} has no legs`);
-    const n = Math.min(legs, available);
-    const specs: EpisodeSpec[] = [];
-    for (let i = 0; i < episodes; i++) {
-      const from = intBetween(random, [0, available - n]);
-      const start = checkpoints[from]!;
-      specs.push({
-        start: { position: start.position.clone(), orientation: start.orientation },
-        targets: checkpoints.slice(from + 1, from + 1 + n).map((c): TargetSpec => ({
-          position: c.position.clone(),
-          radius: c.radius,
-          orientation: c.orientation,
-        })),
-        timeLimitFrames: frames * n,
-        respawn: "last-target",
-      });
-    }
-    const obstacles = world.passiveCollisionEntities
-      .filter((e) => e.type === EntityType.ASTEROID)
-      .map((e): ObstacleSpec => ({ position: e.position.clone(), radius: e.radius }));
-    return { obstacles, episodes: specs };
+    return trackLegs(track, random, episodes, legs, frames);
+  },
+};
+
+/**
+ * Builds `track` with a seed drawn from `random` and cuts `episodes` runs of `legs` consecutive
+ * checkpoints from it (race-legs and generated-legs).
+ */
+function trackLegs(track: Track, random: Random, episodes: number, legs: number, frames: number): Scenario {
+  const world = new World();
+  const race = new RaceController(NO_SERVER);
+  track.build(world, race, seededRandom(Math.floor(random() * 2 ** 32)));
+  const checkpoints = race.checkpoints;
+  const available = checkpoints.length - 1;
+  if (available < 1) throw new Error(`track ${track.name} has no legs`);
+  const n = Math.min(legs, available);
+  const specs: EpisodeSpec[] = [];
+  for (let i = 0; i < episodes; i++) {
+    const from = intBetween(random, [0, available - n]);
+    const start = checkpoints[from]!;
+    specs.push({
+      start: { position: start.position.clone(), orientation: start.orientation },
+      targets: checkpoints.slice(from + 1, from + 1 + n).map((c): TargetSpec => ({
+        position: c.position.clone(),
+        radius: c.radius,
+        orientation: c.orientation,
+      })),
+      timeLimitFrames: frames * n,
+      respawn: "last-target",
+    });
+  }
+  const obstacles = world.passiveCollisionEntities
+    .filter((e) => e.type === EntityType.ASTEROID)
+    .map((e): ObstacleSpec => ({ position: e.position.clone(), radius: e.radius }));
+  return { obstacles, episodes: specs };
+}
+
+/** The `bands` param of generated-legs: a non-empty list of difficulty bands. */
+function bandsParam(params: ArenaParams, fallback: TrackBand[]): TrackBand[] {
+  const value = params.bands ?? fallback;
+  if (!Array.isArray(value) || value.length === 0 || !value.every(isTrackBand))
+    throw new Error(
+      `arena param bands must be a non-empty list of ${TRACK_BAND_NAMES.join(" / ")}, got ${JSON.stringify(value)}`,
+    );
+  return value as TrackBand[];
+}
+
+/**
+ * Generated legs (M7): like race-legs, but on procedurally generated tracks (track-generator.ts).
+ * Each scenario generates one track of a band picked from `bands`, with its own seed; episodes are
+ * runs of `legs` consecutive checkpoints among its corridors, gates, fields and belts. Crashes respawn
+ * at the last checkpoint reached (with `crashMode: "respawn"`).
+ * Params: `bands` (default all three), `episodes`, `legs` per episode, `frames` per leg.
+ */
+export const generatedLegsArena: Arena = {
+  name: "generated-legs",
+  description:
+    "Legs of generated race tracks (easy/medium/hard bands); crashes respawn at the last checkpoint",
+  tier: 3,
+  generate(random, params) {
+    const bands = bandsParam(params, [...TRACK_BAND_NAMES]);
+    const episodes = numberParam(params, "episodes", 6, 1);
+    const legs = numberParam(params, "legs", 3, 1);
+    const frames = numberParam(params, "frames", 600, 1);
+    if (!Number.isInteger(legs)) throw new Error(`arena param legs must be an integer, got ${legs}`);
+    const band = bands[intBetween(random, [0, bands.length - 1])]!;
+    return trackLegs(generatedTrack(band), random, episodes, legs, frames);
   },
 };
 
@@ -399,4 +441,5 @@ export const TIER_ARENAS: readonly Arena[] = [
   corridorArena,
   fieldArena,
   raceLegsArena,
+  generatedLegsArena,
 ];

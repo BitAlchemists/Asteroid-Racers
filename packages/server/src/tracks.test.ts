@@ -37,8 +37,18 @@ describe("tracks", () => {
         expect(c.position.distanceTo(rock.position)).toBeGreaterThan(c.radius + rock.radius);
   });
 
-  it("the track files are registered after the code tracks", () => {
-    expect(Object.keys(TRACKS)).toEqual(["demo", "short", "random", "slalom", "gauntlet", "canyon"]);
+  it("the track files are registered after the code tracks, the generated tracks last", () => {
+    expect(Object.keys(TRACKS)).toEqual([
+      "demo",
+      "short",
+      "random",
+      "slalom",
+      "gauntlet",
+      "canyon",
+      "generated:easy",
+      "generated:medium",
+      "generated:hard",
+    ]);
   });
 
   it.each(["slalom", "gauntlet", "canyon"])("%s is the same for every seed (no belts)", (name) => {
