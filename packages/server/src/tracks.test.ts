@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { DEFAULT_EXAM, examFlights } from "./ai/exam";
 import { GameServer } from "./game-server";
 import { seededRandom } from "./random";
-import { trackByName, TRACKS } from "./tracks";
+import { fileTracks, trackByName, TRACKS } from "./tracks";
 
 const load = (name: string, seed = 1) =>
   new GameServer({ random: seededRandom(seed) }).loadTrack(trackByName(name));
@@ -42,9 +42,7 @@ describe("tracks", () => {
       "demo",
       "short",
       "random",
-      "slalom",
-      "gauntlet",
-      "canyon",
+      ...Object.keys(fileTracks()), // slalom, gauntlet, canyon first (handmade-tracks.test.ts)
       "generated:easy",
       "generated:medium",
       "generated:hard",
