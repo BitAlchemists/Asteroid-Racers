@@ -1,5 +1,7 @@
 # Experiment: m7-s5-generated-curriculum
 
+**2026-11-14:** its levels run as the `m7gen` level of switch 2.6 in batch B, [`m6-b-curriculum.md`](m6-b-curriculum.md), judged on `exam3`. This file stays the worked example of the syntax and is not run itself.
+
 Status: EXAMPLE — not created in Evo Lab, not run. Written with M7 S5 (training access to generated
 tracks and goal types) as a worked example of the syntax; a real run waits for exam v3 (M7 S4) and
 the M6 plan after M7. Smoke-tested headless (see `doc/HISTORY.md`, M7 S5).

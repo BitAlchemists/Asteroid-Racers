@@ -410,3 +410,18 @@ so (`CLAUDE.md`).
     - the primary metric is pre-committed per plan: exam v3's `exam3` score;
     - crashes veto;
     - exam checkpoints must not get worse.
+- **2026-11-14, combination check and batch B planned on exam v3** (user: "yes" to "close M7 and
+  start the combination check, then batch B"):
+  - `experiments/m6-a3-combination.md`: rotation 20 against the new baseline (M4 default + residual
+    0.5 + progress 3), 20 seeds, g150. Only the rotation arm: residual + progress without rotation
+    *is* the new baseline, so "with and without rotation 20" is one switch.
+  - `experiments/m6-b-curriculum.md`: 2.4, 2.5, 2.6 and 2.7 as one experiment on the new baseline
+    without rotation, reusing the combination check's baseline runs. 2.6 gets a second variant,
+    the M7 S5 generated curriculum (`m7gen`), next to the M5 arena levels (`m5tiers`). **Why:**
+    exam v3 is mostly generated tracks and goal races, and M7 S5 built that curriculum for this.
+  - Rule for both: `exam3` at g150, IQM, paired 95 % bootstrap CI, `minEffect` 3 points (half the
+    residual controller's gain); vetoes: `exam3Crashes` clearly higher, or exam v2 checkpoints
+    clearly lower by 0.03 or more. 2.7 is a measurement (training identical) and is judged on how
+    well its metric tracks exam3.
+  - The exam block in both baselines adds `v3: {}` and `skills: {}` (no effect on training), so
+    every run has exam3 and skill curves every 25 generations.

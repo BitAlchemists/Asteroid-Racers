@@ -1,5 +1,7 @@
 # Experiment: m6-2-5-thresholds
 
+**Superseded 2026-11-14:** this arm runs in batch B, [`m6-b-curriculum.md`](m6-b-curriculum.md), on the new M6 baseline (M4 default + residual controller 0.5 + progress 3, reusing `m6-a3-combination`'s baseline runs), with 20 seeds and exam v3's `exam3` as the pre-registered primary metric (crashes and exam v2 checkpoints as vetoes). The draft below (M4 baseline, exam v2 checkpoints, 10 seeds) is kept for the record and is not run.
+
 Status: DRAFT — curriculum-v2 code is in (87c3331); not created in Evo Lab. M6, phase 2, experiment 2.5 (level-up thresholds).
 
 0.6 against 0.8 is a value change on a baseline key (not a valid switch); the comparison is the plateau rule (`curriculum.plateau: {}`, defaults floor 0.5, patience 10, alpha 0.2, minGain 0.02) against the fixed 0.6 rule alone. The arm keeps `success: 0.6` from the baseline, so the run moves up on whichever rule fires first. A plateau-alone arm (`success: 1` plus a large `streak`) would change baseline keys and is not a valid switch; it is left out.
