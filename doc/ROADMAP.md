@@ -10,23 +10,32 @@ How we work is described in [`CLAUDE.md`](../CLAUDE.md). Each milestone gets its
 ## Where we stand (2026-11-14)
 
 - **Done:** M1–M5, M7 (Benchmark v2), the speed side tracks S1 and S2, and D1 (the game is live).
-- **Baseline** (adopted by the user after M6 batch A): M4's default setup (task v2, `lineCheck`,
-  curriculum at 60 %, 10 parents) + the residual controller (scale 0.5) + the progress reward (3).
-  It had never been run as a combination; `m6-a3-combination` runs it now.
-- **Yardstick:** exam v3's `exam3` (0–100), with `exam3Crashes` as a veto. Batch A's residual arm
-  scores about 49, the M4 default about 43, the scripted controller 53. 20 seeds detect about 4–8
-  points. Exam v2 (checkpoints about 0.89) is saturated and kept for continuity.
+- **Baseline** (adopted by the user after M6 batch A and decision point 2): M4's default setup (task
+  v2, `lineCheck`, curriculum at 60 %, 10 parents) + the residual controller (scale 0.5) + the
+  progress reward (3) + `curriculum.keepEasy: 0.25`. Runs train-585..604: exam3 51.9 at g150 (20
+  seeds); without keepEasy 50.4.
+- **Decision rule:** exam3 averaged over g125–150 per seed (adopted 2026-11-14), IQM over 20 seeds,
+  paired 95 % bootstrap CI, `minEffect`, vetoes. No cap on experiments per phase (the budget rule
+  was dropped 2026-11-14).
+- **Yardstick:** exam v3's `exam3` (0–100), with `exam3Crashes` as a veto. The scripted controller
+  alone scores 52.6. 20 seeds detect about 2–3 points. Exam v2 (checkpoints about 0.90) is
+  saturated and kept for continuity.
 - **Known problems:**
-  - medium and hard generated tracks: every model so far crash-loops in narrow corridors and belts
-    (exam3 medium and hard about 15–25);
+  - **exam3 is flat at about 50 from g5 to g150:** the network learns crash avoidance, not racing.
+    The training task is mastered by g13–18, so curriculum tweaks on it do nothing (batch B);
+  - medium and hard generated tracks: exam3 medium about 14–20, hard about 20 (crash loops in
+    narrow corridors and belts);
   - single generations' winners can drop sharply on one exam: residual models sometimes freeze at
-    the start (seed 5 at g150 in two configs), see the history;
-  - the training plateau after about g150.
-- **Now:** decision point 2 (the user's). Run on exam v3: the combination check
-  (`m6-a3-combination`, rotation 20: no win, fewer crashes, slower) and batch B
-  (`m6-b-curriculum`: keepEasy +1.4, below the minimum; plateau, m5tiers, heldOutCurrent no
-  effect; m7gen worse). exam3 sits at about 50 from g5 on: the residual network adds safety, not
-  racing.
+    the start (seed 5 at g150), see the history.
+- **M6 decision point 2, decided by the user 2026-11-14:** after the combination check
+  (`m6-a3-combination`, rotation 20: no win, fewer crashes, slower) and batch B (`m6-b-curriculum`:
+  keepEasy +1.4, below the 3-point minimum; plateau, m5tiers, heldOutCurrent no effect; m7gen
+  worse):
+  - rotation 20 not adopted ("I'd rather have faster races"): finish time matters more than fewer
+    crashes. The residual controller already made it largely obsolete (spin about 1 → 0.3);
+  - keepEasy 0.25 adopted; the averaged decision rule adopted; the budget rule dropped.
+- **Now:** M8 (race training) is planned and waits for the user's approval. M6 pauses after decision
+  point 2 and resumes after M8.
 
 ## Milestones
 
@@ -124,10 +133,11 @@ picker) and training side (six tiered arenas, the watch page's arena mode, basel
   tier 3 `race-legs`. Moving obstacles are dropped: the game has none.
 - ~~Race exam v2~~: moved to M4 (step 8).
 
-### M6 — Experiments 🟡
+### M6 — Experiments 🟡 (paused after decision point 2 for M8)
 
 Plan: [`plans/M6-experiments.md`](plans/M6-experiments.md), approved 2026-11-13. All switch code for
-phases 1–5 is built, 3.4's `controller` switch included. Optional MAP-Elites is not built.
+phases 1–5 is built, 3.4's `controller` switch included. Optional MAP-Elites is not built. Paused
+2026-11-14 for M8 (race training); it resumes after M8, on the M8 setup.
 
 Five phases, each ending in a decision point where the user decides what is adopted:
 
@@ -144,7 +154,7 @@ Five phases, each ending in a decision point where the user decides what is adop
    - 2.7 level-aware held-out;
    - 2.8 rotation cost (against spinning).
 3. **Perception and control:**
-   - 3.1 lookahead (nose and corner frames);
+   - 3.1 lookahead (nose and corner frames): moved into M8;
    - 3.2 richer sensors;
    - 3.3 network size;
    - 3.4 residual policy / heading output (the scripted controller steers, the network corrects).
@@ -159,12 +169,18 @@ Only if needed: Q.1 quality diversity (MAP-Elites).
 2. ✅ Batch A (2.1 progress, 2.2 costs, 2.8 rotation, 3.4 residual), decided 2026-11-14: residual 0.5
    and progress 3 adopted by judgement.
 3. ✅ M7 (Benchmark v2): exam v3 is the yardstick from now on.
-4. 🟡 The combination check `m6-a3-combination` (rotation 20 on the new baseline), 20 seeds, exam3:
-   run; no win by the rule (fewer crashes, slower); waiting for the user's decision.
-5. 🟡 Batch B `m6-b-curriculum` (2.4, 2.5, 2.6 in two variants, 2.7) on the new baseline without
-   rotation, reusing step 4's baseline runs: run; no win by the rule (keepEasy +1.4, below the
-   3-point minimum; m7gen worse); decision point 2 waits for the user.
-6. Then perception (3.1–3.3), the learner, and readiness.
+4. ✅ The combination check `m6-a3-combination` (rotation 20 on the new baseline), 20 seeds, exam3:
+   no win by the rule (fewer crashes, slower); not adopted (user, 2026-11-14: faster races
+   matter more).
+5. ✅ Batch B `m6-b-curriculum` (2.4, 2.5, 2.6 in two variants, 2.7) on the new baseline without
+   rotation, reusing step 4's baseline runs: no win by the rule (keepEasy +1.4, below the 3-point
+   minimum; m7gen worse). Decision point 2 (2026-11-14): keepEasy 0.25 adopted by judgement, the
+   rest dropped; decisions on exam3 averaged over g125–150; budget rule dropped.
+6. ⏸ **M6 pauses here** (agreed 2026-11-14): M8 race training comes first. Phase 3.1 (lookahead)
+   moves into M8, tested together with race training.
+7. After M8, on the M8 setup: phase 3.2 (sensors) and 3.3 (network size), then phase 4 (the
+   learner).
+8. Phase 5 (robustness and readiness) last.
 
 ### M7 — Benchmark v2 ✅
 
@@ -184,6 +200,25 @@ combination check and batch B are planned on exam v3.
 - S5 ✅: the generator and goal types available to training and the curriculum: goal params on
   `generated-legs` and `race-legs` (gates, stop, laps, par), arenas `gates` and `laps`, an opt-in
   `scoring.par`, generated levels in tiered curricula.
+
+### M8 — Race training 🟡 (planned, waiting for approval)
+
+Plan: [`plans/M8-race-training.md`](plans/M8-race-training.md), written 2026-11-14; waits for the
+user's approval. Inserted between M6's decision point 2 and the rest of M6 (direction agreed
+2026-11-14).
+
+Make races the main training task, so the network learns racing and not only crash avoidance:
+
+- many fresh generated race legs per generation (12 tracks), in levels easy → medium → hard
+  promoted by success, with easy material kept in; goal types mixed in once the basics work;
+- lookahead (M6 3.1), tested together with race training;
+- a check of the generator's traps (S5's first leg into a corridor wall, S4's four stall races);
+  exam v3.0 stays frozen;
+- selection robust against single-winner flukes; decisions on exam3 averaged over g125–150;
+- the hand-made tracks and the exam3 seeds are never trained on.
+
+**Done when**, each by a 20-seed pre-registered test: exam3 clearly rises with training, medium and
+hard are well above today's 14–20, and the M8 setup beats the scripted controller's 52.6 on exam3.
 
 ### D1 — Deploy and showcase ✅ (side track)
 

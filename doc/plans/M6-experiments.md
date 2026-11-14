@@ -119,11 +119,12 @@ updated before the next phase starts.
 Names follow `<phase>.<number> <plain name>`, e.g. "2.1 Progress reward". The Evo Lab id is
 `m6-<phase>-<number>-<name>`, e.g. `m6-2-1-progress-reward`.
 
-**Rules for every experiment** (the budget rule):
+**Rules for every experiment:**
 - Each plan states the effect it can detect, from `npm run iqm`'s power estimate on the current
   baseline's spread, and the number of seeds that needs. An experiment that cannot detect a
   worthwhile effect at an affordable seed count is not run.
-- At most **6 experiments per phase** before its decision point.
+- ~~At most **6 experiments per phase** before its decision point.~~ Dropped by the user
+  2026-11-14 (see the changes).
 - **Decision on exam v2**: IQM over the seeds, paired, with a 95 % bootstrap confidence interval
   that excludes 0, plus the effect beyond `minEffect`. Crashes are always reported, and more crashes
   veto. No early screen drops an arm before g100, a lesson from E3b. Plans set `baseline.reuse: true`.
@@ -202,8 +203,7 @@ episode, lower is better:
   steering without passing through worse controllers. So 3.4 (start from steering) and 2.8 (push off
   spinning) matter most; 2.3 (time pressure) matters less, because speed already pays.
 
-**Decision point 2:** the scoring weights, the curriculum rules and the level definitions. If more
-than 6 experiments are needed, 2a and 2b each get their own decision point.
+**Decision point 2:** the scoring weights, the curriculum rules and the level definitions.
 
 #### Phase 3: Perception and capacity: what the models see, and the network to use it
 
@@ -277,7 +277,7 @@ so (`CLAUDE.md`).
       switch.
 - [x] Step 5 committed after M5's arenas exist (tiered levels, plateau rule, `heldOutCurrent`;
       `keepEasy` came from M4 step 8).
-- [ ] Phases 1–5 run under the budget rule, each closed by a decision point recorded in
+- [ ] Phases 1–5 run, each closed by a decision point recorded in
       `HISTORY.md` (experiments run, adopted or dropped); Q.1 only if triggered (decision recorded
       either way).
 - [ ] A readiness report for the best model, and the user's decision on promotion recorded in
@@ -425,3 +425,31 @@ so (`CLAUDE.md`).
     well its metric tracks exam3.
   - The exam block in both baselines adds `v3: {}` and `skills: {}` (no effect on training), so
     every run has exam3 and skill curves every 25 generations.
+- **2026-11-14, M6 pauses for M8 (race training)** (user: "ok" to the proposal after decision
+  point 2). M8 is inserted between decision point 2 and the rest of M6
+  ([`M8-race-training.md`](M8-race-training.md), waiting for approval).
+  - **Why:** on the adopted baseline exam3 is flat at about 50 from g5 to g150 (the scripted
+    controller alone: 52.6); the network learns crash avoidance, not racing. The training task is
+    mastered by g13–18, so phase 2b's curriculum switches had nothing to act on (batch B: keepEasy
+    +1.4, below the minimum; plateau and m5tiers no effect). m7gen's generated curriculum was worse
+    because it flew one track per generation, dropped the v2 task and froze. The headroom is in
+    exam3 medium and hard, and that needs race training first.
+  - **Moves:** phase 3.1 (lookahead) goes into M8, tested together with race training, because
+    racing needs to see the next turn. The selection-robustness question (`reevaluate`, from 1.1)
+    is re-tested in M8 on the race task.
+  - **After M8:** phases 3.2, 3.3 and 4 resume, judged on the M8 setup; phase 5 (robustness and
+    readiness) last.
+- **2026-11-14, decision point 2 decided** (the user):
+  - **Rotation 20 not adopted** ("I'd rather have faster races"): finish time matters more than
+    fewer crashes. The residual controller has made the rotation cost largely obsolete: spin went
+    from about 1 to about 0.3 with it, and rotation 20 only takes it from 0.35 to 0.30. The
+    `scoring.rotation` switch stays in the code, absent when off; it is not part of M8. The
+    preference for speed argues for `scoring.par` / time vs par in M8.
+  - **keepEasy 0.25 adopted** ("Keep easy okay"): part of the baseline from now on (its runs:
+    train-585..604).
+  - **Decision rule:** exam3 averaged over g125–150 (per seed, the mean of the exams in that
+    window) instead of the g150 winner alone ("ok"). The rest stays: 20 seeds, IQM, paired 95 %
+    bootstrap CI, `minEffect`, vetoes.
+  - **Budget rule dropped** ("drop"): no cap of 6 experiments per phase. Each plan still states the
+    effect it can detect and its seeds, and every phase still ends in a decision point.
+  - Plateau, m5tiers, m7gen (as built) and heldOutCurrent are not adopted.

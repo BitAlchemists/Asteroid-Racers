@@ -2181,3 +2181,51 @@ multiplayer play".
     That one is our tool, not Evo Lab.
 - **Evo Lab experiments left open:** both `m6-a3-combination` and `m6-b-curriculum` wait for the
   user's sign-off (`lab exp close`); I did not close them.
+
+### M8 race training planned; M6 paused after decision point 2
+
+- **Commits:** this docs commit (plan, experiment draft, roadmap, M6 plan change, history). No code,
+  no Evo Lab runs.
+- **Why** (user: "ok" to the proposal after the combination check and batch B): exam3 is flat at
+  about 50 from g5 to g150 on the adopted baseline (scripted controller alone: 52.6); the training
+  task is mastered by g13–18; m7gen failed for three named reasons (one track per generation, the
+  v2 task dropped, g150 freezes); keepEasy's +1.4 is real but small; the headroom is medium and hard.
+- **Written:**
+  - `doc/plans/M8-race-training.md`: tools and guards (averaged exam3 over g125–150, exam seeds kept
+    out of training, a multi-track smoke run) → generator check (S5's first-leg wall, S4's four
+    stall races; a fix only as `generator: 2`, exam v3.0 frozen) → E1 race levels × lookahead
+    (factorial, 20 seeds) → E2 selection robustness (`reevaluate`, 16 tracks) → E3 par and goal types →
+    E4 confirmation on fresh seeds 21–40. Done when exam3 rises with training, medium and hard are
+    at least 5 points above the baseline, and the CI of exam3's IQM lies above 52.6.
+  - `experiments/m8-1-race-lookahead.md`: draft, not run. Baseline = the adopted baseline
+    (keepEasy 0.25 included), reusing train-585..604; race levels of 12 generated tracks per generation (1
+    episode × 3 legs each) plus the v2 task at half size, easy → medium → hard.
+  - Roadmap: M8 🟡 (planned, waiting for approval) after M7; "Where we stand" rewritten; M6's order
+    shows it paused after decision point 2, 3.1 moved into M8, 3.2/3.3 and phase 4 after M8, phase
+    5 last.
+  - M6 plan: dated change entries (the pause for M8, and decision point 2), the budget rule
+    removed.
+- **Found in the code while planning:**
+  - `generated-legs` builds one track per scenario, and training builds one scenario per arena entry
+    per generation, each with its own seed stream. So several fresh tracks per generation need no
+    code: list the arena entry several times in a level. No switch built.
+  - keepEasy works per entry with k = round(0.25 × episodes): entries with 1 episode get no easy
+    share, so the race levels list their easy material explicitly.
+  - Held-out flies `heldOut` scenarios per entry (84 for the race levels, the winner only).
+  - `npm run exam3` and `npm run iqm` handle one generation per call; the averaged rule needs a
+    `--gens` window (plan step 1).
+  - Nothing keeps training from drawing an exam3 generated seed (about 1 in 500 per experiment);
+    plan step 1 adds a guard.
+- **Decision point 2, decided by the user** (2026-11-14, relayed by main while the plan was being
+  written; recorded in the M6 and M8 plans and the roadmap):
+  - **rotation 20 not adopted:** "I'd rather have faster races". Finish time matters more than
+    fewer crashes, which argues for `scoring.par` / time vs par in M8 (E3 puts par first). The
+    residual controller already made the rotation cost largely obsolete (spin about 1 → 0.3;
+    rotation 20 only 0.35 → 0.30). The switch stays in the code, absent when off; not part of M8;
+  - **keepEasy 0.25 adopted** ("Keep easy okay"), after asking what it means: part of the baseline
+    from now on (train-585..604);
+  - **decision rule:** exam3 averaged over g125–150 per seed instead of the g150 winner alone ("ok");
+  - **budget rule dropped** ("drop"): removed from the M6 plan with a dated change entry.
+  - Not adopted: plateau, m5tiers, m7gen (as built), heldOutCurrent. The two Evo Lab experiments are
+    still open in Evo Lab (`lab exp close` not run by me).
+- **Still with the user:** approval of the M8 plan.
