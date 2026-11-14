@@ -18,6 +18,11 @@ export class Explosion extends Container implements Animated {
   }
 
   update(dt: number): void {
+    // Destroyed with its entity's node (the entity was removed mid-explosion, e.g. a track switch).
+    if (this.destroyed) {
+      this.phase = "done";
+      return;
+    }
     if (this.phase === "exploding") {
       this.size += dt * 10;
       if (this.size >= 3) {

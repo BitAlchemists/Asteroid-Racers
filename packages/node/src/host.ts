@@ -16,6 +16,8 @@ import {
 import { WebSocketServer } from "ws";
 import { FileModelStore } from "./file-model-store";
 import { createStaticHandler } from "./static-files";
+import { trackBlurb, type LobbyStatus } from "./track-categories";
+import { DEFAULT_ROUND_SECONDS, registerTrackLobby, trackLobby } from "./track-lobby";
 import { WebSocketClientConnection } from "./web-socket-client-connection";
 
 const log = getLogger("TCPServer");
@@ -24,6 +26,8 @@ export const DEFAULT_PORT = 1337;
 export const WEB_SOCKET_PATH = "/ws";
 /** Liveness/readiness probe for the container platform. */
 export const HEALTH_PATH = "/health";
+/** The track rotation's state for the multiplayer page (see track-lobby.ts). */
+export const LOBBY_PATH = "/lobby";
 /** Largest client message we accept. Inputs and chat are tiny. */
 export const MAX_MESSAGE_BYTES = 64 * 1024;
 
@@ -69,6 +73,10 @@ export async function startHost({
       serveHealth(request, response, game, startedAt);
       return;
     }
+    if (request.url?.split("?", 1)[0] === LOBBY_PATH) {
+      serveLobby(request, response, game);
+      return;
+    }
     serveStatic(request, response).catch((error: unknown) => {
       log.warning(`error serving ${request.url}`, error);
       if (!response.headersSent) response.writeHead(500).end("500 - Internal Server Error");
@@ -94,11 +102,15 @@ export async function startHost({
     // `/ws?opponent=<showcase model id>`: the racing bots fly that model (see registerRacingBots).
     const opponent = new URL(request.url ?? "/", "http://localhost").searchParams.get("opponent");
     const leave = opponentChoice(game)?.join(opponent);
+    const proxy = new ClientProxy(connection, game);
+    game.connectClient(proxy);
+    // The track rotation greets the player and counts their vote until they leave.
+    const leaveLobby = trackLobby(game)?.join(proxy);
     connection.onDisconnect(() => {
       log.info(`client ${remote} disconnected`);
       leave?.();
+      leaveLobby?.();
     });
-    game.connectClient(new ClientProxy(connection, game));
   });
 
   await game.start(loop);
@@ -159,24 +171,63 @@ function serveHealth(
   response.end(request.method === "HEAD" ? undefined : body);
 }
 
+/**
+ * GET /lobby: the track rotation (current and next track, votes) or the fixed track, as JSON. Cheap
+ * like /health: it reads the lobby's counters, no simulation work.
+ */
+function serveLobby(request: IncomingMessage, response: ServerResponse, game: GameServer) {
+  if (request.method !== "GET" && request.method !== "HEAD") {
+    response.writeHead(405, { Allow: "GET, HEAD" }).end();
+    return;
+  }
+  const lobby = trackLobby(game);
+  const fixed = fixedTracks.get(game);
+  const status: LobbyStatus = lobby
+    ? lobby.status()
+    : { fixed: true, current: { name: fixed ?? "", blurb: fixed ? trackBlurb(fixed) : "" } };
+  const body = JSON.stringify(status);
+  response.writeHead(200, {
+    "Content-Type": "application/json; charset=utf-8",
+    "Content-Length": Buffer.byteLength(body),
+    "Cache-Control": "no-store",
+  });
+  response.end(request.method === "HEAD" ? undefined : body);
+}
+
+/** The fixed track of servers made by {@link createDefaultGameServer} without a rotation. */
+const fixedTracks = new WeakMap<GameServer, string>();
+
 export interface DefaultGameServerOptions {
   /** Racing bots to add (default 1, like the Dart server). */
   bots?: number;
   /** Model directory; a model trained there wins over the bundled one. */
   modelDir?: string;
-  /** Track name from the registry (default `demo`). */
+  /** Track name from the registry (default `demo`); with `rotation`, the first track to race. */
   track?: string;
+  /** Rotate through these tracks with votes (see track-lobby.ts); absent = `track` stays fixed. */
+  rotation?: readonly string[];
+  /** Longest round on one track in seconds of game time (rotation only). */
+  roundSeconds?: number;
 }
 
 /** A track's world (the demo by default) with chat and racing bots. */
 export function createDefaultGameServer({
   bots = 1,
   modelDir = "db",
-  track = "demo",
+  track,
+  rotation,
+  roundSeconds = DEFAULT_ROUND_SECONDS,
 }: DefaultGameServerOptions = {}): GameServer {
-  const server = new GameServer().loadTrack(trackByName(track));
-  log.info(`track: ${track}`);
+  const first = track ?? rotation?.[0] ?? "demo";
+  const server = new GameServer().loadTrack(trackByName(first));
   server.registerService(new ChatServer());
+  if (rotation) {
+    registerTrackLobby(server, { tracks: rotation, start: first, roundSeconds });
+    log.info(`track rotation: ${rotation.join(", ")}; starting with ${first}`);
+  } else {
+    fixedTracks.set(server, first);
+    log.info(`track: ${first}`);
+  }
   if (bots > 0) {
     const trained = new FileModelStore(modelDir);
     const store = trained.load(DEFAULT_MODEL_NAME) ? trained : bundledModels();

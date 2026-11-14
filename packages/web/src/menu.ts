@@ -1,3 +1,4 @@
+import { RACE_TRACKS, SKILL_TRACKS, type TrackEntry } from "@ar/node/track-categories";
 import { World } from "@ar/shared";
 import {
   describeRules,
@@ -11,8 +12,9 @@ import {
   type RaceRules,
 } from "@ar/server";
 
-// The start page's track picker: it sets `?track=` on the singleplayer and watch links and
-// remembers the choice for the next visit. The race-mode controls (M7) add optional rules to the
+// The start page's track picker: two groups, race tracks and skill tracks, each track with its
+// one-line blurb (track-categories.ts in @ar/node). It sets `?track=` on the singleplayer and watch
+// links and remembers the choice for the next visit. The race-mode controls (M7) add optional rules to the
 // singleplayer link (`?laps=&stop=&gates&timetrial`, see race-modes.ts); left alone, the track's own
 // rules apply.
 
@@ -25,16 +27,38 @@ const stop = document.getElementById("mode-stop") as HTMLInputElement;
 const gates = document.getElementById("mode-gates") as HTMLInputElement;
 const timeTrial = document.getElementById("mode-timetrial") as HTMLInputElement;
 const trackRules = document.getElementById("track-rules")!;
-const select = document.getElementById("track") as HTMLSelectElement;
 const description = document.getElementById("track-description")!;
 const singleplayer = document.getElementById("singleplayer") as HTMLAnchorElement;
 const watch = document.getElementById("watch") as HTMLAnchorElement;
+const trackInputs: HTMLInputElement[] = [];
 
-for (const track of Object.values(TRACKS)) {
-  const option = document.createElement("option");
-  option.value = track.name;
-  option.textContent = track.name;
-  select.append(option);
+function addTracks(listId: string, entries: readonly TrackEntry[]): void {
+  const list = document.getElementById(listId)!;
+  for (const entry of entries) {
+    if (!TRACKS[entry.name]) continue;
+    const input = document.createElement("input");
+    input.type = "radio";
+    input.name = "track";
+    input.value = entry.name;
+    const name = document.createElement("span");
+    name.className = "track-name";
+    name.textContent = entry.name;
+    const blurb = document.createElement("span");
+    blurb.className = "track-blurb";
+    blurb.textContent = entry.blurb;
+    const label = document.createElement("label");
+    label.className = "track-option";
+    label.append(input, name, blurb);
+    list.append(label);
+    trackInputs.push(input);
+  }
+}
+addTracks("race-tracks", RACE_TRACKS);
+addTracks("skill-tracks", SKILL_TRACKS);
+
+/** The picked track's name. */
+function selectedTrack(): string {
+  return trackInputs.find((input) => input.checked)?.value ?? "demo";
 }
 
 let saved: string | null = null;
@@ -43,7 +67,9 @@ try {
 } catch {
   // storage blocked: start with the default
 }
-select.value = saved && saved in TRACKS ? saved : "demo";
+const initial =
+  trackInputs.find((input) => input.value === saved) ?? trackInputs.find((i) => i.value === "demo");
+if (initial) initial.checked = true;
 try {
   const modes = JSON.parse(localStorage.getItem(MODES_KEY) ?? "{}") as Record<string, unknown>;
   laps.value = typeof modes.laps === "string" ? modes.laps : "";
@@ -72,13 +98,13 @@ function modes(): RaceRules {
 }
 
 function update(): void {
-  const track = TRACKS[select.value]!;
+  const track = TRACKS[selectedTrack()]!;
   description.textContent = track.description;
   trackRules.textContent = `Track rules: ${ownRules(track.name)}.`;
   const query = raceModesQuery(modes());
   singleplayer.href = `singleplayer.html?track=${encodeURIComponent(track.name)}${query ? `&${query}` : ""}${opponentQuery("&")}`;
   updateOpponent();
-  watch.href = select.value === "demo" ? "watch.html" : `watch.html?track=${encodeURIComponent(track.name)}`;
+  watch.href = track.name === "demo" ? "watch.html" : `watch.html?track=${encodeURIComponent(track.name)}`;
   try {
     localStorage.setItem(KEY, track.name);
     localStorage.setItem(
@@ -149,6 +175,6 @@ function updateOpponent(): void {
 }
 opponentSelect.addEventListener("change", update);
 
-select.addEventListener("change", update);
+for (const input of trackInputs) input.addEventListener("change", update);
 for (const input of [laps, stop, gates, timeTrial]) input.addEventListener("input", update);
 update();

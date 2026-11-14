@@ -12,6 +12,7 @@ export default defineConfig({
     strictPort: true,
     proxy: {
       "/ws": { target: `ws://localhost:${gameServerPort}`, ws: true },
+      "/lobby": { target: `http://localhost:${gameServerPort}` },
     },
   },
   build: {

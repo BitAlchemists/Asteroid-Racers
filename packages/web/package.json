@@ -10,8 +10,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@ar/shared": "*",
+    "@ar/client": "*",
+    "@ar/node": "*",
     "@ar/server": "*",
-    "@ar/client": "*"
+    "@ar/shared": "*"
   }
 }

@@ -36,13 +36,22 @@
         </label>
         <span class="menu-note" id="opponent-note"></span>
       </p>
-      <p>
-        <label
-          >Track
-          <select id="track"></select>
-        </label>
-        <span id="track-description"></span>
-      </p>
+      <section class="track-picker" aria-labelledby="track-heading">
+        <h2 id="track-heading">Track for “Play alone”</h2>
+        <fieldset class="track-group">
+          <legend>Race tracks</legend>
+          <p class="menu-note">
+            Real races. Multiplayer rotates through these after each race; vote for the next one in the game.
+          </p>
+          <div class="track-list" id="race-tracks"></div>
+        </fieldset>
+        <fieldset class="track-group">
+          <legend>Skill tracks</legend>
+          <p class="menu-note">One skill each, for practice on your own.</p>
+          <div class="track-list" id="skill-tracks"></div>
+        </fieldset>
+        <p class="menu-note" id="track-description"></p>
+      </section>
       <fieldset class="race-modes">
         <legend>Race mode (singleplayer)</legend>
         <p id="track-rules"></p>
@@ -62,7 +71,7 @@
         </li>
         <li>
           <a href="multiplayer.html" id="multiplayer-link">Multiplayer</a> — everyone on this server races
-          together, with the server&#39;s bots (the server picks the track)
+          together, with the server&#39;s bots, through the race tracks in turn (vote for the next one)
         </li>
         <li>
           <a href="showcase.html" id="showcase">Model showcase</a> — watch a trained model fly every track,

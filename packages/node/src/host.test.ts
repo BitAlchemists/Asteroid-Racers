@@ -12,6 +12,7 @@ import {
 import { ChatServer, GameServer, ManualGameLoop, opponentChoice, seededRandom } from "@ar/server";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { createDefaultGameServer, startHost, type RunningHost } from "./host";
+import { RACE_ROTATION } from "./track-categories";
 
 /** Polls until `predicate` holds (network delivery is asynchronous). */
 async function until(predicate: () => boolean, what: string, timeoutMs = 2000): Promise<void> {
@@ -267,6 +268,56 @@ describe("opponent choice over the WebSocket URL", () => {
       await until(() => choice.current === "train-502-g150", "the switch");
       connection.disconnect();
       await until(() => choice.current === "default", "the default to return");
+    } finally {
+      await own.close();
+    }
+  });
+});
+
+describe("track lobby over HTTP and the WebSocket", () => {
+  it("GET /lobby shows the rotation; /vote in the chat counts until the player leaves", async () => {
+    const gameServer = createDefaultGameServer({ bots: 0, rotation: RACE_ROTATION });
+    const own = await startHost({ port: 0, host: "127.0.0.1", gameServer, loop: new ManualGameLoop() });
+    const lobby = async () => (await (await fetch(`${own.url}/lobby`)).json()) as Record<string, unknown>;
+    try {
+      expect(await lobby()).toMatchObject({
+        fixed: false,
+        current: { name: "demo" },
+        next: { name: "canyon", by: "rotation" },
+        votes: {},
+        players: 0,
+      });
+      const connection = new WebSocketServerConnection(own.webSocketUrl);
+      const chats: string[] = [];
+      connection.onMessage((e) => {
+        if (e.messageType === MessageType.CHAT) chats.push(readPayload(MessageType.CHAT, e).text);
+      });
+      await connection.connect();
+      connection.send(createEnvelope(MessageType.HANDSHAKE, { username: "Ann" }));
+      await until(() => chats.some((t) => t.startsWith("Track: demo.")), "the lobby greeting");
+      connection.send(createEnvelope(MessageType.CHAT, { from: "", text: "/vote circuit" }));
+      await until(() => chats.includes("Your vote: circuit."), "the vote");
+      expect(await lobby()).toMatchObject({
+        next: { name: "circuit", by: "vote" },
+        votes: { circuit: 1 },
+        players: 1,
+      });
+      connection.disconnect();
+      await until(() => gameServer.clients.size === 0, "disconnect");
+      expect(await lobby()).toMatchObject({ next: { name: "canyon" }, votes: {}, players: 0 });
+    } finally {
+      await own.close();
+    }
+  });
+
+  it("GET /lobby names the fixed track of TRACK=<name>", async () => {
+    const gameServer = createDefaultGameServer({ bots: 0, track: "canyon" });
+    const own = await startHost({ port: 0, host: "127.0.0.1", gameServer, loop: new ManualGameLoop() });
+    try {
+      const response = await fetch(`${own.url}/lobby`);
+      expect(response.headers.get("cache-control")).toBe("no-store");
+      expect(await response.json()).toMatchObject({ fixed: true, current: { name: "canyon" } });
+      expect((await fetch(`${own.url}/lobby`, { method: "POST" })).status).toBe(405);
     } finally {
       await own.close();
     }

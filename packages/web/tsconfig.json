@@ -7,5 +7,10 @@
     "types": ["vite/client"]
   },
   "include": ["src"],
-  "references": [{ "path": "../shared" }, { "path": "../server" }, { "path": "../client" }]
+  "references": [
+    { "path": "../shared" },
+    { "path": "../server" },
+    { "path": "../client" },
+    { "path": "../node" }
+  ]
 }
