@@ -166,8 +166,9 @@ Only if needed: Q.1 quality diversity (MAP-Elites).
 Plan: [`plans/M7-benchmark-v2.md`](plans/M7-benchmark-v2.md), approved by the user 2026-11-14.
 Inserted between M6's batch A and the rest of M6.
 
-- S1: a procedural track generator with corridors, hairpins, gates, rock fields, straights into
-  tight turns, belts and chicanes, in difficulty bands.
+- S1 ✅: a procedural track generator with corridors, hairpins, gates, rock fields, straights into
+  tight turns, belts and chicanes, in difficulty bands (`generated:<band>`, arena
+  `generated-legs`).
 - S2 ✅: goal types, in the race controller, as optional game modes and in training: stop at the
   finish, directional gates, time trials with par times, laps. Track format v2.
 - S3: 7 more hand-made tracks (10 in total), in track format v2.

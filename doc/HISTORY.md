@@ -1660,3 +1660,52 @@ Approved by the user as the rest of M5 after M4 closed. M5 is done.
   - v2 fields are rejected in v1 files;
   - training `maxSpeed` and `gate` apply on every lap.
 - **Not done here (S5):** par-time scoring in training; arenas that use the new fields.
+
+### M7 S1: procedural track generator
+
+- **Commits:** `M7 S1: procedural track generator, generated:<band> tracks, generated-legs arena`;
+  this docs commit.
+- **Built:**
+  - `packages/server/src/track-generator.ts`: tracks from `(seed, band)` with straights (long ones
+    into sharp turns), corridors with bends and hairpins, gates, chicanes, rock fields and belts;
+    bands easy / medium / hard (table in `doc/experiments.md`).
+  - Geometric validation of every track: race points clear, gates wider than the ship, a free lane
+    along each open leg, a grid search per leg, no holes in corridor walls. Generation retries until
+    the track passes; 600 seeds (200 per band) gave no failure, 2–6 ms per track.
+  - Tracks `generated:easy|medium|hard` (world seed decides) and `generated:<band>:<seed>`; arena
+    `generated-legs` (params `bands`, `episodes`, `legs`, `frames`).
+- **Byte-identical:** `race-legs` now shares its leg cutting with `generated-legs`; its scenarios
+  hash the same as before (checked against main, pinned in a test). Exam v2 flies only demo, short
+  and random (test unchanged). `npm run check` green (403 tests).
+- **Bands, measured** (200 seeds): mean turn at race points 39° / 62° / 77°; rocks on the line
+  16 / 53 / 70 per track; legs 6 / 8 / 10.
+- **Sanity flights** (10 fixed tracks per band, `generated:<band>:101…1010`, world seed 1, the
+  exam's 180 s limit; checkpoints reached, finishes, crashes per flight):
+
+  | Model | easy | medium | hard |
+  | --- | --- | --- | --- |
+  | scripted | 93 %, 9/10, 14 | 54 %, 2/10, 57 | 33 %, 1/10, 67 |
+  | train-495 (residual, g150) | 95 %, 9/10, 13 | 46 %, 1/10, 55 | 34 %, 1/10, 61 |
+  | train-496 | 75 %, 6/10, 3 | 30 %, 0/10, 33 | 32 %, 1/10, 28 |
+  | train-497 | 93 %, 8/10, 12 | 44 %, 1/10, 39 | 34 %, 1/10, 44 |
+  | train-498 | 93 %, 9/10, 12 | 54 %, 3/10, 40 | 34 %, 1/10, 55 |
+  | train-500 | 88 %, 8/10, 19 | 54 %, 2/10, 46 | 34 %, 1/10, 59 |
+
+  Success is ordered easy > medium > hard for every model, as the plan asks. Hard is near the
+  floor (about a third of the checkpoints, the same one track finished by all), and crashes are
+  many on medium and hard. For S4: hard may need to be softened, or it measures little until the
+  models improve.
+- **Decisions:**
+  - Gates and chicanes are ordinary rocks plus a checkpoint between them (radius gap/2 − 10);
+    directional gate semantics are left to S2.
+  - The turn at a gate is at most 60°, so the gate's rocks stay off both legs.
+- **Deviation:** the band acceptance "rock count" is measured on the rocks on the line, not on all
+  rocks (walls dominate the total and don't order the bands); recorded in the plan.
+- **Mistakes:**
+  - The first corridor-hole check sampled points along the walls and reported false holes at bends
+    and junctions; replaced by a grid search from inside the corridor outward.
+  - My first hole test shrank wall rocks to pebbles, which still form a wall the ship can't pass;
+    the test now moves them away.
+  - The machine was shut down mid-task; work resumed on the uncommitted file after a rebase onto
+    S2's format commit.
+

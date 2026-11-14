@@ -278,6 +278,7 @@ brackets; `frames` defaults to the config's `frames` (600).
 | 2 | `corridor` | target at the end of a bent corridor of asteroid walls | `episodes` [4], `segments` [2, 3], `length` [400, 700], `bend` [40, 100]°, `width` [260], `rockRadius` [30, 45], `radius` [50], `frames` per episode |
 | 2 | `field` | a chain through a dense field | `episodes` [4], `targets` [3, 5], `distance` [400, 800], `turn` [0, 90]°, `radius` [60], `density` [10] per 10⁶ units², `rockRadius` [30, 70], `margin` [500], `lane` [0], `frames` per target |
 | 3 | `race-legs` | consecutive checkpoints of a race track; crashes respawn at the last one | `tracks` [["random"]], `episodes` [6], `legs` [3], `frames` per leg |
+| 3 | `generated-legs` (M7) | consecutive checkpoints of a generated track (see below); crashes respawn at the last one | `bands` [["easy", "medium", "hard"]], `episodes` [6], `legs` [3], `frames` per leg |
 
 The watch page flies any of them (`watch.html?arena=<name>&params=<JSON>&seed=<run seed>&g=<gen>`),
 built exactly as in a training run with that seed at that generation.
@@ -306,6 +307,47 @@ race controller, the exam and arena fixtures). The track file fields are in
   (`race-modes.ts`: `parseRaceModes`, `withRaceRules`). New gates get arrows. Race messages
   (rules on joining, "Lap 2 of 3", too fast, wrong way, finish time) arrive as chat from "Race",
   only when a goal is active. Multiplayer: the server's track decides (`TRACK=<name>`).
+
+## Generated tracks (M7 S1)
+
+`packages/server/src/track-generator.ts` builds a race track from `(seed, band)`; the same pair
+always gives the same track.
+
+- **Elements, one per leg:** open straights (half of them long straights into a sharp turn),
+  corridors of asteroid walls with bends or a hairpin, gates (two rocks, the checkpoint between
+  them), chicanes (three gates swinging left and right), rock fields along the line, belts across
+  it. The start leg is a straight; corridors never start at a gate; the finish is never a gate.
+- **Bands:**
+
+  | | easy | medium | hard |
+  | --- | --- | --- | --- |
+  | legs | 6 | 8 | 10 |
+  | leg length | 700–1000 | 550–900 | 450–800 |
+  | turn at a race point | 10–50° | 30–90° | 60–135° |
+  | long straight, then a turn of | 1.5 × 1000, 60–90° | 1.8 × 900, 90–120° | 2.2 × 800, 120–150° |
+  | corridor width, bends, hairpins | 360, 20–45°, none | 280, 35–75°, 25 % | 210, 60–90°, 50 % |
+  | gate gap, chicane swing | 300, 25° | 220, 35° | 150, 45° |
+  | field / belt density (rocks per 10⁶ units²) | 40 / 40 | 70 / 55 | 100 / 70 |
+  | rock radius | 20–45 | 20–55 | 20–60 |
+
+  Measured over 200 seeds: mean turn 39° / 62° / 77°, rocks on the line (fields, belts, gates)
+  16 / 53 / 70 per track. Corridor walls are not counted there: wide easy corridors have the most
+  wall rocks.
+- **Validation** (`validateGeneratedTrack`, every track passes it before it is returned):
+  - race points clear of rocks, the start clear by 150;
+  - gate gaps at least the ship's width + 20;
+  - a free lane along every leg's centre line (ship radius + 20 to every rock), except the leg's
+    own field or belt rocks;
+  - every leg flyable: a grid search (16-unit cells, rocks inflated by ship radius + 12) finds a
+    path from race point to race point;
+  - no holes in corridor walls: a grid search finds no way for the ship from inside a corridor out
+    through its walls (the mouths and the crossings of other legs excepted).
+  Generation retries (fields and belts 15 % thinner each time) until the track passes.
+- **As game tracks:** `generated:easy`, `generated:medium`, `generated:hard` in the picker (the
+  world seed decides the track), and `generated:<band>:<seed>` by name (`trackByName`, the server's
+  `TRACK=` variable), always the same track.
+- **As a training arena:** `generated-legs` (tier 3), like `race-legs`. Absent from a config, nothing
+  changes; exam v2 doesn't fly generated tracks.
 
 ## Skills exam
 

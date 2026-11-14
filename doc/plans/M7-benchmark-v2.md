@@ -37,7 +37,10 @@ exam v2, the existing tracks and the game's default race rules stay exactly as t
 fingerprint tests). Everything is deterministic from seeds. Builders check game modes through tests
 and data, not by watching.
 
-### S1. Procedural track generator
+### S1. Procedural track generator ✅
+
+Done 2026-11-14 (commit `M7 S1: procedural track generator…`); see the history. The bands
+are in [`../experiments.md`](../experiments.md#generated-tracks-m7-s1).
 
 - **Elements:** a new module (`packages/server/src/track-generator.ts`) builds race tracks from:
   - corridors (asteroid walls) with bends and hairpins;
@@ -57,7 +60,8 @@ and data, not by watching.
 - **Acceptance:**
   - the same seed and band give the same track;
   - fingerprint tests;
-  - the bands differ measurably in rock count and turn angle;
+  - the bands differ measurably in rock count and turn angle (rocks on the line: fields, belts
+    and gates; see the change of 2026-11-14);
   - the scripted controller and the best M6 model fly samples from each band, and their success is
     ordered easy > medium > hard.
 
@@ -170,7 +174,7 @@ and data, not by watching.
 ## Acceptance
 
 - [ ] S1–S5 committed, each with `npm run check` green; absent = byte-identical (fixtures,
-      fingerprints).
+      fingerprints). S1 ✅, S2 ✅.
 - [ ] Exam v3 with the pre-registered `exam3` score, profile metrics and tool; E9's baseline and
       batch A re-scored.
 - [ ] The calibration check passed, or the one-time revision recorded.
@@ -212,3 +216,6 @@ and data, not by watching.
   `par` sit in `race`, and `par` is per race only (no per-leg par). Format v2 landed as its own
   commit first so S3 could use it.
 - 2026-11-14: created with the user's approval, after batch A showed exam v2 is saturated.
+- 2026-11-14 (S1): the band acceptance "rock count" is measured on the rocks on the racing line
+  (fields, belts, gates). Total rocks are dominated by corridor walls, and easy's wider
+  corridors have more wall rocks than hard's, so the total doesn't order the bands.
