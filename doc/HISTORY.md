@@ -2367,3 +2367,52 @@ for me"); no separate plan file (a D1 side track, like the deploy part).
 - **Try after the next push to `production`:** open the game on the phone and on a desktop, vote
   in the box, finish a race (or wait up to 4 minutes) and watch the track change; check that
   `https://asteroid-racers.cypherpunk.agency/lobby` answers; pick a skill track under "Play alone".
+
+### D1 follow-up: in-game menu (Back to menu, Restart, Reconnect)
+
+The user's report: in the browser game they could join, but not disconnect or get back to the main
+menu, and the "Disconnect" button looked like outdated logic, notably in singleplayer.
+
+- **Commit:** `a0ac997` (client HUD and game menu, web pages, roadmap line).
+- **Before** (HUD panel from the Dart port): "Username" field, a Connect/Disconnect toggle and
+  "Leave race" while racing.
+  - Disconnect cleared the scene and left a black canvas with only "Connect"; no page had a way
+    back to the start page except the browser's back button.
+  - Singleplayer showed "Disconnect" too (it disconnected from the in-page server).
+  - The Username field only took effect on the next connect, so changing it in a game did nothing.
+  - A server restart or deploy left a dead canvas with a "Disconnected" chat line and "Connect".
+  - "Leave race" left the race without saying what next (fly into the start pad).
+  - Watch and showcase linked back only through the bare "Asteroid Racers" title.
+- **Now** (`packages/client/src/ui/game-menu.ts` holds the per-mode logic, `html-hud.ts` draws
+  it): "☰ Menu" at the top left of the HUD, Esc on desktop.
+  - Singleplayer: Resume, Restart race (reload), Change track (start page at the track picker),
+    Back to menu. No Disconnect, no Leave race button (clicking the start pad still leaves).
+  - Multiplayer: Resume, Leave race (also in the panel while racing; the chat then says how to
+    rejoin), Back to menu (closes the WebSocket first, so no "lost" dialog). A connection that ends
+    without the player asking, or a failed (re)connect, opens "Disconnected" with Reconnect and Back
+    to menu; it stays open until reconnected.
+  - The name is set on the start page only (same localStorage key as before).
+  - Watch and showcase: a "← Menu" link.
+  - The dialog lives outside the HUD root (works with the HUD hidden by "1") and above the touch
+    layer; 44 px buttons, a two-column grid on landscape phones.
+- **Tests:** `game-menu.test.ts` (buttons per mode and state, forced-open dialog, action routing:
+  Back to menu quits before navigating); `game-client.test.ts` (quit vs lost connection, failed
+  connect reported as lost, Reconnect after a dropped connection, quitting while connecting, Leave
+  race notice and no-op outside a race). `npm run check` green: 558 tests.
+- **Browser check** (built-in pane; `npm run build` + `npm run build:server`, the bundle on port
+  4731 behind the local proxy adding `Content-Security-Policy: default-src 'self'`): singleplayer
+  desktop (Esc opens and closes, Change track lands on `index.html#track-heading`, Restart reloads,
+  Back to menu), singleplayer 375×812 and 812×375 (the Menu button and dialog buttons are the top
+  elements over the touch layer; the touch layer is back after Resume); multiplayer desktop (Leave
+  race from the panel, menu without Leave race afterwards, Back to menu: the server log shows the
+  client disconnecting); server stopped while in multiplayer, desktop and 375×812: "Disconnected"
+  opened, Esc and a backdrop tap did not close it, Reconnect with the server down showed "Could not
+  connect to the server.", Reconnect after the restart brought the game back. Watch and showcase
+  "← Menu" on 375×812. Zero console errors in a clean tab over all five pages; the only errors seen
+  were the expected 502s and the failed WebSocket while the server was deliberately down. Viewport
+  reset, servers stopped.
+- **Decisions** (defaults; alternatives in the report to the user): Restart race reloads the page
+  (fresh in-page server and bots) rather than a server-side reset; Change track goes to the start
+  page rather than an in-game picker; Reconnect is manual (no automatic retry); the HUD's name field
+  was removed rather than made to rename live.
+- **No change** under `packages/server/src` or `packages/shared` (training binding, E1 running).
