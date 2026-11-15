@@ -2416,3 +2416,22 @@ menu, and the "Disconnect" button looked like outdated logic, notably in singlep
   page rather than an in-game picker; Reconnect is manual (no automatic retry); the HUD's name field
   was removed rather than made to rename live.
 - **No change** under `packages/server/src` or `packages/shared` (training binding, E1 running).
+
+## 2026-11-15 — D1 follow-up: start page and game menu restyle
+
+- **Ask:** "a menu that is not ugly". The start page was an unstyled document (stacked form fields,
+  bordered fieldsets, a link list repeating the two buttons); the Esc menu was plain grey.
+- **Start page** (`packages/web/index.html`, `style.css`): space background with a CSS starfield,
+  logo and title header; pilot name and the two play buttons in one launch bar; track picker as
+  tiles (radio hidden, the picked tile highlighted) with the picked track's description and rules
+  below; side column with opponent, race modes (switches) and links to the showcase and watch pages;
+  controls in a footer. Phones: one column, track tiles in two columns without blurbs.
+- **Removed:** the Singleplayer/Multiplayer link list (duplicated the buttons). `menu.ts` now updates
+  the two buttons (`#multiplayer`, `#singleplayer`) instead of four links. All other ids kept,
+  including `#track-heading` for "Change track".
+- **Game menu:** same palette (blurred backdrop, gradient panel, red-orange Resume/Reconnect). The
+  HUD's "☰ Menu" button and the rest of the HUD are unchanged.
+- **Checked:** Playwright screenshots of the start page at 1280×800 and 390×844 and the singleplayer
+  Esc menu; `npm run check` green (563 tests). Multiplayer pages not re-checked in a browser (CSS
+  only for the dialog).
+- **No change** under `packages/server/src` or `packages/shared` (training binding untouched).

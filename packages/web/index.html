@@ -8,91 +8,119 @@
     <link rel="stylesheet" href="./src/style.css" />
   </head>
   <body class="menu-page">
+    <div class="menu-stars" aria-hidden="true"></div>
     <main class="menu">
-      <h1>Asteroid Racers</h1>
-      <p>Race your spaceship against other players in the weightlessness of outer space.</p>
-      <p class="menu-actions">
-        <a class="menu-button" href="multiplayer.html" id="multiplayer">Join multiplayer</a>
-        <a class="menu-button menu-button-alt" href="singleplayer.html" id="singleplayer-button"
-          >Play alone</a
-        >
-      </p>
-      <p class="menu-choice">
-        <label
-          >Your name
+      <header class="menu-hero">
+        <img class="menu-logo" src="logo.png" alt="" width="88" height="88" />
+        <div class="menu-hero-text">
+          <h1>Asteroid Racers</h1>
+          <p class="menu-tagline">
+            Race your spaceship against other players in the weightlessness of outer space.
+          </p>
+        </div>
+      </header>
+
+      <section class="menu-launch" aria-label="Play">
+        <label class="menu-field menu-name">
+          <span class="menu-label">Pilot name</span>
           <input
             id="player-name"
             type="text"
             maxlength="40"
             placeholder="random ship name"
             autocomplete="off"
-        /></label>
-        <span class="menu-note">Shown to the other racers; used when you join a game.</span>
-      </p>
-      <p class="menu-choice">
-        <label
-          >Race against
-          <select id="opponent"></select>
+          />
         </label>
-        <span class="menu-note" id="opponent-note"></span>
-      </p>
-      <section class="track-picker" aria-labelledby="track-heading">
-        <h2 id="track-heading">Track for “Play alone”</h2>
-        <fieldset class="track-group">
-          <legend>Race tracks</legend>
-          <p class="menu-note">
-            Real races. Multiplayer rotates through these after each race; vote for the next one in the game.
-          </p>
-          <div class="track-list" id="race-tracks"></div>
-        </fieldset>
-        <fieldset class="track-group">
-          <legend>Skill tracks</legend>
-          <p class="menu-note">One skill each, for practice on your own.</p>
-          <div class="track-list" id="skill-tracks"></div>
-        </fieldset>
-        <p class="menu-note" id="track-description"></p>
+        <div class="menu-actions">
+          <a class="menu-button menu-button-primary" href="multiplayer.html" id="multiplayer">
+            <span class="menu-button-title">Join multiplayer</span>
+            <span class="menu-button-sub">Race everyone on this server</span>
+          </a>
+          <a class="menu-button menu-button-secondary" href="singleplayer.html" id="singleplayer">
+            <span class="menu-button-title">Play alone</span>
+            <span class="menu-button-sub">On the track picked below</span>
+          </a>
+        </div>
       </section>
-      <fieldset class="race-modes">
-        <legend>Race mode (singleplayer)</legend>
-        <p id="track-rules"></p>
-        <label
-          >Laps <input id="mode-laps" type="number" min="1" max="20" step="1" placeholder="track"
-        /></label>
-        <label><input id="mode-stop" type="checkbox" /> Stop at the finish (speed ≤ 100)</label>
-        <label
-          ><input id="mode-gates" type="checkbox" /> Directional gates (cross every checkpoint along its
-          arrow)</label
-        >
-        <label><input id="mode-timetrial" type="checkbox" /> Time trial (finish times in the chat)</label>
-      </fieldset>
-      <ul>
-        <li>
-          <a href="singleplayer.html" id="singleplayer">Singleplayer</a> — the server runs in your browser
-        </li>
-        <li>
-          <a href="multiplayer.html" id="multiplayer-link">Multiplayer</a> — everyone on this server races
-          together, with the server&#39;s bots, through the race tracks in turn (vote for the next one)
-        </li>
-        <li>
-          <a href="showcase.html" id="showcase">Model showcase</a> — watch a trained model fly every track,
-          training arena and the race exam, with results
-        </li>
-        <li>
-          <a href="watch.html" id="watch">Watch the AI</a> — a trained model flies the race exam, or the
-          chosen track
-        </li>
-      </ul>
-      <h2>Controls</h2>
-      <p>
-        <kbd>←</kbd> <kbd>→</kbd> turn, <kbd>↑</kbd> thrust (or <kbd>A</kbd> <kbd>D</kbd> <kbd>W</kbd>),
-        <kbd>1</kbd> toggles the interface, <kbd>Esc</kbd> opens the game menu (restart, change track, back to
-        this page). Fly into the green start pad to join the race; click it (or “Leave race” in multiplayer)
-        to leave.
-      </p>
-      <p class="touch-only">
-        On a phone: drag anywhere on the left half to steer (the ship turns to point where you drag), hold
-        anywhere on the right half to thrust. “☰ Menu” at the top left opens the game menu.
-      </p>
+
+      <div class="menu-grid">
+        <section class="menu-card track-picker" aria-labelledby="track-heading">
+          <h2 id="track-heading">Track for “Play alone”</h2>
+          <fieldset class="track-group">
+            <legend>Race tracks</legend>
+            <p class="menu-note">Multiplayer rotates through these; vote for the next one in the game.</p>
+            <div class="track-list" id="race-tracks"></div>
+          </fieldset>
+          <fieldset class="track-group">
+            <legend>Skill tracks</legend>
+            <p class="menu-note">One skill each, for practice on your own.</p>
+            <div class="track-list" id="skill-tracks"></div>
+          </fieldset>
+          <div class="track-info">
+            <p id="track-description"></p>
+            <p class="menu-note" id="track-rules"></p>
+          </div>
+        </section>
+
+        <aside class="menu-side">
+          <section class="menu-card" aria-labelledby="opponent-heading">
+            <h2 id="opponent-heading">Opponent</h2>
+            <label class="menu-field">
+              <span class="menu-label">Race against</span>
+              <select id="opponent"></select>
+            </label>
+            <p class="menu-note" id="opponent-note"></p>
+          </section>
+
+          <section class="menu-card race-modes" aria-labelledby="modes-heading">
+            <h2 id="modes-heading">Race mode <small>Play alone</small></h2>
+            <label class="menu-field menu-laps">
+              <span class="menu-label">Laps</span>
+              <input id="mode-laps" type="number" min="1" max="20" step="1" placeholder="track" />
+            </label>
+            <label class="menu-toggle">
+              <input id="mode-stop" type="checkbox" />
+              <span><strong>Stop at the finish</strong> speed ≤ 100</span>
+            </label>
+            <label class="menu-toggle">
+              <input id="mode-gates" type="checkbox" />
+              <span><strong>Directional gates</strong> cross every checkpoint along its arrow</span>
+            </label>
+            <label class="menu-toggle">
+              <input id="mode-timetrial" type="checkbox" />
+              <span><strong>Time trial</strong> finish times in the chat</span>
+            </label>
+          </section>
+
+          <section class="menu-card" aria-labelledby="explore-heading">
+            <h2 id="explore-heading">Watch the AI</h2>
+            <nav class="menu-links">
+              <a href="showcase.html" id="showcase">
+                <strong>Model showcase</strong>
+                <span>A trained model flies every track and the race exam, with results.</span>
+              </a>
+              <a href="watch.html" id="watch">
+                <strong>Watch a race</strong>
+                <span>A trained model flies the race exam, or the chosen track.</span>
+              </a>
+            </nav>
+          </section>
+        </aside>
+      </div>
+
+      <footer class="menu-card menu-controls">
+        <h2>Controls</h2>
+        <p>
+          <kbd>←</kbd> <kbd>→</kbd> turn, <kbd>↑</kbd> thrust (or <kbd>A</kbd> <kbd>D</kbd> <kbd>W</kbd>),
+          <kbd>1</kbd> toggles the interface, <kbd>Esc</kbd> opens the game menu (restart, change track, back
+          to this page). Fly into the green start pad to join the race; click it (or “Leave race” in
+          multiplayer) to leave.
+        </p>
+        <p class="touch-only">
+          On a phone: drag anywhere on the left half to steer (the ship turns to point where you drag), hold
+          anywhere on the right half to thrust. “☰ Menu” at the top left opens the game menu.
+        </p>
+      </footer>
     </main>
     <script type="module" src="./src/menu.ts"></script>
   </body>

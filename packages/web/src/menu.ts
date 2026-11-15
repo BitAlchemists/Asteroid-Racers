@@ -158,10 +158,8 @@ function updateOpponent(): void {
   opponentNote.textContent = info
     ? `${info.role}. In multiplayer the bots are shared: the latest choice wins, from the next race on.`
     : "";
-  const multiplayer = `multiplayer.html${opponentQuery("?")}`;
-  for (const id of ["multiplayer", "multiplayer-link"])
-    (document.getElementById(id) as HTMLAnchorElement).href = multiplayer;
-  (document.getElementById("singleplayer-button") as HTMLAnchorElement).href = singleplayer.href;
+  (document.getElementById("multiplayer") as HTMLAnchorElement).href =
+    `multiplayer.html${opponentQuery("?")}`;
   const showcase = document.getElementById("showcase") as HTMLAnchorElement;
   showcase.href =
     opponentSelect.value === "default"

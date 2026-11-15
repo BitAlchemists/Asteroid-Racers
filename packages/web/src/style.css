@@ -144,9 +144,16 @@ body {
   justify-content: center;
   padding: 16px;
   box-sizing: border-box;
-  background: rgba(0, 0, 0, 0.55);
+  background: rgba(3, 6, 12, 0.6);
+  backdrop-filter: blur(3px);
   touch-action: manipulation;
   font-size: 14px;
+  font-family:
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
 }
 
 .game-menu[hidden] {
@@ -154,25 +161,30 @@ body {
 }
 
 .game-menu-panel {
-  width: min(320px, 100%);
+  width: min(340px, 100%);
   max-height: 100%;
   overflow-y: auto;
-  background: rgba(40, 40, 40, 0.95);
-  border: 1px solid #555;
-  border-radius: 12px;
-  padding: 16px;
+  background: linear-gradient(160deg, rgba(30, 44, 70, 0.96), rgba(12, 18, 30, 0.96));
+  border: 1px solid rgba(140, 190, 255, 0.18);
+  border-radius: 16px;
+  padding: 20px;
   box-sizing: border-box;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
 }
 
 .game-menu-panel h2 {
-  margin: 0 0 8px;
-  font-size: 18px;
+  margin: 0 0 6px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #5ec8ff;
 }
 
 .game-menu-message {
-  margin: 0 0 12px;
-  color: var(--muted);
-  line-height: 1.35;
+  margin: 0 0 16px;
+  color: #8d9bb0;
+  line-height: 1.4;
 }
 
 .game-menu-buttons {
@@ -183,21 +195,26 @@ body {
 
 .game-menu-button {
   font: inherit;
-  min-height: 44px;
-  border: 1px solid #666;
+  font-weight: 600;
+  min-height: 46px;
+  border: 1px solid rgba(140, 190, 255, 0.16);
   border-radius: 10px;
-  background: #2b2b2b;
-  color: var(--text);
+  background: rgba(255, 255, 255, 0.04);
+  color: #e8eef7;
   cursor: pointer;
+  transition:
+    background-color 0.12s ease,
+    border-color 0.12s ease;
 }
 
 .game-menu-button:hover:not(:disabled) {
-  background: #3a3a3a;
+  background: rgba(94, 200, 255, 0.1);
+  border-color: rgba(94, 200, 255, 0.45);
 }
 
 .game-menu-button:focus-visible {
-  outline: 2px solid var(--notice);
-  outline-offset: 1px;
+  outline: 2px solid #5ec8ff;
+  outline-offset: 2px;
 }
 
 .game-menu-button:disabled {
@@ -207,14 +224,16 @@ body {
 
 .game-menu-resume,
 .game-menu-reconnect {
-  background: var(--accent);
-  border-color: var(--accent);
+  background: linear-gradient(135deg, #ff5a3c, #c4161c);
+  border-color: transparent;
   color: #fff;
+  box-shadow: 0 6px 20px rgba(196, 22, 28, 0.35);
 }
 
 .game-menu-resume:hover:not(:disabled),
 .game-menu-reconnect:hover:not(:disabled) {
-  background: var(--accent-hover);
+  background: linear-gradient(135deg, #ff6d52, #d81e24);
+  border-color: transparent;
 }
 
 @media (max-height: 420px) {
@@ -228,37 +247,6 @@ body {
   .game-menu-button {
     min-height: 40px;
   }
-}
-
-/* --- landing page ---------------------------------------------------------------------- */
-
-.menu {
-  padding: 2rem 16px;
-  max-width: 40rem;
-}
-
-.menu a {
-  color: #8cf;
-}
-
-.race-modes {
-  border: 1px solid #444;
-  margin: 0 0 1rem;
-}
-
-.race-modes label {
-  display: block;
-  margin: 0.25rem 0;
-}
-
-.race-modes input[type="number"] {
-  width: 4rem;
-}
-
-.menu kbd {
-  border: 1px solid #666;
-  border-radius: 3px;
-  padding: 0 4px;
 }
 
 /* Watch page */
@@ -425,31 +413,6 @@ body.touch-controls .hud-chat-log {
 
 /* Start page on a phone: bigger targets. */
 @media (pointer: coarse), (max-width: 600px) {
-  .menu {
-    padding: 1rem 16px 2rem;
-  }
-  .menu h1 {
-    font-size: 1.6rem;
-  }
-  .menu select,
-  .menu input[type="number"] {
-    font-size: 16px; /* below 16px iOS zooms into the field */
-    min-height: 36px;
-  }
-  .menu input[type="checkbox"] {
-    width: 20px;
-    height: 20px;
-    vertical-align: middle;
-  }
-  .race-modes label {
-    margin: 0.5rem 0;
-  }
-  .menu li {
-    margin: 0.6rem 0;
-  }
-  .menu-choice select {
-    max-width: 100%;
-  }
   .watch-bar {
     gap: 6px 10px;
     padding: 6px 8px;
@@ -465,19 +428,6 @@ body.touch-controls .hud-chat-log {
   }
 }
 
-.menu-choice {
-  margin: 0 0 1rem;
-}
-
-.menu-choice label {
-  display: block;
-}
-
-.menu-note {
-  color: var(--muted);
-  font-size: 0.9em;
-}
-
 .touch-only {
   display: none;
 }
@@ -486,36 +436,6 @@ body.touch-controls .hud-chat-log {
   .touch-only {
     display: block;
   }
-}
-
-.menu-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.menu .menu-button {
-  display: inline-block;
-  padding: 10px 18px;
-  border-radius: 10px;
-  background: var(--accent);
-  color: #fff;
-  font-weight: bold;
-  text-decoration: none;
-}
-
-.menu .menu-button:hover {
-  background: var(--accent-hover);
-}
-
-.menu .menu-button-alt {
-  background: #234;
-}
-
-.menu input[type="text"] {
-  font: inherit;
-  padding: 4px 6px;
-  max-width: 100%;
 }
 
 /* Showcase page (D1): viewer and challenge list side by side, stacked on a portrait phone. */
@@ -605,77 +525,6 @@ body.showcase {
   }
 }
 
-/* The start page scrolls (the game pages do not). */
-html:has(body.menu-page),
-body.menu-page {
-  overflow: auto;
-}
-
-/* Start page: race tracks and skill tracks, each with its one-line blurb. */
-.track-picker h2 {
-  font-size: 1.1rem;
-  margin: 1.2rem 0 0.4rem;
-}
-.track-group {
-  border: 1px solid #444;
-  margin: 0 0 0.8rem;
-  padding: 0.3rem 0.6rem 0.5rem;
-  min-width: 0;
-}
-.track-group legend {
-  font-weight: bold;
-}
-.track-group > .menu-note {
-  margin: 0 0 0.3rem;
-}
-.track-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
-  gap: 2px 12px;
-}
-.track-option {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  column-gap: 8px;
-  align-items: baseline;
-  padding: 5px 6px;
-  border-radius: 6px;
-  cursor: pointer;
-}
-.track-option:hover {
-  background: #1a2633;
-}
-.track-option:has(input:checked) {
-  background: #233648;
-}
-.track-option input {
-  grid-row: span 2;
-  margin: 0;
-}
-.track-name {
-  font-weight: bold;
-}
-.track-blurb {
-  grid-column: 2;
-  color: var(--muted);
-  font-size: 0.9em;
-}
-@media (pointer: coarse), (max-width: 600px) {
-  .track-list {
-    grid-template-columns: 1fr;
-  }
-  .track-option {
-    padding: 8px 6px;
-    min-height: 44px;
-    box-sizing: border-box;
-  }
-  .track-option input {
-    width: 20px;
-    height: 20px;
-    align-self: center;
-  }
-}
-
 /* Multiplayer: the track lobby (current track, next track, votes). */
 .hud-lobby {
   top: 10px;
@@ -744,4 +593,561 @@ body.touch-controls .hud-lobby {
   max-height: calc(100dvh - 210px - env(safe-area-inset-top));
   padding: 6px;
   gap: 4px;
+}
+
+/* --- start page ------------------------------------------------------------------------- */
+
+body.menu-page {
+  --m-bg: #05070d;
+  --m-card: rgba(16, 24, 38, 0.72);
+  --m-card-border: rgba(140, 190, 255, 0.14);
+  --m-line: rgba(140, 190, 255, 0.1);
+  --m-text: #e8eef7;
+  --m-muted: #8d9bb0;
+  --m-cyan: #5ec8ff;
+  --m-cyan-soft: rgba(94, 200, 255, 0.14);
+  --m-hot: #ff5a3c;
+  --m-hot-2: #c4161c;
+  font-family:
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+  color: var(--m-text);
+  background:
+    radial-gradient(1200px 600px at 85% -10%, rgba(60, 90, 200, 0.22), transparent 60%),
+    radial-gradient(900px 500px at -10% 110%, rgba(196, 22, 28, 0.16), transparent 60%), var(--m-bg);
+  min-height: 100%;
+}
+
+/* The start page scrolls (the game pages do not). */
+html:has(body.menu-page),
+body.menu-page {
+  overflow: auto;
+  height: auto;
+}
+
+.menu-stars {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.55;
+  background-image:
+    radial-gradient(1px 1px at 12% 18%, #fff, transparent),
+    radial-gradient(1px 1px at 27% 72%, #cfe, transparent),
+    radial-gradient(1.5px 1.5px at 41% 33%, #fff, transparent),
+    radial-gradient(1px 1px at 58% 84%, #fff, transparent),
+    radial-gradient(1px 1px at 66% 12%, #bdf, transparent),
+    radial-gradient(1.5px 1.5px at 79% 57%, #fff, transparent),
+    radial-gradient(1px 1px at 91% 29%, #fff, transparent),
+    radial-gradient(1px 1px at 6% 61%, #fff, transparent),
+    radial-gradient(1px 1px at 35% 5%, #fff, transparent),
+    radial-gradient(1px 1px at 86% 91%, #cfe, transparent);
+  background-size: 420px 420px;
+}
+
+.menu {
+  position: relative;
+  box-sizing: border-box;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 40px 24px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.menu h1,
+.menu h2,
+.menu p {
+  margin: 0;
+}
+
+.menu-hero {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.menu-logo {
+  flex: none;
+  width: 88px;
+  height: 88px;
+  filter: drop-shadow(0 0 24px rgba(94, 200, 255, 0.35));
+}
+
+.menu h1 {
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1.05;
+  background: linear-gradient(180deg, #fff 30%, #9fc6ff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.menu-tagline {
+  margin-top: 6px !important;
+  color: var(--m-muted);
+  font-size: 1.05rem;
+}
+
+/* Name + the two big buttons. */
+.menu-launch {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 16px;
+  padding: 20px;
+  border: 1px solid var(--m-card-border);
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(30, 44, 70, 0.75), rgba(14, 20, 32, 0.75));
+  backdrop-filter: blur(6px);
+}
+
+.menu-name {
+  flex: 1 1 220px;
+}
+
+.menu-actions {
+  flex: 2 1 420px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.menu-button {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  min-height: 64px;
+  padding: 10px 20px;
+  border-radius: 12px;
+  text-decoration: none;
+  color: #fff;
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease,
+    background-color 0.12s ease;
+}
+
+.menu-button:hover {
+  transform: translateY(-1px);
+}
+
+.menu-button:active {
+  transform: translateY(1px);
+}
+
+.menu-button:focus-visible {
+  outline: 2px solid var(--m-cyan);
+  outline-offset: 3px;
+}
+
+.menu-button-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.menu-button-sub {
+  font-size: 0.82rem;
+  opacity: 0.8;
+}
+
+.menu-button-primary {
+  background: linear-gradient(135deg, var(--m-hot), var(--m-hot-2));
+  box-shadow: 0 8px 28px rgba(196, 22, 28, 0.35);
+}
+
+.menu-button-primary:hover {
+  box-shadow: 0 10px 34px rgba(255, 90, 60, 0.5);
+}
+
+.menu-button-secondary {
+  background: var(--m-cyan-soft);
+  border: 1px solid rgba(94, 200, 255, 0.45);
+}
+
+.menu-button-secondary:hover {
+  background: rgba(94, 200, 255, 0.22);
+}
+
+/* Cards. */
+.menu-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.menu-side {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.menu-card {
+  padding: 18px 20px;
+  border: 1px solid var(--m-card-border);
+  border-radius: 16px;
+  background: var(--m-card);
+  backdrop-filter: blur(6px);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.menu-card h2 {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--m-cyan);
+}
+
+.menu-card h2 small {
+  margin-left: 6px;
+  color: var(--m-muted);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+.menu-note {
+  color: var(--m-muted);
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+/* Form fields. */
+.menu-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.menu-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--m-muted);
+}
+
+.menu input[type="text"],
+.menu input[type="number"],
+.menu select {
+  font: inherit;
+  font-size: 16px; /* below 16px iOS zooms into the field */
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid rgba(140, 190, 255, 0.22);
+  border-radius: 10px;
+  background: rgba(5, 9, 16, 0.7);
+  color: var(--m-text);
+}
+
+.menu select {
+  appearance: none;
+  padding-right: 36px;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--m-muted) 50%),
+    linear-gradient(135deg, var(--m-muted) 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) 50%,
+    calc(100% - 13px) 50%;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+}
+
+.menu input::placeholder {
+  color: #5d6a7e;
+}
+
+.menu input:focus,
+.menu select:focus {
+  outline: none;
+  border-color: var(--m-cyan);
+  box-shadow: 0 0 0 3px rgba(94, 200, 255, 0.2);
+}
+
+/* Track picker: tiles, the radio button hidden behind the tile's highlight. */
+.track-group {
+  border: none;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.track-group legend {
+  padding: 0;
+  margin-bottom: 2px;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.track-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px;
+}
+
+.track-option {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 12px;
+  border: 1px solid var(--m-line);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  cursor: pointer;
+  transition:
+    border-color 0.12s ease,
+    background-color 0.12s ease;
+}
+
+.track-option:hover {
+  border-color: rgba(140, 190, 255, 0.3);
+  background: rgba(94, 200, 255, 0.05);
+}
+
+.track-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.track-option:has(input:checked) {
+  border-color: var(--m-cyan);
+  background: var(--m-cyan-soft);
+  box-shadow: inset 0 0 0 1px var(--m-cyan);
+}
+
+.track-option:has(input:focus-visible) {
+  outline: 2px solid var(--m-cyan);
+  outline-offset: 2px;
+}
+
+.track-name {
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.track-option:has(input:checked) .track-name {
+  color: var(--m-cyan);
+}
+
+.track-blurb {
+  color: var(--m-muted);
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+
+.track-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border-left: 3px solid var(--m-cyan);
+  background: rgba(94, 200, 255, 0.06);
+  line-height: 1.4;
+}
+
+/* Race modes: switches. */
+.menu-laps input[type="number"] {
+  width: 7rem;
+}
+
+.menu-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  cursor: pointer;
+  line-height: 1.35;
+}
+
+.menu-toggle span {
+  color: var(--m-muted);
+  font-size: 0.85rem;
+}
+
+.menu-toggle strong {
+  display: block;
+  color: var(--m-text);
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.menu-toggle input {
+  appearance: none;
+  flex: none;
+  position: relative;
+  width: 40px;
+  height: 22px;
+  margin: 1px 0 0;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.12);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.menu-toggle input::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #cfd8e6;
+  transition: transform 0.15s ease;
+}
+
+.menu-toggle input:checked {
+  background: var(--m-cyan);
+}
+
+.menu-toggle input:checked::after {
+  transform: translateX(18px);
+  background: #fff;
+}
+
+.menu-toggle input:focus-visible {
+  outline: 2px solid var(--m-cyan);
+  outline-offset: 2px;
+}
+
+/* Links to the AI pages. */
+.menu-links {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.menu-links a {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border: 1px solid var(--m-line);
+  border-radius: 10px;
+  text-decoration: none;
+  color: var(--m-text);
+  transition:
+    border-color 0.12s ease,
+    background-color 0.12s ease;
+}
+
+.menu-links a::after {
+  content: "→";
+  position: absolute;
+  right: 14px;
+  color: var(--m-cyan);
+}
+
+.menu-links a {
+  position: relative;
+  padding-right: 36px;
+}
+
+.menu-links a:hover {
+  border-color: rgba(94, 200, 255, 0.4);
+  background: rgba(94, 200, 255, 0.06);
+}
+
+.menu-links span {
+  color: var(--m-muted);
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.menu-controls p {
+  color: var(--m-muted);
+  line-height: 1.7;
+}
+
+.menu kbd {
+  display: inline-block;
+  min-width: 1.4em;
+  padding: 0 6px;
+  border: 1px solid rgba(140, 190, 255, 0.3);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--m-text);
+  font:
+    600 0.8rem/1.6 ui-monospace,
+    Consolas,
+    monospace;
+  text-align: center;
+}
+
+@media (max-width: 860px) {
+  .menu-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .menu {
+    padding: 20px 16px 32px;
+    gap: 16px;
+  }
+  .menu-hero {
+    gap: 14px;
+  }
+  .menu-logo {
+    width: 60px;
+    height: 60px;
+  }
+  .menu-tagline {
+    font-size: 0.95rem;
+  }
+  .menu-launch,
+  .menu-card {
+    padding: 16px;
+  }
+  .menu-actions {
+    grid-template-columns: 1fr;
+    flex-basis: 100%;
+  }
+  /* Two columns of names; the picked track's description shows below the lists. */
+  .track-list {
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .track-option {
+    min-height: 44px;
+    justify-content: center;
+    padding: 8px 10px;
+  }
+  .track-name {
+    font-size: 0.85rem;
+    overflow-wrap: anywhere;
+  }
+  .track-blurb {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu-button,
+  .track-option,
+  .menu-links a,
+  .menu-toggle input,
+  .menu-toggle input::after {
+    transition: none;
+  }
 }
